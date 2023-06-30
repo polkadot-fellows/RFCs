@@ -1,12 +1,13 @@
 # RFC-1: Agile Coretime
 
-| Status          | Proposal                                                           |
-| --------------- | ------------------------------------------------------------------ |
-| **Areas**       | General                                                            |
+|                 |                                                                                             |
+| --------------- | ------------------------------------------------------------------------------------------- |
+| **Status**      | Draft Proposal                                                                              |
+| **Areas**       | General                                                                                     |
 | **Description** | Agile periodic-sale-based model for assigning Coretime on the Polkadot Ubiquitous Computer. |
-| **Issues**      | None                                                               |
-| **Authors**     | Gavin Wood                                                         |
-| **Reviewers**   | None                                                                   |
+| **Issues**      | n/a                                                                                         | 
+| **Authors**     | Gavin Wood                                                                                  |
+| **Reviewers**   | None                                                                                        |
 
 
 ## Summary
@@ -214,7 +215,7 @@ In order to ensure this, then it is crucial that Instantaneous Coretime, once pu
 
 ## Implementation
 
-Implementation of this proposal comes in three phases:
+Implementation of this proposal comes in several phases:
 
 1. Finalise the specifics of implementation; this may be done through a design document or through a well-documented prototype implementation.
 2. Implement the design, including all associated aspects such as unit tests, benchmarks and any support software needed.
@@ -257,14 +258,8 @@ While this proposal does not introduce documentable features per se, adequate do
 
 ## Drawbacks, alternatives, and unknowns
 
-What are the costs of implementing this proposal?
-
-What other strategies might solve the same problem?
-
-What questions still need to be resolved, or details iterated upon, to accept
-this proposal? Your answer to this is likely to evolve as the proposal evolves.
+None at present.
 
 ## Prior art and references
 
 None.
-
