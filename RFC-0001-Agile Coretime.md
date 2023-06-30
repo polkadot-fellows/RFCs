@@ -284,7 +284,7 @@ While this proposal does not introduce documentable features per se, adequate do
 
 ## Drawbacks, alternatives, and unknowns
 
-None.
+None at present.
 
 ## Prior art and references
 
