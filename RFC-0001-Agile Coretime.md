@@ -1,12 +1,13 @@
 # RFC-1: Agile Coretime
 
-| Status          | Proposal                                                           |
-| --------------- | ------------------------------------------------------------------ |
-| **Areas**       | General                                                            |
+|                 |                                                                                             |
+| --------------- | ------------------------------------------------------------------------------------------- |
+| **Status**      | Draft Proposal                                                                              |
+| **Areas**       | General                                                                                     |
 | **Description** | Agile periodic-sale-based model for assigning Coretime on the Polkadot Ubiquitous Computer. |
-| **Issues**      | None                                                               |
-| **Authors**     | Gavin Wood                                                         |
-| **Reviewers**   | None                                                                   |
+| **Issues**      | n/a                                                                                         | 
+| **Authors**     | Gavin Wood                                                                                  |
+| **Reviewers**   | None                                                                                        |
 
 
 ## Summary
@@ -17,7 +18,7 @@ This proposes a periodic, sale-based method for assigning and Polkadot Coretime.
 
 ### Present System
 
-The present system of allocating time for parachains on the cores of the Polkadot Ubiquitous Computer (aka "Polkadot") is through a process known as *slot auctions*. These are on-chain candle auctions which proceed for several days and result in a core being assigned to a single parachain for 6six months at a time up to 18 months in advance. Practically speaking, we only see two year periods being bid upon and leased.
+The present system of allocating time for parachains on the cores of the Polkadot Ubiquitous Computer (aka "Polkadot") is through a process known as *slot auctions*. These are on-chain candle auctions which proceed for several days and result in a core being assigned to a single parachain for six months at a time up to 18 months in advance. Practically speaking, we only see two year periods being bid upon and leased.
 
 Funds behind the bids made in the slot auctions are merely locked, not consumed or paid and become unlocked and returned to the bidder on expirt of the lease period. A means of sharing the deposit trustlessly known as a *crowdloan* is available allowing token holders to contribute to the overall deposit of a chain without any counterparty risk.
 
@@ -60,7 +61,7 @@ This RFC was presented at Polkadot Decoded 2023 Copenhagen on the Main Stage. A 
 
 ## Requirements
 
-There are five main requirements:
+There are six main requirements:
 
 1. The solution MUST provide an acceptable value-capture mechanism for the Polkadot network.
 2. The solution SHOULD allow parachains and other projects deployed on to the Polkadot UC to make long-term capital expenditure predictions.
@@ -99,7 +100,7 @@ At the request of the owner, the Broker-chain allows Bulk Coretime to be:
 
 1. Transferred in ownership.
 2. Split into quantized, non-overlapping segments of Bulk Coretime with the same ownership.
-3. Consumed in exchange for the allocation of a Core during its period. 
+3. Consumed in exchange for the allocation of a Core during its period.
 4. Consumed in exchange for a pro-rata amount of the revenue from Instantaneous Core sales over its period.
 
 Pre-existing leases SHALL be recorded in the Broker-chain and cores reserved for them.
@@ -132,16 +133,17 @@ The Broker-chain aims to sell some `BULK_TARGET` of Cores, up to some `BULK_LIMI
 
 Accounts may call a `purchase` function with the appropriate funds in place to have their funds reserved and signal an intention to purchase Bulk Coretime for the forthcoming period. One account may have only one pending purchase. Any number of accounts may attempt to `purchase` Bulk Coretime for the forthcoming period, but the order is recorded.
 
-If there are more purchases than available cores for purchase in this period, then any additional purchase orders are carried over but marked as such. A purchase is only cancellable if it was carried over.
+If there are more purchase requests than available cores for purchase in this period, then requests are processed in incoming order. Any additional purchase orders are carried over but marked as such. A purchase is only cancellable if it was carried over.
 
-When a block of Bulk Coretime is initially issued through this purchase, the price it was purchased for is recorded, in addition to the beginning and end Relay-chain block numbers to which it corresponds.
+When a region of Bulk Coretime is initially issued through this purchase, the price it was purchased for is recorded, in addition to the beginning and end Relay-chain block numbers to which it corresponds.
 
-The Broker-chain SHALL record this information in a storage double-map called Regions, keyed first by the current bulk sale index (a `u32` starting at zero and incrementing with each sale), then secondarily by a `RegionId`. It shall map into a value of `RegionRecord`:
+The Broker-chain SHALL record this information in a storage double-map called Regions, keyed first by the current bulk `SaleIndex` (a `u16` starting at zero and incrementing with each sale), then secondarily by a `RegionId`. It shall map into a value of `RegionRecord`:
 
 ```rust
+type SaleIndex = u16;
 struct RegionId {
-    core: CoreIndex, // A `u16`.
-    begin: Timeslice,    // A `u16`.
+    core: CoreIndex,  // A `u16`.
+    begin: Timeslice, // A `u16`.
 }
 struct RegionRecord {
     owner: AccountId,
@@ -151,9 +153,13 @@ struct RegionRecord {
 }
 ```
 
-Notably, if a region is split or transferred, then the `price` is reset to `None`.
+This map functions essentially as a linked list. With one region's `end` field functioning as the next region's key's `begin` field. It is keyyed by the sale index in order to allow the following sale period's Coretime to be manipulated during the `LEADIN_PERIOD` prior to it becoming allocatable.
 
-The Broker-chain provides feedback to the Relay-chain on which `ParaId` sets should be serviced on which cores, and does so as they change. Each block, the Broker-chain checks if any timeslices have elapsed and if so checks to see if any cores have a newly active `RegionRecord` value in the `Regions` map. If they do it MUST notify the Relay-chain of the new responsibilities of the relevant `core`. In this case, it MUST remove the item from the `Regions` map.
+An additional storage map is maintained to keep the "heads" of this linked list. It is called `NextRegion` and it maps `CoreIndex` to `Timeslice`, to indicate the earliest stored region of the given core.
+
+Notably, if a region is split or transferred, then the `price` is reset to `None`, which has the effect of disallowing a price-increase-capped renewal.
+
+The Broker-chain provides feedback to the Relay-chain on which `ParaId` sets should be serviced on which cores, and does so as they change. Each block, the Broker-chain checks if the period of a `Timeslice` has elapsed. If so, it checks to see if any cores have a newly active `RegionRecord` value in the `Regions` map. If they do, it MUST notify the Relay-chain of the new responsibilities of the relevant `core`. In this case, it MUST remove the item from the `Regions` map and update the `NextRegion` map so it maps the relevant core to the value of removed record's `end` field.
 
 If the `RegionRecord` value for an elapsed `RegionId` has an `allocation` of `None`, then the item is not removed and the Relay-chain is instructed to place the core for instantaneous use.
 
@@ -165,7 +171,7 @@ Several functions of the Broker-chain SHALL be exposed through dispatchables and
 
 A `transfer(region: RegionId, new_owner: AccountId)` dispatchable SHALL have the effect of altering the current `owner` field of `region` in the `Regions` map from the signed origin to `new_owner`.
 
-An implementation of the `nonfungible` trait SHOULD include equivalent functionality. `RegionIndex` SHOULD be used for the `AssetInstance` value.
+An implementation of the `nonfungible` trait SHOULD include equivalent functionality. `RegionId` SHOULD be used for the `AssetInstance` value.
 
 In both cases, the `price` field SHALL become `None`.
 
@@ -191,11 +197,19 @@ If the `begin` field of the `region` parameter is less than the current `Timesli
 
 Initially `target` values with only one item MAY be supported.
 
-If the `RegionRecord`'s `price` field is `Some` (indicating that the Region is freshly purchased), then the Broker-chain SHALL record the `Vec<ParaId>` and `price` together with the `BlockNumber` of the forthcoming Bulk sales period in a map called AllowedRenewals.
+If the `RegionRecord`'s `price` field is `Some` (indicating that the Region is freshly purchased), then the Broker-chain SHALL record an entry in a storage map called AllowedRenewals. This maps a `CoreIndex` to a struct `RenewalRecord`:
+
+```rust
+struct RenewalRecord {
+    target: Vec<ParaId>,
+    price: Balance,
+    sale: SaleIndex,
+}
+```
 
 #### 4. Renewals
 
-A dispatchable `renew(target: Vec<ParaId>)` SHALL be provided. Any account may call `renew` together with a `Vec<ParaId>` to purchase a core and renew an active allocation.
+A dispatchable `renew(core: CoreIndex)` SHALL be provided. Any account may call `renew` to purchase Bulk Coretime and renew an active allocation for the given `core`.
 
 This MUST be called during the `LEADIN_PERIOD` prior to a Bulk sale (exactly like `purchase`) and has the same effect as `purchase` followed by `allocate` containing the same `Vec<ParaId>`, except that:
 
@@ -203,6 +217,19 @@ This MUST be called during the `LEADIN_PERIOD` prior to a Bulk sale (exactly lik
 2. The price of the purchase is the previous `price` incremented by `RENEWAL_PRICE_CAP` of itself or the regular price, whichever is lower.
 
 AllowedRenewals map is updated with the new information ready for the following Bulk sale.
+
+#### 5. Migrations from Legacy Slot Leases
+
+It is intended that paras which hold a lease from the legacy slot auction system are able to seamlessly transition into the Agile Coretime framework.
+
+A dispatchable `migrate(core: CoreIndex)` SHALL be provided. Any account may call `migrate` to purchase Bulk Coretime at the current price for the given `core`.
+
+This MUST be called during the `LEADIN_PERIOD` prior to a Bulk sale (exactly like `purchase`) and has the same effect as `purchase` followed by `allocate` with a value of `Vec<ParaId>` containing just one item equal to `target`, except that:
+
+1. The purchase always succeeds and as such MUST be processed prior to regular `purchase` orders.
+2. There MUST be an ongoing legacy parachain lease whose parachain is assigned to `core` and which is due to expire during the Coretime period being purchased.
+
+AllowedRenewals map is updated with this information ready for the following Bulk sale.
 
 ### Notes on Instantaneous Core Sales
 
@@ -214,7 +241,7 @@ In order to ensure this, then it is crucial that Instantaneous Coretime, once pu
 
 ## Implementation
 
-Implementation of this proposal comes in three phases:
+Implementation of this proposal comes in several phases:
 
 1. Finalise the specifics of implementation; this may be done through a design document or through a well-documented prototype implementation.
 2. Implement the design, including all associated aspects such as unit tests, benchmarks and any support software needed.
@@ -257,14 +284,8 @@ While this proposal does not introduce documentable features per se, adequate do
 
 ## Drawbacks, alternatives, and unknowns
 
-What are the costs of implementing this proposal?
-
-What other strategies might solve the same problem?
-
-What questions still need to be resolved, or details iterated upon, to accept
-this proposal? Your answer to this is likely to evolve as the proposal evolves.
+None.
 
 ## Prior art and references
 
 None.
-
