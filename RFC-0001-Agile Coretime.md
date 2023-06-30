@@ -61,7 +61,7 @@ This RFC was presented at Polkadot Decoded 2023 Copenhagen on the Main Stage. A 
 
 ## Requirements
 
-There are five main requirements:
+There are six main requirements:
 
 1. The solution MUST provide an acceptable value-capture mechanism for the Polkadot network.
 2. The solution SHOULD allow parachains and other projects deployed on to the Polkadot UC to make long-term capital expenditure predictions.
