@@ -1,6 +1,6 @@
 # RFCs
 
-This repository contains a number of Requests for Comment (RFCs) detailing changes to the runtime and node behavior of these networks. These RFCs are for the discussion and design of features which have been submitted for consideration to the developer fellowships of these networks, as well as targets for the fellowships' on-chain bodies to signal approval or disapproval of.
+This repository contains a number of Requests for Comment (RFCs) detailing proposed changes to the technical implementation of the Polkadot network. These RFCs are for the discussion and design of features which have been submitted for consideration to the developer Fellowship of Polkadot, as well as targets for the Fellowship's on-chain bodies to signal approval or disapproval of.
 
 ## Scope
 
