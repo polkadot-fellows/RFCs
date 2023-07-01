@@ -5,6 +5,7 @@
 | **Start Date**  | Date of initial proposal                                                                    |
 | **Description** | One-sentence description                                                                    |
 | **Authors**     |                                                                                             |
+| **License**     | MIT                                                                                         |
 
 ## Summary
 
