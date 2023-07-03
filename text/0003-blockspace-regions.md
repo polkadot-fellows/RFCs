@@ -5,7 +5,6 @@
 | **Start Date**  | June 27, 2023                                                                               |
 | **Description** | Flexible and Future-proof Coretime allocation on the Polkadot relay-chain                   |
 | **Authors**     | Robert Habermeier                                                                           |
-| **License**     | MIT                                                                                         |
 
 ## Summary
 
