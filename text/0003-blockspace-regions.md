@@ -33,9 +33,10 @@ The specific requirements of the solution are to solve these problems directly o
     - In the end-state of Polkadot, there should be highly mature secondary blockspace markets which can deliver extremely customized coretime solutions to users. Getting the infrastructure right to accommodate this early on will save implementers years of time, not to mention avoiding future migrations.
   5. **The solution SHOULD minimize the required advance notice for scheduling Coretime.** 
     - Application load is highly volatile, and the core scheduling primitives should enable applications to pay for only the Coretime they need, while allowing them to gracefully handle periods of heavy load. It is quite common for applications to suddenly experience a large influx of traffic and interest which lasts for a short time.
-  6. **The solution MUST not allow chains to access more than their scheduled amount of Coretime.**
+  6. **The solution MUST NOT allow chains to access more than their scheduled amount of Coretime.**
   7. **The solution MUST NOT allow parachains to build up arbitrary amounts of Coretime to spend later on**
     - The intention of regions is to ensure consistent rates of utilization by scheduled parachains. Allowing arbitrary amounts of Coretime to be built up and spent later will lead to misallocation of system resources during periods of high demand. Eliminating this type of arbitrage is necessary.
+  8. **The solution SHOULD unify all scheduling mechanisms on the relay-chain**. Maintaining multiple parallel interfaces and implementations of scheduling on the relay-chain, runtime APIs, and node-side will contribute enormously to implementation and ongoing maintenance overheads and should be avoided.
 
 ## Stakeholders
 
