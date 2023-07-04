@@ -84,9 +84,9 @@ The new functions directly return the number of bytes that were written in the `
 (func $ext_crypto_ed25519_generate_version_2
     (param $key_type_id i32) (param $seed i64) (param $out i32))
 (func $ext_crypto_sr25519_generate_version_2
-    (param $key_type_id i32) (param $seed i64) (return i32))
+    (param $key_type_id i32) (param $seed i64) (param $out i32) (return i32))
 (func $ext_crypto_ecdsa_generate_version_2
-    (param $key_type_id i32) (param $seed i64) (return i32))
+    (param $key_type_id i32) (param $seed i64) (param $out i32) (return i32))
 ```
 
 The behaviour of these functions is identical to their version 1 or version 2 equivalent. Instead of allocating a buffer, writing the output to it, and returning a pointer to it, the new version of these functions accepts an `out` parameter containing the memory location where the host writes the output. The output is always of a size known at compilation time.
@@ -157,7 +157,7 @@ These values are equal to the values returned on error by the version 2 (see <ht
 
 The behaviour of this function is identical to its version 1 equivalent. Instead of allocating a buffer, writing the request identifier in it, and returning a pointer to it, the version 2 of this function simply returns the newly-assigned identifier to the HTTP request. On failure, this function returns 0. An identifier of 0 is invalid and is reserved to indicate failure.
 
-Host implementaters should be aware that, because a non-zero identifier value was previously valid, this might require slightly more changes to the host than just adding the new function.
+Host implementers should be aware that, because a zero identifier value was previously valid, this might require slightly more changes to the host than just adding the new function.
 
 ```wat
 (func $ext_offchain_http_request_write_body_version_2
