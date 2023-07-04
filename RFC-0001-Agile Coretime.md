@@ -26,7 +26,7 @@ Funds behind the bids made in the slot auctions are merely locked, not consumed 
 
 The present system is based on a model of one-core-per-parachain. This is a legacy interpretation of the Polkadot platform and is not a reflection of its present capabilities. By restricting ownership and usage to this model, more dynamic and resource-efficient means of utilising the Polkadot Ubiquitous Computer is lost.
 
-More specifically, it is impossible to lease out cores at anything less than six months, and apparently unrealistic to do so at anything less than two years. This cuts out the ability to dynamically manage the underlying resource, and generally experimentation, iteratation and innovation are hampered. It bakes into the platform an assumption of permanence for anything deployed into it and restricts the market's ability to find a more optimal allocation of the finite resource.
+More specifically, it is impossible to lease out cores at anything less than six months, and apparently unrealistic to do so at anything less than two years. This cuts out the ability to dynamically manage the underlying resource, and generally experimentation, iteration and innovation are hampered. It bakes into the platform an assumption of permanence for anything deployed into it and restricts the market's ability to find a more optimal allocation of the finite resource.
 
 There is no ability to determine capital requirements for hosting a parachain beyond two years from the point of its initial deployment onto Polkadot. While it would be unreasonable to have perfect and indefinite cost predictions for any real-world platform, not having any clarity whatsoever beyond "market rates" two years hence can be a very off-putting prospect for teams to buy into.
 
