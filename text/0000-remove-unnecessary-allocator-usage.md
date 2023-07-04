@@ -50,7 +50,7 @@ This RFC proposes to introduce the following new host functions:
 ```
 
 The signature and behaviour of `ext_storage_read_version_2` and `ext_default_child_storage_read_version_2` is identical to their version 1 equivalent, but the return value has a different meaning.
-The new functions directly return the number of bytes written in the `value_out` buffer. If the entry doesn't exist, a value of `-1` is returned. Given that the host must never write more bytes than the size of the buffer in `value_out`, and that the size of this buffer is expressed as a 32 bits number, a 64bits value of `-1` is not ambiguous.
+The new functions directly return the number of bytes that were written in the `value_out` buffer. If the entry doesn't exist, a value of `-1` is returned. Given that the host must never write more bytes than the size of the buffer in `value_out`, and that the size of this buffer is expressed as a 32 bits number, a 64bits value of `-1` is not ambiguous.
 
 ```wat
 (func $ext_hashing_keccak_256_version_2
@@ -89,7 +89,7 @@ The new functions directly return the number of bytes written in the `value_out`
     (param $key_type_id i32) (param $seed i64) (return i32))
 ```
 
-The behaviour of these functions is identical to their version 1 or version 2 equivalent. Instead of allocating a buffer, writing the output to it, and returning a pointer to it, the new version of these functions accepts an `out` parameter containing the memory location where the host writes the output.
+The behaviour of these functions is identical to their version 1 or version 2 equivalent. Instead of allocating a buffer, writing the output to it, and returning a pointer to it, the new version of these functions accepts an `out` parameter containing the memory location where the host writes the output. The output is always of a size known at compilation time.
 
 ```wat
 (func $ext_default_child_storage_root_version_3
@@ -98,7 +98,7 @@ The behaviour of these functions is identical to their version 1 or version 2 eq
     (param $out i32))
 ```
 
-The behaviour of these functions is identical to their version 1 and version 2 equivalents. Instead of allocating a buffer, writing the output to it, and returning a pointer to it, the new versions of these functions accepts an `out` parameter containing the memory location where the host writes the output.
+The behaviour of these functions is identical to their version 1 and version 2 equivalents. Instead of allocating a buffer, writing the output to it, and returning a pointer to it, the new versions of these functions accepts an `out` parameter containing the memory location where the host writes the output. The output is always of a size known at compilation time.
 
 I have taken the liberty to take the version 1 of these functions as a base rather than the version 2, as a PPP deprecating the version 2 of these functions has previously been accepted: <https://github.com/w3f/PPPs/pull/6>.
 
@@ -129,7 +129,7 @@ func $ext_crypto_ecdsa_sign_version_2
     (param $key_type_id i32) (param $key i32) (param $msg i64) (param $out i32) (return i64))
 ```
 
-The behaviour of these functions is identical to their version 1 equivalents. The new versions of these functions accept an `out` parameter containing the memory location where the host writes the signature. On success, these functions return `0`. If the public key can't be found in the keystore, these functions return `1` and do not write anything to `out`.
+The behaviour of these functions is identical to their version 1 equivalents. The new versions of these functions accept an `out` parameter containing the memory location where the host writes the signature. The signatures are always of a size known at compilation time. On success, these functions return `0`. If the public key can't be found in the keystore, these functions return `1` and do not write anything to `out`.
 
 Note that the return value is 0 on success and 1 on failure, while the previous version of these functions write 1 on success (as it represents a SCALE-encoded `Some`) and 0 on failure (as it represents a SCALE-encoded `None`). Returning 0 on success and non-zero on failure is consistent with common practices in the C programming language and is less surprising than the opposite.
 
@@ -140,7 +140,7 @@ Note that the return value is 0 on success and 1 on failure, while the previous 
     (param $sig i32) (param $msg i32) (param $out i32) (return i64))
 ```
 
-The behaviour of these functions is identical to their version 2 equivalents. The new versions of these functions accept an `out` parameter containing the memory location where the host writes the signature. On success, these functions return `0`. On failure, these functions return a non-zero value and do not write anything to `out`. The non-zero value written on failure is the same as in version 2 of these functions: <https://spec.polkadot.network/chap-host-api#defn-ecdsa-verify-error>.
+The behaviour of these functions is identical to their version 2 equivalents. The new versions of these functions accept an `out` parameter containing the memory location where the host writes the signature. The signatures are always of a size known at compilation time. On success, these functions return `0`. On failure, these functions return a non-zero value and do not write anything to `out`. The non-zero value written on failure is the same as in version 2 of these functions: <https://spec.polkadot.network/chap-host-api#defn-ecdsa-verify-error>.
 
 ```wat
 (func $ext_offchain_http_request_start_version_2
@@ -148,6 +148,8 @@ The behaviour of these functions is identical to their version 2 equivalents. Th
 ```
 
 The behaviour of this function is identical to its version 1 equivalent. Instead of allocating a buffer, writing the request identifier in it, and returning a pointer to it, the version 2 of this function simply returns the newly-assigned identifier to the HTTP request. On failure, this function returns 0. An identifier of 0 is invalid and is reserved to indicate failure.
+
+Host implementaters should be aware that, because a non-zero identifier value was previously valid, this might require slightly more changes to the host than just adding the new function.
 
 ```wat
 (func $ext_offchain_http_request_write_body_version_2
