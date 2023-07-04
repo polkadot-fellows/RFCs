@@ -1,4 +1,4 @@
-# RFC-0000: Remove unnecessary host functions allocator usage
+# RFC-0004: Remove unnecessary host functions allocator usage
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
