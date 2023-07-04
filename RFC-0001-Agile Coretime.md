@@ -2,12 +2,11 @@
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
-| **Status**      | Draft Proposal                                                                              |
-| **Areas**       | General                                                                                     |
+| **Start Date**  | 30 June 2023                                                                                |
+| **Status**      | Draft                                                                                       |
 | **Description** | Agile periodic-sale-based model for assigning Coretime on the Polkadot Ubiquitous Computer. |
-| **Issues**      | n/a                                                                                         | 
 | **Authors**     | Gavin Wood                                                                                  |
-| **Reviewers**   | None                                                                                        |
+| **Licence**     | MIT/Apache2                                                                                 |
 
 
 ## Summary
@@ -32,6 +31,17 @@ There is no ability to determine capital requirements for hosting a parachain be
 
 However, quite possibly the most substantial problem is both a perceived and often real high barrier to entry of the Polkadot ecosystem. By forcing innovators to either raise 7-figure sums through investors or appeal to the wider token-holding community, Polkadot makes it essentially difficult for a small band of innovators from deploying their technology into Polkadot. While not being actually permissioned, it is also far from the barrierless, permissionless ideal which an innovation platform such as Polkadot should be striving for.
 
+## Requirements
+
+1. The solution SHOULD provide an acceptable value-capture mechanism for the Polkadot network.
+1. The solution SHOULD allow parachains and other projects deployed on to the Polkadot UC to make long-term capital expenditure predictions for the cost of  ongoing deployment.
+1. The solution SHOULD minimize the barriers to entry in the ecosystem.
+1. The solution SHOULD work when the number of cores which the Polkadot UC can support changes over time.
+1. The solution SHOULD facilitate the optimal allocation of work to core of the Polkadot UC.
+1. The design SHOULD avoid creating additional dependencies on functionality which the Relay-chain need not strictly provide for the delivery of the Polkadot UC.
+
+Furthermore, the design SHOULD be implementable and deployable in a timely fashion; three months from the acceptance of this RFC would seem reasonable.
+
 ## Stakeholders
 
 Primary stakeholder sets are:
@@ -40,39 +50,52 @@ Primary stakeholder sets are:
 - Polkadot Parachain teams both present and future, and their users.
 - Polkadot DOT token holders.
 
-_Facilitator:_
-
-Parity Technologies' Ecosystem division.
-
-_Reviewers:_
-
-None.
-
-_Consulted:_
-- Alistair
-- Jonas
-- Bjorn
-- Rob H
-- Rob K
-
 _Socialization:_
 
 This RFC was presented at Polkadot Decoded 2023 Copenhagen on the Main Stage. A small amount of socialisation at the Parachain Summit preceeded it and some substantial discussion followed it. Parity Ecosystem team is currently soliciting views from ecosystem teams who would be key stakeholders.
 
-## Requirements
+## Design
 
-There are six main requirements:
+### Overview
 
-1. The solution MUST provide an acceptable value-capture mechanism for the Polkadot network.
-2. The solution SHOULD allow parachains and other projects deployed on to the Polkadot UC to make long-term capital expenditure predictions.
-3. The solution SHOULD minimize the barriers to entry in the ecosystem.
-4. The solution SHOULD maximize the value which the Polkadot UC provides by allocating its limited resources optimally.
-5. The design MUST work with a limited set of resources (cores on the Polkadot UC) whose properties and number may evolve over time.
-6. The design MUST avoid creating additional dependency on functionality which the Relay-chain need not strictly provide for the delivery of the Polkadot UC. This includes any dependency on the Relay-chain hosting a DOT token.
+Upon implementation of this proposal, slot auctions and associated crowdloans cease. Instead, Coretime on the Polkadot UC is sold by the Polkadot System in two separate formats: *Bulk* and *Instantaneous*. This proposal only mandates the implementation of *Bulk Coretime*; any mentions of *Instantaneous Coretime* is only intended to illustrate a possible final solution.
 
-Furthermore, the design SHOULD be implementable and deployable in a timely fashion; three months from the acceptance of this RFC would seem reasonable.
+*Bulk Coretime* is sold periodically and allocated any time in advance of its usage, whereas *Instantaneous Coretime* is sold immediately prior to usage on a block-by-block basis with an explicit allocation at the time of purchase.
 
-## Parameters
+All Bulk Coretime sold by Polkadot is done so on a new system parachain known as the *Broker-chain*. Revenue from sales would be sent to the Polkadot Treasury. Owners of Bulk Coretime are tracked on this chain and the ownership status and properties (i.e. the specific period) of the owned Coretime are exposed over XCM as a non-fungible asset.
+
+At the request of the owner, the Broker-chain allows Bulk Coretime to be:
+
+1. Transferred in ownership.
+2. Split into quantized, non-overlapping segments of Bulk Coretime with the same ownership.
+3. Consumed in exchange for the allocation of a Core during its period.
+4. Consumed in exchange for a pro-rata amount of the revenue from Instantaneous Core sales over its period.
+
+###  Special Considerations
+
+As a migration mechanism, pre-existing leases (from the legacy lease/slots/crowdloan framework) SHALL be recorded in the Broker-chain and cores assigned to them. When the lease comes to expiry, there is a mechanism to gain a priority sale of Coretime to ensure that the Parachain suffers no downtime.
+
+Additionally, there is a renewal system which allows a core's Para assignment to be renewed unchanged with a known maximum price increase from month to month. Note that the intention behind renewals is only to ensure that committed Paras get some guarantees about price for predicting future costs. As such this price-capped renewal system only allows cores to be reused for their same tasks from month to month. In any other context, the regular sale system must be used and the regular price paid.
+
+### Relay-chain and Instantaneous Coretime
+
+Sales of Instantaneous Coretime are expected to happen on the Polkadot Relay-chain. The Relay-chain is expected to be responsible for:
+
+- holding non-transferable, non-refundable DOT balance information for collators.
+- setting and adjusting the price of Instantaneous Coretime based on usage.
+- allowing collators to consume their DOT balance in exchange for the ability to schedule one PoV for near-immediate usage.
+- ensuring the Broker-chain has timely book-keeping information on Coretime sales revenue. This should include a total instantaneous revenue amount for each block number.
+
+### Broker-chain
+
+The Broker-chain is a new system parachain. It has the responsibility of providing the Relay-chain via UMP with scheduling information of:
+
+- The number of cores which should be made available during the next session.
+- Which cores should be allocated to which para IDs.
+
+Any cores left unallocated are assumed by the Broker-chain to be used for Instantaneous Coretime sales.
+
+### Parameters
 
 This proposal includes a number of parameters which need not necessarily be fixed. They are stated here along with a value, either *suggested* in which case it is non-binding and the proposal should not be judged on the value since the governance mechanism of Polkadot is expected to specify/maintain it; or *specified* in which case the proposal should be judged on the merit of the value as-is.
 
@@ -84,44 +107,6 @@ This proposal includes a number of parameters which need not necessarily be fixe
 | `BULK_LIMIT`        | `45`                         |
 | `LEADIN_PERIOD`     | `14 * DAYS`                  |
 | `RENEWAL_PRICE_CAP` | `Perbill::from_percent(2)` | 
-
-
-## Design
-
-### Overview
-
-Upon implementation of this proposal, slot auctions and associated crowdloans cease. Instead, Coretime on the Polkadot UC is sold by the Polkadot System in two separate formats: *Bulk* and *Instantaneous*. This proposal only mandates the implementation of *Bulk Coretime*; any mentions of *Instantaneous Coretime* should be treated only in terms of recommendation.
-
-*Bulk Coretime* is sold periodically and allocated any time in advance of its usage, whereas *Instantaneous Coretime* is sold immediately prior to usage on a block-by-block basis with an explicit allocation at the time of purchase.
-
-All Bulk Coretime sold by Polkadot is done so on a new system parachain known as the *Broker-chain*. Owners of Bulk Coretime are tracked on this chain and the ownership status and properties (i.e. the specific period) of the owned Coretime are exposed over XCM as a non-fungible asset.
-
-At the request of the owner, the Broker-chain allows Bulk Coretime to be:
-
-1. Transferred in ownership.
-2. Split into quantized, non-overlapping segments of Bulk Coretime with the same ownership.
-3. Consumed in exchange for the allocation of a Core during its period.
-4. Consumed in exchange for a pro-rata amount of the revenue from Instantaneous Core sales over its period.
-
-Pre-existing leases SHALL be recorded in the Broker-chain and cores reserved for them.
-
-Sales of Instantaneous Coretime is expected to happen on the Polkadot Relay-chain. The Relay-chain is expected to be responsible for:
-
-- holding non-transferable, non-refundable DOT balance information for collators.
-- setting and adjusting the price of Instantaneous Coretime based on usage.
-- allowing collators to consume their DOT balance in exchange for the ability to schedule one PoV for near-immediate usage.
-- ensuring the Broker-chain has timely book-keeping information on Coretime sales revenue. This should include a total instantaneous revenue amount for each block number.
-
-### Broker-chain
-
-The Broker-chain is a new system parachain. It has the responsibility of providing the Relay-chain via UMP with scheduling information of:
-
-- How many cores which should be made available during the next session.
-- Which cores should be allocated to which para IDs.
-
-Any cores left unallocated are assumed by the Broker-chain to be used for Instantaneous Coretime sales.
-
-It is also expected to receive information from the Relay-chain on total revenue from instantaneous coretime sales on a per-block basis.
 
 ### Bulk Sales
 
@@ -231,6 +216,25 @@ This MUST be called during the `LEADIN_PERIOD` prior to a Bulk sale (exactly lik
 
 AllowedRenewals map is updated with this information ready for the following Bulk sale.
 
+### Notes on Price Setting
+
+The specific price setting mechanism is out of scope for this proposal and should be covered in some other work. The present proposal assumes the existence of a price-setting mechanism which could take into account three parameters; two mostly fixed and one which changes each `BULK_PERIOD`. These parameters are `BULK_TARGET`, `BULK_LIMIT` and `CORES_SOLD` which is the actual number of cores sold for the present `BULK_PERIOD` and is always an unsigned integer at most `BULK_LIMIT`.
+
+In general we would expect the price to increase the closer `CORES_SOLD` gets to `BULK_LIMIT` and to decrease the closer it gets to zero. If it is exactly equal to `BULK_TARGET`, then we would expect the price to remain the same.
+
+A simple example of this would be the formula:
+
+```
+NEW_PRICE := IF CORES_OLD < BULK_TARGET THEN
+    OLD_PRICE - OLD_PRICE / 2 * CORES_SOLD / BULK_TARGET
+ELSE
+    OLD_PRICE + OLD_PRICE / 2 *
+        (CORES_SOLD - BULK_TARGET) / (BULK_LIMIT - BULK_TARGET)
+END IF
+```
+
+This exists only as a trivial example to demonstrate a basic solution exists, and should not be intended as a concrete proposal.
+
 ### Notes on Instantaneous Core Sales
 
 For access to the Instantaneous Core sales we may include an `allocate_instantaneous` function. This should allocate the Coretime for usage by Polkadot to serve instantaneous requests and allow the `owner` to collect a pro-rata amount of total Instantaneous sales revenue.
@@ -252,40 +256,34 @@ Implementation of this proposal comes in several phases:
 7. Governance upgrade proposal(s).
 8. Monitoring of the upgrade process.
 
-## Performance
+## Performance, Ergonomics and Compatibility
 
-This proposal has no immediate performance considerations.
-
-## Ergonomics
-
-This proposal makes no changes to the existing end-user experience.
-
-## Backwards Compatibility
+No specific considerations.
 
 Parachains already deployed into the Polkadot UC MUST have a clear plan of action to migrate to an agile Coretime market.
 
-## Security considerations
+While this proposal does not introduce documentable features per se, adequate documentation must be provided to potential purchasers of Polkadot Coretime. This SHOULD include any alterations to the Polkadot-SDK software collection, most likely Cumulus.
+
+## Testing, Security and Privacy
+
+Regular testing through unit tests, integration tests, manual testnet tests, zombie-net tests and fuzzing SHOULD be conducted.
 
 A regular security review SHOULD be conducted prior to deployment through a review by the Web3 Foundation economic research group.
 
 Any final implementation MUST pass a professional external security audit.
 
-## Privacy considerations
-
 The proposal introduces no new privacy concerns.
 
-## Testing
+## Future Directions and Related Material
 
-Regular testing through unit tests, integration tests, manual testnet tests, zombie-net tests and fuzzing SHOULD be conducted.
+RFC-2 proposes a means of implementing the high-level allocations within the Relay-chain.
 
-## Documentation
+Additional work should specify the interface for the instantaneous market revenue so that the Broker chain can ensure Bulk Coretime placed in the instantaneous market is properly compensated.
 
-While this proposal does not introduce documentable features per se, adequate documentation must be provided to potential purchasers of Polkadot Coretime. This SHOULD include any alterations to the Polkadot-SDK software collection, most likely Cumulus.
-
-## Drawbacks, alternatives, and unknowns
+## Drawbacks, Alternatives and Unknowns
 
 None at present.
 
-## Prior art and references
+## Prior Art and References
 
 None.
