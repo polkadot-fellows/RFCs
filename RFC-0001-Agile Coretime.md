@@ -243,6 +243,15 @@ For an efficient market to form around the provision of Bulk-purchased Cores int
 
 In order to ensure this, then it is crucial that Instantaneous Coretime, once purchased, cannot be held indefinitely prior to eventual use since, if this were the case, a nefarious collator could purchase Coretime when cheap and utilize it some time later when expensive and deprive private Coretime providers of their revenue. It SHOULD therefore be assumed that Instantaneous Coretime, once purchased, has a definite and short "shelf-life", after which it becomes unusable. This incentivizes collators to avoid purchasing Coretime unless they expect to utilize it imminently and thus helps create an efficient market-feedback mechanism whereby a higher price will actually result in material revenues for private Coretime providers who contribute to the pool of Cores available to service Instantaneous Coretime purchases.
 
+### The Relay-chain API
+
+The Relay-chain provides a pallet-based API for the Broker-chain to utilize to inform it in real-time of allocation information for the cores and also to alter the number of cores in the next session. There are two functions which it should expose:
+
+- `fn set_core_count(count: u16)`: Sets the number of active cores from the next session onwards, identified from index `0` to index `count - 1` inclusive.
+- `fn assign_core(core_index: u16, assignment: Option<Vec<(ParaId, u16)>>, begin: BlockNumber, end_hint: Option<BlockNumber>)`: Requests the Relay-chain to provision core identified by `core_index` to process paras identified within the `assignment` vector relatively biased according to the accompanying `u16` *weight* parameter. The weight parameter indicates the ratio of blocks which *on average* should be being processed for the the given para compared to the other paras mentioned in the `assignment` vector.
+
+The Relay-chain should publish, through a well-known storage key, the number of blocks in advance which `assign_core` should be called to ensure that the core gets scheduled properly. We can denote this quantity `ADVANCE_NOTICE`. The Relay-chain MUST respect the core assignment provided that `assign_core` gets processed on a block whose number is no greater than `begin - ADVANCE_NOTICE`.
+
 ## Implementation
 
 Implementation of this proposal comes in several phases:
