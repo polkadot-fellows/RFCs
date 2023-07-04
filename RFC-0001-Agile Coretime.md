@@ -12,7 +12,7 @@
 
 ## Summary
 
-This proposes a periodic, sale-based method for assigning and Polkadot Coretime. The method takes into account the need for long-term capital expenditure planning for teams building on Polkadot, yet also provides a means to allow Polkadot to capture long-term value in the resource which it sells. It supports the possibility of building secondary markets to make resource allocation more efficient and largely avoids the need for parameterisation.
+This proposes a periodic, sale-based method for assigning Polkadot Coretime. The method takes into account the need for long-term capital expenditure planning for teams building on Polkadot, yet also provides a means to allow Polkadot to capture long-term value in the resource which it sells. It supports the possibility of building secondary markets to make resource allocation more efficient and largely avoids the need for parameterisation.
 
 ## Motivation
 
