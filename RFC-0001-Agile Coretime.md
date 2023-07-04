@@ -153,7 +153,7 @@ struct RegionRecord {
 }
 ```
 
-This map functions essentially as a linked list. With one region's `end` field functioning as the next region's key's `begin` field. It is keyyed by the sale index in order to allow the following sale period's Coretime to be manipulated during the `LEADIN_PERIOD` prior to it becoming allocatable.
+This map functions essentially as a linked list. With one region's `end` field functioning as the next region's key's `begin` field. It is keyed by the sale index in order to allow the following sale period's Coretime to be manipulated during the `LEADIN_PERIOD` prior to it becoming allocatable.
 
 An additional storage map is maintained to keep the "heads" of this linked list. It is called `NextRegion` and it maps `CoreIndex` to `Timeslice`, to indicate the earliest stored region of the given core.
 
