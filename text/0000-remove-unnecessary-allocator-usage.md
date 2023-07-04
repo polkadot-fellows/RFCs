@@ -140,7 +140,15 @@ Note that the return value is 0 on success and 1 on failure, while the previous 
     (param $sig i32) (param $msg i32) (param $out i32) (return i64))
 ```
 
-The behaviour of these functions is identical to their version 2 equivalents. The new versions of these functions accept an `out` parameter containing the memory location where the host writes the signature. The signatures are always of a size known at compilation time. On success, these functions return `0`. On failure, these functions return a non-zero value and do not write anything to `out`. The non-zero value written on failure is the same as in version 2 of these functions: <https://spec.polkadot.network/chap-host-api#defn-ecdsa-verify-error>.
+The behaviour of these functions is identical to their version 2 equivalents. The new versions of these functions accept an `out` parameter containing the memory location where the host writes the signature. The signatures are always of a size known at compilation time. On success, these functions return `0`. On failure, these functions return a non-zero value and do not write anything to `out`.
+
+The non-zero value written on failure is:
+
+- 1: incorrect value of R or S
+- 2: incorrect value of V
+- 3: invalid signature
+
+These values are equal to the values returned on error by the version 2 (see <https://spec.polkadot.network/chap-host-api#defn-ecdsa-verify-error>), but incremented by 1 in order to reserve 0 for success.
 
 ```wat
 (func $ext_offchain_http_request_start_version_2
