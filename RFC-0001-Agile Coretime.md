@@ -38,7 +38,7 @@ However, quite possibly the most substantial problem is both a perceived and oft
 1. The solution SHOULD minimize the barriers to entry in the ecosystem.
 1. The solution SHOULD work when the number of cores which the Polkadot UC can support changes over time.
 1. The solution SHOULD facilitate the optimal allocation of work to core of the Polkadot UC.
-1. The design SHOULD avoid creating additional dependencies on functionality which the Relay-chain need not strictly provide for the delivery of the Polkadot UC.
+1. The solution SHOULD avoid creating additional dependencies on functionality which the Relay-chain need not strictly provide for the delivery of the Polkadot UC.
 
 Furthermore, the design SHOULD be implementable and deployable in a timely fashion; three months from the acceptance of this RFC would seem reasonable.
 
@@ -106,7 +106,7 @@ This proposal includes a number of parameters which need not necessarily be fixe
 | `BULK_TARGET`       | `30`                         |
 | `BULK_LIMIT`        | `45`                         |
 | `LEADIN_PERIOD`     | `14 * DAYS`                  |
-| `RENEWAL_PRICE_CAP` | `Perbill::from_percent(2)` | 
+| `RENEWAL_PRICE_CAP` | `Perbill::from_percent(2)`   |
 
 ### Bulk Sales
 
@@ -134,7 +134,7 @@ struct RegionRecord {
     owner: AccountId,
     end: Timeslice,
     price: Option<Balance>,
-    allocation: Option<Vec<ParaId>>, // begins set to `None`
+    allocation: Option<Vec<(ParaId, u16)>>, // begins set to `None`
 }
 ```
 
@@ -186,7 +186,7 @@ If the `RegionRecord`'s `price` field is `Some` (indicating that the Region is f
 
 ```rust
 struct RenewalRecord {
-    target: Vec<ParaId>,
+    target: Vec<(ParaId, u16)>,
     price: Balance,
     sale: SaleIndex,
 }
