@@ -79,8 +79,6 @@ The new functions directly return the number of bytes that were written in the `
     (param $data i64) (param $version i32) (param $out i32))
 (func $ext_default_child_storage_root_version_3
     (param $child_storage_key i64) (param $out i32))
-(func $ext_storage_root_version_3
-    (param $out i32))
 (func $ext_crypto_ed25519_generate_version_2
     (param $key_type_id i32) (param $seed i64) (param $out i32))
 (func $ext_crypto_sr25519_generate_version_2
