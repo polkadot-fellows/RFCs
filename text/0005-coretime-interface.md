@@ -71,6 +71,21 @@ fn request_revenue_at(
 
 Requests that the Relay-chain send a `notify_revenue` message back at or soon after Relay-chain block number `when` whose `until` parameter is equal to `when`.
 
+#### `credit_account`
+
+Prototype:
+
+```
+fn credit_account(
+    who: AccountId,
+    amount: Balance,
+)
+```
+
+Instructs the Relay-chain to add the `amount` of DOT to the Instantaneous Coretime Market Credit account of `who`.
+
+It is expected that Instantaneous Coretime Market Credit on the Relay-chain is NOT transferrable and only redeemable when used to assign cores in the Instantaneous Coretime Pool.
+
 #### `assign_core`
 
 Prototype:
