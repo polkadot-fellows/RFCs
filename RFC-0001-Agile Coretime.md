@@ -122,23 +122,101 @@ If there are more purchase requests than available cores for purchase in this pe
 
 When a region of Bulk Coretime is initially issued through this purchase, the price it was purchased for is recorded, in addition to the beginning and end Relay-chain block numbers to which it corresponds.
 
-The Broker-chain SHALL record this information in a storage double-map called Regions, keyed first by the current bulk `SaleIndex` (a `u16` starting at zero and incrementing with each sale), then secondarily by a `RegionId`. It shall map into a value of `RegionRecord`:
+The Broker-chain SHALL record this information in a storage map called Regions, keyed by a `RegionId`. It shall map into a value of `RegionRecord`:
 
 ```rust
-type SaleIndex = u16;
+enum RecordState {
+    Fresh { owner: AccountId },
+    Instantaneous { beneficiary: AccountId },
+    Assigned { target: ParaId },
+}
+type CoreIndex = u16;
+type CorePart = (u16, u64); // 80-bit bitmap.
+type Timeslice = u32; // 80 block amounts.
 struct RegionId {
-    core: CoreIndex,  // A `u16`.
-    begin: Timeslice, // A `u16`.
+    core: (CoreIndex, CorePart),
+    begin: Timeslice,
 }
 struct RegionRecord {
-    owner: AccountId,
     end: Timeslice,
-    price: Option<Balance>,
-    allocation: Option<Vec<(ParaId, u16)>>, // begins set to `None`
+    state: RecordState,
 }
+map RegionId => RegionRecord;
+
+// Simple example with a `u16` `CorePart` and bulk sold in 100 timeslices.
+RegionId { core: (0u16, 0b1111_1111_1111_1111u16), begin: 0 } =>
+    RegionRecord { end: 100u32, state: Fresh(Alice) };
+// First split @ 50
+RegionId { core: (0u16, 0b1111_1111_1111_1111u16), begin: 0 } =>
+    RegionRecord { end: 50u32, state: Fresh(Alice) };
+RegionId { core: (0u16, 0b1111_1111_1111_1111u16), begin: 50 } =>
+    RegionRecord { end: 100u32, state: Fresh(Alice) };
+// Share half of first 50 blocks
+RegionId { core: (0u16, 0b1111_1111_0000_0000u16), begin: 0 } =>
+    RegionRecord { end: 50u32, state: Fresh(Alice) };
+RegionId { core: (0u16, 0b0000_0000_1111_1111u16), begin: 0 } =>
+    RegionRecord { end: 50u32, state: Fresh(Alice) };
+RegionId { core: (0u16, 0b1111_1111_1111_1111u16), begin: 50 } =>
+    RegionRecord { end: 100u32, state: Fresh(Alice) };
+// Sell half of them to Bob
+RegionId { core: (0u16, 0b1111_1111_0000_0000u16), begin: 0 } =>
+    RegionRecord { end: 50u32, state: Fresh(Alice) };
+RegionId { core: (0u16, 0b0000_0000_1111_1111u16), begin: 0 } =>
+    RegionRecord { end: 50u32, state: Fresh(Bob) };
+RegionId { core: (0u16, 0b1111_1111_1111_1111u16), begin: 50 } =>
+    RegionRecord { end: 100u32, state: Fresh(Alice) };
+// Bob splits first 10 and assigns them to himself.
+RegionId { core: (0u16, 0b1111_1111_0000_0000u16), begin: 0 } =>
+    RegionRecord { end: 50u32, state: Fresh(Alice) };
+RegionId { core: (0u16, 0b0000_0000_1111_1111u16), begin: 0 } =>
+    RegionRecord { end: 10u32, state: Fresh(Bob) };
+RegionId { core: (0u16, 0b0000_0000_1111_1111u16), begin: 10 } =>
+    RegionRecord { end: 50u32, state: Fresh(Bob) };
+RegionId { core: (0u16, 0b1111_1111_1111_1111u16), begin: 50 } =>
+    RegionRecord { end: 100u32, state: Fresh(Alice) };
+// Bob shares first 10 3 ways and sells smaller shares to Charlie and Dave
+RegionId { core: (0u16, 0b1111_1111_0000_0000u16), begin: 0 } =>
+    RegionRecord { end: 50u32, state: Fresh(Alice) };
+RegionId { core: (0u16, 0b0000_0000_1100_0000u16), begin: 0 } =>
+    RegionRecord { end: 10u32, state: Fresh(Charlie) };
+RegionId { core: (0u16, 0b0000_0000_0011_0000u16), begin: 0 } =>
+    RegionRecord { end: 10u32, state: Fresh(Dave) };
+RegionId { core: (0u16, 0b0000_0000_0000_1111u16), begin: 0 } =>
+    RegionRecord { end: 10u32, state: Fresh(Bob) };
+RegionId { core: (0u16, 0b0000_0000_1111_1111u16), begin: 10 } =>
+    RegionRecord { end: 50u32, state: Fresh(Bob) };
+RegionId { core: (0u16, 0b1111_1111_1111_1111u16), begin: 50 } =>
+    RegionRecord { end: 100u32, state: Fresh(Alice) };
+// Bob assigns to his para B, Charlie and Dave assign to their paras C and D; Alice assigns to A
+RegionId { core: (0u16, 0b1111_1111_0000_0000u16), begin: 0 } =>
+    RegionRecord { end: 50u32, state: Assigned(A) };
+RegionId { core: (0u16, 0b0000_0000_1100_0000u16), begin: 0 } =>
+    RegionRecord { end: 10u32, state: Assigned(C) };
+RegionId { core: (0u16, 0b0000_0000_0011_0000u16), begin: 0 } =>
+    RegionRecord { end: 10u32, state: Assigned(D) };
+RegionId { core: (0u16, 0b0000_0000_0000_1111u16), begin: 0 } =>
+    RegionRecord { end: 10u32, state: Assigned(B) };
+RegionId { core: (0u16, 0b0000_0000_1111_1111u16), begin: 10 } =>
+    RegionRecord { end: 50u32, state: Assigned(B) };
+RegionId { core: (0u16, 0b1111_1111_1111_1111u16), begin: 50 } =>
+    RegionRecord { end: 100u32, state: Assigned(A) };
+// Actual notifications to relay chain.
+// Assumes:
+// - Timeslice is 10 blocks.
+// - Timeslice 0 begins at block #1000.
+// - Relay needs 10 blocks notice of change.
+//
+// Block 990:
+reassign_core(core: 0u16, begin: 1000, assignment: vec![(A, 8), (C, 2), (D, 2), (B, 4)])
+// Block 1090:
+reassign_core(core: 0u16, begin: 1100, assignment: vec![(A, 8), (B, 8)])
+// Block 1490:
+reassign_core(core: 0u16, begin: 1100, assignment: vec![(A, 16)])
 ```
 
-This map functions essentially as a linked list. With one region's `end` field functioning as the next region's key's `begin` field. It is keyed by the sale index in order to allow the following sale period's Coretime to be manipulated during the `LEADIN_PERIOD` prior to it becoming allocatable.
+
+
+This map functions essentially as a linked list, with one region's `end` field acting as a reference to the next region's key's `begin` field. It is keyed by the sale index in order to allow the following sale period's Coretime to be manipulated during the `LEADIN_PERIOD` prior to it becoming allocatable.
 
 An additional storage map is maintained to keep the "heads" of this linked list. It is called `NextRegion` and it maps `CoreIndex` to `Timeslice`, to indicate the earliest stored region of the given core.
 
@@ -186,7 +264,7 @@ If the `RegionRecord`'s `price` field is `Some` (indicating that the Region is f
 
 ```rust
 struct RenewalRecord {
-    target: Vec<(ParaId, u16)>,
+    target: Vec<(ParaId, u8)>,
     price: Balance,
     sale: SaleIndex,
 }
@@ -248,7 +326,7 @@ In order to ensure this, then it is crucial that Instantaneous Coretime, once pu
 The Relay-chain provides a pallet-based API for the Broker-chain to utilize to inform it in real-time of allocation information for the cores and also to alter the number of cores in the next session. There are two functions which it should expose:
 
 - `fn set_core_count(count: u16)`: Sets the number of active cores from the next session onwards, identified from index `0` to index `count - 1` inclusive.
-- `fn assign_core(core_index: u16, assignment: Option<Vec<(ParaId, u16)>>, begin: BlockNumber, end_hint: Option<BlockNumber>)`: Requests the Relay-chain to provision core identified by `core_index` to process paras identified within the `assignment` vector relatively biased according to the accompanying `u16` *weight* parameter. The weight parameter indicates the ratio of blocks which *on average* should be being processed for the the given para compared to the other paras mentioned in the `assignment` vector.
+- `fn assign_core(core_index: u16, assignment: Option<Vec<(ParaId, u8)>>, begin: BlockNumber, end_hint: Option<BlockNumber>)`: Requests the Relay-chain to provision core identified by `core_index` to process paras identified within the `assignment` vector relatively biased according to the accompanying `u16` *weight* parameter. The weight parameter indicates the ratio of blocks which *on average* should be being processed for the the given para compared to the other paras mentioned in the `assignment` vector.
 
 The Relay-chain should publish, through a well-known storage key, the number of blocks in advance which `assign_core` should be called to ensure that the core gets scheduled properly. We can denote this quantity `ADVANCE_NOTICE`. The Relay-chain MUST respect the core assignment provided that `assign_core` gets processed on a block whose number is no greater than `begin - ADVANCE_NOTICE`.
 
