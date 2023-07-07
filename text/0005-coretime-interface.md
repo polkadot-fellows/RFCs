@@ -147,7 +147,7 @@ fn notify_revenue(
 )
 ```
 
-Provide the amount of revenue accumulated from Instantaneous Coretime Sales from Relay-chain block number `last_until` to `until`, not including `until` itself. `last_until` is defined as being the `until` argument of the last `notify_revenue` message sent.
+Provide the amount of revenue accumulated from Instantaneous Coretime Sales from Relay-chain block number `last_until` to `until`, not including `until` itself. `last_until` is defined as being the `until` argument of the last `notify_revenue` message sent, or zero for the first call.
 
 This explicitly disregards the possibility of multiple parachains requesting and being notified of revenue information. The Relay-chain must be configured to ensure that only a single revenue information destination exists.
 
