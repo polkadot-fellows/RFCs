@@ -9,7 +9,7 @@
 
 ## Summary
 
-In the Agile Coretime model of the Polkadot Ubiquitous Computer, as proposed in RFC-1 and RFC-4, it is necessary for the allocating parachain (envisioned to be one or more pallets on a specialised Brokerage System Chain) to communicate the core assignments to the Relay-chain, which is responsible for ensuring those assignments are properly enacted.
+In the Agile Coretime model of the Polkadot Ubiquitous Computer, as proposed in RFC-1 and RFC-3, it is necessary for the allocating parachain (envisioned to be one or more pallets on a specialised Brokerage System Chain) to communicate the core assignments to the Relay-chain, which is responsible for ensuring those assignments are properly enacted.
 
 This is a proposal for the interface which will exist around the Relay-chain in order to communicate this information and instructions.
 
