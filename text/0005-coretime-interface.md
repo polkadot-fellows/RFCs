@@ -120,7 +120,7 @@ Instructs the Relay-chain to ensure that the core indexed as `core` is utilised 
 
 If `end_hint` is `Some` and the inner is greater than the current block number, then the Relay-chain should optimize in the expectation of receiving a new `assign_core(core, ...)` message at or prior to the block number of the inner value. Specific functionality should remain unchanged regardless of the `end_hint` value.
 
-On the choice of denominator: 57,600 is a highly composite number which factors into: 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 5, 5. By using it as the denominator we allow for various useful fractions to be perfectly represented including thirds, quarters, fifths, tenths, 80ths, percent and 256ths.
+On the choice of denominator: 57,600 is a very composite number which factors into: 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 5, 5. By using it as the denominator we allow for various useful fractions to be perfectly represented including thirds, quarters, fifths, tenths, 80ths, percent and 256ths.
 
 ### DMP Message Types
 
