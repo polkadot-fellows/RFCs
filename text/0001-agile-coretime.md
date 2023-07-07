@@ -473,7 +473,7 @@ The proposal introduces no new privacy concerns.
 
 ## Future Directions and Related Material
 
-RFC-2 proposes a means of implementing the high-level allocations within the Relay-chain.
+RFC-3 proposes a means of implementing the high-level allocations within the Relay-chain.
 
 Additional work should specify the interface for the instantaneous market revenue so that the Broker chain can ensure Bulk Coretime placed in the instantaneous market is properly compensated.
 
