@@ -3,10 +3,8 @@
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 30 June 2023                                                                                |
-| **Status**      | Draft                                                                                       |
 | **Description** | Agile periodic-sale-based model for assigning Coretime on the Polkadot Ubiquitous Computer. |
 | **Authors**     | Gavin Wood                                                                                  |
-| **Licence**     | MIT/Apache2                                                                                 |
 
 
 ## Summary
@@ -34,13 +32,13 @@ However, quite possibly the most substantial problem is both a perceived and oft
 ## Requirements
 
 1. The solution SHOULD provide an acceptable value-capture mechanism for the Polkadot network.
-1. The solution SHOULD allow parachains and other projects deployed on to the Polkadot UC to make long-term capital expenditure predictions for the cost of  ongoing deployment.
+1. The solution SHOULD allow parachains and other projects deployed on to the Polkadot UC to make long-term capital expenditure predictions for the cost of ongoing deployment.
 1. The solution SHOULD minimize the barriers to entry in the ecosystem.
 1. The solution SHOULD work when the number of cores which the Polkadot UC can support changes over time.
-1. The solution SHOULD facilitate the optimal allocation of work to core of the Polkadot UC.
+1. The solution SHOULD facilitate the optimal allocation of work to core of the Polkadot UC, including by facilitating the trade of regular core assignment at various intervals and for various spans.
 1. The solution SHOULD avoid creating additional dependencies on functionality which the Relay-chain need not strictly provide for the delivery of the Polkadot UC.
 
-Furthermore, the design SHOULD be implementable and deployable in a timely fashion; three months from the acceptance of this RFC would seem reasonable.
+Furthermore, the design SHOULD be implementable and deployable in a timely fashion; three months from the acceptance of this RFC should not be unreasonable.
 
 ## Stakeholders
 
@@ -54,240 +52,187 @@ _Socialization:_
 
 This RFC was presented at Polkadot Decoded 2023 Copenhagen on the Main Stage. A small amount of socialisation at the Parachain Summit preceeded it and some substantial discussion followed it. Parity Ecosystem team is currently soliciting views from ecosystem teams who would be key stakeholders.
 
-## Design
+## Explanation
 
 ### Overview
 
-Upon implementation of this proposal, slot auctions and associated crowdloans cease. Instead, Coretime on the Polkadot UC is sold by the Polkadot System in two separate formats: *Bulk* and *Instantaneous*. This proposal only mandates the implementation of *Bulk Coretime*; any mentions of *Instantaneous Coretime* is only intended to illustrate a possible final solution.
+Upon implementation of this proposal, slot auctions and associated crowdloans cease. Instead, Coretime on the Polkadot UC is sold by the Polkadot System in two separate formats: *Bulk* and *Instantaneous*. This proposal only mandates the implementation of *Bulk Coretime*; any mentions of *Instantaneous Coretime* are only intended to illustrate a possible final solution.
 
-*Bulk Coretime* is sold periodically and allocated any time in advance of its usage, whereas *Instantaneous Coretime* is sold immediately prior to usage on a block-by-block basis with an explicit allocation at the time of purchase.
+Bulk Coretime is sold periodically on a specialised *Brokerage System Chain* and allocated in advance of its usage, whereas Instantaneous Coretime is sold on the Relay-chain immediately prior to usage on a block-by-block basis with an explicit allocation at the time of purchase.
 
-All Bulk Coretime sold by Polkadot is done so on a new system parachain known as the *Broker-chain*. Revenue from sales would be sent to the Polkadot Treasury. Owners of Bulk Coretime are tracked on this chain and the ownership status and properties (i.e. the specific period) of the owned Coretime are exposed over XCM as a non-fungible asset.
+Revenue from sales of Bulk Coretime is owned by the Polkadot Treasury. Owners of Bulk Coretime are tracked on this chain and the ownership status and properties of the owned Coretime are exposed over XCM as a non-fungible asset.
 
-At the request of the owner, the Broker-chain allows Bulk Coretime to be:
+At the request of the owner, the Broker-chain allows a single Bulk Coretime asset, known as a *Region*, to be used in various ways including transferal to another owner, allocated to a particular parachain or placed in the Instantaneous Coretime Pool. Regions can also be split out, either into non-overlapping sub-spans or exactly-overlapping spans with less regularity.
 
-1. Transferred in ownership.
-2. Split into quantized, non-overlapping segments of Bulk Coretime with the same ownership.
-3. Consumed in exchange for the allocation of a Core during its period.
-4. Consumed in exchange for a pro-rata amount of the revenue from Instantaneous Core sales over its period.
+The Brokerage System Chain periodically instructs the Relay-chain to assign its cores to alternative tasks as and when the allocation changes owing to a new Region taking effect.
 
-###  Special Considerations
+#### Special Considerations
 
-As a migration mechanism, pre-existing leases (from the legacy lease/slots/crowdloan framework) SHALL be recorded in the Broker-chain and cores assigned to them. When the lease comes to expiry, there is a mechanism to gain a priority sale of Coretime to ensure that the Parachain suffers no downtime.
+As a migration mechanism, pre-existing leases (from the legacy lease/slots/crowdloan framework) SHALL be recorded in the Broker-chain and cores assigned to them. When the lease comes to expiry, there is a mechanism to gain a priority sale of Bulk Coretime to ensure that the Parachain suffers no downtime.
 
-Additionally, there is a renewal system which allows a core's Para assignment to be renewed unchanged with a known maximum price increase from month to month. Note that the intention behind renewals is only to ensure that committed Paras get some guarantees about price for predicting future costs. As such this price-capped renewal system only allows cores to be reused for their same tasks from month to month. In any other context, the regular sale system must be used and the regular price paid.
+Additionally, there is a renewal system which allows a core's assignment to be renewed unchanged with a known maximum price increase from month to month. In this case, the core's assignment must not include an Instantaneous Coretime allocation and must not have been split into smaller amounts.
 
-### Relay-chain and Instantaneous Coretime
+Note that the intention behind renewals is only to ensure that committed Paras get some guarantees about price for predicting future costs. As such this price-capped renewal system only allows cores to be reused for their same tasks from month to month. In any other context, the regular sale system must be used and the regular price paid.
 
-Sales of Instantaneous Coretime are expected to happen on the Polkadot Relay-chain. The Relay-chain is expected to be responsible for:
+#### Relay-chain and Instantaneous Coretime
 
-- holding non-transferable, non-refundable DOT balance information for collators.
+Sales of Instantaneous Coretime happen on the Polkadot Relay-chain. The Relay-chain is expected to be responsible for:
+
+- holding non-transferable, non-refundable DOT-denominated Instantaneous Coretime Market Credit balance information for collators.
 - setting and adjusting the price of Instantaneous Coretime based on usage.
-- allowing collators to consume their DOT balance in exchange for the ability to schedule one PoV for near-immediate usage.
-- ensuring the Broker-chain has timely book-keeping information on Coretime sales revenue. This should include a total instantaneous revenue amount for each block number.
+- allowing collators to consume their ICM Credit at the current pricing in exchange for the ability to schedule one PoV for near-immediate usage.
+- ensuring the Broker System Chain has timely accounting information on Coretime sales revenue.
 
-### Broker-chain
+#### Broker System Chain
 
-The Broker-chain is a new system parachain. It has the responsibility of providing the Relay-chain via UMP with scheduling information of:
+Also known as the *Broker-chain*, this is a new system parachain. It has the responsibility of providing the Relay-chain via UMP with scheduling information of:
 
 - The number of cores which should be made available during the next session.
-- Which cores should be allocated to which para IDs.
+- Which para IDs should be running on which cores and in what ratios.
 
-Any cores left unallocated are assumed by the Broker-chain to be used for Instantaneous Coretime sales.
+The specific interface is properly described in RFC-5.
 
-### Parameters
+### Detail
 
-This proposal includes a number of parameters which need not necessarily be fixed. They are stated here along with a value, either *suggested* in which case it is non-binding and the proposal should not be judged on the value since the governance mechanism of Polkadot is expected to specify/maintain it; or *specified* in which case the proposal should be judged on the merit of the value as-is.
+#### Parameters
 
-| Name                | Value                        |
-| ------------------- | ---------------------------- |
-| `BULK_PERIOD`       | `28 * DAYS`                  |
-| `TIMESLICE`         | `10 * MINUTES`               |
-| `BULK_TARGET`       | `30`                         |
-| `BULK_LIMIT`        | `45`                         |
-| `LEADIN_PERIOD`     | `14 * DAYS`                  |
-| `RENEWAL_PRICE_CAP` | `Perbill::from_percent(2)`   |
+This proposal includes a number of parameters which need not necessarily be fixed. They are stated here along with a value, and are either *suggested* or *specified*. If *suggested*, it is non-binding and the proposal should not be judged on the value since the governance mechanism of Polkadot is expected to specify/maintain it. If *specified*, then the proposal should be judged on the merit of the value as-is.
 
-### Bulk Sales
+| Name                | Value                        | |
+| ------------------- | ---------------------------- | ---------- |
+| `BULK_PERIOD`       | `28 * DAYS`                  | specified  |
+| `LEADIN_PERIOD`     | `14 * DAYS`                  | specified  |
+| `TIMESLICE`         | `8 * MINUTES`                | specified  |
+| `BULK_TARGET`       | `30`                         | suggested  |
+| `BULK_LIMIT`        | `45`                         | suggested  |
+| `RENEWAL_PRICE_CAP` | `Perbill::from_percent(2)`   | suggested  |
 
-There is a periodic sale of Coretime happening at a period of `BULK_PERIOD`.  A number of instances of Coretime spanning from `LEADIN_PERIOD` in the future to `LEADIN_PERIOD + BULK_PERIOD` in the future of a single Polkadot UC Core is offered by the Polkadot System at a fixed price.
+#### Reservations
 
-These instances which are owned by purchaser are called *regions*. This sale happens on the Broker-chain. Regions are quantized into atomic periods of `TIMESLICE`, into which `BULK_PERIOD` divides a whole number of times. The `Timeslice` type is a `u16` which can be multiplied by `TIMESLICE` to give a `BlockNumber` value indicating the same period in times of (Relay-chain) blocks.
+The Broker-chain includes some governance-set reservations of Coretime; these cover every System-chain as well as the pre-existing leased chains.
 
-The Broker-chain aims to sell some `BULK_TARGET` of Cores, up to some `BULK_LIMIT`. It makes this sale in a single batch `LEADIN_PERIOD` prior to the beginning of the period being sold. The Broker chain publishes a price for this batch of sales for the `BULK_TARGET` period prior to the sale execution.
+#### Regions
 
-Accounts may call a `purchase` function with the appropriate funds in place to have their funds reserved and signal an intention to purchase Bulk Coretime for the forthcoming period. One account may have only one pending purchase. Any number of accounts may attempt to `purchase` Bulk Coretime for the forthcoming period, but the order is recorded.
+A *Region* is an assignable period of Coretime with a known regularity.
 
-If there are more purchase requests than available cores for purchase in this period, then requests are processed in incoming order. Any additional purchase orders are carried over but marked as such. A purchase is only cancellable if it was carried over.
+All Regions are associated with a unique *Core Index*, to identify which core the Region controls the assignment of.
 
-When a region of Bulk Coretime is initially issued through this purchase, the price it was purchased for is recorded, in addition to the beginning and end Relay-chain block numbers to which it corresponds.
+All Regions are also associated with a *Core Parts*, an 80-bit bitmap, to denote the regularity on which it may be scheduled on the core. If all bits are set in the Core Parts value, it is said to be *Complete*.
 
-The Broker-chain SHALL record this information in a storage map called Regions, keyed by a `RegionId`. It shall map into a value of `RegionRecord`:
+All Regions have a span. Region spans are quantized into periods of `TIMESLICE` blocks; `BULK_PERIOD` divides into `TIMESLICE` a whole number of times.
 
-```rust
-enum RecordState {
-    Fresh { owner: AccountId },
-    Instantaneous { beneficiary: AccountId },
-    Assigned { target: ParaId },
-}
-type CoreIndex = u16;
-type CorePart = (u16, u64); // 80-bit bitmap.
-type Timeslice = u32; // 80 block amounts.
-struct RegionId {
-    core: (CoreIndex, CorePart),
-    begin: Timeslice,
-}
-struct RegionRecord {
-    end: Timeslice,
-    state: RecordState,
-}
-map RegionId => RegionRecord;
+The `Timeslice` type is a `u32` which can be multiplied by `TIMESLICE` to give a `BlockNumber` value representing the same quantity in terms of (Relay-chain) blocks.
 
-// Simple example with a `u16` `CorePart` and bulk sold in 100 timeslices.
-RegionId { core: (0u16, 0b1111_1111_1111_1111u16), begin: 0 } =>
-    RegionRecord { end: 100u32, state: Fresh(Alice) };
-// First split @ 50
-RegionId { core: (0u16, 0b1111_1111_1111_1111u16), begin: 0 } =>
-    RegionRecord { end: 50u32, state: Fresh(Alice) };
-RegionId { core: (0u16, 0b1111_1111_1111_1111u16), begin: 50 } =>
-    RegionRecord { end: 100u32, state: Fresh(Alice) };
-// Share half of first 50 blocks
-RegionId { core: (0u16, 0b1111_1111_0000_0000u16), begin: 0 } =>
-    RegionRecord { end: 50u32, state: Fresh(Alice) };
-RegionId { core: (0u16, 0b0000_0000_1111_1111u16), begin: 0 } =>
-    RegionRecord { end: 50u32, state: Fresh(Alice) };
-RegionId { core: (0u16, 0b1111_1111_1111_1111u16), begin: 50 } =>
-    RegionRecord { end: 100u32, state: Fresh(Alice) };
-// Sell half of them to Bob
-RegionId { core: (0u16, 0b1111_1111_0000_0000u16), begin: 0 } =>
-    RegionRecord { end: 50u32, state: Fresh(Alice) };
-RegionId { core: (0u16, 0b0000_0000_1111_1111u16), begin: 0 } =>
-    RegionRecord { end: 50u32, state: Fresh(Bob) };
-RegionId { core: (0u16, 0b1111_1111_1111_1111u16), begin: 50 } =>
-    RegionRecord { end: 100u32, state: Fresh(Alice) };
-// Bob splits first 10 and assigns them to himself.
-RegionId { core: (0u16, 0b1111_1111_0000_0000u16), begin: 0 } =>
-    RegionRecord { end: 50u32, state: Fresh(Alice) };
-RegionId { core: (0u16, 0b0000_0000_1111_1111u16), begin: 0 } =>
-    RegionRecord { end: 10u32, state: Fresh(Bob) };
-RegionId { core: (0u16, 0b0000_0000_1111_1111u16), begin: 10 } =>
-    RegionRecord { end: 50u32, state: Fresh(Bob) };
-RegionId { core: (0u16, 0b1111_1111_1111_1111u16), begin: 50 } =>
-    RegionRecord { end: 100u32, state: Fresh(Alice) };
-// Bob shares first 10 3 ways and sells smaller shares to Charlie and Dave
-RegionId { core: (0u16, 0b1111_1111_0000_0000u16), begin: 0 } =>
-    RegionRecord { end: 50u32, state: Fresh(Alice) };
-RegionId { core: (0u16, 0b0000_0000_1100_0000u16), begin: 0 } =>
-    RegionRecord { end: 10u32, state: Fresh(Charlie) };
-RegionId { core: (0u16, 0b0000_0000_0011_0000u16), begin: 0 } =>
-    RegionRecord { end: 10u32, state: Fresh(Dave) };
-RegionId { core: (0u16, 0b0000_0000_0000_1111u16), begin: 0 } =>
-    RegionRecord { end: 10u32, state: Fresh(Bob) };
-RegionId { core: (0u16, 0b0000_0000_1111_1111u16), begin: 10 } =>
-    RegionRecord { end: 50u32, state: Fresh(Bob) };
-RegionId { core: (0u16, 0b1111_1111_1111_1111u16), begin: 50 } =>
-    RegionRecord { end: 100u32, state: Fresh(Alice) };
-// Bob assigns to his para B, Charlie and Dave assign to their paras C and D; Alice assigns to A
-RegionId { core: (0u16, 0b1111_1111_0000_0000u16), begin: 0 } =>
-    RegionRecord { end: 50u32, state: Assigned(A) };
-RegionId { core: (0u16, 0b0000_0000_1100_0000u16), begin: 0 } =>
-    RegionRecord { end: 10u32, state: Assigned(C) };
-RegionId { core: (0u16, 0b0000_0000_0011_0000u16), begin: 0 } =>
-    RegionRecord { end: 10u32, state: Assigned(D) };
-RegionId { core: (0u16, 0b0000_0000_0000_1111u16), begin: 0 } =>
-    RegionRecord { end: 10u32, state: Assigned(B) };
-RegionId { core: (0u16, 0b0000_0000_1111_1111u16), begin: 10 } =>
-    RegionRecord { end: 50u32, state: Assigned(B) };
-RegionId { core: (0u16, 0b1111_1111_1111_1111u16), begin: 50 } =>
-    RegionRecord { end: 100u32, state: Assigned(A) };
-// Actual notifications to relay chain.
-// Assumes:
-// - Timeslice is 10 blocks.
-// - Timeslice 0 begins at block #1000.
-// - Relay needs 10 blocks notice of change.
-//
-// Block 990:
-reassign_core(core: 0u16, begin: 1000, assignment: vec![(A, 8), (C, 2), (D, 2), (B, 4)])
-// Block 1090:
-reassign_core(core: 0u16, begin: 1100, assignment: vec![(A, 8), (B, 8)])
-// Block 1490:
-reassign_core(core: 0u16, begin: 1100, assignment: vec![(A, 16)])
-```
+Regions can be tasked to a ParaId or placed in the Instantaneous Coretime Pool. If they have yet to be placed or tasked, then they are fresh. Fresh Regions have an *Owner*.
 
+#### Bulk Sales
 
+A sale of Bulk Coretime occurs on the Broker Chain every `BULK_PERIOD` blocks.
 
-This map functions essentially as a linked list, with one region's `end` field acting as a reference to the next region's key's `begin` field. It is keyed by the sale index in order to allow the following sale period's Coretime to be manipulated during the `LEADIN_PERIOD` prior to it becoming allocatable.
+In every sale, a `BULK_LIMIT` of individual *Regions* are offered for sale at a particular Sale Price.
 
-An additional storage map is maintained to keep the "heads" of this linked list. It is called `NextRegion` and it maps `CoreIndex` to `Timeslice`, to indicate the earliest stored region of the given core.
+The Regions offered for sale have the same span: they last exactly `BULK_PERIOD` blocks, and begin `LEADIN_PERIOD` blocks into the future at the time of the sale.
 
-Notably, if a region is split or transferred, then the `price` is reset to `None`, which has the effect of disallowing a price-increase-capped renewal.
+The Regions offered for sale also have complete
 
-The Broker-chain provides feedback to the Relay-chain on which `ParaId` sets should be serviced on which cores, and does so as they change. Each block, the Broker-chain checks if the period of a `Timeslice` has elapsed. If so, it checks to see if any cores have a newly active `RegionRecord` value in the `Regions` map. If they do, it MUST notify the Relay-chain of the new responsibilities of the relevant `core`. In this case, it MUST remove the item from the `Regions` map and update the `NextRegion` map so it maps the relevant core to the value of removed record's `end` field.
+Each Region offered for sale has a different Core Index, ensuring that they each represent an independently allocatable resource on the Polkadot UC.
 
-If the `RegionRecord` value for an elapsed `RegionId` has an `allocation` of `None`, then the item is not removed and the Relay-chain is instructed to place the core for instantaneous use.
+After every sale, the Next Sale Price is set according to the Previous Sale Price and the number of Regions sold compared to the desired and maximum amount of Regions to be sold. See Price Setting for additional detail.
+
+This is designed to give a minimum of around two weeks worth of time for it to be sliced, shared, traded and allocated.
+
+The Broker-chain aims to sell some `BULK_TARGET` month-long Regions, up to some maximum amount of `BULK_LIMIT`. It makes this sale in a single batch prior to the beginning of the period being sold by `LEADIN_PERIOD` blocks. The Broker-chain publishes the price for a Region prior to the sale execution.
+
+#### Purchasing
+
+Accounts may call a `purchase` function with the appropriate funds in place to have their funds placed On Hold and signal an commitment to purchase Bulk Coretime for the forthcoming period. One account may have only one pending purchase. Any number of accounts may attempt to `purchase` Bulk Coretime for the forthcoming period and this order is recorded.
+
+Requests are processed in incoming order. If there are more purchase requests than available Regions for purchase then remaining purchase orders are carried over to the next sale and flagged as carried. A purchase is only cancellable (and the funds On Hold refundable) if it is so flagged.
+
+When a purchase request is processed, the Funds On Hold are transferred to the local Treasury and a fresh Region of the proper span is issued and assigned to the purchaser as the owner.
+
+#### Manipulation
+
+Regions may be manipulated in various ways by its owner:
+
+1. *Transferred* in ownership.
+1. *Assigned* to a single, specific ParaID task.
+1. *Partitioned* into quantized, non-overlapping segments of Bulk Coretime with the same ownership.
+1. *Interlaced* into multiple Regions over the same period whose eventual assignments take turns to be scheduled.
+1. *Contributed* into the Instantaneous Coretime Pool, in return for a pro-rata amount of the revenue from the Instantaneous Coretime Sales over its period.
+
+#### Enactment
 
 ### Specific functions of the Broker-chain
 
 Several functions of the Broker-chain SHALL be exposed through dispatchables and/or a `nonfungible` trait implementation integrated into XCM:
 
-#### 1. Transfer of ownership
+#### 1. `transfer`
 
-A `transfer(region: RegionId, new_owner: AccountId)` dispatchable SHALL have the effect of altering the current `owner` field of `region` in the `Regions` map from the signed origin to `new_owner`.
+Regions may have their ownership transferred.
+
+A `transfer(region: RegionId, new_owner: AccountId)` dispatchable SHALL have the effect of altering the current owner of the Region identified by `region` from the signed origin to `new_owner`.
 
 An implementation of the `nonfungible` trait SHOULD include equivalent functionality. `RegionId` SHOULD be used for the `AssetInstance` value.
 
-In both cases, the `price` field SHALL become `None`.
+#### 2. `assign`
 
-#### 2. Split into segments
+Regions may be consumed in exchange for being assigned to a core.
 
-A `split(region: RegionId, pivot: Timeslice)` dispatchable SHALL have the effect of mutating the Regions entry of key `region` so that the `end` field becomes `pivot` and create a new Regions entry of the same `core` but a `begin` equal to `pivot` whose `RegionRecord` has the same `owner`, `end` and `allocation` fields as the origin value of `region`.
+A dispatchable `assign(region: RegionId, target: ParaId)` SHALL be provided corresponding to the `allocate` function described above.
 
-`price` in both records is/becomes `None`.
+It MUST be called with a Signed origin equal to the `owner` field of the value of the Regions map for the `region` key. The `allocation` field of this value MUST be `None` (a region may not be re-allocated).
+
+On success, the `assign` value is changed to `Some` whose inner value is equal to `target`.
+
+If the `begin` field of the `region` parameter is less than the current `Timeslice` value, then it is removed and re-entered with the current `Timeslice` value plus one, unless this would be equal to or greater than the `end` field of the corresponding `RegionRecord` value.
+
+If the Region's span is the entire `BULK_PERIOD`, then the Broker-chain records in storage that the allocation happened during this period in order to facilitate the possibility for a renewal.
+
+#### 3. `partition`
+
+Regions may be split apart into two non-overlapping interior Regions of the same regularity.
+
+A `partition(region: RegionId, pivot: Timeslice)` dispatchable SHALL have the effect of removing the Region identified by `region` and adding two new Regions of the same owner and core-parts. One new Region will begin at the same point of the old Region but end at `pivot`, whereas the other will begin at `pivot` and end at the end point of the old Region.
 
 Also:
 - `owner` field of `region` must the equal to the Signed origin.
 - `pivot` must equal neither the `begin` nor `end` fields of the `region`.
 
-#### 3. Consumed in exchange for allocation
+#### 4. `interlace`
 
-A dispatchable `allocate(region: RegionId, target: Vec<ParaId>)` SHALL be provided corresponding to the `allocate` function described above.
+Regions may be strided into two Regions of the same span whose eventual assignments take turns on the core.
 
-It MUST be called with a Signed origin equal to the `owner` field of the value of the Regions map for the `region` key. The `allocation` field of this value MUST be `None` (a region may not be re-allocated).
+An `interlace(region: RegionId, parts: CoreParts)` dispatchable SHALL have the effect of removing the Region identified by `region` and create two new Regions. The new Regions will each have the same span and owner of the old Region, but one Region will have Core Parts equal to `parts` and the other will have Core Parts equal to the XOR of `parts` and the Core Parts of the old Region.
 
-On success, the `allocation` value is changed to `Some` whose inner value is equal to `target`.
+Also:
+- `owner` field of `region` must the equal to the Signed origin.
+- `parts` must have some bits set AND must not equal the Core Parts of the old Region AND must only have bits set which are also set in the old Region's' Core Parts.
 
-If the `begin` field of the `region` parameter is less than the current `Timeslice` value, then it is removed and re-entered with the current `Timeslice` value plus one, unless this would be equal to or greater than the `end` field of the corresponding `RegionRecord` value.
+#### 5. `contribute`
 
-Initially `target` values with only one item MAY be supported.
+Regions may be consumed in exchange for a pro rata portion of the Instantaneous Coretime Sales Revenue from its period and regularity.
 
-If the `RegionRecord`'s `price` field is `Some` (indicating that the Region is freshly purchased), then the Broker-chain SHALL record an entry in a storage map called AllowedRenewals. This maps a `CoreIndex` to a struct `RenewalRecord`:
+A dispatchable `contribute(region: RegionId, beneficiary: AccountId)` SHALL be provided.
 
-```rust
-struct RenewalRecord {
-    target: Vec<(ParaId, u8)>,
-    price: Balance,
-    sale: SaleIndex,
-}
-```
-
-#### 4. Renewals
+#### 6. Renewals
 
 A dispatchable `renew(core: CoreIndex)` SHALL be provided. Any account may call `renew` to purchase Bulk Coretime and renew an active allocation for the given `core`.
 
-This MUST be called during the `LEADIN_PERIOD` prior to a Bulk sale (exactly like `purchase`) and has the same effect as `purchase` followed by `allocate` containing the same `Vec<ParaId>`, except that:
+This MUST be called during the `LEADIN_PERIOD` prior to a Bulk sale (exactly like `purchase`) and has the same effect as `purchase` followed by `allocate` containing the same `ParaId`, except that:
 
 1. The purchase always succeeds and as such must be processed prior to regular `purchase` orders.
 2. The price of the purchase is the previous `price` incremented by `RENEWAL_PRICE_CAP` of itself or the regular price, whichever is lower.
+3. The Region must not have been split. (Transfer and striding are allowed.)
+4. The Region must be allocated in exactly the same way as before.
 
-AllowedRenewals map is updated with the new information ready for the following Bulk sale.
-
-#### 5. Migrations from Legacy Slot Leases
+#### 7. Migrations
 
 It is intended that paras which hold a lease from the legacy slot auction system are able to seamlessly transition into the Agile Coretime framework.
 
 A dispatchable `migrate(core: CoreIndex)` SHALL be provided. Any account may call `migrate` to purchase Bulk Coretime at the current price for the given `core`.
 
-This MUST be called during the `LEADIN_PERIOD` prior to a Bulk sale (exactly like `purchase`) and has the same effect as `purchase` followed by `allocate` with a value of `Vec<ParaId>` containing just one item equal to `target`, except that:
+This MUST be called during the `LEADIN_PERIOD` prior to a Bulk sale (exactly like `purchase`) and has the same effect as `purchase` followed by `allocate` with a value of `ParaId` containing just one item equal to `target`, except that:
 
 1. The purchase always succeeds and as such MUST be processed prior to regular `purchase` orders.
 2. There MUST be an ongoing legacy parachain lease whose parachain is assigned to `core` and which is due to expire during the Coretime period being purchased.
@@ -321,18 +266,183 @@ For an efficient market to form around the provision of Bulk-purchased Cores int
 
 In order to ensure this, then it is crucial that Instantaneous Coretime, once purchased, cannot be held indefinitely prior to eventual use since, if this were the case, a nefarious collator could purchase Coretime when cheap and utilize it some time later when expensive and deprive private Coretime providers of their revenue. It SHOULD therefore be assumed that Instantaneous Coretime, once purchased, has a definite and short "shelf-life", after which it becomes unusable. This incentivizes collators to avoid purchasing Coretime unless they expect to utilize it imminently and thus helps create an efficient market-feedback mechanism whereby a higher price will actually result in material revenues for private Coretime providers who contribute to the pool of Cores available to service Instantaneous Coretime purchases.
 
-### The Relay-chain API
+### Notes on Types
 
-The Relay-chain provides a pallet-based API for the Broker-chain to utilize to inform it in real-time of allocation information for the cores and also to alter the number of cores in the next session. There are two functions which it should expose:
+#### Regions
 
-- `fn set_core_count(count: u16)`: Sets the number of active cores from the next session onwards, identified from index `0` to index `count - 1` inclusive.
-- `fn assign_core(core_index: u16, assignment: Option<Vec<(ParaId, u8)>>, begin: BlockNumber, end_hint: Option<BlockNumber>)`: Requests the Relay-chain to provision core identified by `core_index` to process paras identified within the `assignment` vector relatively biased according to the accompanying `u16` *weight* parameter. The weight parameter indicates the ratio of blocks which *on average* should be being processed for the the given para compared to the other paras mentioned in the `assignment` vector.
+```rust
+enum RecordState {
+    Fresh { owner: AccountId },
+    Instantaneous { beneficiary: AccountId },
+    Assigned { target: ParaId },
+}
+type Timeslice = u32; // 80 block amounts.
+type CoreIndex = u16;
+type CorePart = [u8; 10]; // 80-bit bitmap.
+struct RegionId {
+    begin: Timeslice,
+    core: CoreIndex,
+    part: CorePart,
+}
+enum RegionRecord {
+    Split { one: CorePart },
+    Merged { other: CorePart },
+    State {
+        end: Timeslice,
+        state: RecordState,
+    },
+}
+type Regions = Map<RegionId, RegionRecord, OptionQuery>;
 
-The Relay-chain should publish, through a well-known storage key, the number of blocks in advance which `assign_core` should be called to ensure that the core gets scheduled properly. We can denote this quantity `ADVANCE_NOTICE`. The Relay-chain MUST respect the core assignment provided that `assign_core` gets processed on a block whose number is no greater than `begin - ADVANCE_NOTICE`.
+struct SplitRegion {
+    core: CoreIndex,
+    one: CorePart,
+    other: CorePart,
+}
+// Processed in forward order.
+const MAX_SPLITS_PER_TIMESLICE;
+type RegionSplits = Map<Timeslice, BoundedVec<SplitRegion, MAX_SPLITS_PER_TIMESLICE>>
+// Processed in reverse order.
+const MAX_MERGES_PER_TIMESLICE;
+type RegionMerges = Map<Timeslice, BoundedVec<SplitRegion, MAX_MERGES_PER_TIMESLICE>>
 
-## Implementation
+// Tracks the parts that a core has been split into and their next Region; informed by RegionSplits
+// and RegionMerges, and used to determine the keys to look up in `Regions`. Initialized to
+// `vec![([0xffu8; 10], begin)]` where `begin` is the `begin` field of the `RegionId` key for the
+// core's initial region.
+type CoreParts = Map<CoreIndex, BoundedVec<(CorePart, Timeslice), 80>>;
+```
 
-Implementation of this proposal comes in several phases:
+Example:
+
+```rust
+// Simple example with a `u16` `CorePart` and bulk sold in 100 timeslices.
+RegionId { core: 0u16, begin: 100 } => 0b1111_1111_1111_1111u16 =>
+    RegionRecord { end: 200u32, state: Fresh(Alice) };
+// First split @ 50
+RegionId { core: 0u16, begin: 100 } => 0b1111_1111_1111_1111u16 =>
+    RegionRecord { end: 150u32, state: Fresh(Alice) };
+RegionId { core: 0u16, begin: 150 } => 0b1111_1111_1111_1111u16 =>
+    RegionRecord { end: 200u32, state: Fresh(Alice) };
+// Share half of first 50 blocks
+RegionId { core: 0u16, begin: 100 } => 0b1111_1111_0000_0000u16 =>
+    RegionRecord { end: 150u32, state: Fresh(Alice) };
+RegionId { core: 0u16, begin: 100 } => 0b0000_0000_1111_1111u16 =>
+    RegionRecord { end: 150u32, state: Fresh(Alice) };
+RegionId { core: 0u16, begin: 150 } => 0b1111_1111_1111_1111u16 =>
+    RegionRecord { end: 200u32, state: Fresh(Alice) };
+RegionSplits: 100 => vec![ { core: 0, one: 0b1111_1111_0000_0000u16, other: 0b0000_0000_1111_1111u16 } ]
+RegionMerges: 150 => vec![ { core: 0, one: 0b1111_1111_0000_0000u16, other: 0b0000_0000_1111_1111u16 } ]
+// Sell half of them to Bob
+RegionId { core: 0u16, begin: 100 } => 0b1111_1111_0000_0000u16 =>
+    RegionRecord { end: 150u32, state: Fresh(Alice) };
+RegionId { core: 0u16, begin: 100 } => 0b0000_0000_1111_1111u16 =>
+    RegionRecord { end: 150u32, state: Fresh(Bob) };
+RegionId { core: 0u16, begin: 150 } => 0b1111_1111_1111_1111u16 =>
+    RegionRecord { end: 200u32, state: Fresh(Alice) };
+RegionSplits: 100 => vec![ { core: 0, one: 0b1111_1111_0000_0000u16, other: 0b0000_0000_1111_1111u16 } ]
+RegionMerges: 150 => vec![ { core: 0, one: 0b1111_1111_0000_0000u16, other: 0b0000_0000_1111_1111u16 } ]
+// Bob splits first 10 and assigns them to himself.
+RegionId { core: 0u16, begin: 100 } => 0b1111_1111_0000_0000u16 =>
+    RegionRecord { end: 150u32, state: Fresh(Alice) };
+RegionId { core: 0u16, begin: 100 } => 0b0000_0000_1111_1111u16 =>
+    RegionRecord { end: 110u32, state: Fresh(Bob) };
+RegionId { core: 0u16, begin: 110 } => 0b0000_0000_1111_1111u16 =>
+    RegionRecord { end: 150u32, state: Fresh(Bob) };
+RegionId { core: 0u16, begin: 150 } => 0b1111_1111_1111_1111u16 =>
+    RegionRecord { end: 200u32, state: Fresh(Alice) };
+RegionSplits: 100 => vec![ { core: 0, one: 0b1111_1111_0000_0000u16, other: 0b0000_0000_1111_1111u16 } ]
+RegionMerges: 150 => vec![ { core: 0, one: 0b1111_1111_0000_0000u16, other: 0b0000_0000_1111_1111u16 } ]
+// Bob shares first 10 3 ways and sells smaller shares to Charlie and Dave
+RegionId { core: 0u16, begin: 100 } => 0b1111_1111_0000_0000u16 =>
+    RegionRecord { end: 150u32, state: Fresh(Alice) };
+RegionId { core: 0u16, begin: 100 } => 0b0000_0000_1100_0000u16 =>
+    RegionRecord { end: 110u32, state: Fresh(Charlie) };
+RegionId { core: 0u16, begin: 100 } => 0b0000_0000_0011_0000u16 =>
+    RegionRecord { end: 110u32, state: Fresh(Dave) };
+RegionId { core: 0u16, begin: 100 } => 0b0000_0000_0000_1111u16 =>
+    RegionRecord { end: 110u32, state: Fresh(Bob) };
+RegionId { core: 0u16, begin: 110 } => 0b0000_0000_1111_1111u16 =>
+    RegionRecord { end: 150u32, state: Fresh(Bob) };
+RegionId { core: 0u16, begin: 150 } => 0b1111_1111_1111_1111u16 =>
+    RegionRecord { end: 200u32, state: Fresh(Alice) };
+RegionSplits: 100 => vec![
+    { core: 0, one: 0b1111_1111_0000_0000u16, other: 0b0000_0000_1111_1111u16 }
+    { core: 0, one: 0b0000_0000_1111_0000u16, other: 0b0000_0000_0000_1111u16 }
+    { core: 0, one: 0b0000_0000_0000_1100u16, other: 0b0000_0000_0000_0011u16 }
+]
+RegionMerges:
+    110 => vec![
+        { core: 0, one: 0b0000_0000_1111_0000u16, other: 0b0000_0000_0000_1111u16 }
+        { core: 0, one: 0b0000_0000_0000_1100u16, other: 0b0000_0000_0000_0011u16 }
+    ],
+    150 => vec![ { core: 0, one: 0b1111_1111_0000_0000u16, other: 0b0000_0000_1111_1111u16 } ]
+// Bob assigns to his para B, Charlie and Dave assign to their paras C and D; Alice assigns to A
+RegionId { core: 0u16, begin: 100 } => 0b1111_1111_0000_0000u16 =>
+    RegionRecord { end: 150u32, state: Assigned(A) };
+RegionId { core: 0u16, begin: 100 } => 0b0000_0000_1100_0000u16 =>
+    RegionRecord { end: 110u32, state: Assigned(C) };
+RegionId { core: 0u16, begin: 100 } => 0b0000_0000_0011_0000u16 =>
+    RegionRecord { end: 110u32, state: Assigned(D) };
+RegionId { core: 0u16, begin: 100 } => 0b0000_0000_0000_1111u16 =>
+    RegionRecord { end: 110u32, state: Assigned(B) };
+RegionId { core: 0u16, begin: 110 } => 0b0000_0000_1111_1111u16 =>
+    RegionRecord { end: 150u32, state: Assigned(B) };
+RegionId { core: 0u16, begin: 150 } => 0b1111_1111_1111_1111u16 =>
+    RegionRecord { end: 200u32, state: Assigned(A) };
+RegionSplits: 100 => vec![
+    { core: 0, one: 0b1111_1111_0000_0000u16, other: 0b0000_0000_1111_1111u16 }
+    { core: 0, one: 0b0000_0000_1111_0000u16, other: 0b0000_0000_0000_1111u16 }
+    { core: 0, one: 0b0000_0000_0000_1100u16, other: 0b0000_0000_0000_0011u16 }
+]
+RegionMerges:
+    110 => vec![
+        { core: 0, one: 0b0000_0000_1111_0000u16, other: 0b0000_0000_0000_1111u16 }
+        { core: 0, one: 0b0000_0000_0000_1100u16, other: 0b0000_0000_0000_0011u16 }
+    ],
+    150 => vec![ { core: 0, one: 0b1111_1111_0000_0000u16, other: 0b0000_0000_1111_1111u16 } ]
+// Actual notifications to relay chain.
+// Assumes:
+// - Timeslice is 10 blocks.
+// - Timeslice 0 begins at block #1000.
+// - Relay needs 10 blocks notice of change.
+//
+// Block 990:
+assign_core(core: 0u16, begin: 1000, assignment: vec![(A, 8), (C, 2), (D, 2), (B, 4)])
+// Block 1090:
+assign_core(core: 0u16, begin: 1100, assignment: vec![(A, 8), (B, 8)])
+// Block 1490:
+assign_core(core: 0u16, begin: 1500, assignment: vec![(A, 16)])
+```
+
+This map functions essentially as a linked list, with one region's `end` field acting as a reference to the next region's key's `begin` field.
+
+`CoreParts` tracks what parts each core is currently been split into. This must be kept up to date by ensuring that for every new Timeslice, `RegionMerges` is first applied to it in reverse order and then `RegionSplits` applied in regular order. Once done, `CoreParts` can be iterated through to both determine the keys to look up in `Regions` and check at which Timeslice there will be an entry in `Regions`. When a `Region` has been processed, `CoreParts` should also be updated so that the `Timeslice` for the Region's `CorePart` value is set to the `Region`'s `end` field.
+
+The Broker-chain provides feedback to the Relay-chain on which `ParaId` sets should be serviced on which cores, and does so as they change. Each block, the Broker-chain checks if the period of a `Timeslice` has elapsed. If so, it checks to see if any cores have a newly active `RegionRecord` value in the `Regions` map. If they do, it MUST notify the Relay-chain of the new responsibilities of the relevant `core`. In this case, it MUST remove the item from the `Regions` map and update the `NextRegion` map so it maps the relevant core to the value of removed record's `end` field.
+
+#### Renewals
+
+When assigning a Region which is the full `BULK_PERIOD` in span, the `AllowedRenewals` map is altered.
+
+The map item for the core being assigned to is (re-)initialized if a value does not yet exist or one does exist whose `sale_begin` is less than `begin` value of the `Region` being assigned. Initializing simply means creating a new value with an empty `weighted_targets`, `price` equal to the last Sale Price and `sale_begin` equal to the `begin` value of the `Region` being assigned.
+
+It is then mutated; `weighted_targets` is changed to include the `target` of the assignment, along with the `u8` weight component equal to the number of bits set in its `CoreParts` bitmap.
+
+```rust
+struct RenewalRecord {
+    weighted_targets: Vec<(ParaId, u8)>,
+    price: Balance,
+    sale_begin: Timeslice,
+}
+type AllowedRenewals = Map<CoreIndex, RenewalRecord>;
+```
+
+When renewing, `AllowedRenewals` must contain a record for the renewed core whose `sale_begin` is `BULK_PERIOD` blocks less than the period whose sale is approaching and the sum of the second components of `weighted_targets` is 80. If successful, then `price` is increased by itself multiplied by `RENEWAL_PRICE_CAP` and used as a cap to the approaching sale's Sale Price. `weighted_targets` is the assignment of the renewed core.
+
+### Rollout
+
+Rollout of this proposal comes in several phases:
 
 1. Finalise the specifics of implementation; this may be done through a design document or through a well-documented prototype implementation.
 2. Implement the design, including all associated aspects such as unit tests, benchmarks and any support software needed.
