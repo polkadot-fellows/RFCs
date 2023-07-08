@@ -531,6 +531,8 @@ The proposal introduces no new privacy concerns.
 
 RFC-3 proposes a means of implementing the high-level allocations within the Relay-chain.
 
+RFC-5 proposes the API for interacting with Relay-chain.
+
 Additional work should specify the interface for the instantaneous market revenue so that the Broker chain can ensure Bulk Coretime placed in the instantaneous market is properly compensated.
 
 ## Drawbacks, Alternatives and Unknowns
