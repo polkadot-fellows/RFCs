@@ -33,10 +33,11 @@ However, quite possibly the most substantial problem is both a perceived and oft
 
 1. The solution SHOULD provide an acceptable value-capture mechanism for the Polkadot network.
 1. The solution SHOULD allow parachains and other projects deployed on to the Polkadot UC to make long-term capital expenditure predictions for the cost of ongoing deployment.
-1. The solution SHOULD minimize the barriers to entry in the ecosystem.
-1. The solution SHOULD work when the number of cores which the Polkadot UC can support changes over time.
-1. The solution SHOULD facilitate the optimal allocation of work to core of the Polkadot UC, including by facilitating the trade of regular core assignment at various intervals and for various spans.
-1. The solution SHOULD avoid creating additional dependencies on functionality which the Relay-chain need not strictly provide for the delivery of the Polkadot UC.
+2. The solution SHOULD minimize the barriers to entry in the ecosystem.
+3. The solution SHOULD work well when the Polkadot UC has up to 1,000 cores.
+4. The solution SHOULD work when the number of cores which the Polkadot UC can support changes over time.
+5. The solution SHOULD facilitate the optimal allocation of work to core of the Polkadot UC, including by facilitating the trade of regular core assignment at various intervals and for various spans.
+6. The solution SHOULD avoid creating additional dependencies on functionality which the Relay-chain need not strictly provide for the delivery of the Polkadot UC.
 
 Furthermore, the design SHOULD be implementable and deployable in a timely fashion; three months from the acceptance of this RFC should not be unreasonable.
 
@@ -270,156 +271,211 @@ In order to ensure this, then it is crucial that Instantaneous Coretime, once pu
 
 #### Regions
 
+This data schema achieves a number of goals:
+- Coretime can be individually traded at a level of a single usage of a single core.
+- Coretime Regions, of arbitrary span and up to 1/80th interlacing can be exposed as NFTs and exchanged.
+- Any Coretime Region can be contributed to the Instantaneous Coretime Pool.
+- Unlimited number of individual Coretime contributors to the Instantaneous Coretime Pool. (Effectively limited only in number of cores and interlacing level; with current values this would allow 80,000 individual payees per timeslice).
+- All keys are self-describing.
+- Workload to communicate core (re-)assignments is well-bounded and low in weight.
+- All mandatory bookkeeping workload is well-bounded in weight.
+
 ```rust
-enum RecordState {
-    Fresh { owner: AccountId },
-    Instantaneous { beneficiary: AccountId },
-    Assigned { target: ParaId },
-}
 type Timeslice = u32; // 80 block amounts.
 type CoreIndex = u16;
 type CorePart = [u8; 10]; // 80-bit bitmap.
+
+// 128-bit (16 bytes)
 struct RegionId {
     begin: Timeslice,
     core: CoreIndex,
     part: CorePart,
 }
-enum RegionRecord {
-    Split { one: CorePart },
-    Merged { other: CorePart },
-    State {
-        end: Timeslice,
-        state: RecordState,
-    },
+// 296-bit (37 bytes)
+struct RegionRecord {
+    end: Timeslice,
+    owner: AccountId,
 }
-type Regions = Map<RegionId, RegionRecord, OptionQuery>;
 
-struct SplitRegion {
+map Regions = Map<RegionId, RegionRecord>;
+
+// 40-bit (5 bytes). Could be 32-bit with a more specialised type.
+enum CoreTask {
+    Off,
+    Assigned { target: ParaId },
+    InstaPool,
+}
+// 113-bit (14 bytes). Could be 14 bytes with a specialised 32-bit `CoreTask`.
+struct ScheduleItem {
+    part: CorePart, // 80 bit
+    task: CoreTask, // 33 bit
+}
+
+/// The work we plan on having each core do at a particular time in the future.
+type Workplan = Map<(Timeslice, CoreIndex), BoundedVec<ScheduleItem, 80>>;
+/// The current workload of each core. This gets updated with workplan as timeslices pass.
+type Workload = Map<CoreIndex, BoundedVec<ScheduleItem, 80>>;
+
+enum Contributor {
+    System,
+    Private(AccountId),
+}
+
+struct ContributionRecord {
+    begin: Timeslice,
+    end: Timeslice,
     core: CoreIndex,
-    one: CorePart,
-    other: CorePart,
+    parts: CoreParts,
+    payee: Contributor,
 }
-// Processed in forward order.
-const MAX_SPLITS_PER_TIMESLICE;
-type RegionSplits = Map<Timeslice, BoundedVec<SplitRegion, MAX_SPLITS_PER_TIMESLICE>>
-// Processed in reverse order.
-const MAX_MERGES_PER_TIMESLICE;
-type RegionMerges = Map<Timeslice, BoundedVec<SplitRegion, MAX_MERGES_PER_TIMESLICE>>
+type InstaPoolContribution = Map<ContributionRecord, ()>;
 
-// Tracks the parts that a core has been split into and their next Region; informed by RegionSplits
-// and RegionMerges, and used to determine the keys to look up in `Regions`. Initialized to
-// `vec![([0xffu8; 10], begin)]` where `begin` is the `begin` field of the `RegionId` key for the
-// core's initial region.
-type CoreParts = Map<CoreIndex, BoundedVec<(CorePart, Timeslice), 80>>;
+type SignedTotalParts = u32;
+type InstaPoolIo = Map<Timeslice, SignedTotalParts>;
+
+type PoolSize = Value<TotalParts>;
+
+/// Counter for the total CoreParts which could be dedicated to a pool. `u32` so we don't ever get
+/// an overflow.
+type TotalParts = u32;
+struct InstaPoolHistoryRecord {
+    total_contributions: TotalParts,
+    maybe_payout: Option<Balance>,
+}
+/// Total InstaPool rewards for each Timeslice and the number of core parts which contributed.
+type InstaPoolHistory = Map<Timeslice, InstaPoolHistoryRecord>;
 ```
+
+`CoreParts` tracks what unique "parts" of a single core. It is used with interlacing in order to give a unique identifier to each compnent of any possible interlacing configuration of a core, allowing for simple self-describing keys for all core ownership and allocation information. It also allows for each core's workload to be tracked and updated progressively, keeping ongoing compute costs well-bounded and low.
+
+Regions are issued into the `Regions` map and can be transferred, partitioned and interlaced as the owner desires. Regions can only be tasked if they begin after the current scheduling deadline (if they have missed this, then the region can be auto-trimmed until it is).
+
+Once tasked, they are removed from there and a record is placed in `Workplan`. In addition, if they are contributed to the Instantaneous Coretime Pool, then an entry is placing in `InstaPoolContribution` and `InstaPoolIo`.
+
+Each timeslice, `InstaPoolIo` is used to update the current value of `PoolSize`. A new entry in `InstaPoolHistory` is inserted, with the `total_contributions` field of `InstaPoolHistoryRecord` being informed by the `PoolSize` value. Each core's has its `Workload` mutated according to its `Workplan` for the upcoming timeslice.
+
+When Instantaneous Coretime Market Revenues are reported for a particular timeslice from the Relay-chain, this information gets placed in the `maybe_payout` field of the relevant record of `InstaPoolHistory`.
+
+Payments can be requested made for for any records in `InstaPoolContribution` whose `begin` is the key for a value in `InstaPoolHistory` whose `maybe_payout` is `Some`. In this case, the `total_contributions` is reduced by the `ContributionRecord`'s `parts` and a pro rata amount paid. The `ContributionRecord` is mutated by incrementing `begin`, or removed if `begin` becomes equal to `end`.
 
 Example:
 
 ```rust
 // Simple example with a `u16` `CorePart` and bulk sold in 100 timeslices.
-RegionId { core: 0u16, begin: 100 } => 0b1111_1111_1111_1111u16 =>
-    RegionRecord { end: 200u32, state: Fresh(Alice) };
+Regions:
+{ core: 0u16, begin: 100, part: 0b1111_1111_1111_1111u16 } => { end: 200u32, owner: Alice };
 // First split @ 50
-RegionId { core: 0u16, begin: 100 } => 0b1111_1111_1111_1111u16 =>
-    RegionRecord { end: 150u32, state: Fresh(Alice) };
-RegionId { core: 0u16, begin: 150 } => 0b1111_1111_1111_1111u16 =>
-    RegionRecord { end: 200u32, state: Fresh(Alice) };
+Regions:
+{ core: 0u16, begin: 100, part: 0b1111_1111_1111_1111u16 } => { end: 150u32, owner: Alice };
+{ core: 0u16, begin: 150, part: 0b1111_1111_1111_1111u16 } => { end: 200u32, owner: Alice };
 // Share half of first 50 blocks
-RegionId { core: 0u16, begin: 100 } => 0b1111_1111_0000_0000u16 =>
-    RegionRecord { end: 150u32, state: Fresh(Alice) };
-RegionId { core: 0u16, begin: 100 } => 0b0000_0000_1111_1111u16 =>
-    RegionRecord { end: 150u32, state: Fresh(Alice) };
-RegionId { core: 0u16, begin: 150 } => 0b1111_1111_1111_1111u16 =>
-    RegionRecord { end: 200u32, state: Fresh(Alice) };
-RegionSplits: 100 => vec![ { core: 0, one: 0b1111_1111_0000_0000u16, other: 0b0000_0000_1111_1111u16 } ]
-RegionMerges: 150 => vec![ { core: 0, one: 0b1111_1111_0000_0000u16, other: 0b0000_0000_1111_1111u16 } ]
+Regions:
+{ core: 0u16, begin: 100, part: 0b1111_1111_0000_0000u16 } => { end: 150u32, owner: Alice };
+{ core: 0u16, begin: 100, part: 0b0000_0000_1111_1111u16 } => { end: 150u32, owner: Alice };
+{ core: 0u16, begin: 150, part: 0b1111_1111_1111_1111u16 } => { end: 200u32, owner: Alice };
 // Sell half of them to Bob
-RegionId { core: 0u16, begin: 100 } => 0b1111_1111_0000_0000u16 =>
-    RegionRecord { end: 150u32, state: Fresh(Alice) };
-RegionId { core: 0u16, begin: 100 } => 0b0000_0000_1111_1111u16 =>
-    RegionRecord { end: 150u32, state: Fresh(Bob) };
-RegionId { core: 0u16, begin: 150 } => 0b1111_1111_1111_1111u16 =>
-    RegionRecord { end: 200u32, state: Fresh(Alice) };
-RegionSplits: 100 => vec![ { core: 0, one: 0b1111_1111_0000_0000u16, other: 0b0000_0000_1111_1111u16 } ]
-RegionMerges: 150 => vec![ { core: 0, one: 0b1111_1111_0000_0000u16, other: 0b0000_0000_1111_1111u16 } ]
+Regions:
+{ core: 0u16, begin: 100, part: 0b1111_1111_0000_0000u16 } => { end: 150u32, owner: Alice };
+{ core: 0u16, begin: 100, part: 0b0000_0000_1111_1111u16 } => { end: 150u32, owner: Bob };
+{ core: 0u16, begin: 150, part: 0b1111_1111_1111_1111u16 } => { end: 200u32, owner: Alice };
 // Bob splits first 10 and assigns them to himself.
-RegionId { core: 0u16, begin: 100 } => 0b1111_1111_0000_0000u16 =>
-    RegionRecord { end: 150u32, state: Fresh(Alice) };
-RegionId { core: 0u16, begin: 100 } => 0b0000_0000_1111_1111u16 =>
-    RegionRecord { end: 110u32, state: Fresh(Bob) };
-RegionId { core: 0u16, begin: 110 } => 0b0000_0000_1111_1111u16 =>
-    RegionRecord { end: 150u32, state: Fresh(Bob) };
-RegionId { core: 0u16, begin: 150 } => 0b1111_1111_1111_1111u16 =>
-    RegionRecord { end: 200u32, state: Fresh(Alice) };
-RegionSplits: 100 => vec![ { core: 0, one: 0b1111_1111_0000_0000u16, other: 0b0000_0000_1111_1111u16 } ]
-RegionMerges: 150 => vec![ { core: 0, one: 0b1111_1111_0000_0000u16, other: 0b0000_0000_1111_1111u16 } ]
+Regions:
+{ core: 0u16, begin: 100, part: 0b1111_1111_0000_0000u16 } => { end: 150u32, owner: Alice };
+{ core: 0u16, begin: 100, part: 0b0000_0000_1111_1111u16 } => { end: 110u32, owner: Bob };
+{ core: 0u16, begin: 110, part: 0b0000_0000_1111_1111u16 } => { end: 150u32, owner: Bob };
+{ core: 0u16, begin: 150, part: 0b1111_1111_1111_1111u16 } => { end: 200u32, owner: Alice };
 // Bob shares first 10 3 ways and sells smaller shares to Charlie and Dave
-RegionId { core: 0u16, begin: 100 } => 0b1111_1111_0000_0000u16 =>
-    RegionRecord { end: 150u32, state: Fresh(Alice) };
-RegionId { core: 0u16, begin: 100 } => 0b0000_0000_1100_0000u16 =>
-    RegionRecord { end: 110u32, state: Fresh(Charlie) };
-RegionId { core: 0u16, begin: 100 } => 0b0000_0000_0011_0000u16 =>
-    RegionRecord { end: 110u32, state: Fresh(Dave) };
-RegionId { core: 0u16, begin: 100 } => 0b0000_0000_0000_1111u16 =>
-    RegionRecord { end: 110u32, state: Fresh(Bob) };
-RegionId { core: 0u16, begin: 110 } => 0b0000_0000_1111_1111u16 =>
-    RegionRecord { end: 150u32, state: Fresh(Bob) };
-RegionId { core: 0u16, begin: 150 } => 0b1111_1111_1111_1111u16 =>
-    RegionRecord { end: 200u32, state: Fresh(Alice) };
-RegionSplits: 100 => vec![
-    { core: 0, one: 0b1111_1111_0000_0000u16, other: 0b0000_0000_1111_1111u16 }
-    { core: 0, one: 0b0000_0000_1111_0000u16, other: 0b0000_0000_0000_1111u16 }
-    { core: 0, one: 0b0000_0000_0000_1100u16, other: 0b0000_0000_0000_0011u16 }
+Regions:
+{ core: 0u16, begin: 100, part: 0b1111_1111_0000_0000u16 } => { end: 150u32, owner: Alice };
+{ core: 0u16, begin: 100, part: 0b0000_0000_1100_0000u16 } => { end: 110u32, owner: Charlie };
+{ core: 0u16, begin: 100, part: 0b0000_0000_0011_0000u16 } => { end: 110u32, owner: Dave };
+{ core: 0u16, begin: 100, part: 0b0000_0000_0000_1111u16 } => { end: 110u32, owner: Bob };
+{ core: 0u16, begin: 110, part: 0b0000_0000_1111_1111u16 } => { end: 150u32, owner: Bob };
+{ core: 0u16, begin: 150, part: 0b1111_1111_1111_1111u16 } => { end: 200u32, owner: Alice };
+// Bob assigns to his para B, Charlie and Dave assign to their paras C and D; Alice assigns first 50 to A
+Regions:
+{ core: 0u16, begin: 150, part: 0b1111_1111_1111_1111u16 } => { end: 200u32, owner: Alice };
+Workplan:
+(100, 0) => vec![
+    { part: 0b1111_1111_0000_0000u16, task: Assigned(A) },
+    { part: 0b0000_0000_1100_0000u16, task: Assigned(C) },
+    { part: 0b0000_0000_0011_0000u16, task: Assigned(D) },
+    { part: 0b0000_0000_0000_1111u16, task: Assigned(B) },
 ]
-RegionMerges:
-    110 => vec![
-        { core: 0, one: 0b0000_0000_1111_0000u16, other: 0b0000_0000_0000_1111u16 }
-        { core: 0, one: 0b0000_0000_0000_1100u16, other: 0b0000_0000_0000_0011u16 }
-    ],
-    150 => vec![ { core: 0, one: 0b1111_1111_0000_0000u16, other: 0b0000_0000_1111_1111u16 } ]
-// Bob assigns to his para B, Charlie and Dave assign to their paras C and D; Alice assigns to A
-RegionId { core: 0u16, begin: 100 } => 0b1111_1111_0000_0000u16 =>
-    RegionRecord { end: 150u32, state: Assigned(A) };
-RegionId { core: 0u16, begin: 100 } => 0b0000_0000_1100_0000u16 =>
-    RegionRecord { end: 110u32, state: Assigned(C) };
-RegionId { core: 0u16, begin: 100 } => 0b0000_0000_0011_0000u16 =>
-    RegionRecord { end: 110u32, state: Assigned(D) };
-RegionId { core: 0u16, begin: 100 } => 0b0000_0000_0000_1111u16 =>
-    RegionRecord { end: 110u32, state: Assigned(B) };
-RegionId { core: 0u16, begin: 110 } => 0b0000_0000_1111_1111u16 =>
-    RegionRecord { end: 150u32, state: Assigned(B) };
-RegionId { core: 0u16, begin: 150 } => 0b1111_1111_1111_1111u16 =>
-    RegionRecord { end: 200u32, state: Assigned(A) };
-RegionSplits: 100 => vec![
-    { core: 0, one: 0b1111_1111_0000_0000u16, other: 0b0000_0000_1111_1111u16 }
-    { core: 0, one: 0b0000_0000_1111_0000u16, other: 0b0000_0000_0000_1111u16 }
-    { core: 0, one: 0b0000_0000_0000_1100u16, other: 0b0000_0000_0000_0011u16 }
+(110, 0) => vec![{ part: 0b0000_0000_1111_1111u16, task: Assigned(B) }]
+// Alice assigns her remaining 50 timeslices to the InstaPool paying herself:
+Regions: (empty)
+Workplan:
+(100, 0) => vec![
+    { part: 0b1111_1111_0000_0000u16, task: Assigned(A) },
+    { part: 0b0000_0000_1100_0000u16, task: Assigned(C) },
+    { part: 0b0000_0000_0011_0000u16, task: Assigned(D) },
+    { part: 0b0000_0000_0000_1111u16, task: Assigned(B) },
 ]
-RegionMerges:
-    110 => vec![
-        { core: 0, one: 0b0000_0000_1111_0000u16, other: 0b0000_0000_0000_1111u16 }
-        { core: 0, one: 0b0000_0000_0000_1100u16, other: 0b0000_0000_0000_0011u16 }
-    ],
-    150 => vec![ { core: 0, one: 0b1111_1111_0000_0000u16, other: 0b0000_0000_1111_1111u16 } ]
+(110, 0) => vec![{ part: 0b0000_0000_1111_1111u16, task: Assigned(B) }]
+(150, 0) => vec![{ part: 0b1111_1111_1111_1111u16, task: InstaPool }]
+InstaPoolContribution:
+{ begin: 150, end: 200, core: 0, parts: 0b1111_1111_1111_1111u16, payee: Alice }
+InstaPoolIo:
+150 => 16
+200 => -16
 // Actual notifications to relay chain.
 // Assumes:
 // - Timeslice is 10 blocks.
 // - Timeslice 0 begins at block #1000.
 // - Relay needs 10 blocks notice of change.
 //
+Workload: 0 => vec![]
+PoolSize: 0
+
 // Block 990:
-assign_core(core: 0u16, begin: 1000, assignment: vec![(A, 8), (C, 2), (D, 2), (B, 4)])
+Relay <= assign_core(core: 0u16, begin: 1000, assignment: vec![(A, 8), (C, 2), (D, 2), (B, 4)])
+Workload: 0 => vec![
+    { part: 0b1111_1111_0000_0000u16, task: Assigned(A) },
+    { part: 0b0000_0000_1100_0000u16, task: Assigned(C) },
+    { part: 0b0000_0000_0011_0000u16, task: Assigned(D) },
+    { part: 0b0000_0000_0000_1111u16, task: Assigned(B) },
+]
+PoolSize: 0
+
 // Block 1090:
-assign_core(core: 0u16, begin: 1100, assignment: vec![(A, 8), (B, 8)])
+Relay <= assign_core(core: 0u16, begin: 1100, assignment: vec![(A, 8), (B, 8)])
+Workload: 0 => vec![
+    { part: 0b1111_1111_0000_0000u16, task: Assigned(A) },
+    { part: 0b0000_0000_1111_1111u16, task: Assigned(B) },
+]
+PoolSize: 0
+
 // Block 1490:
-assign_core(core: 0u16, begin: 1500, assignment: vec![(A, 16)])
+Relay <= assign_core(core: 0u16, begin: 1500, assignment: vec![(Pool, 16)])
+Workload: 0 => vec![
+    { part: 0b1111_1111_1111_1111u16, task: InstaPool },
+]
+PoolSize: 16
+InstaPoolIo:
+200 => -16
+InstaPoolHistory:
+150 => { total_contributions: 16, maybe_payout: None }
+
+// Sometime after block 1500:
+InstaPoolHistory:
+150 => { total_contributions: 16, maybe_payout: Some(P) }
+
+// Sometime after block 1990:
+InstaPoolIo: (empty)
+PoolSize: 0
+InstaPoolHistory:
+150 => { total_contributions: 16, maybe_payout: Some(P0) }
+151 => { total_contributions: 16, maybe_payout: Some(P1) }
+152 => { total_contributions: 16, maybe_payout: Some(P2) }
+...
+199 => { total_contributions: 16, maybe_payout: Some(P49) }
+
+// Sometime later still Alice calls for a payout
+InstaPoolContribution: (empty)
+InstaPoolHistory: (empty)
+// Alice gets rewarded P0 + P1 + ... P49.
 ```
-
-This map functions essentially as a linked list, with one region's `end` field acting as a reference to the next region's key's `begin` field.
-
-`CoreParts` tracks what parts each core is currently been split into. This must be kept up to date by ensuring that for every new Timeslice, `RegionMerges` is first applied to it in reverse order and then `RegionSplits` applied in regular order. Once done, `CoreParts` can be iterated through to both determine the keys to look up in `Regions` and check at which Timeslice there will be an entry in `Regions`. When a `Region` has been processed, `CoreParts` should also be updated so that the `Timeslice` for the Region's `CorePart` value is set to the `Region`'s `end` field.
-
-The Broker-chain provides feedback to the Relay-chain on which `ParaId` sets should be serviced on which cores, and does so as they change. Each block, the Broker-chain checks if the period of a `Timeslice` has elapsed. If so, it checks to see if any cores have a newly active `RegionRecord` value in the `Regions` map. If they do, it MUST notify the Relay-chain of the new responsibilities of the relevant `core`. In this case, it MUST remove the item from the `Regions` map and update the `NextRegion` map so it maps the relevant core to the value of removed record's `end` field.
 
 #### Renewals
 
