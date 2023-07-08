@@ -141,7 +141,7 @@ Indicate that from this block onwards, the range of acceptable values of the `co
 Prototype:
 
 ```
-fn notify_revenue(
+fn notify_revenue_info(
     until: BlockNumber,
     revenue: Balance,
 )
