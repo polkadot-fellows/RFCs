@@ -253,10 +253,10 @@ In general we would expect the price to increase the closer `CORES_SOLD` gets to
 A simple example of this would be the formula:
 
 ```
-NEW_PRICE := IF CORES_OLD < BULK_TARGET THEN
-    OLD_PRICE - OLD_PRICE / 2 * CORES_SOLD / BULK_TARGET
+NEW_PRICE := IF CORES_SOLD < BULK_TARGET THEN
+    OLD_PRICE * MAX(CORES_SOLD, 1) / BULK_TARGET
 ELSE
-    OLD_PRICE + OLD_PRICE / 2 *
+    OLD_PRICE + OLD_PRICE *
         (CORES_SOLD - BULK_TARGET) / (BULK_LIMIT - BULK_TARGET)
 END IF
 ```
