@@ -180,15 +180,14 @@ An implementation of the `nonfungible` trait SHOULD include equivalent functiona
 
 Regions may be consumed in exchange for being assigned to a core.
 
-A dispatchable `assign(region: RegionId, target: ParaId)` SHALL be provided corresponding to the `allocate` function described above.
+A `assign(region: RegionId, target: ParaId)` dispatchable SHALL have the effect of removing the region identified by `region` and placing an item in the workplan corresponding to the region's properties and assigned to the `target` task.
 
-It MUST be called with a Signed origin equal to the `owner` field of the value of the Regions map for the `region` key. The `allocation` field of this value MUST be `None` (a region may not be re-allocated).
-
-On success, the `assign` value is changed to `Some` whose inner value is equal to `target`.
-
-If the `begin` field of the `region` parameter is less than the current `Timeslice` value, then it is removed and re-entered with the current `Timeslice` value plus one, unless this would be equal to or greater than the `end` field of the corresponding `RegionRecord` value.
+If the region's end has already passed (taking into account any advance notice requirements) then this operation is a no-op. If the region's begining has already passed, then it is effectively altered to become the next schedulable timeslice.
 
 If the Region's span is the entire `BULK_PERIOD`, then the Broker-chain records in storage that the allocation happened during this period in order to facilitate the possibility for a renewal.
+
+Also:
+- `owner` field of `region` must the equal to the Signed origin.
 
 #### 3. `partition`
 
@@ -210,11 +209,16 @@ Also:
 - `owner` field of `region` must the equal to the Signed origin.
 - `parts` must have some bits set AND must not equal the Core Parts of the old Region AND must only have bits set which are also set in the old Region's' Core Parts.
 
-#### 5. `contribute`
+#### 5. `pool`
 
 Regions may be consumed in exchange for a pro rata portion of the Instantaneous Coretime Sales Revenue from its period and regularity.
 
-A dispatchable `contribute(region: RegionId, beneficiary: AccountId)` SHALL be provided.
+A `pool(region: RegionId, beneficiary: AccountId)` dispatchable SHALL have the effect of removing the region identified by `region` and placing an item in the workplan corresponding to the region's properties and assigned to the Instantaneous Coretime Pool. The details of the region will be recorded in order to allow the proper allocation of Instantaneous Coretime Sales Revenue.
+
+If the region's end has already passed (taking into account any advance notice requirements) then this operation is a no-op. If the region's begining has already passed, then it is effectively altered to become the next schedulable timeslice.
+
+Also:
+- `owner` field of `region` must the equal to the Signed origin.
 
 #### 6. Renewals
 
