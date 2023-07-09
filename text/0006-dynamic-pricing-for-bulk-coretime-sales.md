@@ -4,7 +4,7 @@
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | July 09, 2023                                                                               |
 | **Description** | A dynamic pricing model to adapt the regular price for bulk coretime sales                  |
-| **Authors**     | Tommi Enenkel                                                                               |
+| **Authors**     | Tommi Enenkel (Alice und Bob)                                                               |
 | **License**     | MIT                                                                                         |
 
 ## Summary
