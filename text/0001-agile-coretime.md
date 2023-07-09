@@ -134,11 +134,9 @@ A sale of Bulk Coretime occurs on the Broker Chain every `BULK_PERIOD` blocks.
 
 In every sale, a `BULK_LIMIT` of individual *Regions* are offered for sale at a particular Sale Price.
 
-The Regions offered for sale have the same span: they last exactly `BULK_PERIOD` blocks, and begin `LEADIN_PERIOD` blocks into the future at the time of the sale.
-
-The Regions offered for sale also have complete
-
 Each Region offered for sale has a different Core Index, ensuring that they each represent an independently allocatable resource on the Polkadot UC.
+
+The Regions offered for sale have the same span: they last exactly `BULK_PERIOD` blocks, and begin `LEADIN_PERIOD` blocks into the future at the time of the sale. The Regions offered for sale also have the complete, non-interlaced, Core.
 
 After every sale, the Next Sale Price is set according to the Previous Sale Price and the number of Regions sold compared to the desired and maximum amount of Regions to be sold. See Price Setting for additional detail.
 
