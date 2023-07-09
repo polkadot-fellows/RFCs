@@ -55,7 +55,7 @@ From here on, we will also refer to Regions sold as 'cores' to stay congruent wi
 | -------------------------- | ---------------------------- | ---------------------------------------------------------- | ------------------------------- |
 | `BULK_LIMIT`               | 45                           | The maximum number of cores being sold                     | `0 < BULK_LIMIT`                |
 | `BULK_TARGET`              | 30                           | The target number of cores being sold                      | `0 < BULK_TARGET <= BULK_LIMIT` |
-| `MIN_PRICE`                | tbd                          | The minimum price a core will always cost.                 | `0 < MIN_PRICE`                 |
+| `MIN_PRICE`                | 1                            | The minimum price a core will always cost.                 | `0 < MIN_PRICE`                 |
 | `MAX_PRICE_INCREASE_FACTOR`| 2                            | The maximum factor by which the price can change.          | `1 < MAX_PRICE_INCREASE_FACTOR` |
 | `SCALE_DOWN`               | 2                            | The steepness of the left side of the function.            | `0 < SCALE_DOWN`                |
 | `SCALE_UP`                 | 2                            | The steepness of the right side of the function.           | `0 < SCALE_UP`                  |
@@ -77,46 +77,39 @@ P(n) = \begin{cases}
 - $u$ is the `SCALE_UP`, the steepness of the right side of the function.
 - $T$ is the `BULK_TARGET`, the target number of cores being sold.
 - $L$ is the `BULK_LIMIT`, the maximum number of cores being sold.
-- $n$ is `CORES_SOLD`, the number of cores being sold.
+- $n$ is `cores_sold`, the number of cores being sold.
 
 #### Left side
 The left side is a power function that describes an increasing concave downward curvature that approaches `old_price`. We realize this by using the form $y = a(1 - x^d)$, usually used as a downward sloping curve, but in our case flipped horizontally by letting the argument $x = \frac{T-n}{T}$ decrease with $n$, doubly inversing the curve.
 
-This approach is chosen over a decaying exponential because it let's us a better control the shape of the plateau, especially allowing us to get a straight line by setting `SCALE_UP` to $1$.
+This approach is chosen over a decaying exponential because it let's us a better control the shape of the plateau, especially allowing us to get a straight line by setting `SCALE_DOWN` to $1$.
 
 #### Ride side
 The right side is a power function of the form $y = a(x^u)$.
 
+### Pseudo-code
 
-### Reference Code
-
-```python
-# `cores_sold`: the number of cores being sold
-# `old_price`: the price of a core in the previous period
-
-# left side of the function, if demand is smaller than the target
-# right side of the function, if demand is equal or larger than the target
-
-def adjust_price_based_on_demand(old_price, cores_sold):
-    if cores_sold <= BULK_TARGET:
-        return (old_price - MIN_PRICE) * (1 - ((BULK_TARGET - cores_sold)**SCALE_DOWN / BULK_TARGET**SCALE_DOWN)) + MIN_PRICE
-    else:
-        return ((MAX_PRICE_INCREASE_FACTOR - 1) * old_price * ((cores_sold - BULK_TARGET)**SCALE_UP / (BULK_LIMIT - BULK_TARGET)**SCALE_UP)) + old_price
+```
+NEW_PRICE := IF CORES_SOLD <= BULK_TARGET THEN
+    (OLD_PRICE - MIN_PRICE) * (1 - ((BULK_TARGET - CORES_SOLD)^SCALE_DOWN / BULK_TARGET^SCALE_DOWN)) + MIN_PRICE
+ELSE
+    ((MAX_PRICE_INCREASE_FACTOR - 1) * OLD_PRICE * ((CORES_SOLD - BULK_TARGET)^SCALE_UP / (BULK_LIMIT - BULK_TARGET)^SCALE_UP)) + OLD_PRICE
+END IF
 ```
 
 ### Properties of the Curve
 #### Minimum Price
-We introduce `MIN_PRICE`` to control the minimum price.
+We introduce `MIN_PRICE` to control the minimum price.
 
 The left side of the function shall be allowed to come close to 0 if cores sold approaches 0. The rationale is that if there are actually 0 cores sold, the previous sale price was too high and the price needs to adapt quickly.
 
 #### Price forms a plateau around the target
-If the number of cores is close to `BULK_TARGET``, less extreme price changes might be sensible. This ensures that a drop in sold cores or an increase doesn’t lead to immediate price changes, but rather slowly adapts. Only if more extreme changes in the number of sold cores occur, does the price slope increase.
+If the number of cores is close to `BULK_TARGET`, less extreme price changes might be sensible. This ensures that a drop in sold cores or an increase doesn’t lead to immediate price changes, but rather slowly adapts. Only if more extreme changes in the number of sold cores occur, does the price slope increase.
 
-We introduce SCALE_DOWN and SCALE_UP to control for the steepness of the left and the right side of the function respectively.
+We introduce `SCALE_DOWN` and `SCALE_UP` to control for the steepness of the left and the right side of the function respectively.
 
 #### Max price increase factor
-We introduce MAX_PRICE_INCREASE_FACTOR as the factor that controls how much the price may increase from one period to another.
+We introduce `MAX_PRICE_INCREASE_FACTOR` as the factor that controls how much the price may increase from one period to another.
 
 Introducing this variable gives governance an additional control lever and avoids the necessity for a future runtime upgrade.
 
@@ -125,7 +118,7 @@ Introducing this variable gives governance an additional control lever and avoid
 #### Baseline
 This example proposes the baseline parameters. If not mentioned otherwise, other examples use these values. 
 
-The minimum price of a core is 1 DOT, the price can double every 4 weeks. Price change around BULK_TARGET is dampened slightly.
+The minimum price of a core is 1 DOT, the price can double every 4 weeks. Price change around `BULK_TARGET` is dampened slightly.
 ```
 BULK_TARGET = 30
 BULK_LIMIT = 45
