@@ -43,7 +43,7 @@ The dynamic pricing model sets the new price based on supply and demand in the p
 - The left side ranges from 0 to the target. It represents situations where demand was lower than the target.
 - The right side ranges from the target to limit. It represents situations where demand was higher than the target.
 
-The curve of the function forms a plateau around the target and then falls off to the left and rises up to the right. The shape of the platou can be controlled via a scale factor for the left side and right side of the function respectively.
+The curve of the function forms a plateau around the target and then falls off to the left and rises up to the right. The shape of the plateau can be controlled via a scale factor for the left side and right side of the function respectively.
 
 ![An image of the baseline graph. The x-axis being cores sold and the y-axis being price. The curve starts at 0 cores sold a price of 1. It rises up and starts to form a plateau shortly before it reaches a target of 30 cores sold, which is also highlighted as target. It then shortly continues on this plateau before sharply rising up to the limit amount of 45 cores sold.](/assets/0006-baseline.png)
 
@@ -51,12 +51,14 @@ The curve of the function forms a plateau around the target and then falls off t
 ### Parameters
 From here on, we will also refer to Regions sold as 'cores' to stay congruent with RFC-1.
 
-- `BULK_LIMIT` - the maximum number of cores being sold
-- `BULK_TARGET` - the target number of cores being sold
-- `MIN_PRICE` - the minimum price a core will always cost. MIN_PRICE >= 0
-- `MAX_PRICE_INCREASE_FACTOR` - the factor by which the price maximally can change from one period to another. MAX_PRICE_INCREASE_FACTOR > 1
-- `SCALE_DOWN` - the steepness of the left side of the function. Should be >= 1
-- `SCALE_UP` - the steepness of the right side of the function. Should be >= 1
+| Name                       | Suggested Value              | Description                                                | Constraints                     |
+| -------------------------- | ---------------------------- | ---------------------------------------------------------- | ------------------------------- |
+| `BULK_LIMIT`               | 45                           | The maximum number of cores being sold                     | `0 < BULK_LIMIT`                |
+| `BULK_TARGET`              | 30                           | The target number of cores being sold                      | `0 < BULK_TARGET <= BULK_LIMIT` |
+| `MIN_PRICE`                | tbd                          | The minimum price a core will always cost.                 | `0 < MIN_PRICE`                 |
+| `MAX_PRICE_INCREASE_FACTOR`| 2                            | The maximum factor by which the price can change.          | `1 < MAX_PRICE_INCREASE_FACTOR` |
+| `SCALE_DOWN`               | 2                            | The steepness of the left side of the function.            | `0 < SCALE_DOWN`                |
+| `SCALE_UP`                 | 2                            | The steepness of the right side of the function.           | `0 < SCALE_UP`                  |
 
 
 ### Function
