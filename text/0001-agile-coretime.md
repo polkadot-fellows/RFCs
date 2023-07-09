@@ -15,7 +15,9 @@ This proposes a periodic, sale-based method for assigning Polkadot Coretime. The
 
 ### Present System
 
-The present system of allocating time for parachains on the cores of the Polkadot Ubiquitous Computer (aka "Polkadot") is through a process known as *slot auctions*. These are on-chain candle auctions which proceed for several days and result in a core being assigned to a single parachain for six months at a time up to 24 months in advance. Practically speaking, we only see two year periods being bid upon and leased.
+The *Polkadot Ubiquitous Computer*, or just *Polkadot UC*, represents the public service provided by the Polkadot Network. It is a trust-free, WebAssembly-based, multicore, internet-native omnipresent virtual machine highly resilient to interfence and corruption.
+
+The present system of allocating time for parachains on the cores of the Polkadot Ubiquitous Computer is through a process known as *slot auctions*. These are on-chain candle auctions which proceed for several days and result in a core being assigned to a single parachain for six months at a time up to 24 months in advance. Practically speaking, we only see two year periods being bid upon and leased.
 
 Funds behind the bids made in the slot auctions are merely locked, not consumed or paid and become unlocked and returned to the bidder on expiry of the lease period. A means of sharing the deposit trustlessly known as a *crowdloan* is available allowing token holders to contribute to the overall deposit of a chain without any counterparty risk.
 
