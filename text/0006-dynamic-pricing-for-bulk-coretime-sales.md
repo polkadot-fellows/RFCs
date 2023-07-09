@@ -61,12 +61,12 @@ From here on, we will also refer to Regions sold as 'cores' to stay congruent wi
 
 ### Function
 
-$P(n) = 
-\begin{cases} 
+```math
+P(n) = \begin{cases} 
     (P_{\text{old}} - P_{\text{min}}) \left(1 - \left(\frac{T - n}{T}\right)^d\right) + P_{\text{min}} & \text{if } n \leq T \\
     ((F - 1) \cdot P_{\text{old}} \cdot \left(\frac{n - T}{L - T}\right)^u) + P_{\text{old}} & \text{if } n > T 
-\end{cases}$
-
+\end{cases}
+```
 
 - $P_{\text{old}}$ is the `old_price`, the price of a core in the previous period.
 - $P_{\text{min}}$ is the `MIN_PRICE`, the minimum price a core will always cost.
@@ -78,7 +78,7 @@ $P(n) =
 - $n$ is `CORES_SOLD`, the number of cores being sold.
 
 #### Left side
-The left side is a power function that describes an increasing concave downward curvature that approaches `old_price`. We realize this by using the form $y = a(1 - x^d), usually a downward sloping curve, but flipping it horizontally by letting the argument $x = \frac{T-n}{T}$ decrease with $n$, doubly inversing the curve.
+The left side is a power function that describes an increasing concave downward curvature that approaches `old_price`. We realize this by using the form $y = a(1 - x^d)$, usually used as a downward sloping curve, but in our case flipped horizontally by letting the argument $x = \frac{T-n}{T}$ decrease with $n$, doubly inversing the curve.
 
 This approach is chosen over a decaying exponential because it let's us a better control the shape of the plateau, especially allowing us to get a straight line by setting `SCALE_UP` to $1$.
 
