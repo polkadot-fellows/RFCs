@@ -39,11 +39,11 @@ The primary stakeholders of this RFC are:
 
 ### Overview
 
-The dynamic pricing model sets the new price based on supply and demand in the previous period. The model is a function of the number of Regions sold, composed of two sides, each being a power function.
-- The left side ranges from 0 to the target. It represents demand lower than the target.
-- The right side ranges from the target to limit. It represents demand higher than the target.
+The dynamic pricing model sets the new price based on supply and demand in the previous period. The model is a function of the number of Regions sold, piecewise-defined by two power functions.
+- The left side ranges from 0 to the target. It represents situations where demand was lower than the target.
+- The right side ranges from the target to limit. It represents situations where demand was higher than the target.
 
-The model forms a plateau around the target and then falls off to the left and rises up to the right. The shape of the platou can be controlled via a scale factor for the left side and right side of the function respectively.
+The curve of the function forms a plateau around the target and then falls off to the left and rises up to the right. The shape of the platou can be controlled via a scale factor for the left side and right side of the function respectively.
 
 ![An image of the baseline graph. The x-axis being cores sold and the y-axis being price. The curve starts at 0 cores sold a price of 1. It rises up and starts to form a plateau shortly before it reaches a target of 30 cores sold, which is also highlighted as target. It then shortly continues on this plateau before sharply rising up to the limit amount of 45 cores sold.](/assets/0006-baseline.png)
 
@@ -53,20 +53,53 @@ From here on, we will also refer to Regions sold as 'cores' to stay congruent wi
 
 - `BULK_LIMIT` - the maximum number of cores being sold
 - `BULK_TARGET` - the target number of cores being sold
-- `CORES_SOLD` - the number of cores being sold
-- `OLD_PRICE` - the price of a core in the previous period
 - `MIN_PRICE` - the minimum price a core will always cost. MIN_PRICE >= 0
 - `MAX_PRICE_INCREASE_FACTOR` - the factor by which the price maximally can change from one period to another. MAX_PRICE_INCREASE_FACTOR > 1
 - `SCALE_DOWN` - the steepness of the left side of the function. Should be >= 1
 - `SCALE_UP` - the steepness of the right side of the function. Should be >= 1
 
+
+### Function
+
+$P(n) = 
+\begin{cases} 
+    (P_{\text{old}} - P_{\text{min}}) \left(1 - \left(\frac{T - n}{T}\right)^d\right) + P_{\text{min}} & \text{if } n \leq T \\
+    ((F - 1) \cdot P_{\text{old}} \cdot \left(\frac{n - T}{L - T}\right)^u) + P_{\text{old}} & \text{if } n > T 
+\end{cases}$
+
+
+- $P_{\text{old}}$ is the `old_price`, the price of a core in the previous period.
+- $P_{\text{min}}$ is the `MIN_PRICE`, the minimum price a core will always cost.
+- $F$ is the `MAX_PRICE_INCREASE_FACTOR`, the factor by which the price maximally can change from one period to another.
+- $d$ is the `SCALE_DOWN`, the steepness of the left side of the function.
+- $u$ is the `SCALE_UP`, the steepness of the right side of the function.
+- $T$ is the `BULK_TARGET`, the target number of cores being sold.
+- $L$ is the `BULK_LIMIT`, the maximum number of cores being sold.
+- $n$ is `CORES_SOLD`, the number of cores being sold.
+
+#### Left side
+The left side is a power function that describes an increasing concave downward curvature that approaches `old_price`. We realize this by using the form $y = a(1 - x^d), usually a downward sloping curve, but flipping it horizontally by letting the argument $x = \frac{T-n}{T}$ decrease with $n$, doubly inversing the curve.
+
+This approach is chosen over a decaying exponential because it let's us a better control the shape of the plateau, especially allowing us to get a straight line by setting `SCALE_UP` to $1$.
+
+#### Ride side
+The right side is a power function of the form $y = a(x^u)$.
+
+
 ### Reference Code
 
 ```python
-if CORES_SOLD <= BULK_TARGET:
-    return (OLD_PRICE - MIN_PRICE) * (1 - (abs(CORES_SOLD - BULK_TARGET)**SCALE_DOWN / BULK_TARGET**SCALE_DOWN)) + MIN_PRICE
-else:
-    return ((MAX_PRICE_INCREASE_FACTOR - 1) * OLD_PRICE * ((CORES_SOLD - BULK_TARGET)**SCALE_UP / (BULK_LIMIT - BULK_TARGET)**SCALE_UP)) + OLD_PRICE
+# `cores_sold`: the number of cores being sold
+# `old_price`: the price of a core in the previous period
+
+# left side of the function, if demand is smaller than the target
+# right side of the function, if demand is equal or larger than the target
+
+def adjust_price_based_on_demand(old_price, cores_sold):
+    if cores_sold <= BULK_TARGET:
+        return (old_price - MIN_PRICE) * (1 - ((BULK_TARGET - cores_sold)**SCALE_DOWN / BULK_TARGET**SCALE_DOWN)) + MIN_PRICE
+    else:
+        return ((MAX_PRICE_INCREASE_FACTOR - 1) * old_price * ((cores_sold - BULK_TARGET)**SCALE_UP / (BULK_LIMIT - BULK_TARGET)**SCALE_UP)) + old_price
 ```
 
 ### Properties of the Curve
