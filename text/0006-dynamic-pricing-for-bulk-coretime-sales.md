@@ -45,7 +45,7 @@ The dynamic pricing model sets the new price based on supply and demand in the p
 
 The model forms a plateau around the target and then falls off to the left and rises up to the right. The shape of the platou can be controlled via a scale factor for the left side and right side of the function respectively.
 
-()[/assets/0006-baseline.png]
+![An image of the baseline graph. The x-axis being cores sold and the y-axis being price. The curve starts at 0 cores sold a price of 1. It rises up and starts to form a plateau shortly before it reaches a target of 30 cores sold, which is also highlighted as target. It then shortly continues on this plateau before sharply rising up to the limit amount of 45 cores sold.](/assets/0006-baseline.png)
 
 
 ### Parameters
@@ -98,8 +98,55 @@ MIN_PRICE = 1
 MAX_PRICE_INCREASE_FACTOR = 2
 SCALE_DOWN = 2
 SCALE_UP = 2
-old_price = 1000
+OLD_PRICE = 1000
 ```
+
+![](/assets/0006-baseline.png)
+
+#### More aggressive pricing
+We might want to have a more aggressive price growth, allowing the price to triple every 4 weeks and have a linear increase in price on the right side.
+
+```
+BULK_TARGET = 30
+BULK_LIMIT = 45
+MIN_PRICE = 1
+MAX_PRICE_INCREASE_FACTOR = 3
+SCALE_DOWN = 2
+SCALE_UP = 1
+OLD_PRICE = 1000
+```
+
+![](/assets/0006-aggressive-pricing.png)
+
+#### Conservative pricing to ensure quick corrections in an affluent market
+If governance considers the risk that a sudden surge in DOT price might price chains out from bulk coretime markets, it can ensure the model quickly reacts to a quick drop in demand, by setting 0 < SCALE_DOWN < 1 and setting the max price increase factor more conservatively.
+
+```
+BULK_TARGET = 30
+BULK_LIMIT = 45
+MIN_PRICE = 1
+MAX_PRICE_INCREASE_FACTOR = 1.5
+SCALE_DOWN = 0.5
+SCALE_UP = 2
+OLD_PRICE = 1000
+```
+
+![](/assets/0006-conservative-pricing.png)
+
+#### Linear pricing
+By setting the scaling factors to 1 and potentially adapting the max price increase, we can achieve a linear function
+
+```
+BULK_TARGET = 30
+BULK_LIMIT = 45
+MIN_PRICE = 1
+MAX_PRICE_INCREASE_FACTOR = 1.5
+SCALE_DOWN = 1
+SCALE_UP = 1
+OLD_PRICE = 1000
+```
+
+![](/assets/0006-linear.png)
 
 
 ## Drawbacks
