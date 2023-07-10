@@ -23,7 +23,7 @@ According to the [Fellowship Manifesto](https://github.com/polkadot-fellows/mani
  * user-interface code required to practically execute upgrades to the Polkadot (Main) Network; and
  * code or technology required by, and utilised primarily for, any code or technology already included.
 
-These RFCs are scoped to the subset of these concerns which must be held consistent across all implementations. Various implementation details, such as internal node algorithms, programming languages, or database formats are out of scope. Changes to network protocol descriptions, runtime logic and runtime public interfaces, inherents, transaction formats should be discussed via RFCs.
+These RFCs are scoped to the subset of these concerns which must be held consistent across all implementations. Various implementation details, such as internal node algorithms, programming languages, or database formats are out of scope. Non-exhaustively, changes to network protocol descriptions, runtime logic and runtime public interfaces, inherents, transaction formats should be discussed via RFCs.
 
 ## Significance 
 
