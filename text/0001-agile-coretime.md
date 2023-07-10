@@ -104,7 +104,9 @@ This proposal includes a number of parameters which need not necessarily be fixe
 | Name                | Value                        | |
 | ------------------- | ---------------------------- | ---------- |
 | `BULK_PERIOD`       | `28 * DAYS`                  | specified  |
-| `LEADIN_PERIOD`     | `14 * DAYS`                  | specified  |
+| `INTERLUDE_PERIOD`  | `7 * DAYS`                   | specified  |
+| `LEADIN_PERIOD`     | `7 * DAYS`                   | specified  |
+| `STEP_PERIOD`       | `8 * HOURS`                  | specified  |
 | `TIMESLICE`         | `8 * MINUTES`                | specified  |
 | `BULK_TARGET`       | `30`                         | suggested  |
 | `BULK_LIMIT`        | `45`                         | suggested  |
@@ -136,21 +138,31 @@ In every sale, a `BULK_LIMIT` of individual *Regions* are offered for sale at a 
 
 Each Region offered for sale has a different Core Index, ensuring that they each represent an independently allocatable resource on the Polkadot UC.
 
-The Regions offered for sale have the same span: they last exactly `BULK_PERIOD` blocks, and begin `LEADIN_PERIOD` blocks into the future at the time of the sale. The Regions offered for sale also have the complete, non-interlaced, Core.
+The Regions offered for sale have the same span: they last exactly `BULK_PERIOD` blocks, and begin immediately following the span of the previous Sale's Regions. The Regions offered for sale also have the complete, non-interlaced, Core.
 
-After every sale, the Next Sale Price is set according to the Previous Sale Price and the number of Regions sold compared to the desired and maximum amount of Regions to be sold. See Price Setting for additional detail.
+The sale period ends immediately as soon as span of the Coretime Regions that are being sold begins. At this point, the next Sale Price is set according to the previous Sale Price and the number of Regions sold compared to the desired and maximum amount of Regions to be sold. See Price Setting for additional detail.
 
-This is designed to give a minimum of around two weeks worth of time for it to be sliced, shared, traded and allocated.
+Following this, there is an *Interlude* period lasting `INTERLUDE_PERIOD` of blocks before the next Sale becomes active. After this period is elapsed, *Regular Purchasing* may begin (see next).
 
-The Broker-chain aims to sell some `BULK_TARGET` month-long Regions, up to some maximum amount of `BULK_LIMIT`. It makes this sale in a single batch prior to the beginning of the period being sold by `LEADIN_PERIOD` blocks. The Broker-chain publishes the price for a Region prior to the sale execution.
+This is designed to give at least two weeks worth of time for the purchased regions to be partitioned, interlaced, traded and allocated.
 
-#### Purchasing
+#### Regular Purchasing
 
-Accounts may call a `purchase` function with the appropriate funds in place to have their funds placed On Hold and signal an commitment to purchase Bulk Coretime for the forthcoming period. One account may have only one pending purchase. Any number of accounts may attempt to `purchase` Bulk Coretime for the forthcoming period and this order is recorded.
+Any account may purchase Regions of Bulk Coretime if they have the appropriate funds in place during the *Purchasing Period*, which is from `INTERLUDE_PERIOD` blocks after the end of the previous sale until the beginning of the Region of the Bulk Coretime which is for sale as long as there are Regions of Bulk Coretime left for sale (i.e. no more than `BULK_LIMIT` have already been sold in the Bulk Coretime Sale).
 
-Requests are processed in incoming order. If there are more purchase requests than available Regions for purchase then remaining purchase orders are carried over to the next sale and flagged as carried. A purchase is only cancellable (and the funds On Hold refundable) if it is so flagged.
+The Purchasing Period is roughly `BULK_PERIOD - INTERLUDE_PERIOD` blocks in length. The price various during an initial portion of the Purchasing Period and then stays stable for the remainder. This initial portion is `LEADIN_PERIOD` blocks in length. During this period the price decreases monotonically from the Sale Price multiplied by `LEADIN_MULTIPLIER` to the basic Sale Price over a number of discrete drops, each `STEP_PERIOD` blocks in length.
 
-When a purchase request is processed, the Funds On Hold are transferred to the local Treasury and a fresh Region of the proper span is issued and assigned to the purchaser as the owner.
+The eventual usage of the funds paid is out of scope for the present proposal.
+
+#### Renewals
+
+At any time when there are there are remaining Regions of Bulk Coretime to be sold, *including during the Interlude Period*, then certain Bulk Coretime assignmnents may be *Renewed*. This is similar to a purchase in that funds must be paid and it consumes one of the Regions of Bulk Coretime which would otherwise be placed for purchase. However there are two key differences.
+
+Firstly, the price paid is exactly `RENEWAL_PRICE_CAP` more than what the purchase/renewal price was in the previous sale.
+
+Secondly, the purchased Region comes preassigned with exactly the same workload as before. It cannot be traded, repartitioned, interlaced or exchanged.
+
+Renewal is only possible for either cores which have been assigned as a result of a previous renewal, or which begin their Bulk Coretime with a fully allocated workload which does not include allocation to the Instantaneous Coretime Pool. In the latter case, the renewed workload will be the same as this initial workload.
 
 #### Manipulation
 
@@ -160,7 +172,7 @@ Regions may be manipulated in various ways by its owner:
 1. *Assigned* to a single, specific ParaID task.
 1. *Partitioned* into quantized, non-overlapping segments of Bulk Coretime with the same ownership.
 1. *Interlaced* into multiple Regions over the same period whose eventual assignments take turns to be scheduled.
-1. *Contributed* into the Instantaneous Coretime Pool, in return for a pro-rata amount of the revenue from the Instantaneous Coretime Sales over its period.
+1. *Pooled* into the Instantaneous Coretime Pool, in return for a pro-rata amount of the revenue from the Instantaneous Coretime Sales over its period.
 
 #### Enactment
 
@@ -224,12 +236,10 @@ Also:
 
 A dispatchable `renew(core: CoreIndex)` SHALL be provided. Any account may call `renew` to purchase Bulk Coretime and renew an active allocation for the given `core`.
 
-This MUST be called during the `LEADIN_PERIOD` prior to a Bulk sale (exactly like `purchase`) and has the same effect as `purchase` followed by `allocate` containing the same `ParaId`, except that:
+This may be called during the Interlude Period as well as the regular Purchasing Period and has the same effect as `purchase` followed by `allocate`, except that:
 
-1. The purchase always succeeds and as such must be processed prior to regular `purchase` orders.
-2. The price of the purchase is the previous `price` incremented by `RENEWAL_PRICE_CAP` of itself or the regular price, whichever is lower.
-3. The Region must not have been split. (Transfer and striding are allowed.)
-4. The Region must be allocated in exactly the same way as before.
+1. The price of the purchase is the previous `price` incremented by `RENEWAL_PRICE_CAP` of itself or the regular price, whichever is lower.
+1. The Region must be allocated as the given `core` was allocated at the beginning of the present Region.
 
 #### 7. Migrations
 
@@ -480,25 +490,6 @@ InstaPoolContribution: (empty)
 InstaPoolHistory: (empty)
 // Alice gets rewarded P0 + P1 + ... P49.
 ```
-
-#### Renewals
-
-When assigning a Region which is the full `BULK_PERIOD` in span, the `AllowedRenewals` map is altered.
-
-The map item for the core being assigned to is (re-)initialized if a value does not yet exist or one does exist whose `sale_begin` is less than `begin` value of the `Region` being assigned. Initializing simply means creating a new value with an empty `weighted_targets`, `price` equal to the last Sale Price and `sale_begin` equal to the `begin` value of the `Region` being assigned.
-
-It is then mutated; `weighted_targets` is changed to include the `target` of the assignment, along with the `u8` weight component equal to the number of bits set in its `CoreParts` bitmap.
-
-```rust
-struct RenewalRecord {
-    weighted_targets: Vec<(ParaId, u8)>,
-    price: Balance,
-    sale_begin: Timeslice,
-}
-type AllowedRenewals = Map<CoreIndex, RenewalRecord>;
-```
-
-When renewing, `AllowedRenewals` must contain a record for the renewed core whose `sale_begin` is `BULK_PERIOD` blocks less than the period whose sale is approaching and the sum of the second components of `weighted_targets` is 80. If successful, then `price` is increased by itself multiplied by `RENEWAL_PRICE_CAP` and used as a cap to the approaching sale's Sale Price. `weighted_targets` is the assignment of the renewed core.
 
 ### Rollout
 
