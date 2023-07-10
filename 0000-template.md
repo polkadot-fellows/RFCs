@@ -26,14 +26,34 @@ Detail-heavy explanation of the RFC, suitable for explanation to an implementer 
 
 Description of recognized drawbacks to the approach given in the RFC. Non-exhaustively, drawbacks relating to performance, ergonomics, user experience, security, or privacy.
 
-## Prior Art
+## Testing, Security, and Privacy
 
-Provide references to prior art which served as inspiration for the submitted design.
+Describe the the impact of the proposal on these three high-importance areas - how implementations can be tested for adherence, effects that the proposal has on security and privacy per-se, as well as any possible implementation pitfalls which should be clearly avoided.
+
+## Performance, Ergonomics, and Compatibility
+
+Describe the impact of the proposal on the exposed functionality of Polkadot.
+
+### Performance
+
+Is this an optimization or a necessary pessimization? What steps have been taken to minimize additional overhead?
+
+### Ergonomics
+
+If the proposal alters exposed interfaces to developers or end-users, which types of usage patterns have been optimized for?
+
+### Compatibility
+
+Does this proposal break compatibility with existing interfaces, older versions of implementations? Summarize necessary migrations or upgrade strategies, if any.
+
+## Prior Art and References
+
+Provide references to prior art or references which served as inspiration or relevant research for the submitted design.
 
 ## Unresolved Questions
 
 Provide specific questions to discuss and address before the RFC is voted on by the Fellowship. This should include, for example, alternatives to aspects of the proposed design where the appropriate trade-off to make is unclear.
 
-## Future Possibilities
+## Future Directions and Related Material
 
-Describe future work which could be enabled by this RFC, if it were accepted. This is a place to brain-dump and explore possibilities, which themselves may become their own RFCs.
+Describe future work which could be enabled by this RFC, if it were accepted, as well as related RFCs. This is a place to brain-dump and explore possibilities, which themselves may become their own RFCs.
