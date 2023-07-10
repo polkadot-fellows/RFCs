@@ -48,7 +48,7 @@ Does this proposal break compatibility with existing interfaces, older versions 
 
 ## Prior Art and References
 
-Provide references to prior art or references which served as inspiration or relevant research for the submitted design.
+Provide references to either prior art or other relevant research for the submitted design.
 
 ## Unresolved Questions
 
