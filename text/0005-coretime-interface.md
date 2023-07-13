@@ -15,7 +15,7 @@ This is a proposal for the interface which will exist around the Relay-chain in 
 
 ## Motivation
 
-The overall motivation for splitting out functions from the Relay-chain onto System parachains is well understood. An well-understood interface is necessary for ensuring multiple chains are able to coordinate their efforts.
+The background motivation for this interface is splitting out coretime allocation functions and secondary markets from the Relay-chain onto System parachains. A well-understood and general interface is necessary for ensuring the Relay-chain receives coretime allocation instructions from one or more System chains without introducing dependencies on the implementation details of either side.
 
 ## Requirements
 
