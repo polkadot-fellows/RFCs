@@ -4,7 +4,7 @@
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 06 July 2023                                                                                |
 | **Description** | Interface for manipulating the usage of cores on the Polkadot Ubiquitous Computer. |
-| **Authors**     | Gavin Wood                                                                                  |
+| **Authors**     | Gavin Wood, Robert Habermeier                                                                    |
 
 
 ## Summary
@@ -22,7 +22,6 @@ The overall motivation for splitting out functions from the Relay-chain onto Sys
 - The interface MUST allow the Relay-chain to be scheduled on a low-latency basis.
 - Individual cores MUST be schedulable, both in full to a single task (a ParaId or the Instantaneous Coretime Pool) or to many unique tasks in differing ratios.
 - Typical usage of the interface SHOULD NOT overload the VMP message system.
-- Worst case usage of the interface MUST NOT cause the Polkadot system to fail.
 - The interface MUST allow for the allocating chain to be notified of all accounting information relevant for making accurate rewards for contributing to the Instantaneous Coretime Pool.
 - The interface MUST allow for Instantaneous Coretime Market Credits to be communicated.
 - The interface MUST allow for the allocating chain to instruct changes to the number of cores which it is able to allocate.
@@ -70,6 +69,8 @@ fn request_revenue_at(
 ```
 
 Requests that the Relay-chain send a `notify_revenue` message back at or soon after Relay-chain block number `when` whose `until` parameter is equal to `when`.
+
+The period in to the past which `when` is allowed to be may be limited; if so the limit should be understood on a channel outside of this proposal. In the case that the request cannot be servied because `when` is too old a block then a `notify_revenue` message must still be returned, but its `revenue`` field may be `None`.
 
 #### `credit_account`
 
@@ -143,13 +144,19 @@ Prototype:
 ```
 fn notify_revenue_info(
     until: BlockNumber,
-    revenue: Balance,
+    revenue: Option<Balance>,
 )
 ```
 
-Provide the amount of revenue accumulated from Instantaneous Coretime Sales from Relay-chain block number `last_until` to `until`, not including `until` itself. `last_until` is defined as being the `until` argument of the last `notify_revenue` message sent, or zero for the first call.
+Provide the amount of revenue accumulated from Instantaneous Coretime Sales from Relay-chain block number `last_until` to `until`, not including `until` itself. `last_until` is defined as being the `until` argument of the last `notify_revenue` message sent, or zero for the first call. If `revenue` is `None`, this indicates that the information is no longer available.
 
 This explicitly disregards the possibility of multiple parachains requesting and being notified of revenue information. The Relay-chain must be configured to ensure that only a single revenue information destination exists.
+
+### Realistic Limits of the Usage
+
+For `request_revenue_info`, a successful request should be possible if `when` is no less than the Relay-chain block number on arrival of the message less 100,000.
+
+For `assign_core`, a successful request should be possible if `begin` is no less than the Relay-chain block  number on arrival of the message plus 10 and `workload` contains no more than 100 items.
 
 ## Performance, Ergonomics and Compatibility
 
