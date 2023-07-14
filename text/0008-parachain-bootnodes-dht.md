@@ -97,7 +97,7 @@ The `peer_id` and `addrs` fields are in theory not strictly needed, as they coul
 
 ## Testing, Security, and Privacy
 
-Because not all nodes might not want to be used as bootnodes, implementers are encouraged to provide a way to disable this mechanism. However, it is very much encouraged to leave this mechanism on by default for all nodes.
+Because not all nodes want to be used as bootnodes, implementers are encouraged to provide a way to disable this mechanism. However, it is very much encouraged to leave this mechanism on by default for all parachain nodes.
 
 This mechanism doesn't add or remove any security by itself, as it relies on existing mechanisms.
 However, if the principle of chain specification bootnodes is entirely replaced with the mechanism described in this RFC (which is the objective), then it becomes important whether the mechanism in this RFC can be abused in order to make a parachain unreachable.
@@ -116,7 +116,7 @@ Furthermore, parachain clients are expected to cache a list of known good nodes 
 
 The DHT mechanism generally has a low overhead, especially given that publishing providers is done only every 24 hours.
 
-Doing a Kademlia iterative query then sending a provider record shouldn't take more than 5 kiB in total for the parachain bootnode.
+Doing a Kademlia iterative query then sending a provider record shouldn't take more than around 50 kiB in total of bandwidth for the parachain bootnode.
 
 Assuming 1000 parachain full nodes, the 20 Polkadot full nodes corresponding to a specific parachain will each receive a sudden spike of a few megabytes of networking traffic when the `key` rotates. Again, this is relatively negligible. If this becomes a problem, one can add a random delay before a parachain full node registers itself to be the provider of the `key` corresponding to `BabeApi_next_epoch`.
 
@@ -141,6 +141,6 @@ While it fundamentally doesn't change much to this RFC, using `BabeApi_currentEp
 
 ## Future Directions and Related Material
 
-An alternative form of the protocol added by this RFC could be to return the entire genesis state. This hasn't been added in this RFC because it isn't clear whether this would actually be useful. I would be against adding such a mechanism just because we can.
+An alternative form of the protocol added by this RFC could be to return the entire genesis state. This hasn't been added in this RFC because it isn't clear whether this would actually be useful. I would be against adding such a mechanism "just because we can".
 
 While the body of the request in the networking protocol in this RFC isn't easily extensible, it is easy to add other networking protocols (and in fact, adding parameters to requests like is the case for many of the existing networking protocols is an anti-pattern).
