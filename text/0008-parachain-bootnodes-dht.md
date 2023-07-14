@@ -19,6 +19,8 @@ The maintenance of bootnodes has long been an annoyance for everyone.
 When a bootnode is newly-deployed or removed, every chain specification must be updated in order to take the update into account. This has lead to various non-optimal solutions, such as pulling chain specifications from GitHub repositories.
 When it comes to RPC nodes, UX developers often have trouble finding up-to-date addresses of parachain RPC nodes. With the ongoing migration from RPC nodes to light clients, similar problems would happen with chain specifications as well.
 
+Furthermore, there exists multiple different possible variants of a certain chain specification: with the non-raw storage, with the raw storage, with just the genesis trie root hash, with or without checkpoint, etc. All of this creates confusion. Removing the need for parachain developers to be aware of and manage these different versions would be beneficial.
+
 Since the PeerId and addresses of bootnodes needs to be stable, extra maintenance work is required from the chain maintainers. For example, they need to be extra careful when migrating nodes within their infrastructure. In some situations, bootnodes are put behind domain names, which also requires maintenance work.
 
 Because the list of bootnodes in chain specifications is so annoying to modify, the consequence is that the number of bootnodes is rather low (typically between 2 and 15). In order to better resist downtimes and DoS attacks, a better solution would be to use every node of a certain chain as potential bootnode, rather than special-casing some specific nodes.
