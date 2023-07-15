@@ -62,25 +62,36 @@ These concepts have been alluded to in [Polkadot: Blockspace over Blockchains](h
 A region is a data structure outlined below:
 
 ```rust
+// Indicates a number in the range 0..57600 (RATE_DENOMINATOR)
+type PartsPer57600 = u16;
+// Indicates a number treated as a rational over 57600 (RATE_DENOMINATOR) which
+// may be greater than 57600. This must be a u64, as regions running longer than a
+// few days would overflow a u32.
+type RationalOver57600 = u64;
+
 struct RegionSchema {
     // Relay-chain block number at which this region becomes active.
     start: u32,
     // The end point of the region in relay-chain blocks, i.e. it ends at start + duration. Note that endpoints are flexible up to `SCHEDULING_LENIENCE`.
     // This may be `None`, in the case that the true endpoint is only determined later.
     end: Option<u32>,
-    // The maximum number of blocks which can be made in the region.
-    // `None` signifies that the maximum should be limited only by the duration and rate.
-    maximum: Option<u32>,
-    // This value determines the rate at which the parachain produces blocks.
-    // 
-    // It is the numerator of a fraction where the denominator is `RATE_DENOMINATOR`, where
-    // the fraction indicates the rate at which this region provides blockspace as compared to the
-    // relay-chain's block-rate. That is, a numerator of `RATE_DENOMINATOR`, i.e. 1/1, means that
-    // the region allows blocks to be made every relay chain block. A numerator of `RATE_DENOMINATOR/2` gives
-    // one block every 2 relay-chain blocks. And so on.
+    // The maximum amount of per-relay-chain block core resources which may be 
+    // used by this region, expressed in parts of `RATE_DENOMINATOR`.
+    maximum: Option<RationalOver57600>,
+    // This value determines the rate at which the parachain may use the core's
+    // resources as a per-block average.
+    //
+    // It is expressed in parts per 57600, where 57600 implies that the region can use all the resources of the core every relay-chain block.
+    //
+    // e.g. a value of 28800 implies that the region can use half the resources of
+    // the core every relay-chain block, on average.
+    //
+    // This is deliberately left ambiguous as to whether those resources are
+    // consumed with infrequent large state transitions or frequent small state
+    // transitions.
     //
     // This value may not be greater than `RATE_DENOMINATOR`.
-    rate_numerator: PartsOf57600,
+    rate: PartsOf57600,
 }
 
 struct Region {
@@ -88,8 +99,9 @@ struct Region {
     core: CoreIndex,
     // The schema of the region.
     schema: RegionSchema,
-    // The count of blocks which have already been produced under the region.
-    count: u32,
+    // The total resource consumption of the region so far relative to the core's
+    // resource levels, expressed in parts of 57600.
+    consumption: RationalOver57600,
     // The assignee of the region is the parachain the region gives the right to create blocks to.
     assignee: ParaId,
 }
@@ -133,23 +145,28 @@ Created regions for a core MUST NOT exceed a combined block rate of 1 at any blo
 
 Regions are used to modify the behavior of the parachain backing/availability pipeline. The first major change is that parachain candidates submitted to the relay-chain in the `ParasInherent` will be annotated with the `RegionId` that they are intended to occupy. Validators and collators do the work of figuring out which blocks are assigned to which regions, lifting the burden of granular scheduling off of the relay chain.
 
-The **maximum level** of a region at any block number `now` is given by:
-`maximum_level(now, region) = min(now, end) - start * rate_numerator`
+The **maximum consumption** of a region at any block number `now` is given by:
+`maximum_consumption(now, region) = min(now, end) - start * rate`
 If `end` is `None`, it is treated as infinite.
 
-The **minimum level** of a region at any block number `now` is given by:
-`minimum_level(now, region) = maximum_level(now - SCHEDULING_LENIENCE, region)`
+The **minimum consumption** of a region at any block number `now` is given by:
+`minimum_consumption(now, region) = maximum_consumption(now - SCHEDULING_LENIENCE, region)`
 
-A submitted candidate for a parachain P at a block B is accepted if:
+The **effective consumption** of a region at any block number `now` is the given by:
+`max(region.consumption, minimum_consumption(now, region))`
+
+A submitted candidate which uses `p: PartsOf57600` of the core's resources for a parachain P at a block B is accepted if:
   * There is no candidate pending availability for B
-  * The region is not at its explicit maximum count.
-  * maximum_level(now, region) > count * RATE_DENOMINATOR`
+  * effective_consumption(B, region) + p <= maximum` if `maximum` is `Some`
+  * effective_consumption(B, region) + p <= maximum_consumption(B, region)
 
-If all of these conditions are met, along with other validity conditions for backed candidates beyond the scope of this RFC, then the candidate is pending availability and the region's count is incremented. If the region's count is less than `minimum_level(now, region) / RATE_DENOMINATOR`, the count is set to this value before being incremented. If the candidate times out before becoming available, the count is once again decremented.
+How core resource limits are defined is left beyond the scope of this RFC - at the time of writing, all cores have the same resource limits, but this design allows cores to be specialized in their resource limits, with some cores allowing more data, some allowing more granularity or execution time, etc.
 
-The scheduling lenience allows regions to fall behind their expected tickrate, but bounded to a small maximum. This prevents accumulated core debt from being accumulated indefinitely  and spent all at once.
+If all of these conditions are met, along with other validity conditions for backed candidates beyond the scope of this RFC, then the candidate is pending availability and the region's consumption value is incremented to `effective_consumption(B, region) + p` If the candidate times out before becoming available, the count is reduced by `p`.
 
-This RFC introduces a new `HYPERCORES` parameter into the `HostConfiguration` which relay-chain governance uses to manage the parameters of the parachains protocol. Hypercores are inspired by technologies such as hyperthreading, to emulate multiple logical cores on a single phsyical core as resources permit. Hypercores allow parachains to make up for missed scheduling opportunities.
+The scheduling lenience allows regions to fall behind their expected tickrate, but bounded to a small maximum. This prevents accumulated core debt from being accumulated indefinitely and spent when convenient. Smoothing system load over short time horizons is desirable, but over infinite time horizons becomes dangerous.
+
+This RFC introduces a new `HYPERCORES` parameter into the `HostConfiguration` which relay-chain governance uses to manage the parameters of the parachains protocol. Hypercores are inspired by technologies such as hyperthreading, to emulate multiple logical cores on a single phsyical core as resources permit. Hypercores allow parachains to make up for missed scheduling opportunities, which is important to effectively decouple parachain growth from backing on the relay chain.
 
 No more than `HYPERCORES_PER_CORE` additional candidates may be backed per core per relay-chain block, and only when hypercores are free, and the total amount of hypercore utilization MUST be no more than `HYPERCORES` per relay-chain block.
 
