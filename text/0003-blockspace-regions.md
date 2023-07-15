@@ -1,4 +1,4 @@
-# RFC-0003: Blockspace Regions
+# RFC-0003: Coretime Scheduling Regions
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
@@ -8,17 +8,17 @@
 
 ## Summary
 
-Blockspace regions are a dynamic, multi-purpose mechanism for determining the assignment of parachains to a relay chain's Execution Cores. They replace existing scheduling logic in the Polkadot Relay Chain, and introduce a notion of Hypercores for accepting parachain blocks at flexible points in time.
+Coretime regions are a dynamic, multi-purpose mechanism for determining the assignment of parachains to a relay chain's Execution Cores. They replace existing scheduling logic in the Polkadot Relay Chain, and introduce a notion of Hypercores for accepting parachain blocks at flexible points in time.
 
-Each blockspace region is a data structure which indicates future rights to create blocks for an assigned parachain and keeps records of how many blocks have already been created. Regions can be split, transferred, and reassigned as a way of trading rights to blockspace in secondary markets, though these actions are gated to specific origins as a means of reducing relay-chain traffic. Regions are initially created by enshrined scheduling mechanisms (for example, RFC-0001) which lie beyond scope for this RFC. Parachains can own an arbitrary number of regions and are limited in block production only by the number and production rate of regions which they own. Each region belongs to a specific execution core, and cannot move between cores. Regions are referenceable by a unique 256-bit identifier within the relay-chain.
+Each region is a data structure assigned to a particular application, which indicates future rights to consume coretime and keeps records of how many resources have been consumed so far. Relay-chain coretime regions, unlike those in RFC-0001 are not intended to be traded or manipulated by users directly, but instead allocated by higher-level mechanisms. The details of those higher-level mechanisms are out of scope for this RFC. Parachains can own an arbitrary number of regions and are limited in block production only by the number and production rate of regions which they own. Each region belongs to a specific execution core, and cannot move between cores. Regions are referenceable by a unique 256-bit identifier within the relay-chain.
 
 ## Motivation
 
 Polkadot must go beyond the one-core-per-chain paradigm in order to maximize allocative efficiency of the primary resource it creates: secure blockspace. Polkadot allocates blockspace through Coretime, the scheduling of many processes onto Execution Cores. Each unit of Coretime gives applications the right to make coarse-grained state transitions. Advancing the underlying scheduling technology will allow Polkadot to present highly sophisticated market mechanisms for Coretime and increase the effective utilization of Execution Cores with low overhead for blockspace consumers.
 
-Demand for applications is highly volatile. Accommodating the burstiness of demand is one of the primary motivations for the region primitive. Depending on the high-level allocation mechanisms which are exposed, applications should be able to acquire an arbitrary number of blockspace regions as needed to meet demand. In theory, they will be bounded only by the limits of their ability to create blocks and the regions available in either primary or secondary markets. Likewise, during periods of low demand, regions enable mechanisms for selling off some proportion of their rights to future blockspace in order to recoup costs. Regions are a core primitive for adaptive demand.
+Demand for applications is highly volatile. Accommodating the burstiness of demand is one of the primary motivations for the region primitive. Depending on the high-level allocation mechanisms which are exposed, applications should be able to acquire an arbitrary number of blockspace regions as needed to meet demand. In theory, they will be bounded only by the limits of their ability to create blocks and the regions available in either primary or secondary markets. Likewise, during periods of low demand, regions enable applications to utilize as few resources from the network as they need and share cores with many other applications. Deploying an application on Polkadot should be akin to deploying on a cloud service, where applications scale up and down to meet demand.
 
-Regions also reduce barriers to further innovation in the core relay-chain blockspace offerings. Once the runtime and node software have been adapted to run on blockspace regions, all future mechanisms for the relay-chain to sell blockspace may be implemented as simple algorithms which create and assign blockspace regions (for example, RFC-1 and RFC-5, taken together), without requiring any further modifications to node logic. This will give Polkadot's governance a larger toolkit to regulate the supply and granularity of blockspace entering the economy.
+Regions also reduce barriers to further iteration and innovation in the core relay-chain blockspace offerings. Once the runtime and node software have been adapted to run on blockspace regions, all future mechanisms for the relay-chain to sell blockspace may be implemented as simple algorithms which create and assign blockspace regions (for example, RFC-1 and RFC-5, taken together), without requiring any further modifications to node logic. This will give Polkadot's governance a larger toolkit to regulate the supply and granularity of blockspace entering the economy without increasing the maintenance burden of core technology.
 
 ### Requirements
 
@@ -107,13 +107,13 @@ struct Region {
 }
 ```
 
-Regions each have a 256-bit identifier, which are unique within the branch of the  relay-chain they are created. When regions are split or decomposed, the identifier of the newly created region is computed as `blake2_256(RegionId, child_count)`, where `child_count` is incremented afterwards. Because child region identifiers are computed deterministically, it is simple to create atomic sequences of transactions that both create and modify new regions. 
+Regions each have a 256-bit identifier, which are unique within the branch of the  relay-chain they are created.
 
 ```rust
 type RegionId = [u8; 32];
 ```
 
-The `RATE_DENOMINATOR = 57600` is used to provide a fixed reference point for block frequency. It is sufficiently large as to allow blocks to come extremely infrequency (~once per week with a numerator of 1) but not so large as to be unwieldy in 64-bit integers. 57600 is deliberately chosen, very composite number. This makes it possible to find exact fractions for common desired ratios of the relay-chain block-time such as 1/3, 1/4, 1/5, and so on. It also divides cleanly into `28 * DAYS`.
+The `RATE_DENOMINATOR = 57600` is used to provide a fixed reference point for resource consumption rates and levels. It is sufficiently large as to allow blocks to come extremely infrequently (~once per week with a numerator of 1) but not so large as to be unwieldy in 64-bit integers. 57600 is a deliberately chosen, very composite number. This makes it possible to find exact fractions for common desired ratios of the relay-chain block-time such as 1/3, 1/4, 1/5, and so on. It also divides cleanly into `28 * DAYS`.
 
 ### The Regions Pallet
 
@@ -121,19 +121,26 @@ Regions will be managed within a "Regions" Pallet which exposes the following st
 
 ```rust
 // Updated whenever regions are created, modified, or collected.
-storage map RegionId -> Region;
+storage map Regions: RegionId -> Region;
 
 // Updated when regions are created, transfered, or collected.
 // This is required for runtime APIs or other higher-level logic on collators to iterate the regions assigned
 // to a specific para.
-storage double_map (ParaId, RegionId) -> ();
+storage double_map RegionsPerPara: (ParaId, RegionId) -> ();
 
 // All functions are gated to permissioned origins, which are controlled by governance and intended to be assigned to system chains for managing regions.
 
 // Create a region. This is gated on allowed origins, e.g. a `RegionCreator` origin, set by governance.
+//
+// This inserts the region into the `RegionsPerPara` and `Regions` maps.
+//
+// If the region's `end` is `Some`, this sets up garbage collection logic for the region.
 fn create(Origin, Region) -> RegionId;
 
 // Update the end-point of a region. This is gated on allowed origins, e.g. a `RegionCreator` origin, set by governance.
+//
+// This is a no-op if the region's end is already `Some` or there is no region with that ID.
+// Otherwise, this sets up garbage-collection logic for the region. If `end` is in the past, `end` is set to the current block number.
 fn set_end(Origin, RegionId, end: u32);
 ```
 
@@ -162,9 +169,9 @@ A submitted candidate which uses `p: PartsOf57600` of the core's resources for a
 
 How core resource limits are defined is left beyond the scope of this RFC - at the time of writing, all cores have the same resource limits, but this design allows cores to be specialized in their resource limits, with some cores allowing more data, some allowing more granularity or execution time, etc.
 
-If all of these conditions are met, along with other validity conditions for backed candidates beyond the scope of this RFC, then the candidate is pending availability and the region's consumption value is incremented to `effective_consumption(B, region) + p` If the candidate times out before becoming available, the count is reduced by `p`.
+If all of these conditions are met, along with other validity conditions for backed candidates beyond the scope of this RFC, then the candidate is pending availability and the region's consumption value is incremented to `effective_consumption(B, region) + p` If the candidate times out before becoming available, the consumption value is reduced by `p`.
 
-The scheduling lenience allows regions to fall behind their expected tickrate, but bounded to a small maximum. This prevents accumulated core debt from being accumulated indefinitely and spent when convenient. Smoothing system load over short time horizons is desirable, but over infinite time horizons becomes dangerous.
+The scheduling lenience allows regions to fall behind their expected tickrate, limited to a small maximum level of debt. This prevents accumulated core debt from being accumulated indefinitely and spent when convenient. Smoothing system load over short time horizons is desirable, but over infinite time horizons becomes dangerous.
 
 This RFC introduces a new `HYPERCORES` parameter into the `HostConfiguration` which relay-chain governance uses to manage the parameters of the parachains protocol. Hypercores are inspired by technologies such as hyperthreading, to emulate multiple logical cores on a single phsyical core as resources permit. Hypercores allow parachains to make up for missed scheduling opportunities, which is important to effectively decouple parachain growth from backing on the relay chain.
 
@@ -204,6 +211,7 @@ This RFC fulfills requirement (7) with the scheduling lenience logic, by setting
 ## Drawbacks
 
 * Hypercores and scheduling lenience, if not properly parameterized, could lead to high system load for short runs of consecutive blocks. This raises the risk of cascading failures when load gets too high.
+* High-level scheduling logic must not overallocate regions onto a core. This wouldn't cause the relay chain to break, but it would lead to friction in scheduling between chains.
 
 ## Testing, Security, and Privacy
 
