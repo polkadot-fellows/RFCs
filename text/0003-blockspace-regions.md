@@ -18,7 +18,7 @@ Polkadot must go beyond the one-core-per-chain paradigm in order to maximize all
 
 Demand for applications is highly volatile. Accommodating the burstiness of demand is one of the primary motivations for the region primitive. Depending on the high-level allocation mechanisms which are exposed, applications should be able to acquire an arbitrary number of blockspace regions as needed to meet demand. In theory, they will be bounded only by the limits of their ability to create blocks and the regions available in either primary or secondary markets. Likewise, during periods of low demand, regions enable mechanisms for selling off some proportion of their rights to future blockspace in order to recoup costs. Regions are a core primitive for adaptive demand.
 
-Regions also reduce barriers to further innovation in the core relay-chain blockspace offerings. Once the runtime and node software have been adapted to run on blockspace regions, all future mechanisms for the relay-chain to sell blockspace may be implemented as simple algorithms which create and assign blockspace regions, without requiring any further modifications to node logic. This will give Polkadot's governance a larger toolkit to regulate the supply and granularity of blockspace entering the economy.
+Regions also reduce barriers to further innovation in the core relay-chain blockspace offerings. Once the runtime and node software have been adapted to run on blockspace regions, all future mechanisms for the relay-chain to sell blockspace may be implemented as simple algorithms which create and assign blockspace regions (for example, RFC-1 and RFC-5, taken together), without requiring any further modifications to node logic. This will give Polkadot's governance a larger toolkit to regulate the supply and granularity of blockspace entering the economy.
 
 ### Requirements
 
@@ -52,7 +52,7 @@ These concepts have been alluded to in [Polkadot: Blockspace over Blockchains](h
 
 | Name                | Constant | Value     |
 | ------------------- | -------- | --------- |
-| RATE_DENOMINATOR    | YES      | 5040      |
+| RATE_DENOMINATOR    | YES      | 57600     |
 | SCHEDULING_LENIENCE | NO       | 16        |
 | HYPERCORES          | NO       | 8         |
 | HYPERCORES_PER_CORE | NO       | 1         |
@@ -65,8 +65,9 @@ A region is a data structure outlined below:
 struct RegionSchema {
     // Relay-chain block number at which this region becomes active.
     start: u32,
-    // Duration of the region in relay-chain blocks, i.e. it ends at start + duration
-    duration: u32,
+    // The end point of the region in relay-chain blocks, i.e. it ends at start + duration. Note that endpoints are flexible up to `SCHEDULING_LENIENCE`.
+    // This may be `None`, in the case that the true endpoint is only determined later.
+    end: Option<u32>,
     // The maximum number of blocks which can be made in the region.
     // `None` signifies that the maximum should be limited only by the duration and rate.
     maximum: Option<u32>,
@@ -79,7 +80,7 @@ struct RegionSchema {
     // one block every 2 relay-chain blocks. And so on.
     //
     // This value may not be greater than `RATE_DENOMINATOR`.
-    rate_numerator: u32,
+    rate_numerator: PartsOf57600,
 }
 
 struct Region {
@@ -100,7 +101,7 @@ Regions each have a 256-bit identifier, which are unique within the branch of th
 type RegionId = [u8; 32];
 ```
 
-The `RATE_DENOMINATOR = 5040` is used to provide a fixed reference point for block frequency. It is sufficiently large as to allow blocks to come fairly infrequently, at a minimum of 8.4 hours with a numerator of 1, but not so large as to be unwieldy. 5040 is deliberately chosen as a [highly composite](https://en.wikipedia.org/wiki/Highly_composite_number) number, with 60 divisors, including all numbers between 1 and 10. This makes it possible to find exact fractions for common desired ratios of the relay-chain block-time such as 1/3, 1/4, 1/5, and so on. It also divides cleanly into `28 * DAYS`.
+The `RATE_DENOMINATOR = 57600` is used to provide a fixed reference point for block frequency. It is sufficiently large as to allow blocks to come extremely infrequency (~once per week with a numerator of 1) but not so large as to be unwieldy in 64-bit integers. 57600 is deliberately chosen, very composite number. This makes it possible to find exact fractions for common desired ratios of the relay-chain block-time such as 1/3, 1/4, 1/5, and so on. It also divides cleanly into `28 * DAYS`.
 
 ### The Regions Pallet
 
@@ -120,9 +121,11 @@ storage double_map (ParaId, RegionId) -> ();
 // Create a region. This is gated on allowed origins, e.g. a `RegionCreator` origin, set by governance.
 fn create(Origin, Region) -> RegionId;
 
-// Update the assigned parachain for a region.
-fn assign(Origin, RegionId, ParaId);
+// Update the end-point of a region. This is gated on allowed origins, e.g. a `RegionCreator` origin, set by governance.
+fn set_end(Origin, RegionId, end: u32);
 ```
+
+This API is intended to be wrapped by logic implementing interfaces such as RFC-5.
 
 Created regions for a core MUST NOT exceed a combined block rate of 1 at any block.
 
@@ -130,14 +133,21 @@ Created regions for a core MUST NOT exceed a combined block rate of 1 at any blo
 
 Regions are used to modify the behavior of the parachain backing/availability pipeline. The first major change is that parachain candidates submitted to the relay-chain in the `ParasInherent` will be annotated with the `RegionId` that they are intended to occupy. Validators and collators do the work of figuring out which blocks are assigned to which regions, lifting the burden of granular scheduling off of the relay chain.
 
+The **maximum level** of a region at any block number `now` is given by:
+`maximum_level(now, region) = min(now, end) - start * rate_numerator`
+If `end` is `None`, it is treated as infinite.
+
+The **minimum level** of a region at any block number `now` is given by:
+`minimum_level(now, region) = maximum_level(now - SCHEDULING_LENIENCE, region)`
+
 A submitted candidate for a parachain P at a block B is accepted if:
   * There is no candidate pending availability for B
-  * The region is not expired or at its maximum count.
-  * `(now - start) * rate_numerator > count * RATE_DENOMINATOR`
+  * The region is not at its explicit maximum count.
+  * maximum_level(now, region) > count * RATE_DENOMINATOR`
 
-If all of these conditions are met, along with other validity conditions for backed candidates beyond the scope of this RFC, then the candidate is pending availability and the region's count is incremented. If the region's count is less than `((now - start) * rate_numerator / RATE_DENOMINATOR) - SCHEDULING_LENIENCE`, the count is set to this value before being incremented. If the candidate times out before becoming available, the count is once again decremented.
+If all of these conditions are met, along with other validity conditions for backed candidates beyond the scope of this RFC, then the candidate is pending availability and the region's count is incremented. If the region's count is less than `minimum_level(now, region) / RATE_DENOMINATOR`, the count is set to this value before being incremented. If the candidate times out before becoming available, the count is once again decremented.
 
-The scheduling lenience allows regions to fall behind their expected tickrate, but bounded to a small maximum.
+The scheduling lenience allows regions to fall behind their expected tickrate, but bounded to a small maximum. This prevents accumulated core debt from being accumulated indefinitely  and spent all at once.
 
 This RFC introduces a new `HYPERCORES` parameter into the `HostConfiguration` which relay-chain governance uses to manage the parameters of the parachains protocol. Hypercores are inspired by technologies such as hyperthreading, to emulate multiple logical cores on a single phsyical core as resources permit. Hypercores allow parachains to make up for missed scheduling opportunities.
 
@@ -178,20 +188,38 @@ This RFC fulfills requirement (7) with the scheduling lenience logic, by setting
 
 * Hypercores and scheduling lenience, if not properly parameterized, could lead to high system load for short runs of consecutive blocks. This raises the risk of cascading failures when load gets too high.
 
-## Prior Art
+## Testing, Security, and Privacy
 
-None
+This is core scheduling infrastructure that doesn't affect either the security model or execution model of tasks in Polkadot. Therefore it has no impact on Security or Privacy.
+
+## Performance, Ergonomics, and Compatibility
+
+### Performance 
+
+This approach should enable much higher average core-utilization by Polkadot, especially when multiplexing many tasks on a single core, or when a single task is using multiple cores, or both.
+
+### Ergonomics
+
+The ergonomics of using regions is intended to be quite simple: high-level runtime code needs to only create a region (and set its endpoint) and the region will be cleaned up.
+
+### Compatibility
+
+For an initial release, regions limited in functionality do not necessarily need to be exposed via a new runtime API to the node-side code and can use the existing runtime APIs for full compatibility. However, to enable fully-featured regions, large sections of node-side code are going to need to be rewritten to use the new regions infrastructure.
+
+## Prior Art and References
+
+This is a companion to RFC-1 and RFC-5.
+
+Hypercores are inspired by hyperthreading in modern CPU architectures.
 
 ## Unresolved Questions
 
 * Should regions have the ability to carry "extra data" which enforce additional constraints, such as a required collator?
 
-## Future Possibilities
+## Future Directions and Related Material
 
 This RFC is only a minimal introduction to regions. The long-run possibilities involve:
   * Allowing parachains to have more than one block pending availability at a time, to enable chains to go faster than the relay chain by combining regions on multiple cores.
   * Migrating the on-demand parachain model to use regions with a maximum of `Some(1)` and an expiry of a few blocks in the future.
   * Introducing regions into the candidate receipt data structure itself - when a parachain is juggling multiple regions, its collators already have to have an idea of which blocks are intended to go on which regions, and foisting this onto validators to figure out when it's already been done is wasteful and error-prone.
-  * Introduce more functions for splitting or decomposing regions into more than 2 at a time.
-  * Region secondary markets. Higher-level code can avoid splitting regions eagerly and instead defer splitting and reassignment of regions to shortly before they are actually needed.
-  * Parachain boosts. Polkadot can sell short-term boosts for chains for short durations in order to accommodate extra demand.
+  * Introduce a `CoreConfiguration` which permits cores to specify how many state transitions can be pending on them and what resources they can consume in aggregate. This will enable cores to accept many candidates per relay-chain block. Regions on these cores may have rates greater than 1.
