@@ -31,7 +31,7 @@ Assuming that this RFC is implemented, and that light clients are used, deployin
 
 ## Stakeholders
 
-This RFC has been opened on my own initiative because I think that this is a good technical solution to a usuability problem that many people are encountering and that they don't realize can be solved.
+This RFC has been opened on my own initiative because I think that this is a good technical solution to a usability problem that many people are encountering and that they don't realize can be solved.
 
 ## Explanation
 
@@ -45,7 +45,7 @@ This RFC adds two mechanisms: a registration in the DHT, and a new networking pr
 
 ### DHT provider registration
 
-This RFC heavily relies on the functionnalities of the Kademlia DHT already in use by Polkadot.
+This RFC heavily relies on the functionalities of the Kademlia DHT already in use by Polkadot.
 You can find a link to the specification [here](https://github.com/libp2p/specs/tree/master/kad-dht).
 
 Full nodes of a parachain registered on Polkadot should register themselves onto the Polkadot DHT as the providers of a key corresponding to the parachain that they are serving, as described in [the `Content provider advertisement` section](https://github.com/libp2p/specs/tree/master/kad-dht#content-provider-advertisement) of the specification. This uses the `ADD_PROVIDER` system of libp2p-kademlia.
@@ -53,7 +53,7 @@ Full nodes of a parachain registered on Polkadot should register themselves onto
 This key is: `sha256(concat(scale_compact(para_id), randomness))` where the value of `randomness` can be found in the `randomness` field when calling the `BabeApi_currentEpoch` function.
 For example, for a `para_id` equal to 1000, and at the time of writing of this RFC (July 14th 2023 at 09:13 UTC), it is `sha(0xa10f12872447958d50aa7b937b0106561a588e0e2628d33f81b5361b13dbcf8df708)`, which is equal to `0x483dd8084d50dbbbc962067f216c37b627831d9339f5a6e426a32e3076313d87`.
 
-In order to avoid downtimes when the key changes, parachain full nodes should also register themselves as a secondary key that uses a value of `randomness` equal to the `randomness` field when calling `BabeApi_nextEpoch`.
+In order to avoid downtime when the key changes, parachain full nodes should also register themselves as a secondary key that uses a value of `randomness` equal to the `randomness` field when calling `BabeApi_nextEpoch`.
 
 Implementers should be aware that their implementation of Kademlia might already hash the key before XOR'ing it. The key is not meant to be hashed twice.
 
