@@ -156,7 +156,7 @@ The eventual usage of the funds paid is out of scope for the present proposal.
 
 #### Renewals
 
-At any time when there are there are remaining Regions of Bulk Coretime to be sold, *including during the Interlude Period*, then certain Bulk Coretime assignmnents may be *Renewed*. This is similar to a purchase in that funds must be paid and it consumes one of the Regions of Bulk Coretime which would otherwise be placed for purchase. However there are two key differences.
+At any time when there are remaining Regions of Bulk Coretime to be sold, *including during the Interlude Period*, then certain Bulk Coretime assignmnents may be *Renewed*. This is similar to a purchase in that funds must be paid and it consumes one of the Regions of Bulk Coretime which would otherwise be placed for purchase. However there are two key differences.
 
 Firstly, the price paid is exactly `RENEWAL_PRICE_CAP` more than what the purchase/renewal price was in the previous sale.
 
