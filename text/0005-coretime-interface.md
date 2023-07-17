@@ -70,7 +70,7 @@ fn request_revenue_at(
 
 Requests that the Relay-chain send a `notify_revenue` message back at or soon after Relay-chain block number `when` whose `until` parameter is equal to `when`.
 
-The period in to the past which `when` is allowed to be may be limited; if so the limit should be understood on a channel outside of this proposal. In the case that the request cannot be servied because `when` is too old a block then a `notify_revenue` message must still be returned, but its `revenue`` field may be `None`.
+The period in to the past which `when` is allowed to be may be limited; if so the limit should be understood on a channel outside of this proposal. In the case that the request cannot be serviced because `when` is too old a block then a `notify_revenue` message must still be returned, but its `revenue` field may be `None`.
 
 #### `credit_account`
 
