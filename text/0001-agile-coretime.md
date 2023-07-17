@@ -370,7 +370,7 @@ Each timeslice, `InstaPoolIo` is used to update the current value of `PoolSize`.
 
 When Instantaneous Coretime Market Revenues are reported for a particular timeslice from the Relay-chain, this information gets placed in the `maybe_payout` field of the relevant record of `InstaPoolHistory`.
 
-Payments can be requested made for for any records in `InstaPoolContribution` whose `begin` is the key for a value in `InstaPoolHistory` whose `maybe_payout` is `Some`. In this case, the `total_contributions` is reduced by the `ContributionRecord`'s `parts` and a pro rata amount paid. The `ContributionRecord` is mutated by incrementing `begin`, or removed if `begin` becomes equal to `end`.
+Payments can be requested made for any records in `InstaPoolContribution` whose `begin` is the key for a value in `InstaPoolHistory` whose `maybe_payout` is `Some`. In this case, the `total_contributions` is reduced by the `ContributionRecord`'s `parts` and a pro rata amount paid. The `ContributionRecord` is mutated by incrementing `begin`, or removed if `begin` becomes equal to `end`.
 
 Example:
 
