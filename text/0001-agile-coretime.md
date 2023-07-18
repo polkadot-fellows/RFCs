@@ -140,7 +140,7 @@ A *Region* is an assignable period of Coretime with a known regularity.
 
 All Regions are associated with a unique *Core Index*, to identify which core the Region controls the assignment of.
 
-All Regions are also associated with a *Core Mask*, an 80-bit bitmap, to denote the regularity on which it may be scheduled on the core. If all bits are set in the Core Mask value, it is said to be *Complete*. 80 is selected since this results in the size of the datatype used to identify any Region of Polkadot Coretime to be a very convenient 128-bit. Additionally, if `TIMESLICE` (the number of Relay-chain blocks in a Timeslice) is 80, then a single bit in the Core Part bitmap represents exactly one Core for one Relay-chain block in one Timeslice.
+All Regions are also associated with a *Core Mask*, an 80-bit bitmap, to denote the regularity on which it may be scheduled on the core. If all bits are set in the Core Mask value, it is said to be *Complete*. 80 is selected since this results in the size of the datatype used to identify any Region of Polkadot Coretime to be a very convenient 128-bit. Additionally, if `TIMESLICE` (the number of Relay-chain blocks in a Timeslice) is 80, then a single bit in the Core Mask bitmap represents exactly one Core for one Relay-chain block in one Timeslice.
 
 All Regions have a span. Region spans are quantized into periods of `TIMESLICE` blocks; `BULK_PERIOD` divides into `TIMESLICE` a whole number of times.
 
@@ -376,13 +376,13 @@ This data schema achieves a number of goals:
 ```rust
 type Timeslice = u32; // 80 block amounts.
 type CoreIndex = u16;
-type CorePart = [u8; 10]; // 80-bit bitmap.
+type CoreMask = [u8; 10]; // 80-bit bitmap.
 
 // 128-bit (16 bytes)
 struct RegionId {
     begin: Timeslice,
     core: CoreIndex,
-    part: CorePart,
+    mask: CoreMask,
 }
 // 296-bit (37 bytes)
 struct RegionRecord {
@@ -400,7 +400,7 @@ enum CoreTask {
 }
 // 113-bit (14 bytes). Could be 14 bytes with a specialised 32-bit `CoreTask`.
 struct ScheduleItem {
-    part: CorePart, // 80 bit
+    mask: CoreMask, // 80 bit
     task: CoreTask, // 33 bit
 }
 
@@ -423,23 +423,23 @@ struct ContributionRecord {
 }
 type InstaPoolContribution = Map<ContributionRecord, ()>;
 
-type SignedTotalParts = u32;
-type InstaPoolIo = Map<Timeslice, SignedTotalParts>;
+type SignedTotalMaskBits = u32;
+type InstaPoolIo = Map<Timeslice, SignedTotalMaskBits>;
 
-type PoolSize = Value<TotalParts>;
+type PoolSize = Value<TotalMaskBits>;
 
 /// Counter for the total CoreMask which could be dedicated to a pool. `u32` so we don't ever get
 /// an overflow.
-type TotalParts = u32;
+type TotalMaskBits = u32;
 struct InstaPoolHistoryRecord {
-    total_contributions: TotalParts,
+    total_contributions: TotalMaskBits,
     maybe_payout: Option<Balance>,
 }
 /// Total InstaPool rewards for each Timeslice and the number of core Mask which contributed.
 type InstaPoolHistory = Map<Timeslice, InstaPoolHistoryRecord>;
 ```
 
-`CoreMask` tracks what unique "parts" of a single core. It is used with interlacing in order to give a unique identifier to each compnent of any possible interlacing configuration of a core, allowing for simple self-describing keys for all core ownership and allocation information. It also allows for each core's workload to be tracked and updated progressively, keeping ongoing compute costs well-bounded and low.
+`CoreMask` tracks unique "parts" of a single core. It is used with interlacing in order to give a unique identifier to each compnent of any possible interlacing configuration of a core, allowing for simple self-describing keys for all core ownership and allocation information. It also allows for each core's workload to be tracked and updated progressively, keeping ongoing compute costs well-bounded and low.
 
 Regions are issued into the `Regions` map and can be transferred, partitioned and interlaced as the owner desires. Regions can only be tasked if they begin after the current scheduling deadline (if they have missed this, then the region can be auto-trimmed until it is).
 
@@ -454,59 +454,59 @@ Payments can be requested made for any records in `InstaPoolContribution` whose 
 Example:
 
 ```rust
-// Simple example with a `u16` `CorePart` and bulk sold in 100 timeslices.
+// Simple example with a `u16` `CoreMask` and bulk sold in 100 timeslices.
 Regions:
-{ core: 0u16, begin: 100, part: 0b1111_1111_1111_1111u16 } => { end: 200u32, owner: Alice };
+{ core: 0u16, begin: 100, mask: 0b1111_1111_1111_1111u16 } => { end: 200u32, owner: Alice };
 // First split @ 50
 Regions:
-{ core: 0u16, begin: 100, part: 0b1111_1111_1111_1111u16 } => { end: 150u32, owner: Alice };
-{ core: 0u16, begin: 150, part: 0b1111_1111_1111_1111u16 } => { end: 200u32, owner: Alice };
+{ core: 0u16, begin: 100, mask: 0b1111_1111_1111_1111u16 } => { end: 150u32, owner: Alice };
+{ core: 0u16, begin: 150, mask: 0b1111_1111_1111_1111u16 } => { end: 200u32, owner: Alice };
 // Share half of first 50 blocks
 Regions:
-{ core: 0u16, begin: 100, part: 0b1111_1111_0000_0000u16 } => { end: 150u32, owner: Alice };
-{ core: 0u16, begin: 100, part: 0b0000_0000_1111_1111u16 } => { end: 150u32, owner: Alice };
-{ core: 0u16, begin: 150, part: 0b1111_1111_1111_1111u16 } => { end: 200u32, owner: Alice };
+{ core: 0u16, begin: 100, mask: 0b1111_1111_0000_0000u16 } => { end: 150u32, owner: Alice };
+{ core: 0u16, begin: 100, mask: 0b0000_0000_1111_1111u16 } => { end: 150u32, owner: Alice };
+{ core: 0u16, begin: 150, mask: 0b1111_1111_1111_1111u16 } => { end: 200u32, owner: Alice };
 // Sell half of them to Bob
 Regions:
-{ core: 0u16, begin: 100, part: 0b1111_1111_0000_0000u16 } => { end: 150u32, owner: Alice };
-{ core: 0u16, begin: 100, part: 0b0000_0000_1111_1111u16 } => { end: 150u32, owner: Bob };
-{ core: 0u16, begin: 150, part: 0b1111_1111_1111_1111u16 } => { end: 200u32, owner: Alice };
+{ core: 0u16, begin: 100, mask: 0b1111_1111_0000_0000u16 } => { end: 150u32, owner: Alice };
+{ core: 0u16, begin: 100, mask: 0b0000_0000_1111_1111u16 } => { end: 150u32, owner: Bob };
+{ core: 0u16, begin: 150, mask: 0b1111_1111_1111_1111u16 } => { end: 200u32, owner: Alice };
 // Bob splits first 10 and assigns them to himself.
 Regions:
-{ core: 0u16, begin: 100, part: 0b1111_1111_0000_0000u16 } => { end: 150u32, owner: Alice };
-{ core: 0u16, begin: 100, part: 0b0000_0000_1111_1111u16 } => { end: 110u32, owner: Bob };
-{ core: 0u16, begin: 110, part: 0b0000_0000_1111_1111u16 } => { end: 150u32, owner: Bob };
-{ core: 0u16, begin: 150, part: 0b1111_1111_1111_1111u16 } => { end: 200u32, owner: Alice };
+{ core: 0u16, begin: 100, mask: 0b1111_1111_0000_0000u16 } => { end: 150u32, owner: Alice };
+{ core: 0u16, begin: 100, mask: 0b0000_0000_1111_1111u16 } => { end: 110u32, owner: Bob };
+{ core: 0u16, begin: 110, mask: 0b0000_0000_1111_1111u16 } => { end: 150u32, owner: Bob };
+{ core: 0u16, begin: 150, mask: 0b1111_1111_1111_1111u16 } => { end: 200u32, owner: Alice };
 // Bob shares first 10 3 ways and sells smaller shares to Charlie and Dave
 Regions:
-{ core: 0u16, begin: 100, part: 0b1111_1111_0000_0000u16 } => { end: 150u32, owner: Alice };
-{ core: 0u16, begin: 100, part: 0b0000_0000_1100_0000u16 } => { end: 110u32, owner: Charlie };
-{ core: 0u16, begin: 100, part: 0b0000_0000_0011_0000u16 } => { end: 110u32, owner: Dave };
-{ core: 0u16, begin: 100, part: 0b0000_0000_0000_1111u16 } => { end: 110u32, owner: Bob };
-{ core: 0u16, begin: 110, part: 0b0000_0000_1111_1111u16 } => { end: 150u32, owner: Bob };
-{ core: 0u16, begin: 150, part: 0b1111_1111_1111_1111u16 } => { end: 200u32, owner: Alice };
+{ core: 0u16, begin: 100, mask: 0b1111_1111_0000_0000u16 } => { end: 150u32, owner: Alice };
+{ core: 0u16, begin: 100, mask: 0b0000_0000_1100_0000u16 } => { end: 110u32, owner: Charlie };
+{ core: 0u16, begin: 100, mask: 0b0000_0000_0011_0000u16 } => { end: 110u32, owner: Dave };
+{ core: 0u16, begin: 100, mask: 0b0000_0000_0000_1111u16 } => { end: 110u32, owner: Bob };
+{ core: 0u16, begin: 110, mask: 0b0000_0000_1111_1111u16 } => { end: 150u32, owner: Bob };
+{ core: 0u16, begin: 150, mask: 0b1111_1111_1111_1111u16 } => { end: 200u32, owner: Alice };
 // Bob assigns to his para B, Charlie and Dave assign to their paras C and D; Alice assigns first 50 to A
 Regions:
-{ core: 0u16, begin: 150, part: 0b1111_1111_1111_1111u16 } => { end: 200u32, owner: Alice };
+{ core: 0u16, begin: 150, mask: 0b1111_1111_1111_1111u16 } => { end: 200u32, owner: Alice };
 Workplan:
 (100, 0) => vec![
-    { part: 0b1111_1111_0000_0000u16, task: Assigned(A) },
-    { part: 0b0000_0000_1100_0000u16, task: Assigned(C) },
-    { part: 0b0000_0000_0011_0000u16, task: Assigned(D) },
-    { part: 0b0000_0000_0000_1111u16, task: Assigned(B) },
+    { mask: 0b1111_1111_0000_0000u16, task: Assigned(A) },
+    { mask: 0b0000_0000_1100_0000u16, task: Assigned(C) },
+    { mask: 0b0000_0000_0011_0000u16, task: Assigned(D) },
+    { mask: 0b0000_0000_0000_1111u16, task: Assigned(B) },
 ]
-(110, 0) => vec![{ part: 0b0000_0000_1111_1111u16, task: Assigned(B) }]
+(110, 0) => vec![{ mask: 0b0000_0000_1111_1111u16, task: Assigned(B) }]
 // Alice assigns her remaining 50 timeslices to the InstaPool paying herself:
 Regions: (empty)
 Workplan:
 (100, 0) => vec![
-    { part: 0b1111_1111_0000_0000u16, task: Assigned(A) },
-    { part: 0b0000_0000_1100_0000u16, task: Assigned(C) },
-    { part: 0b0000_0000_0011_0000u16, task: Assigned(D) },
-    { part: 0b0000_0000_0000_1111u16, task: Assigned(B) },
+    { mask: 0b1111_1111_0000_0000u16, task: Assigned(A) },
+    { mask: 0b0000_0000_1100_0000u16, task: Assigned(C) },
+    { mask: 0b0000_0000_0011_0000u16, task: Assigned(D) },
+    { mask: 0b0000_0000_0000_1111u16, task: Assigned(B) },
 ]
-(110, 0) => vec![{ part: 0b0000_0000_1111_1111u16, task: Assigned(B) }]
-(150, 0) => vec![{ part: 0b1111_1111_1111_1111u16, task: InstaPool }]
+(110, 0) => vec![{ mask: 0b0000_0000_1111_1111u16, task: Assigned(B) }]
+(150, 0) => vec![{ mask: 0b1111_1111_1111_1111u16, task: InstaPool }]
 InstaPoolContribution:
 { begin: 150, end: 200, core: 0, mask: 0b1111_1111_1111_1111u16, payee: Alice }
 InstaPoolIo:
@@ -524,25 +524,25 @@ PoolSize: 0
 // Block 990:
 Relay <= assign_core(core: 0u16, begin: 1000, assignment: vec![(A, 8), (C, 2), (D, 2), (B, 4)])
 Workload: 0 => vec![
-    { part: 0b1111_1111_0000_0000u16, task: Assigned(A) },
-    { part: 0b0000_0000_1100_0000u16, task: Assigned(C) },
-    { part: 0b0000_0000_0011_0000u16, task: Assigned(D) },
-    { part: 0b0000_0000_0000_1111u16, task: Assigned(B) },
+    { mask: 0b1111_1111_0000_0000u16, task: Assigned(A) },
+    { mask: 0b0000_0000_1100_0000u16, task: Assigned(C) },
+    { mask: 0b0000_0000_0011_0000u16, task: Assigned(D) },
+    { mask: 0b0000_0000_0000_1111u16, task: Assigned(B) },
 ]
 PoolSize: 0
 
 // Block 1090:
 Relay <= assign_core(core: 0u16, begin: 1100, assignment: vec![(A, 8), (B, 8)])
 Workload: 0 => vec![
-    { part: 0b1111_1111_0000_0000u16, task: Assigned(A) },
-    { part: 0b0000_0000_1111_1111u16, task: Assigned(B) },
+    { mask: 0b1111_1111_0000_0000u16, task: Assigned(A) },
+    { mask: 0b0000_0000_1111_1111u16, task: Assigned(B) },
 ]
 PoolSize: 0
 
 // Block 1490:
 Relay <= assign_core(core: 0u16, begin: 1500, assignment: vec![(Pool, 16)])
 Workload: 0 => vec![
-    { part: 0b1111_1111_1111_1111u16, task: InstaPool },
+    { mask: 0b1111_1111_1111_1111u16, task: InstaPool },
 ]
 PoolSize: 16
 InstaPoolIo:
