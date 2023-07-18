@@ -9,27 +9,27 @@
 
 ## Summary
 
-This proposes a periodic, sale-based method for assigning Polkadot Coretime. The method takes into account the need for long-term capital expenditure planning for teams building on Polkadot, yet also provides a means to allow Polkadot to capture long-term value in the resource which it sells. It supports the possibility of building secondary markets to make resource allocation more efficient and largely avoids the need for parameterisation.
+This proposes a periodic, sale-based method for assigning Polkadot Coretime, the analogue of "block space" within the Polkadot Network. The method takes into account the need for long-term capital expenditure planning for teams building on Polkadot, yet also provides a means to allow Polkadot to capture long-term value in the resource which it sells. It supports the possibility of building rich and dynamic secondary markets to optimize resource allocation and largely avoids the need for parameterization.
 
 ## Motivation
 
 ### Present System
 
-The *Polkadot Ubiquitous Computer*, or just *Polkadot UC*, represents the public service provided by the Polkadot Network. It is a trust-free, WebAssembly-based, multicore, internet-native omnipresent virtual machine highly resilient to interfence and corruption.
+The *Polkadot Ubiquitous Computer*, or just *Polkadot UC*, represents the public service provided by the Polkadot Network. It is a trust-free, WebAssembly-based, multicore, internet-native omnipresent virtual machine which is highly resilient to interference and corruption.
 
-The present system of allocating time for parachains on the cores of the Polkadot Ubiquitous Computer is through a process known as *slot auctions*. These are on-chain candle auctions which proceed for several days and result in a core being assigned to a single parachain for six months at a time up to 24 months in advance. Practically speaking, we only see two year periods being bid upon and leased.
+The present system of allocating the limited resources of the Polkadot Ubiquitous Computer is through a process known as *parachain slot auctions*. This is a parachain-centric paradigm whereby a single core is long-term allocated to a single parachain which itself implies a Substrate/Cumulus-based chain secured and connected via the Relay-chain. Slot auctions are on-chain candle auctions which proceed for several days and result in the core being assigned to the parachain for six months at a time up to 24 months in advance. Practically speaking, we only see two year periods being bid upon and leased.
 
-Funds behind the bids made in the slot auctions are merely locked, not consumed or paid and become unlocked and returned to the bidder on expiry of the lease period. A means of sharing the deposit trustlessly known as a *crowdloan* is available allowing token holders to contribute to the overall deposit of a chain without any counterparty risk.
+Funds behind the bids made in the slot auctions are merely locked, they are not consumed or paid and become unlocked and returned to the bidder on expiry of the lease period. A means of sharing the deposit trustlessly known as a *crowdloan* is available allowing token holders to contribute to the overall deposit of a chain without any counterparty risk.
 
 ### Problems
 
-The present system is based on a model of one-core-per-parachain. This is a legacy interpretation of the Polkadot platform and is not a reflection of its present capabilities. By restricting ownership and usage to this model, more dynamic and resource-efficient means of utilising the Polkadot Ubiquitous Computer is lost.
+The present system is based on a model of one-core-per-parachain. This is a legacy interpretation of the Polkadot platform and is not a reflection of its present capabilities. By restricting ownership and usage to this model, more dynamic and resource-efficient means of utilizing the Polkadot Ubiquitous Computer are lost.
 
-More specifically, it is impossible to lease out cores at anything less than six months, and apparently unrealistic to do so at anything less than two years. This cuts out the ability to dynamically manage the underlying resource, and generally experimentation, iteration and innovation are hampered. It bakes into the platform an assumption of permanence for anything deployed into it and restricts the market's ability to find a more optimal allocation of the finite resource.
+More specifically, it is impossible to lease out cores at anything less than six months, and apparently unrealistic to do so at anything less than two years. This removes the ability to dynamically manage the underlying resource, and generally experimentation, iteration and innovation suffer. It bakes into the platform an assumption of permanence for anything deployed into it and restricts the market's ability to find a more optimal allocation of the finite resource.
 
 There is no ability to determine capital requirements for hosting a parachain beyond two years from the point of its initial deployment onto Polkadot. While it would be unreasonable to have perfect and indefinite cost predictions for any real-world platform, not having any clarity whatsoever beyond "market rates" two years hence can be a very off-putting prospect for teams to buy into.
 
-However, quite possibly the most substantial problem is both a perceived and often real high barrier to entry of the Polkadot ecosystem. By forcing innovators to either raise 7-figure sums through investors or appeal to the wider token-holding community, Polkadot makes it essentially difficult for a small band of innovators from deploying their technology into Polkadot. While not being actually permissioned, it is also far from the barrierless, permissionless ideal which an innovation platform such as Polkadot should be striving for.
+However, quite possibly the most substantial problem is both a perceived and often real high barrier to entry of the Polkadot ecosystem. By forcing innovators to either raise seven-figure sums through investors or appeal to the wider token-holding community, Polkadot makes it difficult for a small band of innovators to deploy their technology into Polkadot. While not being actually permissioned, it is also far from the barrierless, permissionless ideal which an innovation platform such as Polkadot should be striving for.
 
 ## Requirements
 
@@ -38,7 +38,7 @@ However, quite possibly the most substantial problem is both a perceived and oft
 2. The solution SHOULD minimize the barriers to entry in the ecosystem.
 3. The solution SHOULD work well when the Polkadot UC has up to 1,000 cores.
 4. The solution SHOULD work when the number of cores which the Polkadot UC can support changes over time.
-5. The solution SHOULD facilitate the optimal allocation of work to core of the Polkadot UC, including by facilitating the trade of regular core assignment at various intervals and for various spans.
+5. The solution SHOULD facilitate the optimal allocation of work to cores of the Polkadot UC, including by facilitating the trade of regular core assignment at various intervals and for various spans.
 6. The solution SHOULD avoid creating additional dependencies on functionality which the Relay-chain need not strictly provide for the delivery of the Polkadot UC.
 
 Furthermore, the design SHOULD be implementable and deployable in a timely fashion; three months from the acceptance of this RFC should not be unreasonable.
@@ -53,45 +53,63 @@ Primary stakeholder sets are:
 
 _Socialization:_
 
-This RFC was presented at Polkadot Decoded 2023 Copenhagen on the Main Stage. A small amount of socialisation at the Parachain Summit preceeded it and some substantial discussion followed it. Parity Ecosystem team is currently soliciting views from ecosystem teams who would be key stakeholders.
+The essensials of this proposal were presented at Polkadot Decoded 2023 Copenhagen on the Main Stage. A small amount of socialization at the Parachain Summit preceeded it and some substantial discussion followed it. Parity Ecosystem team is currently soliciting views from ecosystem teams who would be key stakeholders.
 
 ## Explanation
 
 ### Overview
 
-Upon implementation of this proposal, slot auctions and associated crowdloans cease. Instead, Coretime on the Polkadot UC is sold by the Polkadot System in two separate formats: *Bulk* and *Instantaneous*. This proposal only mandates the implementation of *Bulk Coretime*; any mentions of *Instantaneous Coretime* are only intended to illustrate a possible final solution.
+Upon implementation of this proposal, the parachain-centric slot auctions and associated crowdloans cease. Instead, Coretime on the Polkadot UC is sold by the Polkadot System in two separate formats: *Bulk Coretime* and *Instantaneous Coretime*.
 
-Bulk Coretime is sold periodically on a specialised *Brokerage System Chain* and allocated in advance of its usage, whereas Instantaneous Coretime is sold on the Relay-chain immediately prior to usage on a block-by-block basis with an explicit allocation at the time of purchase.
+When a Polkadot Core is utilized, we say it is dedicated to a *Task* rather than a "parachain". The Task to which a Core is dedicated may change at every Relay-chain block and while one predominant type of Task is to secure a Cumulus-based blockchain (i.e. a parachain), other types of Tasks are envisioned.
 
-Revenue from sales of Bulk Coretime is owned by the Polkadot Treasury. Owners of Bulk Coretime are tracked on this chain and the ownership status and properties of the owned Coretime are exposed over XCM as a non-fungible asset.
+Bulk Coretime is sold periodically on a specialised system chain known as the *Coretime-chain* and allocated in advance of its usage, whereas Instantaneous Coretime is sold on the Relay-chain immediately prior to usage on a block-by-block basis.
 
-At the request of the owner, the Broker-chain allows a single Bulk Coretime asset, known as a *Region*, to be used in various ways including transferal to another owner, allocated to a particular parachain or placed in the Instantaneous Coretime Pool. Regions can also be split out, either into non-overlapping sub-spans or exactly-overlapping spans with less regularity.
+This proposal does not fix what should be done with revenue from sales of Coretime and leaves it for a further RFC process.
 
-The Brokerage System Chain periodically instructs the Relay-chain to assign its cores to alternative tasks as and when the allocation changes owing to a new Region taking effect.
+Owners of Bulk Coretime are tracked on the Coretime-chain and the ownership status and properties of the owned Coretime are exposed over XCM as a non-fungible asset.
 
-#### Special Considerations
+At the request of the owner, the Coretime-chain allows a single Bulk Coretime asset, known as a *Region*, to be used in various ways including transferal to another owner, allocated to a particular task (e.g. a parachain) or placed in the Instantaneous Coretime Pool. Regions can also be split out, either into non-overlapping sub-spans or exactly-overlapping spans with less regularity.
 
-As a migration mechanism, pre-existing leases (from the legacy lease/slots/crowdloan framework) SHALL be recorded in the Broker-chain and cores assigned to them. When the lease comes to expiry, there is a mechanism to gain a priority sale of Bulk Coretime to ensure that the Parachain suffers no downtime.
+The Coretime-Chain periodically instructs the Relay-chain to assign its cores to alternative tasks as and when Core allocations change due to new Regions coming into effect.
 
-Additionally, there is a renewal system which allows a core's assignment to be renewed unchanged with a known maximum price increase from month to month. In this case, the core's assignment must not include an Instantaneous Coretime allocation and must not have been split into smaller amounts.
+#### Renewal and Migration
 
-Note that the intention behind renewals is only to ensure that committed Paras get some guarantees about price for predicting future costs. As such this price-capped renewal system only allows cores to be reused for their same tasks from month to month. In any other context, the regular sale system must be used and the regular price paid.
+There is a renewal system which allows a Bulk Coretime assignment of a single core to be renewed unchanged with a known price increase from month to month. Renewals are processed in a period prior to regular purchases, effectively giving them precedence over a fixed number of cores available.
 
-#### Relay-chain and Instantaneous Coretime
+Renewals are only enabled when a core's assignment does not include an Instantaneous Coretime allocation and has not been split into shorter segments.
 
-Sales of Instantaneous Coretime happen on the Polkadot Relay-chain. The Relay-chain is expected to be responsible for:
+Thus, renewals are designed to ensure only that committed parachains get some guarantees about price for predicting future costs. This price-capped renewal system only allows cores to be reused for their same tasks from month to month. In any other context, Bulk Coretime would need to be purchased regularly.
 
-- holding non-transferable, non-refundable DOT-denominated Instantaneous Coretime Market Credit balance information for collators.
+As a migration mechanism, pre-existing leases (from the legacy lease/slots/crowdloan framework) are initialized into the Coretime-chain and cores assigned to them prior to Bulk Coretime sales. In the sale where the lease expires, the system offers a renewal, as above, to allow a priority sale of Bulk Coretime and ensure that the Parachain suffers no downtime when transitioning from the legacy framework.
+
+#### Instantaneous Coretime
+
+Processing of Instantaneous Coretime happens in part on the Polkadot Relay-chain. Credit is purchased on the Coretime-chain for regular DOT tokens, and this results in a DOT-denominated Instantaneous Coretime Credit account on the Relay-chain being credited for the same amount.
+
+Though the Instantaneous Coretime Credit account records a balance for an account identifier (very likely controlled by a collator), it is *non-transferable* and *non-refundable*. It can only be consumed in order to purchase some Instantaneous Coretime with immediate availability.
+
+The Relay-chain reports this usage back to the Coretime-chain in order to allow it to reward the providers of the underlying Coretime, either the Polkadot System or owners of Bulk Coretime who contributed to the Instantaneous Coretime Pool.
+
+Specifically the Relay-chain is expected to be responsible for:
+
+- holding non-transferable, non-refundable DOT-denominated Instantaneous Coretime Credit balance information for collators.
 - setting and adjusting the price of Instantaneous Coretime based on usage.
-- allowing collators to consume their ICM Credit at the current pricing in exchange for the ability to schedule one PoV for near-immediate usage.
-- ensuring the Broker System Chain has timely accounting information on Coretime sales revenue.
+- allowing collators to consume their Instantaneous Coretime Credit at the current pricing in exchange for the ability to schedule one PoV for near-immediate usage.
+- ensuring the Coretime-Chain has timely accounting information on Instantaneous Coretime Sales revenue.
 
-#### Broker System Chain
+#### Coretime-chain
 
-Also known as the *Broker-chain*, this is a new system parachain. It has the responsibility of providing the Relay-chain via UMP with scheduling information of:
+The *Coretime-chain* is a new system parachain. It has the responsibility of providing the Relay-chain via UMP with information of:
 
-- The number of cores which should be made available during the next session.
-- Which para IDs should be running on which cores and in what ratios.
+- The number of cores which should be made available.
+- Which tasks should be running on which cores and in what ratios.
+- Accounting information for Instantaneous Coretime Credit.
+
+It also expects information from the Relay-chain via DMP:
+
+- The number of cores available to be scheduled.
+- Account information on Instantaneous Coretime Sales.
 
 The specific interface is properly described in RFC-5.
 
@@ -99,22 +117,22 @@ The specific interface is properly described in RFC-5.
 
 #### Parameters
 
-This proposal includes a number of parameters which need not necessarily be fixed. They are stated here along with a value, and are either *suggested* or *specified*. If *suggested*, it is non-binding and the proposal should not be judged on the value since the governance mechanism of Polkadot is expected to specify/maintain it. If *specified*, then the proposal should be judged on the merit of the value as-is.
+This proposal includes a number of parameters which need not necessarily be fixed. They are stated here along with a value, and are either *suggested* or *specified*. If *suggested*, it is non-binding and the proposal should not be judged on the value since other RFCs and/or the governance mechanism of Polkadot is expected to specify/maintain it. If *specified*, then the proposal should be judged on the merit of the value as-is.
 
 | Name                | Value                        | |
 | ------------------- | ---------------------------- | ---------- |
 | `BULK_PERIOD`       | `28 * DAYS`                  | specified  |
 | `INTERLUDE_PERIOD`  | `7 * DAYS`                   | specified  |
 | `LEADIN_PERIOD`     | `7 * DAYS`                   | specified  |
-| `STEP_PERIOD`       | `8 * HOURS`                  | specified  |
 | `TIMESLICE`         | `8 * MINUTES`                | specified  |
 | `BULK_TARGET`       | `30`                         | suggested  |
 | `BULK_LIMIT`        | `45`                         | suggested  |
+| `STEP_PERIOD`       | `8 * HOURS`                  | suggested  |
 | `RENEWAL_PRICE_CAP` | `Perbill::from_percent(2)`   | suggested  |
 
 #### Reservations
 
-The Broker-chain includes some governance-set reservations of Coretime; these cover every System-chain as well as the pre-existing leased chains.
+The Coretime-chain includes some governance-set reservations of Coretime; these cover every System-chain as well as the pre-existing leased chains.
 
 #### Regions
 
@@ -122,37 +140,39 @@ A *Region* is an assignable period of Coretime with a known regularity.
 
 All Regions are associated with a unique *Core Index*, to identify which core the Region controls the assignment of.
 
-All Regions are also associated with a *Core Parts*, an 80-bit bitmap, to denote the regularity on which it may be scheduled on the core. If all bits are set in the Core Parts value, it is said to be *Complete*. 80 is selected since this results in the size of the datatype used to identify any Region of Polkadot Coretime to be a very convenient 128-bit. Additionally, if `TIMESLICE` (the number of Relay-chain blocks in a Timeslice) is 80, then a single bit in the Core Part bitmap represents exactly one Core for one Relay-chain block in one Timeslice.
+All Regions are also associated with a *Core Mask*, an 80-bit bitmap, to denote the regularity on which it may be scheduled on the core. If all bits are set in the Core Mask value, it is said to be *Complete*. 80 is selected since this results in the size of the datatype used to identify any Region of Polkadot Coretime to be a very convenient 128-bit. Additionally, if `TIMESLICE` (the number of Relay-chain blocks in a Timeslice) is 80, then a single bit in the Core Part bitmap represents exactly one Core for one Relay-chain block in one Timeslice.
 
 All Regions have a span. Region spans are quantized into periods of `TIMESLICE` blocks; `BULK_PERIOD` divides into `TIMESLICE` a whole number of times.
 
-The `Timeslice` type is a `u32` which can be multiplied by `TIMESLICE` to give a `BlockNumber` value representing the same quantity in terms of (Relay-chain) blocks.
+The `Timeslice` type is a `u32` which can be multiplied by `TIMESLICE` to give a `BlockNumber` value representing the same quantity in terms of Relay-chain blocks.
 
-Regions can be tasked to a ParaId or placed in the Instantaneous Coretime Pool. If they have yet to be placed or tasked, then they are fresh. Fresh Regions have an *Owner*.
+Regions can be tasked to a `TaskId` (aka `ParaId`) or pooled into the Instantaneous Coretime Pool. This process can be *Provisional* or *Final*. If done only provisionally or not at all then they are fresh and have an *Owner* which is able to manipulate them further including reassignment. Once *Final*, then all ownership information is discarded and they cannot be manipulated further. Renewal is not possible when only provisionally tasked/pooled.
 
 #### Bulk Sales
 
-A sale of Bulk Coretime occurs on the Broker Chain every `BULK_PERIOD` blocks.
+A sale of Bulk Coretime occurs on the Coretime-chain every `BULK_PERIOD` blocks.
 
-In every sale, a `BULK_LIMIT` of individual *Regions* are offered for sale at a particular Sale Price.
+In every sale, a `BULK_LIMIT` of individual *Regions* are offered for sale.
 
 Each Region offered for sale has a different Core Index, ensuring that they each represent an independently allocatable resource on the Polkadot UC.
 
-The Regions offered for sale have the same span: they last exactly `BULK_PERIOD` blocks, and begin immediately following the span of the previous Sale's Regions. The Regions offered for sale also have the complete, non-interlaced, Core.
+The Regions offered for sale have the same span: they last exactly `BULK_PERIOD` blocks, and begin immediately following the span of the previous Sale's Regions. The Regions offered for sale also have the complete, non-interlaced, Core Mask.
 
-The sale period ends immediately as soon as span of the Coretime Regions that are being sold begins. At this point, the next Sale Price is set according to the previous Sale Price and the number of Regions sold compared to the desired and maximum amount of Regions to be sold. See Price Setting for additional detail.
+The Sale Period ends immediately as soon as span of the Coretime Regions that are being sold begins. At this point, the next Sale Price is set according to the previous Sale Price together with the number of Regions sold compared to the desired and maximum amount of Regions to be sold. See Price Setting for additional detail on this point.
 
-Following this, there is an *Interlude* period lasting `INTERLUDE_PERIOD` of blocks before the next Sale becomes active. After this period is elapsed, *Regular Purchasing* may begin (see next).
+Following the end of the previous Sale Period, there is an *Interlude Period* lasting `INTERLUDE_PERIOD` of blocks. After this period is elapsed, regular purchasing begins with the *Purchasing Period*.
 
 This is designed to give at least two weeks worth of time for the purchased regions to be partitioned, interlaced, traded and allocated.
 
+#### The Interlude
+
+The Interlude period is a period prior to Regular Purchasing where renewals are allowed to happen. This has the effect of ensuring existing long-term tasks/parachains have a chance to secure their Bulk Coretime for a well-known price prior to general sales.
+
 #### Regular Purchasing
 
-Any account may purchase Regions of Bulk Coretime if they have the appropriate funds in place during the *Purchasing Period*, which is from `INTERLUDE_PERIOD` blocks after the end of the previous sale until the beginning of the Region of the Bulk Coretime which is for sale as long as there are Regions of Bulk Coretime left for sale (i.e. no more than `BULK_LIMIT` have already been sold in the Bulk Coretime Sale).
+Any account may purchase Regions of Bulk Coretime if they have the appropriate funds in place during the Purchasing Period, which is from `INTERLUDE_PERIOD` blocks after the end of the previous sale until the beginning of the Region of the Bulk Coretime which is for sale as long as there are Regions of Bulk Coretime left for sale (i.e. no more than `BULK_LIMIT` have already been sold in the Bulk Coretime Sale). The Purchasing Period is thus roughly `BULK_PERIOD - INTERLUDE_PERIOD` blocks in length.
 
-The Purchasing Period is roughly `BULK_PERIOD - INTERLUDE_PERIOD` blocks in length. The price various during an initial portion of the Purchasing Period and then stays stable for the remainder. This initial portion is `LEADIN_PERIOD` blocks in length. During this period the price decreases monotonically from the Sale Price multiplied by `LEADIN_MULTIPLIER` to the basic Sale Price over a number of discrete drops, each `STEP_PERIOD` blocks in length.
-
-The eventual usage of the funds paid is out of scope for the present proposal.
+The Sale Price varies during an initial portion of the Purchasing Period called the *Leadin Period* and then stays stable for the remainder. This initial portion is `LEADIN_PERIOD` blocks in duration. During the Leadin Period the price decreases towards the Sale Price, which it lands at by the end of the Leadin Period. The actual curve by which the price starts and descends to the Sale Price is outside the scope of this RFC, though a basic suggestion is provided in the Price Setting Notes, below.
 
 #### Renewals
 
@@ -160,103 +180,116 @@ At any time when there are remaining Regions of Bulk Coretime to be sold, *inclu
 
 Firstly, the price paid is exactly `RENEWAL_PRICE_CAP` more than what the purchase/renewal price was in the previous sale.
 
-Secondly, the purchased Region comes preassigned with exactly the same workload as before. It cannot be traded, repartitioned, interlaced or exchanged.
+Secondly, the purchased Region comes preassigned with exactly the same workload as before. It cannot be traded, repartitioned, interlaced or exchanged. As such unlike regular purchasing the Region never has an owner.
 
-Renewal is only possible for either cores which have been assigned as a result of a previous renewal, or which begin their Bulk Coretime with a fully allocated workload which does not include allocation to the Instantaneous Coretime Pool. In the latter case, the renewed workload will be the same as this initial workload.
+Renewal is only possible for either cores which have been assigned as a result of a previous renewal, which are migrating from legacy slot leases, or which fill their Bulk Coretime with an unsegmented, fully and finally assigned workload which does not include placement in the Instantaneous Coretime Pool. In the latter case, the renewed workload will be the same as this initial workload.
 
 #### Manipulation
 
 Regions may be manipulated in various ways by its owner:
 
 1. *Transferred* in ownership.
-1. *Assigned* to a single, specific ParaID task.
 1. *Partitioned* into quantized, non-overlapping segments of Bulk Coretime with the same ownership.
 1. *Interlaced* into multiple Regions over the same period whose eventual assignments take turns to be scheduled.
+1. *Assigned* to a single, specific ParaID task. This may be either *provisional* or *final*.
 1. *Pooled* into the Instantaneous Coretime Pool, in return for a pro-rata amount of the revenue from the Instantaneous Coretime Sales over its period.
 
 #### Enactment
 
-### Specific functions of the Broker-chain
+### Specific functions of the Coretime-chain
 
-Several functions of the Broker-chain SHALL be exposed through dispatchables and/or a `nonfungible` trait implementation integrated into XCM:
+Several functions of the Coretime-chain SHALL be exposed through dispatchables and/or a `nonfungible` trait implementation integrated into XCM:
 
 #### 1. `transfer`
 
 Regions may have their ownership transferred.
 
-A `transfer(region: RegionId, new_owner: AccountId)` dispatchable SHALL have the effect of altering the current owner of the Region identified by `region` from the signed origin to `new_owner`.
+A `transfer(region: RegionId, new_owner: AccountId)` dispatchable shall have the effect of altering the current owner of the Region identified by `region` from the signed origin to `new_owner`.
 
 An implementation of the `nonfungible` trait SHOULD include equivalent functionality. `RegionId` SHOULD be used for the `AssetInstance` value.
 
-#### 2. `assign`
+#### 2. `partition`
 
-Regions may be consumed in exchange for being assigned to a core.
+Regions may be split apart into two non-overlapping interior Regions of the same Core Mask which together concatenate to the original Region.
 
-A `assign(region: RegionId, target: ParaId)` dispatchable SHALL have the effect of removing the region identified by `region` and placing an item in the workplan corresponding to the region's properties and assigned to the `target` task.
-
-If the region's end has already passed (taking into account any advance notice requirements) then this operation is a no-op. If the region's begining has already passed, then it is effectively altered to become the next schedulable timeslice.
-
-If the Region's span is the entire `BULK_PERIOD`, then the Broker-chain records in storage that the allocation happened during this period in order to facilitate the possibility for a renewal.
-
-Also:
-- `owner` field of `region` must the equal to the Signed origin.
-
-#### 3. `partition`
-
-Regions may be split apart into two non-overlapping interior Regions of the same regularity.
-
-A `partition(region: RegionId, pivot: Timeslice)` dispatchable SHALL have the effect of removing the Region identified by `region` and adding two new Regions of the same owner and core-parts. One new Region will begin at the same point of the old Region but end at `pivot`, whereas the other will begin at `pivot` and end at the end point of the old Region.
+A `partition(region: RegionId, pivot: Timeslice)` dispatchable SHALL have the effect of removing the Region identified by `region` and adding two new Regions of the same owner and Core Mask. One new Region will begin at the same point of the old Region but end at `pivot` timeslices into the Region, whereas the other will begin at this point and end at the end point of the original Region.
 
 Also:
 - `owner` field of `region` must the equal to the Signed origin.
 - `pivot` must equal neither the `begin` nor `end` fields of the `region`.
 
-#### 4. `interlace`
+#### 3. `interlace`
 
-Regions may be strided into two Regions of the same span whose eventual assignments take turns on the core.
+Regions may be decomposed into two Regions of the same span whose eventual assignments take turns on the core by virtue of having complementary Core Masks.
 
-An `interlace(region: RegionId, parts: CoreParts)` dispatchable SHALL have the effect of removing the Region identified by `region` and create two new Regions. The new Regions will each have the same span and owner of the old Region, but one Region will have Core Parts equal to `parts` and the other will have Core Parts equal to the XOR of `parts` and the Core Parts of the old Region.
+An `interlace(region: RegionId, mask: CoreMask)` dispatchable shall have the effect of removing the Region identified by `region` and creating two new Regions. The new Regions will each have the same span and owner of the original Region, but one Region will have a Core Mask equal to `mask` and the other will have Core Mask equal to the XOR of `mask` and the Core Mask of the original Region.
 
 Also:
 - `owner` field of `region` must the equal to the Signed origin.
-- `parts` must have some bits set AND must not equal the Core Parts of the old Region AND must only have bits set which are also set in the old Region's' Core Parts.
+- `mask` must have some bits set AND must not equal the Core Mask of the old Region AND must only have bits set which are also set in the old Region's' Core Mask.
+
+#### 4. `assign`
+
+Regions may be assigned to a core.
+
+A `assign(region: RegionId, target: ParaId, finality: Finality)` dispatchable shall have the effect of placing an item in the workplan corresponding to the region's properties and assigned to the `target` task.
+
+If the region's end has already passed (taking into account any advance notice requirements) then this operation is a no-op. If the region's begining has already passed, then it is effectively altered to become the next schedulable timeslice.
+
+`finality` may have the value of either `Final` or `Provisional`. If `Final`, then the operation is free, the `region` record is removed entirely from storage and renewal may be possible: if the Region's span is the entire `BULK_PERIOD`, then the Coretime-chain records in storage that the allocation happened during this period in order to facilitate the possibility for a renewal. (Renewal only becomes possible when the full Core Mask of a core is finally assigned for the full `BULK_PERIOD`.)
+
+Also:
+- `owner` field of `region` must the equal to the Signed origin.
 
 #### 5. `pool`
 
 Regions may be consumed in exchange for a pro rata portion of the Instantaneous Coretime Sales Revenue from its period and regularity.
 
-A `pool(region: RegionId, beneficiary: AccountId)` dispatchable SHALL have the effect of removing the region identified by `region` and placing an item in the workplan corresponding to the region's properties and assigned to the Instantaneous Coretime Pool. The details of the region will be recorded in order to allow the proper allocation of Instantaneous Coretime Sales Revenue.
+A `pool(region: RegionId, beneficiary: AccountId, finality: Finality)` dispatchable shall have the effect of placing an item in the workplan corresponding to the region's properties and assigned to the Instantaneous Coretime Pool. The details of the region will be recorded in order to allow for a pro rata share of the Instantaneous Coretime Sales Revenue at the time of the Region relative to any other providers in the Pool.
 
 If the region's end has already passed (taking into account any advance notice requirements) then this operation is a no-op. If the region's begining has already passed, then it is effectively altered to become the next schedulable timeslice.
+
+`finality` may have the value of either `Final` or `Provisional`. If `Final`, then the operation is free and the `region` record is removed entirely from storage.
 
 Also:
 - `owner` field of `region` must the equal to the Signed origin.
 
 #### 6. Renewals
 
-A dispatchable `renew(core: CoreIndex)` SHALL be provided. Any account may call `renew` to purchase Bulk Coretime and renew an active allocation for the given `core`.
+A dispatchable `renew(core: CoreIndex)` shall be provided. Any account may call `renew` to purchase Bulk Coretime and renew an active allocation for the given `core`.
 
 This may be called during the Interlude Period as well as the regular Purchasing Period and has the same effect as `purchase` followed by `allocate`, except that:
 
-1. The price of the purchase is the previous `price` incremented by `RENEWAL_PRICE_CAP` of itself or the regular price, whichever is lower.
-1. The Region must be allocated as the given `core` was allocated at the beginning of the present Region.
+1. The price of the purchase is the previous `price` incremented by `RENEWAL_PRICE_CAP`.
+1. The Region is allocated exactly the given `core` is currently allocated for the present Region.
 
-#### 7. Migrations
+Renewal is only valid where a Region's span is assigned to Tasks (not placed in the Instantaneous Coretime Pool) for the entire unsplit `BULK_PERIOD` over all of the Core Mask and with Finality. There are thus three possibilities of a renewal being allowed:
 
-It is intended that paras which hold a lease from the legacy slot auction system are able to seamlessly transition into the Agile Coretime framework.
+1. Purchased unsplit Coretime with final assignment to tasks over the full Core Mask.
+1. Renewed Coretime.
+1. A legacy lease which is ending.
 
-A dispatchable `migrate(core: CoreIndex)` SHALL be provided. Any account may call `migrate` to purchase Bulk Coretime at the current price for the given `core`.
+#### 7. Instantaneous Coretime Credits
 
-This MUST be called during the `LEADIN_PERIOD` prior to a Bulk sale (exactly like `purchase`) and has the same effect as `purchase` followed by `allocate` with a value of `ParaId` containing just one item equal to `target`, except that:
+A dispatchable `purchase_credit(amount: Balance, beneficiary: RelayChainAccountId)` shall be provided. Any account with at least `amount` spendable funds may call this. This increases the Instantaneous Coretime Credit balance on the Relay-chain of the `beneficiary` by the given `amount`.
 
-1. The purchase always succeeds and as such MUST be processed prior to regular `purchase` orders.
-2. There MUST be an ongoing legacy parachain lease whose parachain is assigned to `core` and which is due to expire during the Coretime period being purchased.
+This Credit is consumable on the Relay-chain as part of the Task scheduling system and its specifics are out of scope within this proposal. When consumed, revenue is recorded and provided to the Coretime-chain for proper distribution. The API for doing this is specified in RFC-5.
 
-AllowedRenewals map is updated with this information ready for the following Bulk sale.
+### Notes on the Instantaneous Coretime Market
 
-### Notes on Price Setting
+For an efficient market to form around the provision of Bulk-purchased Cores into the pool of cores available for Instantaneous Coretime purchase, it is crucial to ensure that price changes for the purchase of Instantaneous Coretime are reflected well in the revenues of private Coretime providers during the same period.
 
-The specific price setting mechanism is out of scope for this proposal and should be covered in some other work. The present proposal assumes the existence of a price-setting mechanism which could take into account three parameters; two mostly fixed and one which changes each `BULK_PERIOD`. These parameters are `BULK_TARGET`, `BULK_LIMIT` and `CORES_SOLD` which is the actual number of cores sold for the present `BULK_PERIOD` and is always an unsigned integer at most `BULK_LIMIT`.
+In order to ensure this, then it is crucial that Instantaneous Coretime, once purchased, cannot be held indefinitely prior to eventual use since, if this were the case, a nefarious collator could purchase Coretime when cheap and utilize it some time later when expensive and deprive private Coretime providers of their revenue.
+
+It must therefore be assumed that Instantaneous Coretime, once purchased, has a definite and short "shelf-life", after which it becomes unusable. This incentivizes collators to avoid purchasing Coretime unless they expect to utilize it imminently and thus helps create an efficient market-feedback mechanism whereby a higher price will actually result in material revenues for private Coretime providers who contribute to the pool of Cores available to service Instantaneous Coretime purchases.
+
+### Notes on Economics
+
+The specific pricing mechanisms are out of scope for the present proposal. Proposals on economics should be properly described and discussed in another RFC. However, for the sake of completeness, I provide some basic illustration of how price setting could potentially work.
+
+#### Bulk Price Progression
+
+The present proposal assumes the existence of a price-setting mechanism which could take into account three parameters; two mostly fixed and one which changes each `BULK_PERIOD`. These parameters are `BULK_TARGET`, `BULK_LIMIT` and `CORES_SOLD` which is the actual number of cores sold for the present `BULK_PERIOD` and is always an unsigned integer at most `BULK_LIMIT`.
 
 In general we would expect the price to increase the closer `CORES_SOLD` gets to `BULK_LIMIT` and to decrease the closer it gets to zero. If it is exactly equal to `BULK_TARGET`, then we would expect the price to remain the same.
 
@@ -273,15 +306,45 @@ END IF
 
 This exists only as a trivial example to demonstrate a basic solution exists, and should not be intended as a concrete proposal.
 
-### Notes on Instantaneous Core Sales
+#### Intra-Leadin Price-decrease
 
-For access to the Instantaneous Core sales we may include an `allocate_instantaneous` function. This should allocate the Coretime for usage by Polkadot to serve instantaneous requests and allow the `owner` to collect a pro-rata amount of total Instantaneous sales revenue.
+During the Leadin Period of a sale, the effective price starts higher than the Sale Price and falls to end at the Sale Price at the end of the Leadin Period. The price can thus be defined as a simple factor above one on which the Sale Price is multiplied. A function which returns this factor would accept a factor between zero and one specifying the portion of the Leadin Period which has passed.
 
-For an efficient market to form around the provision of Bulk-purchased Cores into the pool of cores available for Instantaneous Coretime purchase, it is crucial to ensure that price changes for the purchase of Instantaneous Coretime are reflected well in the revenues of private Coretime providers during the same period.
+Thus we assume `SALE_PRICE`, then we can define `PRICE` as:
 
-In order to ensure this, then it is crucial that Instantaneous Coretime, once purchased, cannot be held indefinitely prior to eventual use since, if this were the case, a nefarious collator could purchase Coretime when cheap and utilize it some time later when expensive and deprive private Coretime providers of their revenue. It SHOULD therefore be assumed that Instantaneous Coretime, once purchased, has a definite and short "shelf-life", after which it becomes unusable. This incentivizes collators to avoid purchasing Coretime unless they expect to utilize it imminently and thus helps create an efficient market-feedback mechanism whereby a higher price will actually result in material revenues for private Coretime providers who contribute to the pool of Cores available to service Instantaneous Coretime purchases.
+```
+PRICE := SALE_PRICE * FACTOR((NOW - LEADIN_BEGIN) / LEADIN_PERIOD)
+```
+
+We can define a very simple progression where the price decreases monotonically from double the Sale Price at the beginning of the Leadin Period.
+
+```
+FACTOR(T) := 2 - T
+```
+
+#### Instantaneous Price Progression
+
+This proposal assumes the existence of a Relay-chain-based price-setting mechanism for the Instantaneous Coretime Market which alters from block to block, taking into account several parameters: the last price, the size of the Instantaneous Coretime Pool (in terms of cores per block) and the amount of Instantaneous Coretime waiting for processing (in terms of Core-blocks queued).
+
+The ideal situation is to have the size of the Instantaneous Coretime Pool be equal to some factor of the Instantaneous Coretime waiting. This allows all Instantaneous Coretime sales to be processed with some limited latency while giving limited flexibility over ordering to the Relay-chain apparatus which is needed for efficient operation.
+
+If we set a factor of three, and thus aim to retain a queue of Instantaneous Coretime Sales which can be processed within three Relay-chain blocks, then we would increase the price if the queue goes above three times the amount of cores available, and decrease if it goes under.
+
+Let us assume the values `OLD_PRICE`, `FACTOR`, `QUEUE_SIZE` and `POOL_SIZE`. A simple definition of the `NEW_PRICE` would be thus:
+
+```
+NEW_PRICE := IF QUEUE_SIZE < POOL_SIZE * FACTOR THEN
+    OLD_PRICE * 0.95
+ELSE
+    OLD_PRICE / 0.95
+END IF
+```
+
+This exists only as a trivial example to demonstrate a basic solution exists, and should not be intended as a concrete proposal.
 
 ### Notes on Types
+
+This exists only as a short illustration of a potential technical implementation and should not be treated as anything more.
 
 #### Regions
 
@@ -339,7 +402,7 @@ struct ContributionRecord {
     begin: Timeslice,
     end: Timeslice,
     core: CoreIndex,
-    parts: CoreParts,
+    mask: CoreMask,
     payee: Contributor,
 }
 type InstaPoolContribution = Map<ContributionRecord, ()>;
@@ -349,18 +412,18 @@ type InstaPoolIo = Map<Timeslice, SignedTotalParts>;
 
 type PoolSize = Value<TotalParts>;
 
-/// Counter for the total CoreParts which could be dedicated to a pool. `u32` so we don't ever get
+/// Counter for the total CoreMask which could be dedicated to a pool. `u32` so we don't ever get
 /// an overflow.
 type TotalParts = u32;
 struct InstaPoolHistoryRecord {
     total_contributions: TotalParts,
     maybe_payout: Option<Balance>,
 }
-/// Total InstaPool rewards for each Timeslice and the number of core parts which contributed.
+/// Total InstaPool rewards for each Timeslice and the number of core Mask which contributed.
 type InstaPoolHistory = Map<Timeslice, InstaPoolHistoryRecord>;
 ```
 
-`CoreParts` tracks what unique "parts" of a single core. It is used with interlacing in order to give a unique identifier to each compnent of any possible interlacing configuration of a core, allowing for simple self-describing keys for all core ownership and allocation information. It also allows for each core's workload to be tracked and updated progressively, keeping ongoing compute costs well-bounded and low.
+`CoreMask` tracks what unique "parts" of a single core. It is used with interlacing in order to give a unique identifier to each compnent of any possible interlacing configuration of a core, allowing for simple self-describing keys for all core ownership and allocation information. It also allows for each core's workload to be tracked and updated progressively, keeping ongoing compute costs well-bounded and low.
 
 Regions are issued into the `Regions` map and can be transferred, partitioned and interlaced as the owner desires. Regions can only be tasked if they begin after the current scheduling deadline (if they have missed this, then the region can be auto-trimmed until it is).
 
@@ -370,7 +433,7 @@ Each timeslice, `InstaPoolIo` is used to update the current value of `PoolSize`.
 
 When Instantaneous Coretime Market Revenues are reported for a particular timeslice from the Relay-chain, this information gets placed in the `maybe_payout` field of the relevant record of `InstaPoolHistory`.
 
-Payments can be requested made for any records in `InstaPoolContribution` whose `begin` is the key for a value in `InstaPoolHistory` whose `maybe_payout` is `Some`. In this case, the `total_contributions` is reduced by the `ContributionRecord`'s `parts` and a pro rata amount paid. The `ContributionRecord` is mutated by incrementing `begin`, or removed if `begin` becomes equal to `end`.
+Payments can be requested made for any records in `InstaPoolContribution` whose `begin` is the key for a value in `InstaPoolHistory` whose `maybe_payout` is `Some`. In this case, the `total_contributions` is reduced by the `ContributionRecord`'s `mask` and a pro rata amount paid. The `ContributionRecord` is mutated by incrementing `begin`, or removed if `begin` becomes equal to `end`.
 
 Example:
 
@@ -429,7 +492,7 @@ Workplan:
 (110, 0) => vec![{ part: 0b0000_0000_1111_1111u16, task: Assigned(B) }]
 (150, 0) => vec![{ part: 0b1111_1111_1111_1111u16, task: InstaPool }]
 InstaPoolContribution:
-{ begin: 150, end: 200, core: 0, parts: 0b1111_1111_1111_1111u16, payee: Alice }
+{ begin: 150, end: 200, core: 0, mask: 0b1111_1111_1111_1111u16, payee: Alice }
 InstaPoolIo:
 150 => 16
 200 => -16
@@ -508,7 +571,7 @@ Rollout of this proposal comes in several phases:
 
 No specific considerations.
 
-Parachains already deployed into the Polkadot UC MUST have a clear plan of action to migrate to an agile Coretime market.
+Parachains already deployed into the Polkadot UC must have a clear plan of action to migrate to an agile Coretime market.
 
 While this proposal does not introduce documentable features per se, adequate documentation must be provided to potential purchasers of Polkadot Coretime. This SHOULD include any alterations to the Polkadot-SDK software collection, most likely Cumulus.
 
@@ -528,11 +591,20 @@ RFC-3 proposes a means of implementing the high-level allocations within the Rel
 
 RFC-5 proposes the API for interacting with Relay-chain.
 
-Additional work should specify the interface for the instantaneous market revenue so that the Broker chain can ensure Bulk Coretime placed in the instantaneous market is properly compensated.
+Additional work should specify the interface for the instantaneous market revenue so that the Coretime-chain can ensure Bulk Coretime placed in the instantaneous market is properly compensated.
 
 ## Drawbacks, Alternatives and Unknowns
 
-None at present.
+Unknowns include the economic and resource parameterisations:
+
+- The initial price of Bulk Coretime.
+- The price-change algorithm between Bulk Coretime sales.
+- The price increase per Bulk Coretime period for renewals.
+- The price decrease graph in the Leadin period for Bulk Coretime sales.
+- The initial price of Instantaneous Coretime.
+- The price-change algorithm for Instantaneous Coretime sales.
+- The percentage of cores to be sold as Bulk Coretime.
+- The fate of revenue collected.
 
 ## Prior Art and References
 
