@@ -289,17 +289,33 @@ The specific pricing mechanisms are out of scope for the present proposal. Propo
 
 #### Bulk Price Progression
 
-The present proposal assumes the existence of a price-setting mechanism which could take into account three parameters; two mostly fixed and one which changes each `BULK_PERIOD`. These parameters are `BULK_TARGET`, `BULK_LIMIT` and `CORES_SOLD` which is the actual number of cores sold for the present `BULK_PERIOD` and is always an unsigned integer at most `BULK_LIMIT`.
+The present proposal assumes the existence of a price-setting mechanism which takes into account several parameters:
+
+- `OLD_PRICE`: The price of the previous sale.
+- `BULK_TARGET`: the target number of cores to be purchased as Bulk Coretime Regions or renewed during the previous sale.
+- `BULK_LIMIT`: the maximum number of cores which could have been purchased/renewed during the previous sale.
+- `CORES_SOLD`: the actual number of cores purchased/renewed in the previous sale.
+- `SELLOUT_PRICE`: the price at which the most recent Bulk Coretime was purchased (*not* renewed) prior to selling more cores than `BULK_TARGET` (or immediately after, if none were purchased before). This may not have a value if no Bulk Coretime was purchased.
 
 In general we would expect the price to increase the closer `CORES_SOLD` gets to `BULK_LIMIT` and to decrease the closer it gets to zero. If it is exactly equal to `BULK_TARGET`, then we would expect the price to remain the same.
+
+In the edge case that no cores were purchased yet more cores were sold (through renewals) than the target, then we would also avoid altering the price.
 
 A simple example of this would be the formula:
 
 ```
-NEW_PRICE := IF CORES_SOLD < BULK_TARGET THEN
-    OLD_PRICE * MAX(CORES_SOLD, 1) / BULK_TARGET
+IF SELLOUT_PRICE == NULL AND CORES_SOLD > BULK_TARGET THEN
+    RETURN OLD_PRICE
+END IF
+EFFECTIVE_PRICE := IF CORES_SOLD > BULK_TARGET THEN
+    SELLOUT_PRICE
 ELSE
-    OLD_PRICE + OLD_PRICE *
+    OLD_PRICE
+END IF
+NEW_PRICE := IF CORES_SOLD < BULK_TARGET THEN
+    EFFECTIVE_PRICE * MAX(CORES_SOLD, 1) / BULK_TARGET
+ELSE
+    EFFECTIVE_PRICE + EFFECTIVE_PRICE *
         (CORES_SOLD - BULK_TARGET) / (BULK_LIMIT - BULK_TARGET)
 END IF
 ```
