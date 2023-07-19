@@ -4,7 +4,7 @@
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 2023-07-19                                                                                  |
 | **Description** | Modify the networking storage read requests to solve some problems with the existing one    |
-| **Authors**     |                                                                                             |
+| **Authors**     | Pierre Krieger                                                                              |
 
 ## Summary
 
