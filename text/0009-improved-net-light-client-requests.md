@@ -100,7 +100,7 @@ This protocol keeps the same maximum response size limit as currently exists (16
 
 ## Drawbacks
 
-This proposal doesn't handle one specific situation: what if a proof containing a specific item would exceed the response size limit? For example, if the response size limit was 1 MiB, querying the runtime code (which is typically 1.0 to 1.5 MiB) would be impossible as it's impossible to generate a proof less than 1 MiB. The response size limit is currently 16 MiB, meaning that no single storage item must exceed 16 MiB.
+This proposal doesn't handle one specific situation: what if a proof containing a single specific item would exceed the response size limit? For example, if the response size limit was 1 MiB, querying the runtime code (which is typically 1.0 to 1.5 MiB) would be impossible as it's impossible to generate a proof less than 1 MiB. The response size limit is currently 16 MiB, meaning that no single storage item must exceed 16 MiB.
 
 Unfortunately, because it's impossible to verify a Merkle proof before having received it entirely, parsing the proof in a streaming way is also not possible.
 
@@ -116,7 +116,7 @@ Implementers of the replier side should be careful to detect early on when a rep
 
 ### Performance
 
-It is unclear to the author of the RFC what the performance implications are. Servers are supposed to have limits to the amount of resources they use to respond to requests, and as such the worst that can happen is that requests become a bit slower than they currently are.
+It is unclear to the author of the RFC what the performance implications are. Servers are supposed to have limits to the amount of resources they use to respond to requests, and as such the worst that can happen is that light client requests become a bit slower than they currently are.
 
 ### Ergonomics
 
@@ -124,7 +124,7 @@ Irrelevant.
 
 ### Compatibility
 
-The prior networking protocol is maintained for now. The older version of this protocol could get removed in a year or two.
+The prior networking protocol is maintained for now. The older version of this protocol could get removed in a long time.
 
 ## Prior Art and References
 
