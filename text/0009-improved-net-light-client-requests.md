@@ -114,6 +114,8 @@ The main security consideration concerns the size of replies and the resources n
 
 Implementers of the replier side should be careful to detect early on when a reply would exceed the maximum reply size, rather than inconditionally generate a reply, as this could take a very large amount of CPU, disk I/O, and memory. Existing implementations might currently be accidentally protected from such an attack thanks to the fact that requests have a maximum size, and thus that the list of keys in the query was bounded. After this proposal, this accidental protection would no longer exist.
 
+Malicious server nodes might truncate Merkle proofs even when they don't strictly need to, and it is not possible for the client to (easily) detect this situation. However, malicious server nodes can already do undesirable things such as throttle down their upload bandwidth or simply not respond. There is no need to handle unnecessarily truncated Merkle proofs any differently than a server simply not answering the request.
+
 ## Performance, Ergonomics, and Compatibility
 
 ### Performance
