@@ -98,6 +98,8 @@ Also note that child tries aren't considered as descendants of the main trie whe
 
 This protocol keeps the same maximum response size limit as currently exists (16 MiB). It is not possible for the querier to know in advance whether its query will lead to a reply that exceeds the maximum size. If the reply is too large, the replier should send back only a limited number (but at least one) of requested items in the proof. The querier should then send additional requests for the rest of the items. A response containing none of the requested items is invalid.
 
+The server is allowed to silently discard some keys of the request if it judges that the number of requested keys is too high. This is in line with the fact that the server might truncate the response.
+
 ## Drawbacks
 
 This proposal doesn't handle one specific situation: what if a proof containing a single specific item would exceed the response size limit? For example, if the response size limit was 1 MiB, querying the runtime code (which is typically 1.0 to 1.5 MiB) would be impossible as it's impossible to generate a proof less than 1 MiB. The response size limit is currently 16 MiB, meaning that no single storage item must exceed 16 MiB.
