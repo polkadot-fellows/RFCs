@@ -1,4 +1,4 @@
-# RFC-000X: Remove Asset Sufficiency from Asset Hubs
+# RFC-0011: Remove Asset Sufficiency from Asset Hubs
 
 |                 |                                                                               |
 | --------------- | ----------------------------------------------------------------------------- |
