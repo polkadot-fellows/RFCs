@@ -3,7 +3,7 @@
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | July 24, 2023 |
-| **Description** | Changes to the BlockBuilder v5 and Core v7 Runtime APIs. |
+| **Description** | Changes to the BlockBuilder v5 and Core v7 Runtime APIs to prepare for Multi-Block-Migrations. |
 | **Authors**     | Oliver Tale-Yazdi |
 
 ## Summary
