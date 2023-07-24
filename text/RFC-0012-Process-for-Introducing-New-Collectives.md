@@ -1,4 +1,4 @@
-# RFC-0000: Process for Adding New System Collectives
+# RFC-0012: Process for Adding New System Collectives
 
 |                 |                                                                               |
 | --------------- | ----------------------------------------------------------------------------- |
