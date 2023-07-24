@@ -1,9 +1,9 @@
-# RFC-0013: Runtime API `BlockBuilder` v5 and `Core` v7
+# RFC-0013: Prepare `BlockBuilder` and `Core` runtime API for MBMs
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | July 24, 2023 |
-| **Description** | Changes to the BlockBuilder v5 and Core v7 Runtime APIs to prepare for Multi-Block-Migrations. |
+| **Description** | Prepares the `BlockBuilder` and `Core` Runtime APIs for Multi-Block-Migrations. |
 | **Authors**     | Oliver Tale-Yazdi |
 
 ## Summary
