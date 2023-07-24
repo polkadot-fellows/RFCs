@@ -64,7 +64,7 @@ Compliance of a block author can be tested by adding specific code to the `after
 checking that it always executes. The new logic of `initialize_block` can be tested by checking that
 the block-builder will skip transactions and optional hooks when `Minimal` is returned.  
 
-Security: Implementations need to be well audited before merging.
+Security: Implementations need to be well-audited before merging.
 
 Privacy: n/a
 
