@@ -102,7 +102,9 @@ Related issues and merge requests:
 
 ## Unresolved Questions
 
-Please suggest a better name for `BlockExecutiveMode`. We already tried: `RuntimeExecutiveMode`, `ExtrinsicInclusionMode`.
+Please suggest a better name for `BlockExecutiveMode`. We already tried: `RuntimeExecutiveMode`,
+`ExtrinsicInclusionMode`. The names of the modes `Normal` and `Minimal` were also called
+`AllExtrinsics` and `OnlyInherents`, so if you have naming preferences; please post them.
 
 ## Future Directions and Related Material
 
