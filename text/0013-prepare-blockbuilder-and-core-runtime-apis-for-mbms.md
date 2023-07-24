@@ -84,7 +84,7 @@ The new interface allows for more extensible runtime logic. In the future, this 
 
 Backwards compatibility can only be considered on the node side since the runtime cannot be
 backwards compatible in any way. The advice here is OPTIONAL and outside of the RFC. To not degrade
-user performance, it is recommended to check that an updated node can still import historic blocks.
+user experience, it is recommended to check that an updated node can still import historic blocks.
 
 ## Prior Art and References
 
