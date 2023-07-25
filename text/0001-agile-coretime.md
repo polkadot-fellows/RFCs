@@ -340,7 +340,7 @@ FACTOR(T) := 2 - T
 
 #### Instantaneous Price Progression
 
-This proposal assumes the existence of a Relay-chain-based price-setting mechanism for the Instantaneous Coretime Market which alters from block to block, taking into account several parameters: the last price, the size of the Instantaneous Coretime Pool (in terms of cores per block) and the amount of Instantaneous Coretime waiting for processing (in terms of Core-blocks queued).
+This proposal assumes the existence of a Relay-chain-based price-setting mechanism for the Instantaneous Coretime Market which alters from block to block, taking into account several parameters: the last price, the size of the Instantaneous Coretime Pool (in terms of cores per Relay-chain block) and the amount of Instantaneous Coretime waiting for processing (in terms of Core-blocks queued).
 
 The ideal situation is to have the size of the Instantaneous Coretime Pool be equal to some factor of the Instantaneous Coretime waiting. This allows all Instantaneous Coretime sales to be processed with some limited latency while giving limited flexibility over ordering to the Relay-chain apparatus which is needed for efficient operation.
 
