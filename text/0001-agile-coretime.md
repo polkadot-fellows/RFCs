@@ -117,22 +117,11 @@ The specific interface is properly described in RFC-5.
 
 #### Parameters
 
-This proposal includes a number of parameters which need not necessarily be fixed. They are stated here along with a value, and are either *suggested* or *specified*. If *suggested*, it is non-binding and the proposal should not be judged on the value since other RFCs and/or the governance mechanism of Polkadot is expected to specify/maintain it. If *specified*, then the proposal should be judged on the merit of the value as-is.
+This proposal includes a number of parameters which need not necessarily be fixed. Their usage is explained below, but their values are suggested or specified in the later section *Parameter Values*.
 
-| Name                | Value                        | |
-| ------------------- | ---------------------------- | ---------- |
-| `BULK_PERIOD`       | `28 * DAYS`                  | specified  |
-| `INTERLUDE_PERIOD`  | `7 * DAYS`                   | specified  |
-| `LEADIN_PERIOD`     | `7 * DAYS`                   | specified  |
-| `TIMESLICE`         | `8 * MINUTES`                | specified  |
-| `BULK_TARGET`       | `30`                         | suggested  |
-| `BULK_LIMIT`        | `45`                         | suggested  |
-| `STEP_PERIOD`       | `8 * HOURS`                  | suggested  |
-| `RENEWAL_PRICE_CAP` | `Perbill::from_percent(2)`   | suggested  |
+#### Reservations and Leases
 
-#### Reservations
-
-The Coretime-chain includes some governance-set reservations of Coretime; these cover every System-chain as well as the pre-existing leased chains.
+The Coretime-chain includes some governance-set reservations of Coretime; these cover every System-chain. Additionally, governance is expected to initialize details of the pre-existing leased chains.
 
 #### Regions
 
@@ -191,7 +180,7 @@ Regions may be manipulated in various ways by its owner:
 1. *Transferred* in ownership.
 1. *Partitioned* into quantized, non-overlapping segments of Bulk Coretime with the same ownership.
 1. *Interlaced* into multiple Regions over the same period whose eventual assignments take turns to be scheduled.
-1. *Assigned* to a single, specific ParaID task. This may be either *provisional* or *final*.
+1. *Assigned* to a single, specific task (identified by `TaskId` aka `ParaId`). This may be either *provisional* or *final*.
 1. *Pooled* into the Instantaneous Coretime Pool, in return for a pro-rata amount of the revenue from the Instantaneous Coretime Sales over its period.
 
 #### Enactment
@@ -232,7 +221,7 @@ Also:
 
 Regions may be assigned to a core.
 
-A `assign(region: RegionId, target: ParaId, finality: Finality)` dispatchable shall have the effect of placing an item in the workplan corresponding to the region's properties and assigned to the `target` task.
+A `assign(region: RegionId, target: TaskId, finality: Finality)` dispatchable shall have the effect of placing an item in the workplan corresponding to the region's properties and assigned to the `target` task.
 
 If the region's end has already passed (taking into account any advance notice requirements) then this operation is a no-op. If the region's begining has already passed, then it is effectively altered to become the next schedulable timeslice.
 
@@ -254,13 +243,26 @@ If the region's end has already passed (taking into account any advance notice r
 Also:
 - `owner` field of `region` must the equal to the Signed origin.
 
-#### 6. Renewals
+#### 6. Purchases
+
+A dispatchable `purchase(price_limit: Balance)` shall be provided. Any account may call `purchase` to purchase Bulk Coretime at the maximum price of `price_limit`.
+
+This may be called successfully only:
+
+1. during the regular Purchasing Period;
+2. when the caller is a Signed origin and their account balance is reducible by the current sale price;
+3. when the current sale price is no greater than `price_limit`; and
+4. when the number of cores already sold is less than `BULK_LIMIT`.
+
+If successful, the caller's account balance is reduced by the current sale price and a new Region item for the following Bulk Coretime span is issued with the owner equal to the caller's account.
+
+#### 7. Renewals
 
 A dispatchable `renew(core: CoreIndex)` shall be provided. Any account may call `renew` to purchase Bulk Coretime and renew an active allocation for the given `core`.
 
 This may be called during the Interlude Period as well as the regular Purchasing Period and has the same effect as `purchase` followed by `assign`, except that:
 
-1. The price of the purchase is the previous `price` incremented by `RENEWAL_PRICE_CAP`.
+1. The price of the sale is the Renewal Price (see next).
 1. The Region is allocated exactly the given `core` is currently allocated for the present Region.
 
 Renewal is only valid where a Region's span is assigned to Tasks (not placed in the Instantaneous Coretime Pool) for the entire unsplit `BULK_PERIOD` over all of the Core Mask and with Finality. There are thus three possibilities of a renewal being allowed:
@@ -269,7 +271,15 @@ Renewal is only valid where a Region's span is assigned to Tasks (not placed in 
 1. Renewed Coretime.
 1. A legacy lease which is ending.
 
-#### 7. Instantaneous Coretime Credits
+**Renewal Price**
+
+The Renewal Price is:
+
+- If the workload being renewed came to be through the *Purchase and Assignment* of Bulk Coretime, then the price paid during the Purchase operation.
+- If the workload being renewed was previously renewed, then the price paid during this previous Renewal operation plus `RENEWAL_PRICE_CAP`.
+- If the workload being renewed is a migation from a legacy slot auction lease, then the nominal price for a Regular Purchase (outside of the Lead-in Period) of the Sale during which the legacy lease expired.
+
+#### 8. Instantaneous Coretime Credits
 
 A dispatchable `purchase_credit(amount: Balance, beneficiary: RelayChainAccountId)` shall be provided. Any account with at least `amount` spendable funds may call this. This increases the Instantaneous Coretime Credit balance on the Relay-chain of the `beneficiary` by the given `amount`.
 
@@ -338,6 +348,21 @@ We can define a very simple progression where the price decreases monotonically 
 FACTOR(T) := 2 - T
 ```
 
+#### Parameter Values
+
+Parameters are either *suggested* or *specified*. If *suggested*, it is non-binding and the proposal should not be judged on the value since other RFCs and/or the governance mechanism of Polkadot is expected to specify/maintain it. If *specified*, then the proposal should be judged on the merit of the value as-is.
+
+| Name                | Value                        | |
+| ------------------- | ---------------------------- | ---------- |
+| `BULK_PERIOD`       | `28 * DAYS`                  | specified  |
+| `INTERLUDE_PERIOD`  | `7 * DAYS`                   | specified  |
+| `LEADIN_PERIOD`     | `7 * DAYS`                   | specified  |
+| `TIMESLICE`         | `8 * MINUTES`                | specified  |
+| `BULK_TARGET`       | `30`                         | suggested  |
+| `BULK_LIMIT`        | `45`                         | suggested  |
+| `RENEWAL_PRICE_CAP` | `Perbill::from_percent(2)`   | suggested  |
+
+
 #### Instantaneous Price Progression
 
 This proposal assumes the existence of a Relay-chain-based price-setting mechanism for the Instantaneous Coretime Market which alters from block to block, taking into account several parameters: the last price, the size of the Instantaneous Coretime Pool (in terms of cores per Relay-chain block) and the amount of Instantaneous Coretime waiting for processing (in terms of Core-blocks queued).
@@ -395,7 +420,7 @@ map Regions = Map<RegionId, RegionRecord>;
 // 40-bit (5 bytes). Could be 32-bit with a more specialised type.
 enum CoreTask {
     Off,
-    Assigned { target: ParaId },
+    Assigned { target: TaskId },
     InstaPool,
 }
 // 120-bit (15 bytes). Could be 14 bytes with a specialised 32-bit `CoreTask`.
