@@ -258,7 +258,7 @@ Also:
 
 A dispatchable `renew(core: CoreIndex)` shall be provided. Any account may call `renew` to purchase Bulk Coretime and renew an active allocation for the given `core`.
 
-This may be called during the Interlude Period as well as the regular Purchasing Period and has the same effect as `purchase` followed by `allocate`, except that:
+This may be called during the Interlude Period as well as the regular Purchasing Period and has the same effect as `purchase` followed by `assign`, except that:
 
 1. The price of the purchase is the previous `price` incremented by `RENEWAL_PRICE_CAP`.
 1. The Region is allocated exactly the given `core` is currently allocated for the present Region.
