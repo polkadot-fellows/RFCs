@@ -93,7 +93,7 @@ The Relay-chain reports this usage back to the Coretime-chain in order to allow 
 
 Specifically the Relay-chain is expected to be responsible for:
 
-- holding non-transferable, non-refundable DOT-denominated Instantaneous Coretime Credit balance information for collators.
+- holding non-transferable, non-refundable DOT-denominated Instantaneous Coretime Credit balance information.
 - setting and adjusting the price of Instantaneous Coretime based on usage.
 - allowing collators to consume their Instantaneous Coretime Credit at the current pricing in exchange for the ability to schedule one PoV for near-immediate usage.
 - ensuring the Coretime-Chain has timely accounting information on Instantaneous Coretime Sales revenue.
