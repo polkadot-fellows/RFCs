@@ -398,10 +398,10 @@ enum CoreTask {
     Assigned { target: ParaId },
     InstaPool,
 }
-// 113-bit (14 bytes). Could be 14 bytes with a specialised 32-bit `CoreTask`.
+// 120-bit (15 bytes). Could be 14 bytes with a specialised 32-bit `CoreTask`.
 struct ScheduleItem {
     mask: CoreMask, // 80 bit
-    task: CoreTask, // 33 bit
+    task: CoreTask, // 40 bit
 }
 
 /// The work we plan on having each core do at a particular time in the future.
