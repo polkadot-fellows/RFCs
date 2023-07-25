@@ -182,7 +182,7 @@ Firstly, the price paid is exactly `RENEWAL_PRICE_CAP` more than what the purcha
 
 Secondly, the purchased Region comes preassigned with exactly the same workload as before. It cannot be traded, repartitioned, interlaced or exchanged. As such unlike regular purchasing the Region never has an owner.
 
-Renewal is only possible for either cores which have been assigned as a result of a previous renewal, which are migrating from legacy slot leases, or which fill their Bulk Coretime with an unsegmented, fully and finally assigned workload which does not include placement in the Instantaneous Coretime Pool. In the latter case, the renewed workload will be the same as this initial workload.
+Renewal is only possible for either cores which have been assigned as a result of a previous renewal, which are migrating from legacy slot leases, or which fill their Bulk Coretime with an unsegmented, fully and finally assigned workload which does not include placement in the Instantaneous Coretime Pool. The renewed workload will be the same as this initial workload.
 
 #### Manipulation
 
