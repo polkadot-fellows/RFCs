@@ -589,7 +589,7 @@ No specific considerations.
 
 Parachains already deployed into the Polkadot UC must have a clear plan of action to migrate to an agile Coretime market.
 
-While this proposal does not introduce documentable features per se, adequate documentation must be provided to potential purchasers of Polkadot Coretime. This SHOULD include any alterations to the Polkadot-SDK software collection, most likely Cumulus.
+While this proposal does not introduce documentable features per se, adequate documentation must be provided to potential purchasers of Polkadot Coretime. This SHOULD include any alterations to the Polkadot-SDK software collection.
 
 ## Testing, Security and Privacy
 
