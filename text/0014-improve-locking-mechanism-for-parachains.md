@@ -86,9 +86,9 @@ This RFC is fully compatibility with existing interfaces.
 
 ## Prior Art and References
 
-Parachain Slot Extension Story: https://github.com/paritytech/polkadot/issues/4758
-Allow parachain to renew lease without actually run another parachain: https://github.com/paritytech/polkadot/issues/6685
-Always treat parachain that never produced block for a significant amount of time as unlocked: https://github.com/paritytech/polkadot/issues/7539
+- Parachain Slot Extension Story: https://github.com/paritytech/polkadot/issues/4758
+- Allow parachain to renew lease without actually run another parachain: https://github.com/paritytech/polkadot/issues/6685
+- Always treat parachain that never produced block for a significant amount of time as unlocked: https://github.com/paritytech/polkadot/issues/7539
 
 ## Unresolved Questions
 
