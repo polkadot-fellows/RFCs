@@ -1,9 +1,9 @@
-# RFC-0011: Remove Asset Sufficiency from Asset Hubs
+# RFC-0011: Add New Path to Account Creation on Asset Hubs
 
 |                 |                                                                               |
 | --------------- | ----------------------------------------------------------------------------- |
 | **Start Date**  | 19 July 2023                                                                  |
-| **Description** | Proposal for a secure means of removing asset "sufficiency".                  |
+| **Description** | Proposal for a new secure means of creating an account on Asset Hub.          |
 | **Authors**     | Joe Petrowski                                                                 |
 
 ## Summary
@@ -13,8 +13,9 @@ a non-existent account, will provide a sufficient reference that creates the acc
 asset is _sufficient_ to justify an account's existence, even in lieu of the existential deposit of
 DOT.
 
-This RFC proposes a means of removing this concept from Asset Hub in a way that will increase both
-security and simplicity.
+While convenient for sufficient assets, the vast majority of assets are not sufficient. This RFC
+proposes an opt-in means for users to create accounts from non-sufficient assets by swapping a
+portion of the first transfer to acquire the existential deposit of DOT.
 
 ## Motivation
 
@@ -24,17 +25,16 @@ asset's administrator could mint the asset and create many accounts without payi
 storage deposit. For this reason, governance has been extremely strict in granting sufficiency, so
 far only doing so to one asset (USDT).
 
-The concept of sufficiency can also be confusing for users and UX developers because it exposes
-low-level protocol decisions (like existence criteria). Further, it means that the existence
-criteria on Asset Hub are different than in other locations within the Polkadot system.
+With the introduction of the Asset Conversion pallet, the Asset Hub can offer a new path to account
+creation. The current paths are:
 
-But the ability to create accounts without the need for the user to interact with DOT brings user
-experience advantages. It allows applications to let users only use the asset(s) they are
-interested in without adding extra steps to their journey.
+1. An account can have the existential deposit of DOT;
+1. An account can have the minimum balance of a sufficient asset;
+1. Someone else can create an account in the context of an asset class by placing a deposit in DOT.
+   This path is only available to the asset class's `Admin` or `Freezer`.
 
-With the introduction of the Asset Conversion pallet, the Asset Hub can entirely remove asset
-sufficiency in a secure way, while still allowing asset transfer without introducing intermediate
-steps in a user's (both sender's and receiver's) attempt to transer an asset.
+This RFC proposes a fourth path that does not introduce prior steps for either the sender or
+receiver of the asset.
 
 ### Requirements
 
@@ -42,7 +42,6 @@ steps in a user's (both sender's and receiver's) attempt to transer an asset.
   unlimited number of accounts.
 - The system SHOULD allow users to hold and transact in any asset without _separately and priorly_
   acquiring DOT.
-- The system SHOULD NOT require asset-specific governance intervention.
 
 ## Stakeholders
 
@@ -61,18 +60,17 @@ does exist, the full amount of the asset can be transferred. This would mean tha
 asset transfer to an account has some amount debited to acquire the DOT to create the account, but
 subsequent transfers would always be in full.
 
-The main benefits of this approach are:
+The main benefit of this approach is that it removes the sender's need to know about the
+desination's existence and the recipient's need to "prepare" an account by endowing it.
 
-- Asset transfers should almost always succeed, without the sender knowing about the destination's
-  existence nor the recipient needing to "prepare" an account by endowing it;
-- There is an increase in network security by only trusting DOT issuance and not needing to trust
-  asset issuers;
-- Wallet and UI developers no longer need to design logic around asset sufficiency.
+The primary tradeoff, of course, is that transactions like "send 10 USDT" could result in fewer
+than 10 USDT arriving in the destination account. This can be solved by having the conversion be
+opt-in for the sender.
 
-The primary tradeoff, of course, is that it does force users to have DOT in order to have an
-account. However, this is true everywhere else within the system, the amount is small (the
-existential deposit is 0.1 DOT on Asset Hub), and the user need not interact with the DOT in any
-way because transaction fee payment can also be handled via Asset Conversion.
+Because the existential deposit is small (0.1 DOT on Asset Hub), and the user need not interact
+with the DOT in any way -- because transaction fee payment can also be handled via Asset Conversion
+-- many users may find this path convenient in avoiding transfer errors due to non-existent
+accounts or asset insufficiency.
 
 Stripping out all other asset transfer-associated logic, this RFC proposes the following logic:
 
@@ -82,22 +80,24 @@ fn transfer(
     asset: AssetId,
     destination: AccountId,
     amount: Balance,
+    create_destination: bool,
     ..
 ) -> DispatchResult {
     let from = ensure_signed(origin)?;
-    if destination.exists() {
-        // The destination already exists (holds ED of DOT). We can just transfer the asset as
-        // normal.
+    let details = Asset::<T, I>::get(&id).ok_or(Error::<T, I>::Unknown)?;
+    if destination.exists() || !create_destination || details.sufficient {
+        // Either the destination already exists (holds ED of DOT), the user does not want to create
+        // the destination account, or the asset class is sufficient. We can just transfer the
+        // asset as normal.
         Self::do_transfer(asset, from, destination, amount, ..)?;
     } else {
-        // The destination does not exist. In the current way, we would check if the asset is
-        // sufficient, and create the account with a sufficient reference if so or fail if not.
+        // The destination does not exist and the user has opted in to create it via a swap.
         //
-        // Instead, we try to swap the asset provided for the existential deposit, depositing the ED
-        // in the destination account. If the asset does not have an Asset Conversion pair with DOT
-        // or the asset amount isn't enough to acquire the existential deposit, this will fail. But
-        // we generally think (a) pairs will exist, and (b) the ED is small and UIs can easily
-        // verify that this should succeed, so failures should be rare.
+        // We will try to swap the asset provided for the existential deposit, depositing the ED in
+        // the destination account. If the asset does not have an Asset Conversion pair with DOT or
+        // the asset amount isn't enough to acquire the existential deposit, this will fail. But we
+        // generally think (a) pairs will exist, and (b) the ED is small and UIs can easily verify
+        // that this should succeed, so failures should be rare.
         //
         // The swap returns the amount of the asset consumed to acquire the ED.
         let consumed = Swap::swap_tokens_for_exact_tokens(
@@ -120,7 +120,7 @@ fn transfer(
 ## Drawbacks
 
 This solution would automatically convert some amount of another asset to DOT when acquiring DOT
-was perhaps not the recipient's intent.
+was perhaps not the recipient's intent. However, this is opt-in.
 
 ## Testing, Security, and Privacy
 
@@ -144,17 +144,12 @@ that the block builder can appropriately budget for the weight.
 
 ### Ergonomics
 
-This proposal would benefit the ergonomics of the system for end users by making all assets behave
-the same when sending to a new account.
+This proposal would benefit the ergonomics of the system for end users by allowing all assets to
+create destination accounts when needed.
 
 ### Compatibility
 
-This change would require changes to the Assets pallet to remove sufficiency from the internal
-logic of the pallet. The Assets pallet may want to maintain the concept of sufficiency should other
-chains want to use it for other purposes, but asset transfer should have a handler for what to do
-when an account does not exist. The default implementation of that handler could rely on
-sufficiency to preserve behavior, but runtimes (like Asset Hub) could implement an alternative,
-like using Asset Conversion.
+This change would require changes to the Assets pallet to add the new account creation path.
 
 ## Prior Art and References
 
