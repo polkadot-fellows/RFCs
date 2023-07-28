@@ -8,7 +8,7 @@
 
 ## Summary
 
-The manager of a parachain have the permission to manage the parachain when the parachain is unlocked. Parachain is by default locked when onboarded on a slot. This requires the parachain wasm/genesis must be valid otherwise a root track governance action on relaychain is required to update the parachain.
+The manager of a parachain has permission to manage the parachain when the parachain is unlocked. Parachains are by default locked when onboarded to a slot. This requires the parachain wasm/genesis must be valid, otherwise a root track governance action on relaychain is required to update the parachain.
 
 This RFC proposes a mechanism to allow a parachain manager to self-service the parachain without root track governance action.
 
