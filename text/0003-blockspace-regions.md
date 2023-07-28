@@ -164,8 +164,8 @@ The **effective consumption** of a region at any block number `now` is the given
 
 A submitted candidate which uses `p: PartsOf57600` of the core's resources for a parachain P at a block B is accepted if:
   * There is no candidate pending availability for B
-  * effective_consumption(B, region) + p <= maximum` if `maximum` is `Some`
-  * effective_consumption(B, region) + p <= maximum_consumption(B, region)
+  * `effective_consumption(B, region) + p <= maximum` if `maximum` is `Some`
+  * `effective_consumption(B, region) + p <= maximum_consumption(B, region)`
 
 How core resource limits are defined is left beyond the scope of this RFC - at the time of writing, all cores have the same resource limits, but this design allows cores to be specialized in their resource limits, with some cores allowing more data, some allowing more granularity or execution time, etc.
 
@@ -207,6 +207,8 @@ This RFC fulfills requirement (5) as it works well even if regions are scheduled
 This RFC fulfills requirement (6) with the region validity check, ensuring that parachains never exceed either the explicit or implicit maximum allocated to the region.
 
 This RFC fulfills requirement (7) with the scheduling lenience logic, by setting an effective limit on how far behind the maximum possible utilized coretime a region can be.
+
+This RFC fulfills requirement (8) by accommodating regions ranging from single-block short-term regions to very long-term scheduled regions. This encompasses the entire possible range of what is possible to schedule on the relay chain.
 
 ## Drawbacks
 
