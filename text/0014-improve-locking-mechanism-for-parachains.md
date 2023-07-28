@@ -130,7 +130,7 @@ This RFC is fully compatibility with existing interfaces.
 
 ## Unresolved Questions
 
-How long should we wait before considering a parachain is unable to produce block? It should not be too long otherwise will defects the purpose of this RFC. It should not be too short otherwise will introduce centralization risk. It is proposed to be 7 days.
+None at this stage.
 
 ## Future Directions and Related Material
 
