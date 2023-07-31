@@ -127,9 +127,9 @@ The Coretime-chain includes some governance-set reservations of Coretime; these 
 
 A *Region* is an assignable period of Coretime with a known regularity.
 
-All Regions are associated with a unique *Core Index*, to identify which core the Region controls the assignment of.
+All Regions are associated with a unique *Core Index*, to identify which core the assignment of which ownership of the Region controls.
 
-All Regions are also associated with a *Core Mask*, an 80-bit bitmap, to denote the regularity on which it may be scheduled on the core. If all bits are set in the Core Mask value, it is said to be *Complete*. 80 is selected since this results in the size of the datatype used to identify any Region of Polkadot Coretime to be a very convenient 128-bit. Additionally, if `TIMESLICE` (the number of Relay-chain blocks in a Timeslice) is 80, then a single bit in the Core Mask bitmap represents exactly one Core for one Relay-chain block in one Timeslice.
+All Regions are also associated with a *Core Mask*, an 80-bit bitmap, to denote the regularity at which it may be scheduled on the core. If all bits are set in the Core Mask value, it is said to be *Complete*. 80 is selected since this results in the size of the datatype used to identify any Region of Polkadot Coretime to be a very convenient 128-bit. Additionally, if `TIMESLICE` (the number of Relay-chain blocks in a Timeslice) is 80, then a single bit in the Core Mask bitmap represents exactly one Core for one Relay-chain block in one Timeslice.
 
 All Regions have a span. Region spans are quantized into periods of `TIMESLICE` blocks; `BULK_PERIOD` divides into `TIMESLICE` a whole number of times.
 
