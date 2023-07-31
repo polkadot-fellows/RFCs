@@ -167,7 +167,7 @@ The Sale Price varies during an initial portion of the Purchasing Period called 
 
 At any time when there are remaining Regions of Bulk Coretime to be sold, *including during the Interlude Period*, then certain Bulk Coretime assignmnents may be *Renewed*. This is similar to a purchase in that funds must be paid and it consumes one of the Regions of Bulk Coretime which would otherwise be placed for purchase. However there are two key differences.
 
-Firstly, the price paid is the minimum of `RENEWAL_PRICE_CAP` more than what the purchase/renewal price was in the previous renewal and the current (or initial, if you to begin) regular Sale Price.
+Firstly, the price paid is the minimum of `RENEWAL_PRICE_CAP` more than what the purchase/renewal price was in the previous renewal and the current (or initial, if yet to begin) regular Sale Price.
 
 Secondly, the purchased Region comes preassigned with exactly the same workload as before. It cannot be traded, repartitioned, interlaced or exchanged. As such unlike regular purchasing the Region never has an owner.
 
