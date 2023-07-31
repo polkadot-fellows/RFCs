@@ -283,7 +283,7 @@ The Renewal Price is the minimum of the current regular Sale Price (or the initi
 
 A dispatchable `purchase_credit(amount: Balance, beneficiary: RelayChainAccountId)` shall be provided. Any account with at least `amount` spendable funds may call this. This increases the Instantaneous Coretime Credit balance on the Relay-chain of the `beneficiary` by the given `amount`.
 
-This Credit is consumable on the Relay-chain as part of the Task scheduling system and its specifics are out of scope within this proposal. When consumed, revenue is recorded and provided to the Coretime-chain for proper distribution. The API for doing this is specified in RFC-5.
+This Credit is consumable on the Relay-chain as part of the Task scheduling system and its specifics are out of the scope of this proposal. When consumed, revenue is recorded and provided to the Coretime-chain for proper distribution. The API for doing this is specified in RFC-5.
 
 ### Notes on the Instantaneous Coretime Market
 
