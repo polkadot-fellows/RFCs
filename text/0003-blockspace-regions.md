@@ -90,7 +90,7 @@ struct RegionSchema {
     // consumed with infrequent large state transitions or frequent small state
     // transitions.
     //
-    // This value may not be greater than `RATE_DENOMINATOR`.
+    // This value must not be greater than `RATE_DENOMINATOR`.
     rate: PartsOf57600,
 }
 
