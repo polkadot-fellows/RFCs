@@ -153,7 +153,7 @@ Created regions for a core MUST NOT exceed a combined block rate of 1 at any blo
 Regions are used to modify the behavior of the parachain backing/availability pipeline. The first major change is that parachain candidates submitted to the relay-chain in the `ParasInherent` will be annotated with the `RegionId` that they are intended to occupy. Validators and collators do the work of figuring out which blocks are assigned to which regions, lifting the burden of granular scheduling off of the relay chain.
 
 The **maximum consumption** of a region at any block number `now` is given by:
-`maximum_consumption(now, region) = min(now, end) - start * rate`
+`maximum_consumption(now, region) = (min(now, end) - start) * rate`
 If `end` is `None`, it is treated as infinite.
 
 The **minimum consumption** of a region at any block number `now` is given by:
