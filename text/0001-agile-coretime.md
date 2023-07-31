@@ -167,7 +167,7 @@ The Sale Price varies during an initial portion of the Purchasing Period called 
 
 At any time when there are remaining Regions of Bulk Coretime to be sold, *including during the Interlude Period*, then certain Bulk Coretime assignmnents may be *Renewed*. This is similar to a purchase in that funds must be paid and it consumes one of the Regions of Bulk Coretime which would otherwise be placed for purchase. However there are two key differences.
 
-Firstly, the price paid is the minimum of `RENEWAL_PRICE_CAP` more than what the purchase/renewal price was in the previous sale and the current (or initial, if you to begin) regular purchase price.
+Firstly, the price paid is the minimum of `RENEWAL_PRICE_CAP` more than what the purchase/renewal price was in the previous renewal and the current (or initial, if you to begin) regular Sale Price.
 
 Secondly, the purchased Region comes preassigned with exactly the same workload as before. It cannot be traded, repartitioned, interlaced or exchanged. As such unlike regular purchasing the Region never has an owner.
 
@@ -273,7 +273,7 @@ Renewal is only valid where a Region's span is assigned to Tasks (not placed in 
 
 **Renewal Price**
 
-The Renewal Price is the minimum of the current regular purchase price (or the initial purchase price if in the Interlude Period) and:
+The Renewal Price is the minimum of the current regular Sale Price (or the initial Sale Price if in the Interlude Period) and:
 
 - If the workload being renewed came to be through the *Purchase and Assignment* of Bulk Coretime, then the price paid during that Purchase operation.
 - If the workload being renewed was previously renewed, then the price paid during this previous Renewal operation plus `RENEWAL_PRICE_CAP`.
