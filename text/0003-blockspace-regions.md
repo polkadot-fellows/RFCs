@@ -8,7 +8,7 @@
 
 ## Summary
 
-Coretime regions are a dynamic, multi-purpose mechanism for determining the assignment of parachains to a relay chain's Execution Cores. They replace existing scheduling logic in the Polkadot Relay Chain, and introduce a notion of Hypercores for accepting parachain blocks at flexible points in time.
+Coretime regions are a dynamic, multi-purpose mechanism for determining the assignment of parachains to a relay chain's Execution Cores. They replace existing scheduling logic in the Polkadot Relay Chain, and introduce a notion of BURST_CORES for accepting parachain blocks at flexible points in time.
 
 Each region is a data structure assigned to a particular application, which indicates future rights to consume coretime and keeps records of how many resources have been consumed so far. Relay-chain coretime regions, unlike those in RFC-0001 are not intended to be traded or manipulated by users directly, but instead allocated by higher-level mechanisms. The details of those higher-level mechanisms are out of scope for this RFC. Parachains can own an arbitrary number of regions and are limited in block production only by the number and production rate of regions which they own. Each region belongs to a specific execution core, and cannot move between cores. Regions are referenceable by a unique 256-bit identifier within the relay-chain.
 
@@ -50,12 +50,12 @@ These concepts have been alluded to in [Polkadot: Blockspace over Blockchains](h
 
 ### Parameters:
 
-| Name                | Constant | Value     |
-| ------------------- | -------- | --------- |
-| RATE_DENOMINATOR    | YES      | 57600     |
-| SCHEDULING_LENIENCE | NO       | 16        |
-| HYPERCORES          | NO       | 8         |
-| HYPERCORES_PER_CORE | NO       | 1         |
+| Name                 | Constant | Value     |
+| -------------------  | -------- | --------- |
+| RATE_DENOMINATOR     | YES      | 57600     |
+| SCHEDULING_LENIENCE  | NO       | 16        |
+| BURST_CORES          | NO       | 8         |
+| BURST_CORES_PER_CORE | NO       | 1         |
 
 ### Region and RegionSchema
 
@@ -173,9 +173,9 @@ If all of these conditions are met, along with other validity conditions for bac
 
 The scheduling lenience allows regions to fall behind their expected tickrate, limited to a small maximum level of debt. This prevents accumulated core debt from being accumulated indefinitely and spent when convenient. Smoothing system load over short time horizons is desirable, but over infinite time horizons becomes dangerous.
 
-This RFC introduces a new `HYPERCORES` parameter into the `HostConfiguration` which relay-chain governance uses to manage the parameters of the parachains protocol. Hypercores are inspired by technologies such as hyperthreading, to emulate multiple logical cores on a single phsyical core as resources permit. Hypercores allow parachains to make up for missed scheduling opportunities, which is important to effectively decouple parachain growth from backing on the relay chain.
+This RFC introduces a new `BURST_CORES` parameter into the `HostConfiguration` which relay-chain governance uses to manage the parameters of the parachains protocol. BURST_CORES are inspired by technologies such as hyperthreading, to emulate multiple logical cores on a single physical core as resources permit. BURST_CORES allow parachains to make up for missed scheduling opportunities, which is important to effectively decouple parachain growth from backing on the relay chain.
 
-No more than `HYPERCORES_PER_CORE` additional candidates may be backed per core per relay-chain block, and only when hypercores are free, and the total amount of hypercore utilization MUST be no more than `HYPERCORES` per relay-chain block.
+No more than `BURST_CORES_PER_CORE` additional candidates may be backed per core per relay-chain block, and only when BURST_CORES are free, and the total amount of hypercore utilization MUST be no more than `BURST_CORES` per relay-chain block.
 
 The reason behind this is that there may be more backed candidates than there are cores on a per-block basis even if regions are never over-allocated onto cores. The regions architecture accommodates variance both in the direction of missing opportunities to make blocks as well as variance in the direction of making up for missed blocks. System load becomes more volatile on a block-by-block basis but is stable over longer runs of blocks. Accommodating this "positive variance" to respect the frequencies of regions eliminates friction between regions assigned to the same core, which would be a major complication for scheduling.
 
@@ -198,7 +198,7 @@ This RFC fulfills requirement (1) by introducing a region primitive which is pro
 
 This RFC fulfills requirement (2) by giving each region a unique ID and requiring each backed parachain block to be tagged with the assigned region. To implement elastic scaling, collators need only send the expected region ID to validators along with their candidate.
 
-This RFC fulfills requirement (3) with Hypercores. Up to the allowed leniency in scheduling and the resources available in the system, scheduled chains may make up for missed opportunities to make blocks as early as the next relay-chain block.
+This RFC fulfills requirement (3) with BURST_CORES. Up to the allowed leniency in scheduling and the resources available in the system, scheduled chains may make up for missed opportunities to include blocks as early as the next relay-chain block.
 
 This RFC fulfills requirement (4) with the region validity check in backing and by pushing the requirement of not over-scheduling onto higher-level logic. The region validity check leads to no scheduling friction between overlapping durations or varying frequencies among regions assigned to the same core.
 
@@ -212,7 +212,7 @@ This RFC fulfills requirement (8) by accommodating regions ranging from single-b
 
 ## Drawbacks
 
-* Hypercores and scheduling lenience, if not properly parameterized, could lead to high system load for short runs of consecutive blocks. This raises the risk of cascading failures when load gets too high.
+* BURST_CORES and scheduling lenience, if not properly parameterized, could lead to high system load for short runs of consecutive blocks. This raises the risk of cascading failures when load gets too high.
 * High-level scheduling logic must not overallocate regions onto a core. This wouldn't cause the relay chain to break, but it would lead to friction in scheduling between chains.
 
 ## Testing, Security, and Privacy
@@ -237,7 +237,7 @@ For an initial release, regions limited in functionality do not necessarily need
 
 This is a companion to RFC-1 and RFC-5.
 
-Hypercores are inspired by hyperthreading in modern CPU architectures.
+BURST_CORES are inspired by hyperthreading in modern CPU architectures.
 
 ## Unresolved Questions
 
