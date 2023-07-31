@@ -464,7 +464,7 @@ struct InstaPoolHistoryRecord {
 type InstaPoolHistory = Map<Timeslice, InstaPoolHistoryRecord>;
 ```
 
-`CoreMask` tracks unique "parts" of a single core. It is used with interlacing in order to give a unique identifier to each compnent of any possible interlacing configuration of a core, allowing for simple self-describing keys for all core ownership and allocation information. It also allows for each core's workload to be tracked and updated progressively, keeping ongoing compute costs well-bounded and low.
+`CoreMask` tracks unique "parts" of a single core. It is used with interlacing in order to give a unique identifier to each component of any possible interlacing configuration of a core, allowing for simple self-describing keys for all core ownership and allocation information. It also allows for each core's workload to be tracked and updated progressively, keeping ongoing compute costs well-bounded and low.
 
 Regions are issued into the `Regions` map and can be transferred, partitioned and interlaced as the owner desires. Regions can only be tasked if they begin after the current scheduling deadline (if they have missed this, then the region can be auto-trimmed until it is).
 
