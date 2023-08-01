@@ -649,4 +649,4 @@ Unknowns include the economic and resource parameterisations:
 
 ## Prior Art and References
 
-Robert Habermeier initially wrote on the subject of reframing Polkadot as a blockspace-centric service during 2022 in the article [Polkadot Blockspace over Blockchains](https://www.rob.tech/polkadot-blockspace-over-blockchains/). This article contained the idea of introducing the possibility of transferal of "claims on execution cores" and as such "create a secondary market for Polkadot blockspace".
+Robert Habermeier initially wrote on the subject of Polkadot blockspace-centric in the article [Polkadot Blockspace over Blockchains](https://www.rob.tech/polkadot-blockspace-over-blockchains/). While not going into details, the article served as an early reframing piece for moving beyond one-slot-per-chain models and building out secondary market infrastructure for resource allocation.
