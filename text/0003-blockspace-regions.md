@@ -146,7 +146,7 @@ fn set_end(Origin, RegionId, end: u32);
 
 This API is intended to be wrapped by logic implementing interfaces such as RFC-5.
 
-Created regions for a core MUST NOT exceed a combined block rate of 1 at any block.
+Created and overlapping regions for a core MUST NOT have a combined rate exceeding 57600.
 
 ### Changes to backing/availability
 
@@ -181,7 +181,7 @@ The reason behind this is that there may be more backed candidates than there ar
 
 ### Changes to approval checking
 
-Approval-checking is altered to support core: it accommodates multiple blocks being made available on the same core at the same time, and samples selection for these blocks based on the number of regular cores.
+Approval-checking is altered to support burst cores: it accommodates multiple blocks being made available on the same core at the same time, and samples selection for these blocks based on the number of regular cores.
 
 ### Changes to runtime APIs
 
