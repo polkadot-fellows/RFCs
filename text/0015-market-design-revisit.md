@@ -2,9 +2,9 @@
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
-| **Start Date**  | 05.08.2023                                                                   |
-| **Description** | This RFC refines the previously proposed mechanisms involving the various Coretime markets and presents an integrated framework for harmonious interaction between all markets.                                                                    |
-| **Authors**     | Jonas Gehrlein                                                                                             |
+| **Start Date**  | 05.08.2023                                                                                  |
+| **Description** | This RFC refines the previously proposed mechanisms involving the various Coretime markets and presents an integrated framework for harmonious interaction between all markets.                                                       |
+| **Authors**     | Jonas Gehrlein                                                                              |
 
 ## Summary
 
