@@ -71,7 +71,7 @@ Blockspace sold through the Instantaneous Market can be viewed as a [substitute 
 
 A good approach could be to commence the Instantaneous Market with an `INSTANTANOUS_START_PRICE = MARKET_PRICE * INSTANTANOUS_DISCOUNT` (potentially 20%) at the outset of a `BULK_PERIOD`. Under the assumption of a 28-day period, the price for the first block would be set at 
 
-$INSTANTANOUS\_BLOCK\_BATCH\_{1} = \frac{INSTANTANOUS\_START\_PRICE}{403200}$ 
+`Instantanous_Block_Batch_1` = `INSTANTANOUS_START_PRICE` / 403200
 
 After that, the price is continously updated according to some queue system already teasered in RFC-1.
 
