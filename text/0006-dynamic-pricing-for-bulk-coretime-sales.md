@@ -11,6 +11,8 @@
 
 This RFC proposes a dynamic pricing model for the sale of Bulk Coretime on the Polkadot UC. The proposed model updates the regular price of cores for each sale period, by taking into account the number of cores sold in the previous sale, as well as a limit of cores and a target number of cores sold. It ensures a minimum price and limits price growth to a maximum price increase factor, while also giving govenance control over the steepness of the price change curve. It allows governance to address challenges arising from changing market conditions and should offer predictable and controlled price adjustments.
 
+Accompanying visualizations are provided at [1].
+
 ## Motivation
 
 RFC-1 proposes periodic Bulk Coretime Sales as a mechanism to sell continouos regions of blockspace (suggested to be 4 weeks in length). A number of Blockspace Regions (compare RFC-1 & RFC-3) are provided for sale to the Broker-Chain each period and shall be sold in a way that provides value-capture for the Polkadot network. The exact pricing mechanism is out of scope for RFC-1 and shall be provided by this RFC. 
@@ -44,9 +46,6 @@ The dynamic pricing model sets the new price based on supply and demand in the p
 - The right side ranges from the target to limit. It represents situations where demand was higher than the target.
 
 The curve of the function forms a plateau around the target and then falls off to the left and rises up to the right. The shape of the plateau can be controlled via a scale factor for the left side and right side of the function respectively.
-
-![An image of the baseline graph. The x-axis being cores sold and the y-axis being price. The curve starts at 0 cores sold a price of 1. It rises up and starts to form a plateau shortly before it reaches a target of 30 cores sold, which is also highlighted as target. It then shortly continues on this plateau before sharply rising up to the limit amount of 45 cores sold.](/assets/0006-baseline.png)
-
 
 ### Parameters
 From here on, we will also refer to Regions sold as 'cores' to stay congruent with RFC-1.
@@ -129,8 +128,6 @@ SCALE_UP = 2
 OLD_PRICE = 1000
 ```
 
-![](/assets/0006-baseline.png)
-
 #### More aggressive pricing
 We might want to have a more aggressive price growth, allowing the price to triple every 4 weeks and have a linear increase in price on the right side.
 
@@ -143,8 +140,6 @@ SCALE_DOWN = 2
 SCALE_UP = 1
 OLD_PRICE = 1000
 ```
-
-![](/assets/0006-aggressive-pricing.png)
 
 #### Conservative pricing to ensure quick corrections in an affluent market
 If governance considers the risk that a sudden surge in DOT price might price chains out from bulk coretime markets, it can ensure the model quickly reacts to a quick drop in demand, by setting 0 < SCALE_DOWN < 1 and setting the max price increase factor more conservatively.
@@ -159,8 +154,6 @@ SCALE_UP = 2
 OLD_PRICE = 1000
 ```
 
-![](/assets/0006-conservative-pricing.png)
-
 #### Linear pricing
 By setting the scaling factors to 1 and potentially adapting the max price increase, we can achieve a linear function
 
@@ -174,8 +167,6 @@ SCALE_UP = 1
 OLD_PRICE = 1000
 ```
 
-![](/assets/0006-linear.png)
-
 
 ## Drawbacks
 None at present.
@@ -187,3 +178,7 @@ This pricing model is based on the requirements from the basic linear solution p
 ## Future Possibilities
 
 This RFC, if accepted, shall be implemented in conjunction with RFC-1.
+
+## References
+
+- [1] Polkadot forum post with visualizations: [Dynamic Pricing for Bulk Coretime Sales](https://forum.polkadot.network/t/dynamic-pricing-for-bulk-coretime-sales/3359)
