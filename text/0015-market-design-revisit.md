@@ -63,7 +63,7 @@ After all cores are allocated, the `RESERVE_PRICE` is adjusted following the pro
 
 #### Settlement Period (7 days)
 
-There are no explicit tasks for the coretime systemchain to perform in this period. This period is still important to allow for sufficient time for all participants to engage in secondary markets, especially to be able to allocate Coretime that starts in the upcoming `BULK_PERIOD`.
+During the settlement period, participants have ample time to trade Coretime on secondary markets before the onset of the next `BULK_PERIOD`. This allows for trading with full Coretime availability. Trading transferrable Coretime naturally continues during each `BULK_PERIOD`, albeit with cores already in use.
 
 #### Instantanous Market
 
