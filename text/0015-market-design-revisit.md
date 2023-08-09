@@ -8,16 +8,16 @@
 
 ## Summary
 
-This document is a proposal for restructuring the bulk markets in the Polkadot UC's coretime allocation system to improve efficiency and fairness. The proposal suggests separating the `BULK_PERIOD` into `MARKET_PERIOD` and `RENEWAL_PERIOD`, allowing for a market-driven price discovery through a clearing price Dutch auction during the `MARKET_PERIOD` followed by renewal offers at the `MARKET_PRICE` during the `RENEWAL_PERIOD`. The new system ensures synchronicity between renewal and market prices, fairness among all current tenants, and efficient price discovery, while preserving price caps to provide security for current tenants. It also discusses the initiation of the instantanous market with a discount and the possibility of long-term leases.
+This document is a proposal for restructuring the bulk markets in the Polkadot UC's coretime allocation system to improve efficiency and fairness. The proposal suggests separating the `BULK_PERIOD` into `MARKET_PERIOD` and `RENEWAL_PERIOD`, allowing for a market-driven price discovery through a clearing price Dutch auction during the `MARKET_PERIOD` followed by renewal offers at the `MARKET_PRICE` during the `RENEWAL_PERIOD`. The new system ensures synchronicity between renewal and market prices, fairness among all current tenants, and efficient price discovery, while preserving price caps to provide security for current tenants. It seeks to start a discussion about the possibility of long-term leases.
 
 ## Motivation
 
 While the initial [RFC-1](https://github.com/polkadot-fellows/RFCs/blob/6f29561a4747bbfd95307ce75cd949dfff359e39/text/0001-agile-coretime.md) has provided a robust framework for Coretime allocation within the Polkadot UC, this proposal builds upon its strengths and uses many provided building blocks to address some areas that could be further improved. 
 
 In particular, this proposal introduces the following changes:
-- It introduces a `RESERVE_PRICE` that anchors all markets, promoting price synchronicity among it's substitute goods (flexible/renewed/instantanous coretime). 
+- It introduces a `RESERVE_PRICE` that anchors all markets, promoting price synchronicity within the Bulk markets (flexible + renewals). 
     - This reduces complexity.
-    - This makes sure all tenants pay the same for coretime.
+    - This makes sure all consumers pay a closely correlated price for coretime within a `BULK_PERIOD`.
 - It reverses the order of the market and renewal phase. 
     - This allows to fine-tune the price through market forces.
 - It exposes the renewal prices, while still being beneficial for longterm tenants, more to market forces. 
@@ -65,16 +65,6 @@ After all cores are allocated, the `RESERVE_PRICE` is adjusted following the pro
 
 During the settlement period, participants have ample time to trade Coretime on secondary markets before the onset of the next `BULK_PERIOD`. This allows for trading with full Coretime availability. Trading transferrable Coretime naturally continues during each `BULK_PERIOD`, albeit with cores already in use.
 
-#### Instantanous Market
-
-Blockspace sold through the Instantaneous Market can be viewed as a [substitute good](https://en.wikipedia.org/wiki/Substitute_good) to fixed allocated blockspace. As such, we can expect prices between the Bulk Market and the Instantaneous Market to have a close correlation, aligning closely with the `MARKET_PRICE`. Given the less flexible nature of on-demand blocks, it might be beneficial to introduce a small discount.
-
-A good approach could be to commence the Instantaneous Market with an `INSTANTANOUS_START_PRICE = MARKET_PRICE * INSTANTANOUS_DISCOUNT` (potentially 20%) at the outset of a `BULK_PERIOD`. Under the assumption of a 28-day period, the price for the first block would be set at 
-
-`Instantanous_Block_Batch_1` = `INSTANTANOUS_START_PRICE` / 403200
-
-After that, the price is continously updated according to some queue system already teasered in RFC-1.
-
 
 ### Benefits of this system
 - The introduction of a single price, the `RESERVE_PRICE`, provides an anchor for all Coretime markets. This is a preventative measure against the possible divergence and mismatch of prices, which could inadvertently lead to a situation where existing tenants secure cores at significantly below-market rates.
@@ -89,7 +79,7 @@ Having all bidders pay the market clearing price offers some benefits and disadv
 - Advantages:
     - **Fairness**: All bidders pay the same price.
     - **Active participation**: Because bidders are protected from overbidding (winner's curse), they are more likely to engage and reveal their true valuations.  
-    - **Simplicity**: A single price is easier to work with for pricing renewals and the instantanous market.
+    - **Simplicity**: A single price is easier to work with for pricing renewals later.
     - **Truthfulness**: There is no need to try to game the market by waiting with bidding. Bidders can just bid their valuations.
 - Disadvantages:
     - **(Potentially) Lower Revenue**: While the theory predicts revenue-equivalence between a uniform price and pay-as-bid type of auction, slightly lower revenue for the former type is observed empirically. Arguably, revenue maximization (i.e., squeezing out the maximum willingness to pay from bidders) is not the priority for Polkadot UC. Instead, it is interested in efficient allocation and the other benefits illustrated above.
