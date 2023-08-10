@@ -32,7 +32,7 @@ Since the power / privilege level of the treasurer track is greater than that of
 
 The primary stakeholders of this RFC are:
 
-- DOT token holders – as this affects the protocols treasury
+- DOT token holders – as this affects the protocol's treasury
 - Entities wishing to submit a referendum via the treasurer track - as this affects the referendum timeline
 - Projects with governance app integrations - see Performance, Ergonomics, and Compatibility section below.
 - [lolmcshizz](https://twitter.com/lolmcshizz/status/1681896333349736448) - expressed interest to change this parameter
@@ -41,7 +41,7 @@ The primary stakeholders of this RFC are:
 
 ## Explanation
 
-This RFC proposes to change the duration of the confirmation period for the treasurer track. In order to achieve that the ``confirm_period`` parameter for the treasurer track in ``runtime/polkadot/src/governance/tracks.rs`` must be changed.
+This RFC proposes to change the duration of the confirmation period for the treasurer track. In order to achieve that, the ``confirm_period`` parameter for the treasurer track in ``runtime/polkadot/src/governance/tracks.rs`` must be changed.
 
 [Currently it is set to](https://github.com/paritytech/polkadot/blob/a1c8d720e05624d5f2ac43d89dcedd3d0d2e7342/runtime/polkadot/src/governance/tracks.rs#L119C1-L119C30) ``confirm_period: 3 * HOURS`` 
 
