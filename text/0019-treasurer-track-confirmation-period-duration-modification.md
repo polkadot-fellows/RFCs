@@ -1,10 +1,11 @@
 # RFC-0019: Treasurer Track Confirmation Period Duration Modification
 
-|                 |                                                                                             |
-| --------------- | ------------------------------------------------------------------------------------------- |
-| **August 10, 2023**  |                                                                     |
-| **Treasurer Track Confirmation Period Duration Modification** |                                                                   |
-| **ChaosDAO**     |                                                                                             |
+                                                                                           
+|                 |                                                                  |
+| --------------- | ---------------------------------------------------------------- |
+| **Start Date**  | August 10, 2023                                                  |
+| **Description** | Treasurer Track Confirmation Period Duration Modification        |
+| **Authors**     |    ChaosDAO                                                     |                                                                                           
 
 ## Summary
 
