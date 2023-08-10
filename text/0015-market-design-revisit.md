@@ -61,6 +61,10 @@ After all cores are allocated, the `RESERVE_PRICE` is adjusted following the pro
 
 **Note:** The particular price curve is outside the scope of the proposal. The `MARKET_PRICE` (as a function of `RESERVE_PRICE`), however, is able to capture higher demand very well while being capped downwards. That means, the curve that adjusts the `RESERVE_PRICE` should be more sensitive to undercapacity.
 
+#### Price Predictability 
+
+Tasks that are in the "renewal-pipeline" can determine the upper bound for the price they will pay in any future period. The main driver of any price increase over time is the adjustment of the `RESERVE_PRICE`, that occurs at the end of each `BULK_PERIOD` after determining the capacity fillment of Polkadot UC.  To calculate the maximum price in some future period, a task could assume maximum capacity in all upcoming periods and track the resulting price increase of `RESERVE_PRICE`. In the final period, that price can get a maximum premium of `PRICE_PREMIUM` and after deducting a potential `RENEWAL_DISCOUNT`, the maximum price can be determined.
+
 #### Settlement Period (7 days)
 
 During the settlement period, participants have ample time to trade Coretime on secondary markets before the onset of the next `BULK_PERIOD`. This allows for trading with full Coretime availability. Trading transferrable Coretime naturally continues during each `BULK_PERIOD`, albeit with cores already in use.
