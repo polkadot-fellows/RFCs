@@ -8,7 +8,7 @@
 
 ## Summary
 
-The Polkadot UC will generate revenue from the sale of available Coretime. The question then arises: how should we handle these revenues? Broadly, there are three potential paths – burning the revenue and thereby removing it from total issuance or divert it to the Treasury. This Request for Comment (RFC) presents arguments favoring burning as the preferred mechanism for handling revenues from Coretime sales.
+The Polkadot UC will generate revenue from the sale of available Coretime. The question then arises: how should we handle these revenues? Broadly, there are two reasonable paths – burning the revenue and thereby removing it from total issuance or divert it to the Treasury. This Request for Comment (RFC) presents arguments favoring burning as the preferred mechanism for handling revenues from Coretime sales.
 
 ## Motivation
 
