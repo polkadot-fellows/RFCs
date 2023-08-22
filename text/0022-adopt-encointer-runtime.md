@@ -26,11 +26,13 @@ Also, Encointer aims to update its runtime in batches with other system chains i
 ## Explanation
 
 There are no details to elaborate on. It's just about the location of our runtime code. 
-[Our PR](https://github.com/polkadot-fellows/runtimes/pull/17) has all details
+[Our PR](https://github.com/polkadot-fellows/runtimes/pull/17) has all details.
+
+Noteworthy: All Encointer-specific pallets will still be located in encointer's repo for the time being: https://github.com/encointer/pallets 
 
 ## Drawbacks
 
-No known drawbacks
+Other than all other system chains, development and maintenance of the Encointer Network is mainly financed by the KSM Treasury and possibly the DOT Treasury in the future. Encointer is dedicated to maintaining its network and runtime code for as long as possible, but there is a dependency on funding which is not in the hands of the fellowship. The only risk in the context of funding, however, is that the Encointer runtime will see less frequent updates if there's less funding. 
 
 ## Testing, Security, and Privacy
 
