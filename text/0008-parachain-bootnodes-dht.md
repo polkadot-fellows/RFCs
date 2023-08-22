@@ -79,7 +79,7 @@ message Response {
     // Multiaddresses of the parachain side of the node. The list and format are the same as for the `listenAddrs` field of the `identify` protocol.
     repeated bytes addrs = 2;
 
-    // Genesis hash of the parachain. Untrusted.
+    // Genesis hash of the parachain. Used to determine the name of the networking protocol to connect to the parachain. Untrusted.
     bytes genesis_hash = 3;
 
     // So-called "fork ID" of the parachain. Used to determine the name of the networking protocol to connect to the parachain. Untrusted.
