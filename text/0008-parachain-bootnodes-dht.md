@@ -78,16 +78,24 @@ message Response {
 
     // Multiaddresses of the parachain side of the node. The list and format are the same as for the `listenAddrs` field of the `identify` protocol.
     repeated bytes addrs = 2;
+
+    // Genesis hash of the parachain. Untrusted.
+    bytes genesis_hash = 3;
+
+    // So-called "fork ID" of the parachain. Used to determine the name of the networking protocol to connect to the parachain. Untrusted.
+    optional string fork_id = 4;
 };
 ```
 
-The maximum size of a response is set to an arbitrary 16kiB. The responding side should make sure to conform to this limit. Given that the only variable-length field is `addrs`, this is easily achieved by limiting the number of addresses.
+The maximum size of a response is set to an arbitrary 16kiB. The responding side should make sure to conform to this limit. Given that `fork_id` is typically very small and that the only variable-length field is `addrs`, this is easily achieved by limiting the number of addresses.
 
 Implementers should be aware that `addrs` might be very large, and are encouraged to limit the number of `addrs` to an implementation-defined value.
 
 ## Drawbacks
 
-The new networking protocol is in theory not strictly needed, as the PeerId and addresses could be always equal to the PeerId and addresses of the node being registered as the provider and serving the response. However, the Cumulus implementation currently uses two different networking stacks, one of the parachain and one for the relay chain, using two separate PeerIds and addresses, and as such the PeerId and addresses of the other networking stack must be indicated. Asking them to use only one networking stack wouldn't feasible in a realistic time frame.
+The `peer_id` and `addrs` fields are in theory not strictly needed, as the PeerId and addresses could be always equal to the PeerId and addresses of the node being registered as the provider and serving the response. However, the Cumulus implementation currently uses two different networking stacks, one of the parachain and one for the relay chain, using two separate PeerIds and addresses, and as such the PeerId and addresses of the other networking stack must be indicated. Asking them to use only one networking stack wouldn't feasible in a realistic time frame.
+
+The values of the `genesis_hash` and `fork_id` fields cannot be verified by the requester and are expected to be unused at the moment. Instead, a client that desires connecting to a parachain is expected to obtain the genesis hash and fork ID of the parachain from the parachain chain specification. These fields are included in the networking protocol nonetheless in case an acceptable solution is found in the future, and in order to allow use cases such as discovering parachains in a not-strictly-trusted way.
 
 ## Testing, Security, and Privacy
 
@@ -135,6 +143,4 @@ While it fundamentally doesn't change much to this RFC, using `BabeApi_currentEp
 
 ## Future Directions and Related Material
 
-A previous version of this RFC had extra fields in the networking request that indicated some elements of the chain specification of the parachain, namely the genesis state hash and the `forkId`. Using these extra fields, it would be possible to connect to a parachain from just a `para_id` and without knowing any chain specification for that parachain.
-
-Unfortunately, the correctness of these values in these fields can't be verified by the client willing to connect to the parachain. Furthermore, it is possible for multiple parabootnodes to provide multiple different values for the genesis state hash and `forkId`, making a secure implementation very complicated to write.
+It is possible that in the future a client could connect to a parachain without having to rely on a trusted parachain specification.
