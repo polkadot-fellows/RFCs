@@ -17,5 +17,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: xlc/fellowship-process-bot
-
+      - uses: xlc/fellowship-process-bot@main
