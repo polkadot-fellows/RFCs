@@ -1,0 +1,21 @@
+name: Process Bot
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  pull-requests: write # for merge PR
+
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  process:
+    name: Process Comment
+    if: ${{ github.event.issue.pull_request && startsWith(github.event.comment.body, '/bot ') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: xlc/fellowship-process-bot
+
