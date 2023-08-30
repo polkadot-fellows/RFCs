@@ -109,7 +109,7 @@ This document proposes a new kind of Task (rather than the Para-Task), the Actor
 AVF code blobs:
 - include metadata describing format and platform (WebAssembly and RISKV are both reasonable formats).
 - have two required entry-points:
-  - `fn service()`
+  - `async fn main(args: Vec<u8>)`
   - `fn call(origin: Option<TaskId>, data: Vec<u8>) -> Result<Vec<u8>, ()>`
 - have two recommended inspector entry-points, used by Actor-Sequencers.
   - `fn payout(now: RelayChainBlockNumber) -> RelayChainBalance`
@@ -123,7 +123,7 @@ struct AgendaItem {
     entry: Invocation,
 }
 enum Invocation {
-    Service,
+    Service { times: u32 },
     Call { in: Vec<u8>, out: Vec<u8> },
 }
 struct Slab {
