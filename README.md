@@ -25,7 +25,7 @@ According to the [Fellowship Manifesto](https://github.com/polkadot-fellows/mani
 
 These RFCs are scoped to the subset of these concerns which must be held consistent across all implementations. Various implementation details, such as internal node algorithms, programming languages, or database formats are out of scope. Non-exhaustively, changes to network protocol descriptions, runtime logic and runtime public interfaces, inherents, transaction formats should be discussed via RFCs.
 
-## Significance 
+## Significance
 
 These RFCs are in practice only a signaling mechanism to determine and indicate the Fellowship's design and architecture preferences and to coordinate discussion and social consensus on architectures and designs according to open-source principles.
 
@@ -52,3 +52,13 @@ Problems, requirements, and descriptions in RFC text should be stated using the 
   * The terms "MUST", "MUST NOT", "SHALL", "SHALL NOT", or "REQUIRED" mean that the requirement is fixed and must be adhered to by implementations. These statements should be limited to those required for interoperability and security.
   * The terms "SHOULD", "RECOMMENDED", "SHOULD NOT", or "NOT RECOMMENDED" mean that there are only limited valid circumstances in which a requirement may be ignored.
   * The terms "MAY" or "OPTIONAL" mean that the requirement is optional, though interoperability between implementations making different choices in this respect is required.
+
+## Bots
+
+The repository provides a bot for proposing RFCs on chain in a referenda to let the fellowship vote on the RFC. The referenda can only be created by accounts that are part of the fellowship. To use the bot you need to write the following comment into a pull request:
+
+``` text
+/rfc-propose
+```
+
+It takes a moment and then the bot should answer with a comment with more instructions on how to proceed.
