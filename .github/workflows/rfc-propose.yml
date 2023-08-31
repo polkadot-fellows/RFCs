@@ -1,0 +1,18 @@
+name: RFC propose
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  rfc-propose:
+    name: Propose an RFC creation transaction
+    if: ${{ github.event.issue.pull_request && startsWith(github.event.comment.body, '/rfc-propose') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: paritytech/rfc-propose@ae558a3c03f562362b78babdc72697f5f5fbb3af # v0.0.1
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
