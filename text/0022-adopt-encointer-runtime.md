@@ -19,7 +19,7 @@ Also, Encointer aims to update its runtime in batches with other system chains i
 ## Stakeholders
 
 * Fellowship: streamlined reviews of system chain runtime upgrades
-* Kusama Network: all system chains in one place
+* Kusama Network: Tokenholders can easily see the changes of all system chains in one place.
 * Encointer Association: Further decentralization of the Encointer Network necessities like devops.
 * Encointer devs: May be eligible for fellowship membership because of their contributions to the encointer runtime - being a system chain. 
 
