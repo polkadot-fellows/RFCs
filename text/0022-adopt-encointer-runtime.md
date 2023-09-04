@@ -8,7 +8,7 @@
 
 ## Summary
 
-Encointer is a system chain on Kusama since Jan 2022 and has been developed and maintained by the Encointer association. This RFC proposes to treat Encointer like any other system chain and include it in the fellowship repo with [this PR](https://github.com/polkadot-fellows/runtimes/pull/17)
+Encointer is a system chain on Kusama since Jan 2022 and has been developed and maintained by the Encointer association. This RFC proposes to treat Encointer like any other system chain and include it in the fellowship repo with [this PR](https://github.com/polkadot-fellows/runtimes/pull/17).
 
 ## Motivation
 
