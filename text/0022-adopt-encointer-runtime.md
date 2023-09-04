@@ -36,7 +36,7 @@ Other than all other system chains, development and maintenance of the Encointer
 
 ## Testing, Security, and Privacy
 
-No changes to the existing system are proposed. Only changes to how maintenance is organized
+No changes to the existing system are proposed. Only changes to how maintenance is organized.
 
 ## Performance, Ergonomics, and Compatibility
 
