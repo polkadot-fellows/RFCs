@@ -3,7 +3,7 @@
 |                 |                                                       |
 | --------------- |-------------------------------------------------------|
 | **Start Date**  | Aug 22nd 2023                                         |
-| **Description** | merge Encointer runtime into fellowship runtimes repo |
+| **Description** | Permanently move the Encointer runtime into the Fellowship runtimes repo. |
 | **Authors**     | @brenzi                                               |
 
 ## Summary
