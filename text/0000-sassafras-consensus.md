@@ -463,18 +463,20 @@ Each ticket has an associated unique identifier, denoted as `TicketId`.
 The value of the `TicketId` is determined through the output of the Bandersnatch
 VRF, using the following inputs:
 
-- Epoch `N+1` randomness: obtained from the `NextEpochDescriptor`.
-- Epoch `N+1` index: tracked by the Sassafras on-chain code.
-- Attempt index: a value from `0` to `attempts_number`.
+- Epoch `N+1` randomness: a `Randomness` obtained from the `NextEpochDescriptor`.
+- Epoch `N+1` index: a `U64` value tracked by the Sassafras on-chain code.
+- Attempt index: a `U32` value from `0` to `attempts_number`.
+
+Let `next_epoch` be an object with the information associated to the next epoch.
 
 ```rust
-    randomness = Randomness(..)
-    epoch_index = U64(..);
-    attempt_index = U32(..);
-
     ticket_id_vrf_input = vrf_input_from_items(
         BYTES("sassafras-ticket-v1.0"),
-        [ randomness, BYTES(epoch), BYTES(attempt) ]
+        [ 
+            next_epoch.randomness,
+            BYTES(next_epoch.epoch_index),
+            BYTES(attempt_index)
+        ]
     );
 
     bytes = vrf_bytes(SECRET_KEY, ticket_id_vrf_input, 16);
@@ -528,12 +530,10 @@ paragraph of the *layman description* of Sassafras protocol.
 For every candidate ticket an associated ticket-body is constructed.
 
 ```rust
-    EphemeralPublicKey ::= Ed25519PublicKey
-
     TicketBody ::= SEQUENCE {
-        attempt_index: AttemptIndex,
-        erased_pub: EphemeralPublicKey,
-        revealed_pub: EphemeralPublicKey
+        attempt_index: U32,
+        erased_pub: Ed25519PublicKey,
+        revealed_pub: Ed25519PublicKey
     }
 ```
 
@@ -543,22 +543,30 @@ For every candidate ticket an associated ticket-body is constructed.
 - `revealed_pub`: Ed25519 ephemeral public key which is enabled as soon as the
   ticket is claimed.
 
-Erased key pair generation is left unspecified and free to the implementor.
+The process of generating an erased key pair is intentionally left undefined,
+allowing the implementor the freedom to choose the most suitable strategy.
 
-Revealed key pair is instead generated using bytes produced by the VRF with
-input similar to the one used for ticket-id generation, only the label is different.
+Revealed key pair is generated using bytes produced by the VRF with input
+parameters equal to those employed in ticket-id generation, only the label is
+different.
+
+Let `next_epoch` be an object with the information associated to the next epoch.
 
 ```rust
-    vrf_input = vrf_input_from_items(
-        BYTES("sassafras-erased-seed-v1.0"),
-        [ randomness, BYTES(epoch), BYTES(attempt) ]
+    revealed_vrf_input = vrf_input_from_items(
+        domain: BYTES("sassafras-revealed-v1.0"),
+        data: [ 
+            next_epoch.randomness,
+            BYTES(next_epoch.epoch_index),
+            BYTES(attempt_index)
+        ]
     );
 
-    seed = vrf_bytes(SECRET_KEY, vrf_input, 32);
-    revealed_pub = EphemeralSecret(seed).public();
+    revealed_seed = vrf_bytes(SECRET_KEY, revealed_vrf_input, 32);
+    revealed_pub = ed25519_secret_from_seed(revealed_seed).public();
 ```
 
-The usage of the `EphemeralPublicKey`s will be clarified in the ticket claiming section
+The usage of the `EphemeralPublicKey`s will be clarified in the ticket claiming section.
 
 #### 6.2.4. Ring Signature Production
 
@@ -567,14 +575,22 @@ The usage of the `EphemeralPublicKey`s will be clarified in the ticket claiming 
 ```rust
     sign_data = vrf_signature_data(
         transcript_label: BYTES("sassafras-ticket-body-v1.0"),
-        transcript_data: [ SCALE(ticket_body) ],
-        vrf_inputs: [ ticket_id_vrf_input ]
+        transcript_data: [
+            SCALE(ticket_body)
+        ],
+        vrf_inputs: [
+            ticket_id_vrf_input
+        ]
     )
   
-    ring_signature = ring_vrf_sign(SECRET_KEY, sign_data, RING_PROVER)
+    ring_signature = ring_vrf_sign(SECRET_KEY, RING_PROVER, sign_data)
 ```
 
-The body and the ring signature are bundled together in the `TicketEnvelope`
+`RING_PROVER` object is constructed using the set of public keys which belong to
+the next epoch authorities and the *ZK-SNARK* initialization parameters
+(more details in the [bandersnatch_vrfs](https://github.com/w3f/ring-vrf/blob/18614458ca4cb335c88d4e710c13906a76f51e43/bandersnatch_vrfs/src/ring.rs#L91-L93) reference implementation).
+
+The body and the ring signature are combined in the `TicketEnvelope`:
 
 ```rust
     TicketEnvelope ::= SEQUENCE {
@@ -597,7 +613,7 @@ Generic validation rules:
 - Tickets submissions must occur within the first half of the epoch.
   (TODO: I expect this is to give time to the chain finality consensus to finalize
    the on-chain tickets before next epoch starts)
-- The transaction source must be one of the current session validators.
+- The transaction must be submitted by one of the current session validators.
 
 Ticket specific validation rules:
 - Ring signature is verified using the on-chain `RingVerifier`.
@@ -634,6 +650,13 @@ strategy:
 
 Here `slot-index` is a relative value computed as `epoch_start_slot - epoch_slot`.
 
+The association between each ticket and its corresponding slot is recorded on
+the blockchain and is publicly visible to all. What remains confidential is the
+identity of the ticket *owner*, and consequently, who possesses the authority to
+claim the corresponding slot. This information is known only to the author of
+the ticket.
+
+
 #### 6.4.1 Fallback Assignment
 
 In cases where `k` is less than `n`, some (*orphan*) slots in the middle of the
@@ -649,113 +672,159 @@ order. The authority index which has the right to claim a slot is computed as:
 
 ### 6.5. Claim of ticket ownership during block production
 
-Once that tickets are bounded to the epoch slots, each validator becomes aware
-for which slots he can author a block.
+Once that tickets are associated with epoch slots, each validator gains
+knowledge of the slots for which they can author a block.
 
-Slots are primarily claimed via VRF output.
+The primary method for claiming slots is through the use of the VRF output.
 
-The author of a block must embed in the block header digest a `SlotClaim` entry which
-has enough information to claim the ownership of the slot.
+To establish ownership of a slot, the block author must include a SCALE encoded
+`SlotClaim` item in the block header digest. This structure contains the
+necessary information to assert ownership of the slot.
 
 ```rust
     SlotClaim ::= SEQUENCE {
         authority_index: U32,
         slot: U64,
-        vrf_signature: VrfSignature,
+        signature: VrfSignature,
         ticket_claim: EphemeralSignature OPTIONAL
     }
 ```
 
 - `authority_index`: index of the block author in the on-chain authorities list.
-- `slot`: absolute monotonic slot number from genesis (note this is not the index for a slot in the epoch)
-- `vrf_signature`: signature embedding one or two `VrfOutputs`.
-   One is always present and is used to generate per-block randomness.
-   The second is present if the slot has an associated ticket and is used to claim ticket ownership.
-- `ticket_claim`: optional additional proof of ticket ownership.
-   Is a signature of some challenge which can be verified using the `erased_public` `EphemeralPublicKey`
-   committed via the `TicketBody`.
 
-TODO: what is the point of ticket_claim if we already have a method to claim the ticket?
+- `slot`: absolute slot number (this is not the relative index within the epoch)
+
+- `vrf_signature`: This is a signature that includes one or two `VrfOutputs`.
+  - The first `VrfOutput` is always present and is used to generate per-block
+    randomness. This is not relevant to claim ticket ownership.
+  - The second `VrfOutput` is included if the slot is associated with a ticket.
+    This is relevant to claim ticket ownership.
+
+- `ticket_claim`: optional element providing an additional proof of ticket
+  ownership. It comprises a signature of the challenge derived from the signed
+  data transcript. This signature is verified using the `erased_public`
+  `EphemeralPublicKey` that was committed via the `TicketBody`.
+
+TODO: what is the point of claiming the ticket via the `ticket_claim` if we already
+have a method to claim the ticket via the VRF output?
 
 #### 6.5.1. Primary Claim Method
 
-The `VrfSignatureData` to produce the `SlotClaim` signature is constructed as:
+This claim mechanism is employed when the slot is bounded to a ticket, as
+determined by the chain's current state.
+
+In this case the `VrfSignature` within the `SlotClaim` contains two `VrfOutput`
+elements.
+
+Let `ticket_body` represent the `TicketBody` that has been committed to the
+on-chain state, `curr_epoch` denote an object containing information about
+the current epoch and `slot` the absolute monotonic slot number.
+
+The construction of the `VrfSignatureData` for generating the `SlotClaim`
+signature is as follows:
+
 
 ```rust
-    fn slot_claim_vrf_input = vrf_input_from_items(
-        domain: BYTES("sassafras-slot-claim-v1.0"),
-        data: [randomness, BYTES(epoch), BYTES(attempt)]
+    randomness_vrf_input = vrf_input_from_items(
+        domain: BYTES("sassafras-randomness-v1.0"),
+        data: [
+            curr_epoch.randomness,
+            BYTES(curr_epoch.epoch_index),
+            BYTES(slot)
+        ]
     );
 
-    fn revealed_key_vrf_input = vrf_input_from_items(
-        domain: BYTES("sassafras-revealed-key-v1.0"),
-        data: [ TODO ]
+    revealed_vrf_input = vrf_input_from_items(
+        domain: BYTES("sassafras-revealed-v1.0"),
+        data: [
+            curr_epoch.randomness,
+            BYTES(curr_epoch.epoch_index),
+            BYTES(ticket_body.attempt_index)
+        ]
     );
     
     signature_data = vrf_signature_data(
-        transcript_label: BYTES("sassafras-slot-claim-transcript-v1.0"),
-        transcript_data: [ SCALE(ticket_body) ],
-        vrf_inputs: [ slot_claim_vrf_input, revealed_key_vrf_input ]
+        transcript_label: BYTES("sassafras-claim-v1.0"),
+        transcript_data: [
+            SCALE(ticket_body)
+        ],
+        vrf_inputs: [
+            randomness_vrf_input,
+            revealed_vrf_input
+        ]
     );
 ```
 
 #### 6.5.2. Secondary Claim Method
 
 If the slot doesn't have any associated ticket then the validator is the one
-with index equal to the rule exposed in paragraph [6.4.1].
+with index equal to the rule exposed in paragraph `6.4.1`.
 
-The `VrfSignatureData` to produce the `SlotClaim` signature is constructed as:
+Given `randomness_vrf_input` constructed as shown for the primary method, the
+`VrfSignatureData` to produce the `SlotClaim` signature is constructed as:
 
 ```rust
     signature_data = vrf_signature_data(
         transcript_label: BYTES("sassafras-slot-claim-transcript-v1.0"),
         transcript_data: [ ],
-        vrf_inputs: [ slot_claim_vrf_input ]
+        vrf_inputs: [
+            randomness_vrf_input
+        ]
     )
 ```
 
 ### 6.6. Validation of the claim during block verification
 
-TODO
+Ticket ownership claims should be validated.
+
+Validation is performed using the second `VrfOutput` found in the SlotClaim signature.
+Using this object the verifier is able to reconstruct the val
 
 
-## Drawbacks
 
-TODO
+## 7. Drawbacks
 
-Description of recognized drawbacks to the approach given in the RFC.
-Non-exhaustively, drawbacks relating to performance, ergonomics, user experience, security, or privacy.
+None
 
-## Testing, Security, and Privacy
+## 8. Testing, Security, and Privacy
 
-TODO
+TODO ?
 
-Describe the the impact of the proposal on these three high-importance areas - how implementations can be tested for adherence, effects that the proposal has on security and privacy per-se, as well as any possible implementation pitfalls which should be clearly avoided.
+Describe the impact of the proposal on these three high-importance areas 
+- how implementations can be tested for adherence,
+- effects that the proposal has on security and
+- privacy per-se, as well as any possible implementation pitfalls which should be clearly avoided.
 
-## Performance, Ergonomics, and Compatibility
+## 9. Performance, Ergonomics, and Compatibility
 
-TODO
+TODO ?
 
 Describe the impact of the proposal on the exposed functionality of Polkadot.
 
-### Performance
+### 9.1. Performance
 
-TODO. Is this an optimization or a necessary pessimization? What steps have been taken to minimize additional overhead?
+TODO ?
+
+Is this an optimization or a necessary pessimization? What steps have been taken to minimize additional overhead?
 
 Sassafras consensus usage is a huge step forward in short-lived forks reduction.
 
-### Ergonomics
+### 9.2 Ergonomics
+
+TODO ?
 
 If the proposal alters exposed interfaces to developers or end-users, which types of usage patterns have been optimized for?
 
-### Compatibility
+### 9.3 Compatibility
 
-The introduction of this consensus mechanism impacts native client code and thus can't be introduced via a runtime upgrade.
+The introduction of this consensus mechanism impacts native client code and thus
+can't be introduced via a runtime upgrade.
 
-Upgrading strategy should not be discussed here and must be discussed in a separately RFC.
+Upgrading strategy should not be discussed here and must be discussed in a
+separately RFC.
 
 
-## Prior Art and References
+## 10. Prior Art and References
 
 - Web3 Foundation research page: https://research.web3.foundation/Polkadot/protocols/block-production/SASSAFRAS
 - Sassafras whitepaper: https://eprint.iacr.org/2023/031.pdf
@@ -763,23 +832,41 @@ Upgrading strategy should not be discussed here and must be discussed in a separ
 - Sassafras reference implementation tracking issue: https://github.com/paritytech/substrate/issues/11515
 - Sassafras reference implementation main PR: https://github.com/paritytech/substrate/pull/11879
 
-- TODO: ASN.1
 
-## Unresolved Questions
+## 11. Unresolved Questions
 
 None
 
-## Future Directions and Related Material
 
-This RFC covers the foundations and the core of the protocol.
+## 12. Future Directions and Related Material
 
-Future RFCs should cover the following additional topics which makes the protocol complete and secure.
+While this RFC lays the groundwork and outlines the core aspects of the
+protocol, several crucial topics remain to be addressed in future RFCs to ensure
+the protocol's completeness and security.
 
-- Deployment strategy.
-  - How this protocol can replace an already running instance of another one?
-- ZK-SNARK SRS initialization ceremony.
-  - Should this process performed before sassafras deployment and how?
-  - As the process is quite involved, is the SRS shared with the parachains?
-- Anonymous submission of on-chain tickets.
-  - Are we going to leverage Mixnet?
-  - ...
+These topics include:
+
+### 12.1. Deployment Strategies
+
+- **Protocol Migration**. Exploring how this protocol can seamlessly replace
+  an already operational instance of another protocol is essential. Future RFCs
+  should delve into the deployment strategy, including considerations for a smooth
+  transition process.
+
+### 12.2. ZK-SNARK SRS Initialization Ceremony.
+
+- **Timing and Procedure**: Determining the timing and procedure for the ZK-SNARK
+  SRS (Structured Reference String) initialization ceremony. Future RFCs should
+  provide insights into whether this process should be performed before the
+  deployment of Sassafras and the steps involved.
+
+- **Sharing with Parachains**: Considering the complexity of the ceremony, we
+  must understand whether the SRS is shared with parachains or maintained
+  independently.
+
+### 12.3. Anonymous Submission of Tickets.
+
+- **Mixnet Integration**: Submitting tickets directly can pose a risk of
+  potential deanonymization through traffic analysis. Subsequent RFCs should
+  investigate the potential for incorporating Mixnet technology or other
+  privacy-enhancing mechanisms to address this concern.
