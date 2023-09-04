@@ -1,10 +1,10 @@
 # RFC-0022: Adopt Encointer Runtime
 
-|                 |                                                       |
-| --------------- |-------------------------------------------------------|
-| **Start Date**  | Aug 22nd 2023                                         |
+|                 |                                                                           |
+| --------------- |---------------------------------------------------------------------------|
+| **Start Date**  | Aug 22nd 2023                                                             |
 | **Description** | Permanently move the Encointer runtime into the Fellowship runtimes repo. |
-| **Authors**     | @brenzi                                               |
+| **Authors**     | @brenzi for Encointer Association, 8000 Zurich, switzerland               |
 
 ## Summary
 
