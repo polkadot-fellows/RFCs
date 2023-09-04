@@ -52,4 +52,4 @@ None identified
 
 ## Future Directions and Related Material
 
-More info on Encointer: [https//encointer.org](https//encointer.org)
+More info on Encointer: [encointer.org](https://encointer.org)
