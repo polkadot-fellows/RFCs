@@ -87,7 +87,7 @@ The new functions directly return the number of bytes that were written in the `
     (param $key_type_id i32) (param $seed i64) (param $out i32) (return i32))
 ```
 
-The behaviour of these functions is identical to their version 1 or version 2 equivalent. Instead of allocating a buffer, writing the output to it, and returning a pointer to it, the new version of these functions accepts an `out` parameter containing the memory location where the host writes the output. The output is always of a size known at compilation time.
+The behaviour of these functions is identical to their version 1 or version 2 equivalent. Instead of allocating a buffer, writing the output to it, and returning a pointer to it, the new version of these functions accepts an `out` parameter containing the memory location where the host writes the output. The output is always of a size known at compilation time. The runtime execution stops with an error if `out` is outside of the range of the memory of the virtual machine.
 
 ```wat
 (func $ext_default_child_storage_root_version_3
@@ -96,7 +96,7 @@ The behaviour of these functions is identical to their version 1 or version 2 eq
     (param $out i32))
 ```
 
-The behaviour of these functions is identical to their version 1 and version 2 equivalents. Instead of allocating a buffer, writing the output to it, and returning a pointer to it, the new versions of these functions accepts an `out` parameter containing the memory location where the host writes the output. The output is always of a size known at compilation time.
+The behaviour of these functions is identical to their version 1 and version 2 equivalents. Instead of allocating a buffer, writing the output to it, and returning a pointer to it, the new versions of these functions accepts an `out` parameter containing the memory location where the host writes the output. The output is always of a size known at compilation time. The runtime execution stops with an error if `out` is outside of the range of the memory of the virtual machine.
 
 I have taken the liberty to take the version 1 of these functions as a base rather than the version 2, as a PPP deprecating the version 2 of these functions has previously been accepted: <https://github.com/w3f/PPPs/pull/6>.
 
@@ -112,7 +112,7 @@ I have taken the liberty to take the version 1 of these functions as a base rath
     (param $removed_count_out i32) (return i32))
 ```
 
-The behaviour of these functions is identical to their version 2 and 3 equivalent. Instead of allocating a buffer, writing the output to it, and returning a pointer to it, the version 3 and 4 of these functions accepts a `removed_count_out` parameter containing the memory location to a 8 bytes buffer where the host writes the number of keys that were removed in little endian. The functions return 1 to indicate that there are keys remaining, and 0 to indicate that all keys have been removed.
+The behaviour of these functions is identical to their version 2 and 3 equivalent. Instead of allocating a buffer, writing the output to it, and returning a pointer to it, the version 3 and 4 of these functions accepts a `removed_count_out` parameter containing the memory location to a 8 bytes buffer where the host writes the number of keys that were removed in little endian. The runtime execution stops with an error if `removed_count_out` is outside of the range of the memory of the virtual machine. The functions return 1 to indicate that there are keys remaining, and 0 to indicate that all keys have been removed.
 
 Note that there is an alternative proposal to add new host functions with the same names: <https://github.com/w3f/PPPs/pull/7>. This alternative doesn't conflict with this one except for the version number. One proposal or the other will have to use versions 4 and 5 rather than 3 and 4.
 
@@ -127,7 +127,7 @@ func $ext_crypto_ecdsa_sign_version_2
     (param $key_type_id i32) (param $key i32) (param $msg i64) (param $out i32) (return i64))
 ```
 
-The behaviour of these functions is identical to their version 1 equivalents. The new versions of these functions accept an `out` parameter containing the memory location where the host writes the signature. The signatures are always of a size known at compilation time. On success, these functions return `0`. If the public key can't be found in the keystore, these functions return `1` and do not write anything to `out`.
+The behaviour of these functions is identical to their version 1 equivalents. The new versions of these functions accept an `out` parameter containing the memory location where the host writes the signature. The runtime execution stops with an error if `out` is outside of the range of the memory of the virtual machine, even if the function wouldn't write anything to `out`. The signatures are always of a size known at compilation time. On success, these functions return `0`. If the public key can't be found in the keystore, these functions return `1` and do not write anything to `out`.
 
 Note that the return value is 0 on success and 1 on failure, while the previous version of these functions write 1 on success (as it represents a SCALE-encoded `Some`) and 0 on failure (as it represents a SCALE-encoded `None`). Returning 0 on success and non-zero on failure is consistent with common practices in the C programming language and is less surprising than the opposite.
 
@@ -138,7 +138,7 @@ Note that the return value is 0 on success and 1 on failure, while the previous 
     (param $sig i32) (param $msg i32) (param $out i32) (return i64))
 ```
 
-The behaviour of these functions is identical to their version 2 equivalents. The new versions of these functions accept an `out` parameter containing the memory location where the host writes the signature. The signatures are always of a size known at compilation time. On success, these functions return `0`. On failure, these functions return a non-zero value and do not write anything to `out`.
+The behaviour of these functions is identical to their version 2 equivalents. The new versions of these functions accept an `out` parameter containing the memory location where the host writes the signature. The runtime execution stops with an error if `out` is outside of the range of the memory of the virtual machine, even if the function wouldn't write anything to `out`. The signatures are always of a size known at compilation time. On success, these functions return `0`. On failure, these functions return a non-zero value and do not write anything to `out`.
 
 The non-zero value written on failure is:
 
