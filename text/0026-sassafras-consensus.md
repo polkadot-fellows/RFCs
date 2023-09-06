@@ -1,8 +1,8 @@
-# RFC-xx: Sassafras Consensus Protocol
+# RFC-26: Sassafras Consensus Protocol
 
 |                 |                                                                  |
 | --------------- | ---------------------------------------------------------------- |
-| **Start Date**  | September 03, 2023                                               |
+| **Start Date**  | September 06, 2023                                               |
 | **Description** | Sassafras consensus protocol description and structures          | 
 | **Authors**     | Davide Galassi                                                   |
 
