@@ -1,4 +1,4 @@
-# RFC-26: Sassafras Consensus Protocol
+# RFC-0026: Sassafras Consensus Protocol
 
 |                 |                                                                  |
 | --------------- | ---------------------------------------------------------------- |
