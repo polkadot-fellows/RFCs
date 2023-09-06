@@ -86,7 +86,7 @@ subsequent conventions:
 
 - For simplicity, code snippets are presented in a *Rust-like* pseudo-code format.
 
-- The function `BYTES(x: T)` returns an `OCTET STRING` representing the raw
+- The function `BYTES(x: T)` returns an `OCTET_STRING` representing the raw
   byte array representation of the object `x` with type `T`.
   - if `T` is `VisibleString` (aka *ascii* string): it returns the sequence of
     bytes of its *ascii* representation.
@@ -97,7 +97,7 @@ subsequent conventions:
   [`SCALE`](https://github.com/paritytech/parity-scale-codec) encoding of the
   variable `x` with type `T`.
 
-- The function `U<n>(x: OCTET STRING)` returns a `U<n>` interpreting `x` as
+- The function `U<n>(x: OCTET_STRING)` returns a `U<n>` interpreting `x` as
   the little-endian encoding of a `n` bits unsigned integer.
 
 - The function `BLAKE2_<n>` returns <n> bytes of the standard *blake2b* hash.
@@ -163,7 +163,7 @@ referring to the Ring-VRF research [paper](https://eprint.iacr.org/2023/002.pdf)
 ### 5.1. VRF Input
 
 The VRF Input, denoted as `VrfInput`, is constructed using a domain and some
-arbitrary data using the `vrf_input(domain: OCTET STRING, buf: OCTET STRING)`
+arbitrary data using the `vrf_input(domain: OCTET_STRING, buf: OCTET_STRING)`
 function. This function is left opaque here and can be read in the actual
 reference implementation.
 
@@ -673,7 +673,7 @@ specific order. The index of the authority which has the privilege to claim a
 slot is calculated as follows:
 
 ```rust
-    index = blake2b_64(SCALE((epoch_randomness, slot))) mod authorities_number;
+    index = BLAKE2_64(SCALE((epoch_randomness, slot))) mod authorities_number;
 ```
 
 TODO: what about using `epoch_randomness_accumulator` instead of `epoch_randomness`?
