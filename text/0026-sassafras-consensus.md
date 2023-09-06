@@ -540,9 +540,9 @@ For every candidate ticket an associated ticket-body is constructed.
 ```
 
 - `attempt_index`: attempt index used to generate the associated ticket_id.
-- `erased_pub`: Ed25519 ephemeral public key which is invalidated as soon as the
+- `erased_pub`: Ed25519 ephemeral public key which gets erased as soon as the
   ticket is claimed.
-- `revealed_pub`: Ed25519 ephemeral public key which is enabled as soon as the
+- `revealed_pub`: Ed25519 ephemeral public key which gets exposed as soon as the
   ticket is claimed.
 
 The process of generating an erased key pair is intentionally left undefined,
@@ -649,8 +649,10 @@ Given an ordered sequence of tickets `[t0, t1, t2, ..., tk]` to be assigned to
 `n` slots, where `n ≥ k`, the tickets are allocated according to the following
 strategy:
 
-    slot-index  : [ 0,  1,  2, ............ , n ]
-	  tickets     : [ t1, t3, t5, ... , t4, t2, t0 ].
+```
+    slot-index  : [  0,  1,  2, ............ , n ]
+    tickets     : [ t1, t3, t5, ... , t4, t2, t0 ]
+```
 
 Here `slot-index` is a relative value computed as `epoch_start_slot - epoch_slot`.
 
