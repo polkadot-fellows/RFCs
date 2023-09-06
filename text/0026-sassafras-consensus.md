@@ -32,13 +32,10 @@ interoperability and clarifying aspects left open for implementation discretion.
 ### 1.1. Relevance to Implementors
 
 This RFC focuses on providing implementors with the necessary insights into the
-protocol's operation. It takes precedence over the research paper in cases where
-discrepancies arise between the two documents.
+protocol's operation.
 
-(TODO: remove this)
-Example: In this RFC, ticket claims occur in the epoch immediately following
-issuance, whereas the original protocol description specifies a two-epoch gap.
-The approach outlined in this RFC should be followed.
+To avoid ambiguities and interoperability issues, this document takes precedence
+over the research paper in cases where discrepancies arise between the two.
 
 ### 1.2. Supporting Sassafras for Polkadot
 
@@ -50,13 +47,13 @@ paves the way for integrating Sassafras into the Polkadot network.
 
 ## 2. Stakeholders
 
-### 2.1 Developers of Relay-Chains and Para-Chains
+### 2.1. Developers of Relay-Chains and Para-Chains
 
 Developers responsible for creating relay-chains and para-chains within the
 Polkadot ecosystem who intend to leverage the benefits offered by the Sassafras
 Protocol.
 
-### 2.2 Developers of Polkadot Relay-Chain
+### 2.2. Developers of Polkadot Relay-Chain
 
 Developers contributing to the Polkadot relay-chain, which plays a pivotal role
 in facilitating the interoperability and functionality of the Sassafras Protocol
@@ -360,7 +357,7 @@ left undefined as are not relevant. Their definitions can be found in the
 
 ## 6. Sassafras Protocol
 
-### 6.1 Epoch's First Block
+### 6.1. Epoch's First Block
 
 The first block produced for an epoch `N` is required to include the descriptor
 for the next epoch `N+1`.
@@ -394,7 +391,7 @@ Consequently, every node executing the block has the capability to verify if
 the descriptor generated during block execution matches the one produced by the
 block author, which is stored in the digest data.
 
-#### 6.1.1 Epoch Randomness
+#### 6.1.1. Epoch Randomness
 
 Each epoch has an associated randomness value defined by the
 `NextEpochDescriptor` `Randomness` element.
@@ -662,7 +659,7 @@ identity of the ticket *owner*, and consequently, who possesses the authority to
 claim the corresponding slot. This information is known only to the author of
 the ticket.
 
-#### 6.4.1 Fallback Assignment
+#### 6.4.1. Fallback Assignment
 
 In cases where the number of available tickets is less than the number of epoch
 slots, some (*orphan*) slots in the middle of the epoch will remain unbounded to
@@ -739,7 +736,7 @@ Follows the construction of the `VrfSignatureData`:
 The inclusion of `revealed_vrf_input` allows the verifier to reconstruct the
 `revealed_pub` key which has been committed into the `TicketBody`.
 
-##### 6.5.1.1 (Optional) Ed25519 Erased Ephemeral Key Claim
+##### 6.5.1.1. (Optional) Ed25519 Erased Ephemeral Key Claim
 
 As the ticket ownership was already checked using the primary method, this 
 step is purely optional and serves only to enforce the claim.
@@ -854,7 +851,7 @@ committed in the `TicketBody`. If there is a mismatch, the claim is not legit.
     revealed_pub = ed25519_secret_from_seed(revealed_seed).public();
 ```
 
-##### 6.6.1.1 (Optional) Ephemeral Key Signature Check
+##### 6.6.1.1. (Optional) Ephemeral Key Signature Check
 
 If the `erased_signature` element within the `SlotClaim` is present the
 `erased_pub` key is used to verify it.
@@ -931,13 +928,13 @@ Generation of forks are not possible when following the protocol and the only so
 of forks is network partitioning. In this case, on recovery, the decision of
 which fork to follow is not opinionated and there is only one choice.
 
-### 9.2 Ergonomics
+### 9.2. Ergonomics
 
 TODO ?
 
 If the proposal alters exposed interfaces to developers or end-users, which types of usage patterns have been optimized for?
 
-### 9.3 Compatibility
+### 9.3. Compatibility
 
 The adoption of Sassafras impacts native client code and thus can't be
 introduced just via a runtime upgrade.
