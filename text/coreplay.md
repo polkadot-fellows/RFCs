@@ -291,7 +291,7 @@ The analogy:
 - actors must pay for this facility (actors place a deposit in DOT to use the long-term storage)
 - actors are sleeping when they're offstage (they don't do anything at all)
 
-On suepr-scaling:
+On super-scaling:
 - we'd have multiple theatres in a grid arrangement with the audience (validators) being rotated randomly assigned between them every hour or two.
 - we'd introduce the concept of couriers who would deliver mail between theatres (these would be bridges between multiple relay-chains (theatres) using the same superset of validators (audience), and thus are reasonably secure).
 - actors would also be couriered between theatres, but they'd obviously be offstage while they're being transported which could take some time.
