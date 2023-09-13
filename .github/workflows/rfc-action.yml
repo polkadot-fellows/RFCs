@@ -1,0 +1,19 @@
+name: RFC action
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  pull-requests: write
+  contents: write
+
+jobs:
+  rfc-action:
+    name: Handle an RFC-related command
+    if: ${{ github.event.issue.pull_request && startsWith(github.event.comment.body, '/rfc') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: paritytech/rfc-action@f7f859cf3ef3e10a4a64289f59df74c71b8de54f # v0.0.2
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
