@@ -21,7 +21,7 @@ validator set.
 
 However, state transitions on the Relay Chain need to be executed by _all_ validators. This
 execution consumes compute time on a vast majority of validators that could be used for validating
-parachains, as in, offering more blockspace, coretime, etc. to the network.
+parachains, as in, offering more coretime (a.k.a. blockspace) to the network.
 
 By moving as much state transition logic off the Relay Chain and into "system chains" -- a set of
 parachains that, with the Relay Chain, make up the Polkadot protocol -- the Polkadot Ubiquitous
@@ -29,9 +29,9 @@ Computer can specialise in providing its primary offering: secure blockspace.
 
 ## Stakeholders
 
-- Parachains who interact with affected logic on the Relay Chain;
-- The XCM format and its developers;
-- Tooling and UI developers.
+- Parachains that interact with affected logic on the Relay Chain;
+- Core protocol and XCM format developers;
+- Tooling, block explorer, and UI developers.
 
 ## Explanation
 
@@ -52,6 +52,9 @@ The following pallets and subsystems are good candidates to migrate from the Rel
 	- Conviction Voting
 	- Referenda
 
+Note: The Auctions and Crowdloan pallets will be replaced by Coretime, its system chain and
+interface described in RFC-1 and RFC-5, respectively.
+
 ### Migrations
 
 Some subsystems are simpler to move than others. For example, migrating Identity can be done by
@@ -63,14 +66,17 @@ network's functioning, like Staking and Governance. However, these do not store 
 long time the way that Identity does, and can likely coexist with a similarly-permissioned system
 chain for some time, much like how "Gov1" and "OpenGov" coexisted at the latter's introduction.
 
-### APIs
+Specific migration plans will be included in release notes of runtimes from the Polkadot Fellowship.
+
+### Interfaces
 
 The Relay Chain, in many cases, will still need to interact with these subsystems, especially
 Staking and Governance. These subsystems will require making some APIs available either via
-dispatchable calls or XCM `Instruction`s. For example, Staking provides a pallet-API to register
-points (e.g. for block production) and offences. This API is often called every block to register
-the points. With Staking in a system chain, that chain would need to allow the Relay Chain to update
-validator points periodically so that it can correctly calculate rewards.
+dispatchable calls accessible to XCM `Transact` or possibly XCM `Instruction`s in future versions.
+
+For example, Staking provides a pallet-API to register points (e.g. for block production) and
+offences (e.g. equivocation). With Staking in a system chain, that chain would need to allow the
+Relay Chain to update validator points periodically so that it can correctly calculate rewards.
 
 ## Drawbacks
 
