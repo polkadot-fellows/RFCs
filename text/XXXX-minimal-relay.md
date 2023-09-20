@@ -16,16 +16,16 @@ parachains. This is a proposal to migrate several subsystems into system paracha
 
 Polkadot's scaling approach allows many distinct state machines (known generally as parachains) to
 operate with common guarantees about the validity and security of their state transitions. Polkadot
-provides these common guarantees by executing the state transitions on a strict subset of the total
-validator set.
+provides these common guarantees by executing the state transitions on a strict subset (a backing
+group) of the total validator set.
 
-However, state transitions on the Relay Chain need to be executed by _all_ validators. This
-execution consumes compute time on a vast majority of validators that could be used for validating
-parachains, as in, offering more coretime (a.k.a. blockspace) to the network.
+However, state transitions on the Relay Chain need to be executed by _all_ validators. The resources
+of the complement of a single backing group could be used to offer more cores. As in, they could be
+offering more coretime (a.k.a. blockspace) to the network.
 
-By moving as much state transition logic off the Relay Chain and into "system chains" -- a set of
-parachains that, with the Relay Chain, make up the Polkadot protocol -- the Polkadot Ubiquitous
-Computer can specialise in providing its primary offering: secure blockspace.
+By minimising state transition logic on the Relay Chain by migrating it into "system chains" -- a
+set of parachains that, with the Relay Chain, make up the Polkadot protocol -- the Polkadot
+Ubiquitous Computer can maximise its primary offering: secure blockspace.
 
 ## Stakeholders
 
@@ -78,6 +78,8 @@ For example, Staking provides a pallet-API to register points (e.g. for block pr
 offences (e.g. equivocation). With Staking in a system chain, that chain would need to allow the
 Relay Chain to update validator points periodically so that it can correctly calculate rewards.
 
+A pub-sub protocol may also lend itself to these types of interactions.
+
 ## Drawbacks
 
 None at present.
@@ -104,8 +106,8 @@ particularly important for application development.
 
 ### Compatibility
 
-Implementing this proposal will require some changes to pallet APIs. Application developers will
-need to interact with multiple chains in the network.
+Implementing this proposal will require some changes to pallet APIs and/or a pub-sub protocol.
+Application developers will need to interact with multiple chains in the network.
 
 ## Prior Art and References
 
