@@ -2,33 +2,84 @@
 
 |                 |                                                                               |
 | --------------- | ----------------------------------------------------------------------------- |
-| **Start Date**  | XX September 2023                                                             |
+| **Start Date**  | 20 September 2023                                                             |
 | **Description** | Proposal to minimise Relay Chain functionality.                               |
 | **Authors**     | Joe Petrowski, Gavin Wood                                                     |
 
 ## Summary
 
-One paragraph summary of the RFC.
+The Relay Chain contains most of the core logic for the Polkadot network. While this was necessary
+prior to the launch of parachains and development of XCM, most of this logic can exist in
+parachains. This is a proposal to migrate several subsystems into system parachains.
 
 ## Motivation
 
-Longer motivation behind the content of the RFC, presented as a combination of both problems and requirements for the solution.
+Polkadot's scaling approach allows many distinct state machines (known generally as parachains) to
+operate with common guarantees about the validity and security of their state transitions. Polkadot
+provides these common guarantees by executing the state transitions on a strict subset of the total
+validator set.
+
+However, state transitions on the Relay Chain need to be executed by _all_ validators. This
+execution consumes compute time on a vast majority of validators that could be used for validating
+parachains, as in, offering more blockspace, coretime, etc. to the network.
+
+By moving as much state transition logic off the Relay Chain and into "system chains" -- a set of
+parachains that, with the Relay Chain, make up the Polkadot protocol -- the Polkadot Ubiquitous
+Computer can specialise in providing its primary offering: secure blockspace.
 
 ## Stakeholders
 
-A brief catalogue of the primary stakeholder sets of this RFC, with some description of previous socialization of the proposal.
+- Parachains who interact with affected logic on the Relay Chain;
+- The XCM format and its developers;
+- Tooling and UI developers.
 
 ## Explanation
 
-Detail-heavy explanation of the RFC, suitable for explanation to an implementer of the changeset. This should address corner cases in detail and provide justification behind decisions, and provide rationale for how the design meets the solution requirements.
+The following pallets and subsystems are good candidates to migrate from the Relay Chain:
+
+- Identity
+- Preimage
+- Balances
+- Staking
+	- Staking
+	- Election Provider
+	- Bags List
+	- NIS
+	- Nomination Pools
+	- Fast Unstake
+- Governance
+	- Treasury and Bounties
+	- Conviction Voting
+	- Referenda
+
+### Migrations
+
+Some subsystems are simpler to move than others. For example, migrating Identity can be done by
+simply preventing state changes in the Relay Chain, using the Identity-related state as the genesis
+for a new chain, and launching that new chain with the genesis and logic (pallet) needed.
+
+Other subsystems cannot experience any downtime like this because they are essential to the
+network's functioning, like Staking and Governance. However, these do not store information for a
+long time the way that Identity does, and can likely coexist with a similarly-permissioned system
+chain for some time, much like how "Gov1" and "OpenGov" coexisted at the latter's introduction.
+
+### APIs
+
+The Relay Chain, in many cases, will still need to interact with these subsystems, especially
+Staking and Governance. These subsystems will require making some APIs available either via
+dispatchable calls or XCM `Instruction`s. For example, Staking provides a pallet-API to register
+points (e.g. for block production) and offences. This API is often called every block to register
+the points. With Staking in a system chain, that chain would need to allow the Relay Chain to update
+validator points periodically so that it can correctly calculate rewards.
 
 ## Drawbacks
 
-Description of recognized drawbacks to the approach given in the RFC. Non-exhaustively, drawbacks relating to performance, ergonomics, user experience, security, or privacy.
+None at present.
 
 ## Testing, Security, and Privacy
 
-Describe the the impact of the proposal on these three high-importance areas - how implementations can be tested for adherence, effects that the proposal has on security and privacy per-se, as well as any possible implementation pitfalls which should be clearly avoided.
+Standard audit/review requirements apply. More powerful multi-chain integration test tools would be
+useful in developement.
 
 ## Performance, Ergonomics, and Compatibility
 
@@ -36,24 +87,31 @@ Describe the impact of the proposal on the exposed functionality of Polkadot.
 
 ### Performance
 
-Is this an optimization or a necessary pessimization? What steps have been taken to minimize additional overhead?
+This is an optimization. The removal of public/user transactions on the Relay Chain ensures that its
+primary resources are allocated to system performance.
 
 ### Ergonomics
 
-If the proposal alters exposed interfaces to developers or end-users, which types of usage patterns have been optimized for?
+This proposal alters very little for coretime users (e.g. parachain developers). Application
+developers will need to interact with multiple chains, making ergonomic light client tools
+particularly important for application development.
 
 ### Compatibility
 
-Does this proposal break compatibility with existing interfaces, older versions of implementations? Summarize necessary migrations or upgrade strategies, if any.
+Implementing this proposal will require some changes to pallet APIs. Application developers will
+need to interact with multiple chains in the network.
 
 ## Prior Art and References
 
-Provide references to either prior art or other relevant research for the submitted design.
+- [Transactionless Relay-chain](https://github.com/paritytech/polkadot/issues/323)
+- [Moving Staking off the Relay Chain](https://github.com/paritytech/polkadot-sdk/issues/491)
 
 ## Unresolved Questions
 
-Provide specific questions to discuss and address before the RFC is voted on by the Fellowship. This should include, for example, alternatives to aspects of the proposed design where the appropriate trade-off to make is unclear.
+There remain some implementation questions, like how to use balances for both Staking and
+Governance. See, for example, [Moving Staking off the Relay
+Chain](https://github.com/paritytech/polkadot-sdk/issues/491).
 
 ## Future Directions and Related Material
 
-Describe future work which could be enabled by this RFC, if it were accepted, as well as related RFCs. This is a place to brain-dump and explore possibilities, which themselves may become their own RFCs.
+Ideally the Relay Chain becomes transactionless, such that not even balances are represented there.
