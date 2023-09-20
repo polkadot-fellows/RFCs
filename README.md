@@ -55,10 +55,15 @@ Problems, requirements, and descriptions in RFC text should be stated using the 
 
 ## Bots
 
-The repository provides a bot for proposing RFCs on chain in a referenda to let the fellowship vote on the RFC. The referenda can only be created by accounts that are part of the fellowship. To use the bot you need to write the following comment into a pull request:
+The repository provides a bot for:
+
+* Proposing RFCs on chain in a referenda to let the fellowship vote on the RFC. The referenda can only be created by accounts that are part of the fellowship.
+* Processing (merging or closing) the PR after the on-chain referendum gets confirmed.
+
+To use the bot you need to write the following comment into a pull request:
 
 ``` text
-/rfc-propose
+/rfc (help|propose|process)
 ```
 
 It takes a moment and then the bot should answer with a comment with more instructions on how to proceed.
