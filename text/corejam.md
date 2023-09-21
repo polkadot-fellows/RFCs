@@ -4,7 +4,7 @@
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 11 September 2023                                                                                |
 | **Description** | Parallelised, decentralised, permissionless state-machine based on a multistage Collect-Refine-Join-Accumulate model. |
-| **Authors**     | Gavin Wood                                                                    |
+| **Authors**     | Gavin Wood, Robert Habermeier, Bastian Köcher                                                                    |
 
 
 ## Summary
@@ -48,6 +48,8 @@ In order of importance:
 
 ## Explanation
 
+**CoreJam is a general model for utilization of Polkadot Cores. It is a mechanism by which Work Packages are communicated, authorized, computed and verified, and their results gathered, combined and accumulated into particular parts of the Relay-chain's state.**
+
 The idea of *Proof-of-Validity* and *Parachain Validation Function* as first-class concepts in the Polkadot protocol is removed. These are now specializations of more general concepts.
 
 We introduce a number of new interrelated concepts: *Work Package*, *Work Class*, *Work Item*, *Work Output*, *Work Class Trie*.
@@ -65,7 +67,6 @@ mod v0 {
     type MaxWorkItemsInPackage = ConstU32<16>;
     struct WorkPackage {
         authorization: Vec<u8>,
-        progressions: BoundedVec<(WorkClass, Weight), MaxWorkItemsInPackage>,
         items: BoundedVec<WorkItem, MaxWorkItemsInPackage>,
     }
 }
@@ -85,13 +86,21 @@ impl TryFrom<EncodedWorkPackage> for v0::WorkPackage {
 }
 ```
 
-A *Work Package* is an *Authorization* together with a series of *Work Items*, limited in plurality, versioned and with a maximum encoded size. There is a third field `progressions` to provide weight-limit information for the final *Accumulate* stage. It must fulfill a constraint that the sum over all `Weight` items (i.e. the second item in the `Vec`'s tuple) must be no greater than `PROGRESS_WEIGHT_PER_PACKAGE`.
+A *Work Package* is an *Authorization* together with a series of *Work Items*, limited in plurality, versioned and with a maximum encoded size.
 
 Work Items are a pair of class and payload, where the `class` identifies the Class of Work to be done in this item (*Work Class*).
 
-### Authorization and Authorizers
+Though this process happens entirely in consensus, there are two main consensus environments at play, _in-core_ and _on-chain_. We therefore partition the progress into two pairs of stages: Collect & Refine and Join & Accumulate.
 
-An *Authorizer* is parameterized procedure:
+### Collect-Refine
+
+The first two stages of the CoreJam process are *Collect* and *Refine*. *Collect* refers to the collection and authorization of Work Packages collections of items together with an authorization to utilize a Polkadot Core. *Refine* refers to the performance of computation according to the Work Packages in order to yield a *Work Result*. Finally, each Validator Group member attests to a Work Package yielding a set of Work Results and these attestations form the basis for inclusion on-chain and integration into the Relay-chain's state (in the following stages).
+
+#### Collection and `is_authorized`
+
+Collection is the means of a Validator Group member attaining a Work Package which is authorized to be performed on their assigned Core at the current time. Authorization is a pre-requisite for a Work Package to be included included on-chain. Computation of Work Packages which are not Authorized is not rewarded. Incorrectly attesting that a Work Package is authorized is a disputable offence and can result in substantial punishment.
+
+An *Authorizer* is a parameterized procedure:
 
 ```rust
 type CodeHash = [u8; 32];
@@ -106,10 +115,15 @@ struct Authorizer {
 The `code_hash` of the Authorizer is assumed to be the hash of some code accessible in the Relay-chain's Storage pallet. The procedure itself is called the *Authorization Procedure* (`AuthProcedure`) and is expressed in this code (which must be capable of in-core VM execution). Its entry-point prototype is:
 
 ```rust
-fn is_authorized(param: &AuthParam, package: &WorkPackage) -> bool;
+struct Context {
+    height: BlockNumber,
+    header_hash: [u8; 32],
+    core_index: CoreIndex,
+}
+fn is_authorized(param: &AuthParam, package: &WorkPackage, context: &Context) -> bool;
 ```
 
-If the `is_authorized` function overruns the system-wide limit or panicks on some input, it is considered equivalent to returning `false`.
+If the `is_authorized` function overruns the system-wide limit or panicks on some input, it is considered equivalent to returning `false`. While it is mostly stateless (e.g. isolated from any Relay-chain state) it is provided with a `context` parameter in order to give information about a recent Relay-chain block. This allows it to be provided with a concise proof over some recent state Relay-chain state.
 
 A single `Authorizer` value is associated with the index of the Core at a particular Relay-chain block and limits in some way what Work Packages may be legally processed by that Core.
 
@@ -132,7 +146,7 @@ However with this proposal (and even the advent of on-demand parachains), valida
 
 This ensures that Validators do a strictly limited amount of work before knowing whether they will be rewarded and are able to discontinue and attempt other candidates earlier than would otherwise be the case. There is the possibility of wasting Coretime by processing Work Packages which result in error, but well-written authorization procedures can mitigate this risk by making a prior validation of the Work Items.
 
-### Collect-Refine
+### Refine
 
 The `refine` function is implemented as an entry-point inside a code blob which is stored on-chain and whose hash is associated with the Work Class.
 
@@ -146,9 +160,9 @@ type WorkOutput = BoundedVec<u8, WorkOutputLen>;
 fn refine(payload: WorkPayload) -> WorkOutput;
 ```
 
-Both `refine` and `is_authorized` are only ever executed on-core. Within this environment, we need to ensure that we can interrupt computation not long after some well-specified limit and deterministically determine when an invocation of the VM exhausts this limit. Since the exact point at which interruption of computation need not be deterministic, it is expected to be executed by a streaming JIT transpiler with a means of approximate and overshooting interruption coupled with deterministic metering.
+Both `refine` and `is_authorized` are only ever executed in-core. Within this environment, we need to ensure that we can interrupt computation not long after some well-specified limit and deterministically determine when an invocation of the VM exhausts this limit. Since the exact point at which interruption of computation need not be deterministic, it is expected to be executed by a streaming JIT transpiler with a means of approximate and overshooting interruption coupled with deterministic metering.
 
-Several host functions, largely in line with the *PVF* host functions, are supplied. Two additional ones include:
+Several host functions (largely in line with the host functions available to Parachain Validation Function code) are supplied. Two additional ones include:
 
 ```rust
 /// Determine the preimage of `hash` utilizing the Relay-chain Storage pallet.
@@ -159,52 +173,138 @@ fn state_root(height: u32) -> Option<[u8; 32]>;
 
 Other host functions will allow for the possibility of executing a WebAssembly payload (for example, a Parachain Validation Function) or instantiating and entering a subordinate RISCV VM (for example for Actor Progressions).
 
-When applying `refine` from the client code, we must allow for the possibility that the VM exits unexpectedly or does not end. If this happens, then the Work Item is invalidated. Thus we define a type `WorkResult`:
+When applying `refine` from the client code, we must allow for the possibility that the VM exits unexpectedly or does not end. Validators are always rewarded for computing properly authorized Work Packages, including those which include such broken Work Items. But they must be able to report their broken state into the Relay-chain in order to collect their reward. Thus we define a type `WorkResult`:
 
 ```rust
 enum WorkError {
     Timeout,
     Panic,
 }
-type WorkResult = Result<WorkOutput, WorkError>;
+struct WorkResult {
+    class: WorkClass,
+    item_hash: [u8; 32],
+    result: Result<WorkOutput, WorkError>,
+    weight: Weight,
+}
 fn apply_refine(item: WorkItem) -> WorkResult;
 ```
 
-Each Relay-chain block, every Validator Group representing a Core which is assigned work provides up to one Work Result coherent with the assignment of that Core. Validators are rewarded when they take part in their Group and process a Work Package. This culminates in providing a *Work Result* to the Relay-chain block author. If no Work Result is provided (or if the Relay-chain block author refuses to include it), then that Validator Group is not rewarded for that block.
+The amount of weight used in executing the `refine` function is noted in the `WorkResult` value, and this is used later in order to help apportion on-chain weight (for the Join-Accumulate process) to the Work Classes whose items appear in the Work Packages.
+
+```rust
+struct WorkStatement {
+    latest_relay_block_hash: [u8; 32],
+    results: BoundedVec<WorkResult, MaxWorkItemsInPackage>,
+}
+struct Attestation {
+    statement: WorkStatement,
+    validator: AccountId,
+    signature: Signature,
+}
+```
+
+Each Relay-chain block, every Validator Group representing a Core which is assigned work provides a series of Work Results coherent with an authorized Work Package. Validators are rewarded when they take part in their Group and process such a Work Package. Thus, together with some information concerning their execution context, they sign a *Statement* concerning the work done and the results of it. This signed Statement is called an *Attestation*, and is provided to the Relay-chain block author. If no such Attestation is provided (or if the Relay-chain block author refuses to include it), then that Validator Group is not rewarded for that block.
+
+The process continues once the Attestations arrive at the Relay-chain Block Author.
 
 ### Join-Accumulate
 
-Join-Accumulate is a second stage of computation and is independent from Collect-Refine. Unlike with the computation in Collect-Refine which happens contemporaneously within one of many isolated cores, the computation of Join-Accumulate is both entirely synchronous with all other computation of its stage and operates within (and has access to) the same shared state-machine.
+Join-Accumulate is a second major stage of computation and is independent from Collect-Refine. Unlike with the computation in Collect-Refine which happens contemporaneously within one of many isolated cores, the computation of Join-Accumulate is both entirely synchronous with all other computation of its stage and operates within (and has access to) the same shared state-machine.
 
-The Join-Progess stage may be seen as a synchronized counterpart to the parallelised Collect-Refine stage. It may be used to integrate the work done from the context of an isolated VM into a self-consistent world model. In concrete terms this means ensuring that the independent work components, which cannot have been aware of each other during the Collect-Refine stage, do not conflict in some way. Less dramatically, this stage may be used to enforce ordering or provide a synchronisation point (e.g. for combining entropy in a sharded RNG). Finally, this stage may be a sensible place to manage asynchronous interactions and oversee message queue transitions.
+Being on-chain (rather than in-core as with Collect-Refine), information and computation done in the Join-Accumulate stage is carried out by the block-author and the resultant block evaluated by all validators and full-nodes. Because of this, and unlike in-core computation, it has full access to the Relay-chain's state.
 
-The user-supplied `accumulate` function defines the elective portion of the Join-Accumulate stage. This is executed in a *metered* format, meaning it must be able to be executed in a sandboxed and non-deterministic fashion but also with a means of providing an upper limit on the amount of weight it may consume and a guarantee that this limit will never be breached.
+The Join-Accumulate stage may be seen as a synchronized counterpart to the parallelised Collect-Refine stage. It may be used to integrate the work done from the context of an isolated VM into a self-consistent singleton world model. In concrete terms this means ensuring that the independent work components, which cannot have been aware of each other during the Collect-Refine stage, do not conflict in some way. Less dramatically, this stage may be used to enforce ordering or provide a synchronisation point (e.g. for combining entropy in a sharded RNG). Finally, this stage may be a sensible place to manage asynchronous interactions between subcomponents of a Work Class or even different Work Classes and oversee message queue transitions.
+
+#### Metering
+
+Join-Accumulate is, as the name suggests, comprised of two subordinate stages. Both stages involve executing code inside a VM on-chain. Thus code must be executed in a *metered* format, meaning it must be able to be executed in a sandboxed and deterministic fashion but also with a means of providing an upper limit on the amount of weight it may consume and a guarantee that this limit will never be breached.
 
 Practically speaking, we may allow a similar VM execution metering system similar to that for the `refine` execution, whereby we do not require a strictly deterministic means of interrupting, but do require deterministic metering and only approximate interruption. This would mean that full-nodes and Relay-chain validators could be made to execute some additional margin worth of computation without payment, though any attack could easily be mitigated by attaching a fixed cost (either economically or in weight terms) to an VM invocation.
 
-The function signature to the `accumulate` entry-point in the Work Class's code blob is:
+Each Work Class defines some requirements it has regarding the provision of on-chain weight. Since all on-chain weight requirements must be respected of all processed Work Packages, it is important that each Work Statement does not imply using more weight than its fair portion of the total available, and in doing so provides enough weight to its constituent items to meet their requirements.
+
+```rust
+struct WorkItemWeightRequirements {
+    prune: Weight,
+    accumulate: Weight,
+}
+type WeightRequirements = StorageMap<WorkClass, WorkItemWeightRequirements>;
+```
+
+Each Work Class has two weight requirements associated with it corresponding to the two pieces of permissionless on-chain Work Class logic and represent the amount of weight allotted for each Work Item of this class included in a Work Package assigned to a Core.
+
+The total amount of weight utilizable by each Work Package (`weight_per_package`) is specified as:
+
+```
+weight_per_package := relay_block_weight * safety_margin / max_cores
+```
+
+`safety_margin` ensures that other Relay-chain system processes can happen and important transactions can be processed and is likely to be around 75%.
+
+A Work Statement is only valid if all weight liabilities of all included Work Items fit within this limit:
+
+```
+let total_weight_requirement = work_statement
+    .items
+    .map(|item| weight_requirements[item.class])
+    .sum(|requirements| requirements.prune + requirements.accumulate)
+total_weight_requirement <= weight_per_package
+```
+
+Because of this, Work Statement builders must be aware of any upcoming alterations to `max_cores` and build Statements which are in accordance with it not at present but also in the near future when it may have changed.
+
+#### Join and `prune`
+
+_For consideration: Place a hard limit on total weight able to be used by `prune` in any Work Package since it is normally computed twice and an attacker can force it to be computed a third time._
+
+The main difference between code called in the Join stage and that in the Accumulate stage is that in the former code is required to exit successfully, within the weight limit and may not mutate any state.
+
+The Join stage involves the Relay-chain Block Author gathering together all Work Packages backed by a Validator Group in a manner similar to the current system of PoV candidates. The Work Results are grouped according to their Work Class, and the untrusted Work Class function `prune` is called once for each such group. This returns a `Vec<usize>` of invalid indices. Using this result, invalid Work Packages may be pruned and the resultant set retried with confidence that the result will be an empty `Vec`.
+
+```rust
+fn prune(outputs: Vec<WorkOutput>) -> Vec<usize>;
+```
+
+The call to the `prune` function is allocated weight equal to the length of `outputs` multiplied by the `prune` field of the Work Class's weight requirements.
+
+The `prune` function is used by the Relay-chain Block Author in order to ensure that all Work Packages which make it through the Join stage are non-conflicting and valid for the present Relay-chain state. All Work Packages are rechecked using the same procedure on-chain and the block is considered malformed (i.e. it panics) if the result is not an empty `Vec`.
+
+The `prune` function has immutable access to the Work Class's child trie state, as well as regular read-only storage access to the Relay-chain's wider state.
+
+```rust
+fn get_work_storage(key: &[u8]) -> Result<Vec<u8>>;
+fn get_work_storage_len(key: &[u8]);
+```
+
+The amount of weight `prune` is allowed to use is a fixed multiple of the number of 
+
+#### Accumulate
+
+The second stage is that of Accumulate. The function signature to the `accumulate` entry-point in the Work Class's code blob is:
 
 ```rust
 fn accumulate(results: Vec<(Authorization, Vec<(ItemHash, WorkResult)>)>);
 type ItemHash = [u8; 32];
 ```
 
-As stated, there is an amount of weight which it is allowed to use before being forcibly terminated and any non-committed state changes lost. This is the sum of all `progressions` fields whose first item is the particular Work Class across all scheduled Work Packages.
+As stated, there is an amount of weight which it is allowed to use before being forcibly terminated and any non-committed state changes lost. The lowest amount of weight provided to `accumulate` is defined as the number of `WorkResult` values passed in `results` to `accumulate` multiplied by the `accumulate` field of the Work Class's weight requirements.
+
+However, the actual amount of weight may be substantially more. Each Work Package is allotted a specific amount of weight for all on-chain activity (`weight_per_package` above) and has a weight liability defined by the weight requirements of all Work Items it contains (`total_weight_requirement` above). Any weight remaining after the liability (i.e. `weight_per_package - total_weight_requirement`) may be apportioned to the Work Classes of Items within the Statement on a pro-rata basis according to the amount of weight they utilized during `refine`. Any weight unutilized by classes within one package may be carried over to the next package and utilized there.
 
 Work Items are identified by their hash (`ItemHash`). We provide both the authorization of the package and the item identifers and their results in order to allow the `refine` logic to take appropriate action in the case that an invalid Work Item was issued.
 
 _(Note for later: We may wish to provide a more light-client friendly Work Item identifier than a simple hash; perhaps a Merkle root of equal-size segments.)_
 
-Read-access to the entire Relay-chain state is allowed, but no direct write access may be provided since `refine` is untrusted code. `set_storage` may fail if an insufficient deposit is held under the Work Class's account.
-
 ```rust
-fn checkpoint() -> Weight;
-fn weight_remaining() -> Weight;
 fn get_work_storage(key: &[u8]) -> Result<Vec<u8>>;
 fn get_work_storage_len(key: &[u8]);
+fn checkpoint() -> Weight;
+fn weight_remaining() -> Weight;
 fn set_work_storage(key: &[u8], value: &[u8]) -> Result<(), ()>;
 fn remove_work_storage(key: &[u8]);
 ```
+
+Read-access to the entire Relay-chain state is allowed. No direct write access may be provided since `refine` is untrusted code. `set_storage` may fail if an insufficient deposit is held under the Work Class's account.
 
 Full access to a child trie specific to the Work Class is provided through the `work_storage` host functions. Since `refine` is permissionless and untrusted code, we must ensure that its child trie does not grow to degrade the Relay-chain's overall performance or place untenable requirements on the storage of full-nodes. To this goal, we require an account sovereign to the Work Class to be holding an amount of funds proportional to the overall storage footprint of its Child Trie. `set_work_storage` may return an error should the balance requirement not be met.
 
@@ -321,21 +421,25 @@ The proposal introduces no new privacy concerns.
 
 ## Future Directions and Related Material
 
-Important considerations include:
-
-1. In the case of composite Work Packages, allowing synchronous (and therefore causal) interactions between the subpackages. If this were to be the case, then some sort of synchronisation sentinel would be needed to ensure that should one subpackage result without the expected effects on its Work Class State (by virtue of the `accumulate` outcome for that subpackage), that the `accumulate` of any causally entangled subpackages takes appropriate account for this (i.e. by dropping it and not effecting any changes from it).
+None at present.
 
 ## Drawbacks, Alternatives and Unknowns
 
-None at present.
+Important considerations include:
+
+1. In the case of composite Work Packages, allowing synchronous (and therefore causal) interactions between the Work Items. If this were to be the case, then some sort of synchronisation sentinel would be needed to ensure that should one subpackage result without the expected effects on its Work Class State (by virtue of the `accumulate` outcome for that subpackage), that the `accumulate` of any causally entangled subpackages takes appropriate account for this (i.e. by dropping it and not effecting any changes from it).
+
+2. Work Items may need some degree of coordination to be useful by the `accumulate` function of their Work Class. To a large extent this is outside of the scope of this proposal's computation model by design. Through the authorization framework we assert that it is the concern of the Work Class and not of the Relay-chain validators themselves. However we must ensure that certain requirements of the parachains use-case are practically fulfillable in *some* way. Within the legacy parachain model, PoVs:
+    1. shouldn't be replayable;
+    2. shouldn't require unbounded buffering in `accumulate` if things are submitted out-of-order;
+    3. should be possible to evaluate for ordering by validators making a best-effort.
 
 ## Prior Art and References
 
 None.
 
-
-
 # Chat
+```
 for this we need a pallet on the RC to allow arbitrary data to be stored for a deposit, with a safeguard that it would remain in RC state for at least 24 hours (in case of dispute); and a host function to allow the PoV to reference it.
 this issue is that for fast-changing data, you'd need to store all of the different images for 24 hours each.
 this would quickly get prohibitive.
@@ -526,3 +630,4 @@ basically, just turn polkadot into a global, secure map-reduce computer.
 We could just experiment 
 As a new WT
 yup
+```
