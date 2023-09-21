@@ -62,11 +62,12 @@ simply preventing state changes in the Relay Chain, using the Identity-related s
 for a new chain, and launching that new chain with the genesis and logic (pallet) needed.
 
 Other subsystems cannot experience any downtime like this because they are essential to the
-network's functioning, like Staking and Governance. However, these do not store information for a
-long time the way that Identity does, and can likely coexist with a similarly-permissioned system
-chain for some time, much like how "Gov1" and "OpenGov" coexisted at the latter's introduction.
+network's functioning, like Staking and Governance. However, these can likely coexist with a
+similarly-permissioned system chain for some time, much like how "Gov1" and "OpenGov" coexisted at
+the latter's introduction.
 
-Specific migration plans will be included in release notes of runtimes from the Polkadot Fellowship.
+Specific migration plans will be included in release notes of runtimes from the Polkadot Fellowship
+when beginning the work of migrating a particular subsystem.
 
 ### Interfaces
 
