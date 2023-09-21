@@ -4,7 +4,7 @@
 | --------------- |---------------------------------------------------------------------------|
 | **Start Date**  | Aug 22nd 2023                                                             |
 | **Description** | Permanently move the Encointer runtime into the Fellowship runtimes repo. |
-| **Authors**     | @brenzi for Encointer Association, 8000 Zurich, switzerland               |
+| **Authors**     | @brenzi for Encointer Association, 8000 Zurich, Switzerland               |
 
 ## Summary
 
