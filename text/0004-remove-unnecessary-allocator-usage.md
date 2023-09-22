@@ -1,14 +1,14 @@
-# RFC-0004: Remove unnecessary host functions allocator usage
+# RFC-0004: Remove the allocator usage
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 2023-07-04                                                                                  |
-| **Description** | Add alternatives to host functions that make use of the allocator when unnecessary          |
+| **Description** | Update the runtime-host interface to no longer make use of a host-side allocator            |
 | **Authors**     | Pierre Krieger                                                                              |
 
 ## Summary
 
-Add new versions of host functions in order to avoid using the allocator when the buffer being allocated is of a size known at compilation time.
+Update the runtime-host interface to no longer make use of a host-side allocator.
 
 ## Motivation
 
@@ -18,20 +18,7 @@ The API of many host functions consists in allocating a buffer. For example, whe
 
 Even though no benchmark has been done, it is pretty obvious that this design is very inefficient. To continue with the example of `ext_hashing_twox_256_version_1`, it would be more efficient to instead write the output hash to a buffer that was allocated by the runtime on its stack and passed by pointer to the function. Allocating a buffer on the stack in the worst case scenario simply consists in decreasing a number, and in the best case scenario is free. Doing so would save many Wasm memory reads and writes by the allocator, and would save a function call to `ext_allocator_free_version_1`.
 
-After this RFC, only the following functions have no exact equivalent that doesn't use the allocator:
-
-- `ext_storage_get`
-- `ext_default_child_storage_get`
-- `ext_storage_next_key`
-- `ext_default_child_storage_next_key`
-- `ext_crypto_ed25519_public_keys`
-- `ext_crypto_sr25519_public_keys`
-- `ext_crypto_ecdsa_public_keys`
-- `ext_offchain_network_state`
-- `ext_offchain_local_storage_get`
-- `ext_offchain_http_response_wait`
-- `ext_offchain_http_response_headers`
-- `ext_offchain_http_response_read_body`
+Furthermore, the existence of the host-side allocator has become questionable over time. It is implemented in a very naive way, and for determinism and backwards compatibility reasons it needs to be implemented exactly identically in every client implementation. Furthermore, runtimes make substantial use of heap memory allocations, and each allocation needs to go twice through the runtime <-> host boundary (once for allocating and once for freeing). Moving the allocator to the runtime side, while it would increase the size of the runtime, would be a good idea. But before the host-side allocator can be deprecated, all the host functions that make use of it need to be updated to not use it.
 
 ## Stakeholders
 
@@ -39,7 +26,9 @@ No attempt was made at convincing stakeholders. The writer of this RFC believes 
 
 ## Explanation
 
-This RFC proposes to introduce the following new host functions:
+### New host functions
+
+This section contains a list of new host functions to introduce.
 
 ```wat
 (func $ext_storage_read_version_2
@@ -51,6 +40,24 @@ This RFC proposes to introduce the following new host functions:
 
 The signature and behaviour of `ext_storage_read_version_2` and `ext_default_child_storage_read_version_2` is identical to their version 1 equivalent, but the return value has a different meaning.
 The new functions directly return the number of bytes that were written in the `value_out` buffer. If the entry doesn't exist, a value of `-1` is returned. Given that the host must never write more bytes than the size of the buffer in `value_out`, and that the size of this buffer is expressed as a 32 bits number, a 64bits value of `-1` is not ambiguous.
+
+The runtime execution stops with an error if `value_out` is outside of the range of the memory of the virtual machine, even if the size of the buffer is 0 or if the amount of data to write would be 0 bytes.
+
+```wat
+(func $ext_storage_next_key_version_2
+    (param $key i64) (param $out i64) (return i32))
+(func $ext_default_child_storage_next_key_version_2
+    (param $child_storage_key i64) (param $key i64) (param $out i64) (return i32))
+```
+
+The behaviour of these functions is identical to their version 1 equivalents.
+Instead of allocating a buffer, writing the next key to it, and returning a pointer to it, the new version of these functions accepts an `out` parameter containing [a pointer-size](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size) to the memory location where the host writes the output. The runtime execution stops with an error if `out` is outside of the range of the memory of the virtual machine, even if the function wouldn't write anything to `out`.
+These functions return the size, in bytes, of the next key, or `0` if there is no next key. If the size of the next key is larger than the buffer in `out`, the bytes of the key that fit the buffer are written to `out` and any extra byte that doesn't fit is discarded.
+
+Some notes:
+
+- It is never possible for the next key to be an empty buffer, because an empty buffer has no preceding key. For this reason, a return value of `0` can unambiguously be used to indicate the lack of next key.
+- The `ext_storage_next_key_version_2` and `ext_default_child_storage_next_key_version_2` are typically used in order to enumerate keys that starts with a certain prefix. Given that storage keys are constructed by concatenating hashes, the runtime is expected to know the size of the next key and can allocate a buffer that can fit said key.
 
 ```wat
 (func $ext_hashing_keccak_256_version_2
@@ -149,6 +156,30 @@ The non-zero value written on failure is:
 These values are equal to the values returned on error by the version 2 (see <https://spec.polkadot.network/chap-host-api#defn-ecdsa-verify-error>), but incremented by 1 in order to reserve 0 for success.
 
 ```wat
+(func $ext_crypto_ed25519_num_public_keys_version_1
+    (param $key_type_id i32) (return i32))
+(func $ext_crypto_ed25519_public_key_version_2
+    (param $key_type_id i32) (param $key_index i32) (param $out i32))
+(func $ext_crypto_sr25519_num_public_keys_version_1
+    (param $key_type_id i32) (return i32))
+(func $ext_crypto_sr25519_public_key_version_2
+    (param $key_type_id i32) (param $key_index i32) (param $out i32))
+(func $ext_crypto_ecdsa_num_public_keys_version_1
+    (param $key_type_id i32) (return i32))
+(func $ext_crypto_ecdsa_public_key_version_2
+    (param $key_type_id i32) (param $key_index i32) (param $out i32))
+```
+
+The functions superceded the `ext_crypto_ed25519_public_key_version_1`, `ext_crypto_sr25519_public_key_version_1`, and `ext_crypto_ecdsa_public_key_version_1` host functions.
+
+Instead of calling `ext_crypto_ed25519_public_key_version_1` in order to obtain the list of all keys at once, the runtime should instead call `ext_crypto_ed25519_num_public_keys_version_1` in order to obtain the number of public keys available, then `ext_crypto_ed25519_public_key_version_2` repeatedly.
+The `ext_crypto_ed25519_public_key_version_2` function writes the public key of the given `key_index` to the memory location designated by `out`. The `key_index` must be between 0 (included) and `n` (excluded), where `n` is the value returned by `ext_crypto_ed25519_num_public_keys_version_1`.
+
+The same explanations apply for `ext_crypto_sr25519_public_key_version_1` and `ext_crypto_ecdsa_public_key_version_1`.
+
+Host implementers should be aware that the list of public keys (including their ordering) must not change while the runtime is running. This is most likely done by copying the list of all available keys either at the start of the execution or the first time the list is accessed.
+
+```wat
 (func $ext_offchain_http_request_start_version_2
   (param $method i64) (param $uri i64) (param $meta i64) (result i32))
 ```
@@ -160,16 +191,54 @@ Host implementers should be aware that, because a zero identifier value was prev
 ```wat
 (func $ext_offchain_http_request_write_body_version_2
   (param $method i64) (param $uri i64) (param $meta i64) (result i32))
+(func $ext_offchain_http_response_read_body_version_2
+  (param $request_id i32) (param $buffer i64) (param $deadline i64) (result i64))
 ```
 
-The behaviour of this function is identical to its version 1 equivalent. Instead of allocating a buffer, writing two bytes in it, and returning a pointer to it, the new version of this function simply indicates what happened:
+The behaviour of these functions is identical to their version 1 equivalent. Instead of allocating a buffer, writing two bytes in it, and returning a pointer to it, the new version of these functions simply indicates what happened:
 
-- 0 on success.
-- 1 if the deadline was reached.
-- 2 if there was an I/O error while processing the request.
-- 3 if the identifier of the request is invalid.
+- For `ext_offchain_http_request_write_body_version_2`, 0 on success.
+- For `ext_offchain_http_response_read_body_version_2`, 0 or a non-zero number of bytes on success.
+- -1 if the deadline was reached.
+- -2 if there was an I/O error while processing the request.
+- -3 if the identifier of the request is invalid.
 
-These values are equal to the values returned on error by the version 1 (see <https://spec.polkadot.network/chap-host-api#defn-http-error>), but incremented by 1 in order to reserve 0 for success.
+These values are equal to the values returned on error by the version 1 (see <https://spec.polkadot.network/chap-host-api#defn-http-error>), but tweaked in order to reserve positive numbers for success.
+
+When it comes to `ext_offchain_http_response_read_body_version_2`, the host implementers must not read too much data at once in order to not create ambiguity in the returned value. Given that the size of the `buffer` is always inferior or equal to 4 GiB, this is not a problem.
+
+```wat
+(func $ext_offchain_http_response_wait_version_2
+    (param $ids i64) (param $deadline i64) (param $out i32))
+```
+
+The behaviour of this function is identical to its version 1 equivalent. Instead of allocating a buffer, writing the output to it, and returning a pointer to it, the new version of this function accepts an `out` parameter containing the memory location where the host writes the output. The runtime execution stops with an error if `out` is outside of the range of the memory of the virtual machine.
+
+The encoding of the response code is also modified compared to its version 1 equivalent and each response code now encodes to 4 little endian bytes as described:
+
+- 100-999: the request has finished with the given HTTP status code.
+- -1 if the deadline was reached.
+- -2 if there was an I/O error while processing the request.
+- -3 if the identifier of the request is invalid.
+
+The buffer passed to `out` must always have a size of `4 * n` where `n` is the number of elements in the `ids`.
+
+```wat
+(func $ext_offchain_http_response_header_name_version_1
+    (param $request_id i32) (param $header_index i32) (param $out i64) (result i64))
+(func $ext_offchain_http_response_header_value_version_1
+    (param $request_id i32) (param $header_index i32) (param $out i64) (result i64))
+```
+
+These functions supercede the `ext_offchain_http_response_headers_version_1` host function.
+
+Contrary to `ext_offchain_http_response_headers_version_1`, only one header indicated by `header_index` can be read at a time. Instead of calling `ext_offchain_http_response_headers_version_1` once, the runtime should call `ext_offchain_http_response_header_name_version_1` and `ext_offchain_http_response_header_value_version_1` multiple times with an increasing `header_index`, until a value of `-1` is returned.
+
+These functions accept an `out` parameter containing [a pointer-size](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size) to the memory location where the header name or value should be written. The runtime execution stops with an error if `out` is outside of the range of the memory of the virtual machine, even if the function wouldn't write anything to `out`.
+
+These functions return the size, in bytes, of the header name or header value. If request doesn't exist or is in an invalid state (as documented for `ext_offchain_http_response_headers_version_1`) or the `header_index` is out of range, a value of `-1` is returned. Given that the host must never write more bytes than the size of the buffer in `out`, and that the size of this buffer is expressed as a 32 bits number, a 64bits value of `-1` is not ambiguous.
+
+If the buffer in `out` is too small to fit the entire header name of value, only the bytes that fit are written and the rest are discarded.
 
 ```wat
 (func $ext_offchain_submit_transaction_version_2
@@ -179,6 +248,57 @@ These values are equal to the values returned on error by the version 1 (see <ht
 ```
 
 The behaviour of these functions is identical to their version 1 equivalent. Instead of allocating a buffer, writing `1` or `0` in it, and returning a pointer to it, the version 2 of these functions simply return 1 or 0.
+
+```wat
+(func $ext_offchain_local_storage_read_version_1
+    (param $kind i32) (param $key i64) (param $value_out i64) (param $offset i32) (result i64))
+```
+
+This function supercedes the `ext_offchain_local_storage_get_version_1` host function, and uses an API and logic similar to `ext_storage_read_version_2`.
+
+It reads the offchain local storage key indicated by `kind` and `key` starting at the byte indicated by `offset`, and writes the value to the [pointer-size](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size) indicated by `value_out`.
+
+The function returns the number of bytes that were written in the `value_out` buffer. If the entry doesn't exist, a value of `-1` is returned. Given that the host must never write more bytes than the size of the buffer in `value_out`, and that the size of this buffer is expressed as a 32 bits number, a 64bits value of `-1` is not ambiguous.
+
+The runtime execution stops with an error if `value_out` is outside of the range of the memory of the virtual machine, even if the size of the buffer is 0 or if the amount of data to write would be 0 bytes.
+
+```wat
+(func $ext_offchain_network_peer_id_version_1
+    (param $out i64))
+```
+
+This function writes [the `PeerId` of the local node](https://spec.polkadot.network/chap-networking#id-node-identities) to the memory location indicated by `out`. A `PeerId` is always 38 bytes long.
+The runtime execution stops with an error if `out` is outside of the range of the memory of the virtual machine.
+
+```wat
+(func $ext_input_size_version_1
+    (return i64))
+(func $ext_input_read_version_1
+    (param $offset i64) (param $out i64))
+```
+
+When a runtime function is called, the host uses the allocator to allocate memory within the runtime where to write some input data. These two new host functions provide an alternative way to access the input that doesn't make use of the allocator.
+
+The `ext_input_size_version_1` host function returns the size in bytes of the input data.
+
+The `ext_input_read_version_1` host function copies some data from the input data to the memory of the runtime. The `offset` parameter indicates the offset within the input data where to start copying, and must be inferior or equal to the value returned by `ext_input_size_version_1`. The `out` parameter is [a pointer-size](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size) containing the buffer where to write to.
+The runtime execution stops with an error if `out` is outside of the range of the memory of the virtual machine, even if the amount of data to copy would be 0 bytes.
+
+### Other changes
+
+In addition to the new host functions, this RFC proposes two changes to the runtime-host interface:
+
+- The following function signature is now accepted for runtime entry points: `(func (result i64))`.
+- Runtimes no longer need to expose a constant named `__heap_base`.
+
+All the host functions that are being superceded by new host functions are now considered deprecated and should no longer be used.
+The following other host functions are similarly also considered deprecated:
+
+- `ext_storage_get_version_1`
+- `ext_default_child_storage_get_version_1`
+- `ext_allocator_malloc_version_1`
+- `ext_allocator_free_version_1`
+- `ext_offchain_network_state_version_1`
 
 ## Drawbacks
 
@@ -192,19 +312,14 @@ The API of these new functions was heavily inspired by API used by the C program
 
 ## Unresolved Questions
 
-No unresolved questions.
+The changes in this RFC would need to be benchmarked. This involves implementing the RFC and measuring the speed difference.
+
+It is expected that most host functions are faster or equal speed to their deprecated counterparts, with the following exceptions:
+
+- `ext_input_size_version_1`/`ext_input_read_version_1` is inherently slower than obtaining a buffer with the entire data due to the two extra function calls and the extra copying. However, given that this only happens once per runtime call, the cost is expected to be negligible.
+- The `ext_crypto_*_public_keys`, `ext_offchain_network_state`, and `ext_offchain_http_*` host functions are likely slightly slower than their deprecated counterparts, but given that they are used only in offchain workers this is acceptable.
 
 ## Future Possibilities
 
-The existence of the host-side allocator has become questionable over time. It is implemented in a very naive way, and for determinism and backwards compatibility reasons it needs to be implemented exactly identically in every client implementation. Furthermore, runtimes make substantial use of heap memory allocations, and each allocation needs to go twice through the runtime <-> host boundary (once for allocating and once for freeing). Moving the allocator to the runtime side, while it would increase the size of the runtime, would be a good idea. But before the host-side allocator can be deprecated, all the host functions that make use of it need to be updated to not use it.
-
-When it comes to removing the allocator usage from the functions that still use it after this RFC, it can in my opinion be done like this:
-
-- The `ext_crypto_*_public_keys`, `ext_offchain_network_state`, and `ext_offchain_http_*` host functions can be updated to no longer use the allocator by splitting them in two: one function to query the number of items and one function to query an individual item.
-- The `ext_offchain_local_storage_get` host functions should be deprecated in favor of a new `ext_offchain_local_storage_read` host function.
-- The `ext_storage_next_key` and `ext_default_child_storage_next_key` host functions should also be updated to get a new `read`-like API. Because storage keys are organized by concatenating hashes, their length is always known ahead of time, and as such a buffer containing the next key can be allocated ahead of time.
-- The `ext_storage_get` and `ext_default_child_storage_get` host functions should be deprecated in favor of `ext_storage_read` and `ext_default_child_storage_read`. Most of the time (numbers, cryptographic public keys, etc.), the runtime knows ahead of the time the size of the data that it is going to read. Using `read` instead of `get` can be problematic in situations where the size of the data is not known ahead of time, which is `Vec`s and `String`s, as it might require reallocations and mutiple calls to `read` instead of just one to `get`. While `Vec`s and `String`s are pretty uncommon, it is difficult to know ahead of time whether this is an actual problem, and this would need to be benchmarked. A theoretical alternative approach could be to provide an API similar to `mmap`, where the runtime maps a storage value in its memory, but this theoretical approach might not realistically be implementable.
-
-Furthermore, the input data provided to the runtime is also allocated using the allocator. New host functions that allow reading the input from the runtime would have to be added.
-
-Because all these changes might be controversial and might require benchmarking, and that the removal of the allocator might also be controversial, I have decided to not include them as part of this RFC.
+After this RFC, we can remove from the source code of the host the allocator altogether in a future version, by removing support for all the deprecated host functions.
+This would remove the possibility to synchronize older blocks, which is probably controversial and requires a some preparations that are out of scope of this RFC.
