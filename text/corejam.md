@@ -52,8 +52,7 @@ In order of importance:
 
 The idea of *Proof-of-Validity* and *Parachain Validation Function* as first-class concepts in the Polkadot protocol is removed. These are now specializations of more general concepts.
 
-We introduce a number of new interrelated concepts: *Work Package*, *Work Class*, *Work Item*, *Work Output*, *Work Class Trie*.
-
+We introduce a number of new interrelated concepts: *Work Package*, *Work Class*, *Work Item*, *Work Package Output*, *Work Package Result*, *Work Package Report* (also known as a *Candidate*) and *Work Package Attestation*, *Work Class Trie*.
 
 ```rust
 mod v0 {
@@ -65,8 +64,22 @@ mod v0 {
         payload: WorkPayload,
     }
     type MaxWorkItemsInPackage = ConstU32<16>;
+    type MaxWorkPackageDependencies = ConstU32<8>;
+    enum Authorization {
+        Instantaneous(InstantaneousAuth),
+        Bulk(Vec<u8>),
+    }
+    type HeaderHash = [u8; 32];
+    /// Just a Blake2-256 hash of an EncodedWorkPackage.
+    type WorkPackageHash = [u8; 32];
+    type Prerequisites = BoundedVec<WorkPackageHash, MaxWorkPackageDependencies>;
+    struct Context {
+        header_hash: HeaderHash,
+        prerequisites: Prerequisites,
+    }
     struct WorkPackage {
-        authorization: Vec<u8>,
+        authorization: Authorization,
+        context: Context,
         items: BoundedVec<WorkItem, MaxWorkItemsInPackage>,
     }
 }
@@ -86,7 +99,7 @@ impl TryFrom<EncodedWorkPackage> for v0::WorkPackage {
 }
 ```
 
-A *Work Package* is an *Authorization* together with a series of *Work Items*, limited in plurality, versioned and with a maximum encoded size.
+A *Work Package* is an *Authorization* together with a series of *Work Items* and a context , limited in plurality, versioned and with a maximum encoded size.
 
 Work Items are a pair of class and payload, where the `class` identifies the Class of Work to be done in this item (*Work Class*).
 
@@ -98,7 +111,13 @@ The first two stages of the CoreJam process are *Collect* and *Refine*. *Collect
 
 #### Collection and `is_authorized`
 
-Collection is the means of a Validator Group member attaining a Work Package which is authorized to be performed on their assigned Core at the current time. Authorization is a pre-requisite for a Work Package to be included included on-chain. Computation of Work Packages which are not Authorized is not rewarded. Incorrectly attesting that a Work Package is authorized is a disputable offence and can result in substantial punishment.
+Collection is the means of a Validator Group member attaining a Work Package which is authorized to be performed on their assigned Core at the current time. Authorization is a prerequisite for a Work Package to be included on-chain. Computation of Work Packages which are not Authorized is not rewarded. Incorrectly attesting that a Work Package is authorized is a disputable offence and can result in substantial punishment.
+
+There are two kinds of Authorization corresponding to the two kinds of Coretime which are sold by Polkadot (see RFC#0001). An Authorization for usage of Instantaneous Coretime consists of a self-contained Signature of an account which own enough Instantaneous Coretime Credit in order to purchase a block of Coretime at the current rate signing a payload of the Work Package hash.
+
+RCVGs run the risk of a credit owner not having the credit at the point of inclusion, in which case the RCVG will not be rewarded. Credit may never be withdrawn, therefore RCVGs can safely accept a block if and only if the Credit account contains a balance of at least the product of the number of Cores assigned to IC, the price per IC core per block and the number of blocks behind the head of the finalized chain which the RCVG currently may be.
+
+An Authorization for usage of Bulk Coretime is more sophisticated. We introduce the concept of an *Authorizer* procedure, which is a piece of logic stored on-chain to which Bulk Coretime may be assigned. Assigning some Bulk Coretime to an Authorizer implies allowing any Work Package which passes that authorization process to utilize that Bulk Coretime in order to be submitted on-chain. It controls the circumstances under which RCVGs may be rewarded for evaluation and submission of Work Packages (and thus what Work Packages become valid to submit onto Polkadot). Authorization logic is entirely arbitrary and need not be restricted to authorizing a single collator, Work Package builder, parachain or even a single Work Class.
 
 An *Authorizer* is a parameterized procedure:
 
@@ -115,12 +134,7 @@ struct Authorizer {
 The `code_hash` of the Authorizer is assumed to be the hash of some code accessible in the Relay-chain's Storage pallet. The procedure itself is called the *Authorization Procedure* (`AuthProcedure`) and is expressed in this code (which must be capable of in-core VM execution). Its entry-point prototype is:
 
 ```rust
-struct Context {
-    height: BlockNumber,
-    header_hash: [u8; 32],
-    core_index: CoreIndex,
-}
-fn is_authorized(param: &AuthParam, package: &WorkPackage, context: &Context) -> bool;
+fn is_authorized(param: &AuthParam, package: &WorkPackage, core_index: CoreIndex) -> bool;
 ```
 
 If the `is_authorized` function overruns the system-wide limit or panicks on some input, it is considered equivalent to returning `false`. While it is mostly stateless (e.g. isolated from any Relay-chain state) it is provided with a `context` parameter in order to give information about a recent Relay-chain block. This allows it to be provided with a concise proof over some recent state Relay-chain state.
@@ -192,18 +206,32 @@ fn apply_refine(item: WorkItem) -> WorkResult;
 The amount of weight used in executing the `refine` function is noted in the `WorkResult` value, and this is used later in order to help apportion on-chain weight (for the Join-Accumulate process) to the Work Classes whose items appear in the Work Packages.
 
 ```rust
-struct WorkStatement {
-    latest_relay_block_hash: [u8; 32],
+struct WorkReport {
+    /// The hash of the underlying WorkPackage.
+    hash: WorkPackageHash,
+    /// The context of the underlying WorkPackage.
+    context: Context,
+    /// The core index of the attesting RCVG.
+    core_index: CoreIndex,
+    /// The results of the evaluation of the Items in the underlying Work Package.
     results: BoundedVec<WorkResult, MaxWorkItemsInPackage>,
 }
 struct Attestation {
-    statement: WorkStatement,
+    report: WorkReport,
+    validator: AccountId,
+    signature: Signature,
+}
+/// Since all RCVG members should be attesting to the same few Work Reports, it may
+/// make sense to send Attestations without the full underlying WorkReport, but only
+/// its hash.
+struct BareAttestation {
+    report_hash: WorkReportHash,
     validator: AccountId,
     signature: Signature,
 }
 ```
 
-Each Relay-chain block, every Validator Group representing a Core which is assigned work provides a series of Work Results coherent with an authorized Work Package. Validators are rewarded when they take part in their Group and process such a Work Package. Thus, together with some information concerning their execution context, they sign a *Statement* concerning the work done and the results of it. This signed Statement is called an *Attestation*, and is provided to the Relay-chain block author. If no such Attestation is provided (or if the Relay-chain block author refuses to include it), then that Validator Group is not rewarded for that block.
+Each Relay-chain block, every Validator Group representing a Core which is assigned work provides a series of Work Results coherent with an authorized Work Package. Validators are rewarded when they take part in their Group and process such a Work Package. Thus, together with some information concerning their execution context, they sign a *Report* concerning the work done and the results of it. This is also known as a *Candidate*. This signed Report is called an *Attestation*, and is provided to the Relay-chain block author. If no such Attestation is provided (or if the Relay-chain block author refuses to include it), then that Validator Group is not rewarded for that block.
 
 The process continues once the Attestations arrive at the Relay-chain Block Author.
 
@@ -215,13 +243,46 @@ Being on-chain (rather than in-core as with Collect-Refine), information and com
 
 The Join-Accumulate stage may be seen as a synchronized counterpart to the parallelised Collect-Refine stage. It may be used to integrate the work done from the context of an isolated VM into a self-consistent singleton world model. In concrete terms this means ensuring that the independent work components, which cannot have been aware of each other during the Collect-Refine stage, do not conflict in some way. Less dramatically, this stage may be used to enforce ordering or provide a synchronisation point (e.g. for combining entropy in a sharded RNG). Finally, this stage may be a sensible place to manage asynchronous interactions between subcomponents of a Work Class or even different Work Classes and oversee message queue transitions.
 
+#### Initial Validation
+
+There are a number of initial validation requirements which the RCBA must do in order to ensure no time is wasted on further, possibly costly, computation.
+
+Firstly, any given Work Report must have enough attestation signatures to be considered for inclusion on-chain. Only one Work Report may be considered for inclusion from each RCVG per block.
+
+Secondly, any Work Reports introduced by the RCBA must be *Recent*, defined as having a `context.header_hash` which is an ancestor of the RCBA head and whose height is less than `RECENT_BLOCKS` from the block which the RCBA is now authoring.
+
+```rust
+const RECENT_BLOCKS: u32 = 16;
+```
+
+Thirdly, the RCBA may not include multiple Work Reports for the same Work Package. Since Work Reports become inherently invalid once they are no longer *Recent*, then this check may be simplified to ensuring that there are no Work Reports of the same Work Package within any *Recent* blocks.
+
+Fourthly, the RCBA may not include Work Reports whose prerequisites are not themselves included in *Recent* blocks.
+
+In order to ensure all of the above tests are honoured by the RCBA, a block which contains Work Reports which fail any of these tests shall panic on import. The Relay-chain's on-chain logic will thus include these checks in order to ensure that they are honoured by the RCBA. We therefore introduce the *Recent Inclusions* storage item, which retaining all Work Package hashes which were included in the *Recent* blocks:
+
+```rust
+const MAX_CORES: u32 = 512;
+/// Must be ordered.
+type InclusionSet = BoundedVec<WorkPackageHash, ConstU32<MAX_CORES>>;
+type RecentInclusions = StorageValue<BoundedVec<InclusionSet, ConstU32<RECENT_BLOCKS>>>
+```
+
+The RCBA must keep an up to date set of which Work Packages have already been included in order to avoid accidentally attempting to introduce a duplicate Work Package or one whose prerequisites have not been fulfilled. Since the currently authored block is considered *Recent*, Work Reports introduced earlier in the same block do satisfy prerequisites of Work Packages introduced later.
+
+While it will generally be the case that RCVGs know precisely which Work Reports will have been introduced at the point that their Attestation arrives with the RCBA by keeping the head of the Relay-chain in sync, it will not always be possible. Therefore, RCVGs will never be punished for providing an Attestation which fails any of these tests; the Attestation will simply be kept until either:
+
+1. it stops being *Recent*;
+2. it becomes included on-chain; or
+3. some other Attestation of the same Work Package becomes included on-chain.
+
 #### Metering
 
 Join-Accumulate is, as the name suggests, comprised of two subordinate stages. Both stages involve executing code inside a VM on-chain. Thus code must be executed in a *metered* format, meaning it must be able to be executed in a sandboxed and deterministic fashion but also with a means of providing an upper limit on the amount of weight it may consume and a guarantee that this limit will never be breached.
 
 Practically speaking, we may allow a similar VM execution metering system similar to that for the `refine` execution, whereby we do not require a strictly deterministic means of interrupting, but do require deterministic metering and only approximate interruption. This would mean that full-nodes and Relay-chain validators could be made to execute some additional margin worth of computation without payment, though any attack could easily be mitigated by attaching a fixed cost (either economically or in weight terms) to an VM invocation.
 
-Each Work Class defines some requirements it has regarding the provision of on-chain weight. Since all on-chain weight requirements must be respected of all processed Work Packages, it is important that each Work Statement does not imply using more weight than its fair portion of the total available, and in doing so provides enough weight to its constituent items to meet their requirements.
+Each Work Class defines some requirements it has regarding the provision of on-chain weight. Since all on-chain weight requirements must be respected of all processed Work Packages, it is important that each Work Report does not imply using more weight than its fair portion of the total available, and in doing so provides enough weight to its constituent items to meet their requirements.
 
 ```rust
 struct WorkItemWeightRequirements {
@@ -241,7 +302,7 @@ weight_per_package := relay_block_weight * safety_margin / max_cores
 
 `safety_margin` ensures that other Relay-chain system processes can happen and important transactions can be processed and is likely to be around 75%.
 
-A Work Statement is only valid if all weight liabilities of all included Work Items fit within this limit:
+A Work Report is only valid if all weight liabilities of all included Work Items fit within this limit:
 
 ```
 let total_weight_requirement = work_statement
@@ -251,7 +312,7 @@ let total_weight_requirement = work_statement
 total_weight_requirement <= weight_per_package
 ```
 
-Because of this, Work Statement builders must be aware of any upcoming alterations to `max_cores` and build Statements which are in accordance with it not at present but also in the near future when it may have changed.
+Because of this, Work Report builders must be aware of any upcoming alterations to `max_cores` and build Statements which are in accordance with it not at present but also in the near future when it may have changed.
 
 #### Join and `prune`
 
@@ -289,7 +350,7 @@ type ItemHash = [u8; 32];
 
 As stated, there is an amount of weight which it is allowed to use before being forcibly terminated and any non-committed state changes lost. The lowest amount of weight provided to `accumulate` is defined as the number of `WorkResult` values passed in `results` to `accumulate` multiplied by the `accumulate` field of the Work Class's weight requirements.
 
-However, the actual amount of weight may be substantially more. Each Work Package is allotted a specific amount of weight for all on-chain activity (`weight_per_package` above) and has a weight liability defined by the weight requirements of all Work Items it contains (`total_weight_requirement` above). Any weight remaining after the liability (i.e. `weight_per_package - total_weight_requirement`) may be apportioned to the Work Classes of Items within the Statement on a pro-rata basis according to the amount of weight they utilized during `refine`. Any weight unutilized by classes within one package may be carried over to the next package and utilized there.
+However, the actual amount of weight may be substantially more. Each Work Package is allotted a specific amount of weight for all on-chain activity (`weight_per_package` above) and has a weight liability defined by the weight requirements of all Work Items it contains (`total_weight_requirement` above). Any weight remaining after the liability (i.e. `weight_per_package - total_weight_requirement`) may be apportioned to the Work Classes of Items within the Report on a pro-rata basis according to the amount of weight they utilized during `refine`. Any weight unutilized by classes within one package may be carried over to the next package and utilized there.
 
 Work Items are identified by their hash (`ItemHash`). We provide both the authorization of the package and the item identifers and their results in order to allow the `refine` logic to take appropriate action in the case that an invalid Work Item was issued.
 
@@ -406,6 +467,18 @@ We should consider utilizing the Storage Pallet for Parachain Code and store onl
 ### Notes for implementing the Actor Progression model
 
 Actor code is stored in the Storage Pallet. Actor-specific data including code hash, VM memory hash and sequence number is stored in the Actor Work Class Trie under that Actor's identifier. The Work Package would include pre-transition VM memories of actors to be progressed whose hash matches the VM memory hash stored on-chain and any additional data required for execution by the actors (including, perhaps, swappable memory pages). The `refine` function would initiate the relevant VMs and make entries into those VMs in line with the Work Package's manifest. The Work Output would provide a vector of actor progressions made including their identifer, pre- and post-VM memory hashes and sequence numbers. The `accumulate` function would identify and resolve any conflicting progressions and update the Actor Work Class Trie with the progressed actors' new states. More detailed information is given in the Coreplay RFC.
+
+### Notes on Implementation Order
+
+In order to ease the migration process from the current Polkadot on- and off-chain logic to this proposal, we can envision a partial implementation, or refactoring, which would facilitate the eventual proposal whilst remaining compatible with the pre-existing usage and avoid altering substantial code.
+
+We therefore envision an initial version of this proposal with minimal modifications to current code:
+
+1. Remain with Webassembly rather than RISC-V, both for Work Class logic and the subordinate environments which can be set up from Work Class logic. The introduction of Work Classes is a permissioned action requiring governance intervention. Work Packages will otherwise execute as per the proposal. *Minor changes to the status quo.*
+2. Attested Work Packages must finish running in time and not panic. Therefore `WorkResult` must have an `Infallible` error type. If an Attestation is posted for a Work Package which panics or times out, then this is a slashable offence. *No change to the status quo.*
+3. There should be full generalization over Work Package contents, as per the proposal. Introduction of Authorizers, `refine`, `prune` and `accumulate`. *Additional code to the status quo.*
+
+Later implementation steps would polish (1) to replace with RISC-V (with backwards compatibility) and polish (2) to support posting receipts of timed-out/failed Work Packages on-chain for RISC-V Work Classes.
 
 ## Performance, Ergonomics and Compatibility
 
