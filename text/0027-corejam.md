@@ -389,8 +389,6 @@ fn get_work_storage(key: &[u8]) -> Result<Vec<u8>>;
 fn get_work_storage_len(key: &[u8]);
 ```
 
-The amount of weight `prune` is allowed to use is a fixed multiple of the number of 
-
 #### Accumulate
 
 The second stage is that of Accumulate. The function signature to the `accumulate` entry-point in the Work Class's code blob is:
