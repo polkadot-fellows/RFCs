@@ -63,8 +63,8 @@ mod v0 {
         class: WorkClass,
         payload: WorkPayload,
     }
-    type MaxWorkItemsInPackage = ConstU32<16>;
-    type MaxWorkPackageDependencies = ConstU32<8>;
+    type MaxWorkItemsInPackage = ConstU32<4>;
+    type MaxWorkPackagePrerequisites = ConstU32<4>;
     enum Authorization {
         Instantaneous(InstantaneousAuth),
         Bulk(Vec<u8>),
@@ -72,7 +72,7 @@ mod v0 {
     type HeaderHash = [u8; 32];
     /// Just a Blake2-256 hash of an EncodedWorkPackage.
     type WorkPackageHash = [u8; 32];
-    type Prerequisites = BoundedVec<WorkPackageHash, MaxWorkPackageDependencies>;
+    type Prerequisites = BoundedVec<WorkPackageHash, MaxWorkPackagePrerequisites>;
     struct Context {
         header_hash: HeaderHash,
         prerequisites: Prerequisites,
@@ -171,7 +171,13 @@ type ClassCodeHash = StorageMap<ClassId, CodeHash>;
 ```rust
 type WorkOutputLen = ConstU32<1024>;
 type WorkOutput = BoundedVec<u8, WorkOutputLen>;
-fn refine(payload: WorkPayload) -> WorkOutput;
+fn refine(
+    payload: WorkPayload,
+    authorization: Authorization,
+    auth_id: Option<AuthId>,
+    context: Context,
+    package_hash: WorkPackageHash,
+) -> WorkOutput;
 ```
 
 Both `refine` and `is_authorized` are only ever executed in-core. Within this environment, we need to ensure that we can interrupt computation not long after some well-specified limit and deterministically determine when an invocation of the VM exhausts this limit. Since the exact point at which interruption of computation need not be deterministic, it is expected to be executed by a streaming JIT transpiler with a means of approximate and overshooting interruption coupled with deterministic metering.
@@ -348,6 +354,8 @@ fn accumulate(results: Vec<(Authorization, Vec<(ItemHash, WorkResult)>)>);
 type ItemHash = [u8; 32];
 ```
 
+The logic in `accumulate` may need to know how the various Work Items arrived into a processed Work Package. Since a Work Package could have multiple Work Items of the same Work Class, it makes sense to have a separate inner `Vec` for Work Items sharing the Authorization (by virtue of being in the same Work Package).
+
 As stated, there is an amount of weight which it is allowed to use before being forcibly terminated and any non-committed state changes lost. The lowest amount of weight provided to `accumulate` is defined as the number of `WorkResult` values passed in `results` to `accumulate` multiplied by the `accumulate` field of the Work Class's weight requirements.
 
 However, the actual amount of weight may be substantially more. Each Work Package is allotted a specific amount of weight for all on-chain activity (`weight_per_package` above) and has a weight liability defined by the weight requirements of all Work Items it contains (`total_weight_requirement` above). Any weight remaining after the liability (i.e. `weight_per_package - total_weight_requirement`) may be apportioned to the Work Classes of Items within the Report on a pro-rata basis according to the amount of weight they utilized during `refine`. Any weight unutilized by classes within one package may be carried over to the next package and utilized there.
@@ -375,7 +383,7 @@ Other host functions, including some to access Relay-chain hosted services such 
 
 _(Note for discussion: Should we be considering light-client proof size at all here?)_
 
-We can already imagine two kinds of Work Class: *Parachain Validation* (as per Polkadot 1.0) and *Actor Progression* (as per Coreplay). Given how abstract the model is, one might reasonably expect many more.
+We can already imagine three kinds of Work Class: *Parachain Validation* (as per Polkadot 1.0), *Actor Progression* (as per Coreplay in a yet-to-be-proposed RFC) and Simple Ordering (placements of elements into a namespaced Merkle trie). Given how abstract the model is, one might reasonably expect many more.
 
 ### Relay-chain Storage Pallet
 
