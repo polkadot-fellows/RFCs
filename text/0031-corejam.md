@@ -50,9 +50,29 @@ In order of importance:
 
 **CoreJam is a general model for utilization of Polkadot Cores. It is a mechanism by which Work Packages are communicated, authorized, computed and verified, and their results gathered, combined and accumulated into particular parts of the Relay-chain's state.**
 
-The idea of *Proof-of-Validity* and *Parachain Validation Function* as first-class concepts in the Polkadot protocol is removed. These are now specializations of more general concepts.
+### From Old to New
 
-We introduce a number of new interrelated concepts: *Work Package*, *Work Class*, *Work Item*, *Work Package Output*, *Work Package Result*, *Work Package Report* (also known as a *Candidate*) and *Work Package Attestation*, *Work Class Trie*.
+The current specification of the Polkadot protocol and as such Relay-chain operation is designed after a rough proposal and in line with the overall requirements of the Polkadot (1.0) whitepaper. It incorporates first-class concepts including *Proof-of-Validity* and *Parachain Validation Function*. This will no longer be considered canonical for the Polkadot protocol and to avoid confusion will be known as the *Fixed-function Parachains Legacy Model*, or just *Legacy Model* for short.
+
+Existing parachains functionality will continue to be provided as a special case under a more general and permissionless model which is detailed presently and known as *CoreJam*.
+
+As part of this model, we introduce a number of new and interrelated concepts: *Work Package*, *Work Class*, *Work Item*, *Work Output*, *Work Result*, *Work Report* and *Work Package Attestation*, *Work Class Trie*.
+
+Focussing on continuity and reuse of existing logic, it is unsurprising that many of these have less-general analogues in the Parachains model; while this mapping can be helpful to quickly create an approximate understanding of the new concepts for those already familiar with Polkadot, care must be taken not to inadvertantly make incorrect presumptions over exact details their relationships, constraints, timing, provisions and APIs. Nonetheless, they are provided here for whatever help they may be:
+
+| CoreJam model                | Legacy model      | Context |
+| --- | --- | --- |
+| *Work Package*               | Proof-of-Validity | Untrusted data provided to RcVG |
+| *Work Item*                  | Proof-of-Validity | State-transition inputs and witness |
+| *Work Output*                | Candidate         | State-transition consequence |
+| *Work Report*                | Candidate         | Target of Attestation |
+| *(Work Package) Attestation* | Attestation       | Output signed by members of RcVG |
+| *Registration*               | Attestation       | Placement of Attestation on-chain |
+| *Integration*                | Inclusion         | Irreversible transition of state |
+| *Builder*                    | Collator          | |
+| *Work Class Trie*            | Relay-chain state | Of the Parachains pallets |
+
+### Overview
 
 ```rust
 mod v0 {
@@ -98,7 +118,7 @@ impl TryFrom<EncodedWorkPackage> for v0::WorkPackage {
 }
 ```
 
-A *Work Package* is an *Authorization* together with a series of *Work Items* and a context, limited in plurality, versioned and with a maximum encoded size. The Context includes an optional reference to a Work Package (`WorkPackageHash`) which limits the relative order of the Work Package (see *Work Package Ordering*, later).
+A *Work Package* is an *Authorization* together with a series of *Work Items* and a context, limited in plurality, versioned and with a maximum encoded size. The Context includes an optional reference to a Work Package (`WorkPackageHash`) which limits the relative order of the Work Package (see **Work Package Ordering**, later).
 
 (The number of prerequisites of a Work Package is limited to at most one. However, we cannot trivially control the number of dependents in the same way, nor would we necessarily wish to since it would open up a griefing vector for misbehaving Work Package Builders who interrupt a sequence by introducing their own Work Packages which a prerequisite which is within another's sequence.)
 
@@ -110,19 +130,19 @@ Though this process happens entirely in consensus, there are two main consensus 
 
 A Work Package has several stages of consensus computation associated with its processing, which happen as the system becomes more certain that it represents a correct and useful transition of its Work Class.
 
-While a Work Package is being built, the *Builder* must have a synchronized Relay-chain node in order to supply a specific *Context*. The Context dictates a certain *scope* for the Work Package, allowing its inclusion only on a small portion of the (yet to be built, presumably) Relay-chain. We define the Relay-chain height at this point to be `T`.
+While a Work Package is being built, the *Builder* must have a synchronized Relay-chain node in order to supply a specific *Context*. The Context dictates a certain *Scope* for the Work Package which is used by the Basic Validation to limit which Relay-chain blocks it may be processed on to a small sequence of a specific fork (which is yet to be built, presumably). We define the Relay-chain height at this point to be `T`.
 
 The first consensus computation to be done is the Work Package having its Authorization checked in-core, hosted by the Relay-chain Validator Group. If it is determined to be authorized, then the same environment hosts the Refinement of the Work Package into a series of Work Results. This concludes the bulk of the computation that the Work Package represents. We would assume that the Relay-chain's height at this point is shortly after the authoring time, `T+r` where `r` could be as low as zero.
 
-The second consensus computation happens on-chain at the behest of the Relay-chain Block Author of the time `T+r+i`, where `i` is generally zero or one, the time taken for the Work Results to be transported from within the Core to get to the gateway of being on-chain. The computation done essentially just ensures that the Work Package is still in scope and that the prerequisite it relies upon (if any) has been submitted ahead of it. This is called the initial *Inclusion* on-chain and initiates the *Availability Protocol* for this Work Package once Relay-chain Validators synchronize to the block. This protocol guarantees that the Work Package will be made available for as long as we allow disputes over its validity to be made.
+The second consensus computation happens on-chain at the behest of the Relay-chain Block Author of the time `T+r+i`, where `i` is generally zero or one, the time taken for the Work Results to be transported from within the Core to get to the gateway of being on-chain. The computation done essentially just ensures that the Work Package is still in scope and that the prerequisite it relies upon (if any) has been submitted ahead of it. This is called the on-chain *Registration* (in the fixed-function parachains model, this is known as "attestation") and initiates the *Availability Protocol* for this Work Package once Relay-chain Validators synchronize to the block. This protocol guarantees that the Work Package will be made available for as long as we allow disputes over its validity to be made.
 
-At some point later `T+r+i+a` (where `a` is the time to distribute the fragments of the Work Package and report their archival to the next Relay-chain Block Author) the Availability Protocol has concluded and the Relay-chain Block Author of the time brings this information on-chain in the form of a bitfield in which an entry flips from zero to one.
+At some point later `T+r+i+a` (where `a` is the time to distribute the fragments of the Work Package and report their archival to the next Relay-chain Block Author) the Availability Protocol has concluded and the Relay-chain Block Author of the time brings this information on-chain in the form of a bitfield in which an entry flips from zero to one. At this point we can say that the Work Report's Package is *Available*.
 
-Finally, at some point later still `T+r+i+a+o`, the Results of the Work Package are Accumulated into the common state of the Relay-chain. Here, `a` is any latency incurred due to ordering requirements and is expected to be zero in the variant of this proposal to be implemented initially. See *Work Package Ordering*, later.
+Finally, at some point later still `T+r+i+a+o`, the Results of the Work Package are aggregated into groups of Work Classes, and then *Pruned* and *Accumulated* into the common state of the Relay-chain. This process is known as *Integration* (in the fixed-function parachains model, this is known as "inclusion") and is irreversible within any given fork. Additional latency from being made *Available* to being *Integrated* (i.e. the `a` component) may be incurred due to ordering requirements, though it is expected to be zero in the variant of this proposal to be implemented initially (see **Work Package Ordering**, later).
 
 ### Collect-Refine
 
-The first two stages of the CoreJam process are *Collect* and *Refine*. *Collect* refers to the collection and authorization of Work Packages collections of items together with an authorization to utilize a Polkadot Core. *Refine* refers to the performance of computation according to the Work Packages in order to yield a *Work Result*. Finally, each Validator Group member attests to a Work Package yielding a set of Work Results and these attestations form the basis for inclusion on-chain and integration into the Relay-chain's state (in the following stages).
+The first two stages of the CoreJam process are *Collect* and *Refine*. *Collect* refers to the collection and authorization of Work Packages collections of items together with an authorization to utilize a Polkadot Core. *Refine* refers to the performance of computation according to the Work Packages in order to yield a *Work Result*. Finally, each Validator Group member attests to a Work Package yielding a set of Work Results and these Attestations form the basis for bringing the Results on-chain and integrating them into the Polkadot (and in particular the Work Class's) state which happens in the following stages.
 
 #### Collection and `is_authorized`
 
@@ -130,9 +150,9 @@ Collection is the means of a Validator Group member attaining a Work Package whi
 
 There are two kinds of Authorization corresponding to the two kinds of Coretime which are sold by Polkadot (see RFC#0001). An Authorization for usage of Instantaneous Coretime consists of a self-contained Signature of an account which own enough Instantaneous Coretime Credit in order to purchase a block of Coretime at the current rate signing a payload of the Work Package hash.
 
-RCVGs run the risk of a credit owner not having the credit at the point of inclusion, in which case the RcVG will not be rewarded. Credit may never be withdrawn, therefore RCVGs can safely accept a block if and only if the Credit account contains a balance of at least the product of the number of Cores assigned to IC, the price per IC core per block and the number of blocks behind the head of the finalized chain which the RcVG currently may be.
+RcVGs run the risk of a credit owner not having the credit at the point of eventual payment (in the Join stage, later), in which case the RcVG will not be rewarded. Credit may never be withdrawn, therefore RcVGs can safely accept a block if and only if the Credit account contains a balance of at least the product of the number of Cores assigned to IC, the price per IC core per block and the number of blocks behind the head of the finalized chain which the RcVG currently may be.
 
-An Authorization for usage of Bulk Coretime is more sophisticated. We introduce the concept of an *Authorizer* procedure, which is a piece of logic stored on-chain to which Bulk Coretime may be assigned. Assigning some Bulk Coretime to an Authorizer implies allowing any Work Package which passes that authorization process to utilize that Bulk Coretime in order to be submitted on-chain. It controls the circumstances under which RCVGs may be rewarded for evaluation and submission of Work Packages (and thus what Work Packages become valid to submit onto Polkadot). Authorization logic is entirely arbitrary and need not be restricted to authorizing a single collator, Work Package builder, parachain or even a single Work Class.
+An Authorization for usage of Bulk Coretime is more sophisticated. We introduce the concept of an *Authorizer* procedure, which is a piece of logic stored on-chain to which Bulk Coretime may be assigned. Assigning some Bulk Coretime to an Authorizer implies allowing any Work Package which passes that authorization process to utilize that Bulk Coretime in order to be submitted on-chain. It controls the circumstances under which RcVGs may be rewarded for evaluation and submission of Work Packages (and thus what Work Packages become valid to submit onto Polkadot). Authorization logic is entirely arbitrary and need not be restricted to authorizing a single collator, Work Package builder, parachain or even a single Work Class.
 
 An *Authorizer* is a parameterized procedure:
 
@@ -227,26 +247,41 @@ fn apply_refine(item: WorkItem) -> WorkResult;
 The amount of weight used in executing the `refine` function is noted in the `WorkResult` value, and this is used later in order to help apportion on-chain weight (for the Join-Accumulate process) to the Work Classes whose items appear in the Work Packages.
 
 ```rust
-struct WorkReport {
-    /// The hash of the underlying WorkPackage.
+/// Secure refrence to a Work Package.
+struct WorkPackageSpec {
+    /// The hash of the encoded `EncodedWorkPackage`.
     hash: WorkPackageHash,
-    /// The context of the underlying WorkPackage.
+    /// The erasure root of the encoded `EncodedWorkPackage`.
+    root: ErasureRoot,
+    /// The length in bytes of encoded `EncodedWorkPackage`.
+    len: u32,
+}
+/// Execution report of a Work Package, mainly comprising the Results from the Refinement
+/// of its Work Items.
+struct WorkReport {
+    /// The specification of the underlying Work Package.
+    package_spec: WorkPackageSpec,
+    /// The context of the underlying Work Package.
     context: Context,
-    /// The core index of the attesting RcVG.
+    /// The Core index under which the Work Package was Refined to generate the Report.
     core_index: CoreIndex,
     /// The results of the evaluation of the Items in the underlying Work Package.
     results: BoundedVec<WorkResult, MaxWorkItemsInPackage>,
 }
-/// Multiple signatures are consolidated into a single Attestation in a space
-/// efficient manner using a `BitVec` to succinctly which validators have attested.
+/// Multiple signatures are consolidated into a single Attestation in a space-efficient
+/// manner using a `BitVec` to succinctly express which validators have attested.
 struct Attestation {
-  report: WorkReport,
-  validators: BitVec, // indicates which validators from the group have a signature
-  attestations: Vec<Signature>,
+    /// The Work Report which is being attested.
+    report: WorkReport,
+    /// Which validators from the group have a signature in `attestations`.
+    validators: BitVec,
+    /// The signatures of the RcVG members set out in `validators` whose message is the
+    /// hash of the `report`.
+    attestations: Vec<Signature>,
 }
 ```
 
-Each Relay-chain block, every Validator Group representing a Core which is assigned work provides a series of Work Results coherent with an authorized Work Package. Validators are rewarded when they take part in their Group and process such a Work Package. Thus, together with some information concerning their execution context, they sign a *Report* concerning the work done and the results of it. This is also known as a *Candidate*. This signed Report is called an *Attestation*, and is provided to the Relay-chain block author. If no such Attestation is provided (or if the Relay-chain block author refuses to include it), then that Validator Group is not rewarded for that block.
+Each Relay-chain block, every Validator Group representing a Core which is assigned work provides a series of Work Results coherent with an authorized Work Package. Validators are rewarded when they take part in their Group and process such a Work Package. Thus, together with some information concerning their execution context, they sign a *Report* concerning the work done and the results of it. This is also known as a *Candidate*. This signed Report is called an *Attestation*, and is provided to the Relay-chain block author. If no such Attestation is provided (or if the Relay-chain block author refuses to introduce it for Registration), then that Validator Group is not rewarded for that block.
 
 The process continues once the Attestations arrive at the Relay-chain Block Author.
 
@@ -254,15 +289,23 @@ The process continues once the Attestations arrive at the Relay-chain Block Auth
 
 Join-Accumulate is a second major stage of computation and is independent from Collect-Refine. Unlike with the computation in Collect-Refine which happens contemporaneously within one of many isolated cores, the computation of Join-Accumulate is both entirely synchronous with all other computation of its stage and operates within (and has access to) the same shared state-machine.
 
-Being on-chain (rather than in-core as with Collect-Refine), information and computation done in the Join-Accumulate stage is carried out by the block-author and the resultant block evaluated by all validators and full-nodes. Because of this, and unlike in-core computation, it has full access to the Relay-chain's state.
+Being *on-chain* (rather than *in-core* as with Collect-Refine), information and computation done in the Join-Accumulate stage is carried out (initially) by the block-author and the resultant block evaluated by all validators and full-nodes. Because of this, and unlike in-core computation, it has full access to the Relay-chain's state.
 
 The Join-Accumulate stage may be seen as a synchronized counterpart to the parallelised Collect-Refine stage. It may be used to integrate the work done from the context of an isolated VM into a self-consistent singleton world model. In concrete terms this means ensuring that the independent work components, which cannot have been aware of each other during the Collect-Refine stage, do not conflict in some way. Less dramatically, this stage may be used to enforce ordering or provide a synchronisation point (e.g. for combining entropy in a sharded RNG). Finally, this stage may be a sensible place to manage asynchronous interactions between subcomponents of a Work Class or even different Work Classes and oversee message queue transitions.
 
+#### Registration and Integration
+
+There are two main phases of on-chain logic before a Work Package's ramifications are irreversibly assimilated into the state of the (current fork of the) Relay-chain. The first is where the Work Package is *Registered* on-chain. This is proposed through an extrinsic introduced by the RcBA and implies the successful outcome of some *Initial Validation* (described next). This kicks-off an off-chain process of *Availability* which, if successful, culminates in a second extrinsic being introduced on-chain shortly afterwards specifying that the Availability requirements of the Work Report are met.
+
+Since this is an asynchronous process, there are no ordering guarantees on Work Reports' Availability requirements being fulfilled. There may or may not be provision for adding further delays at this point to ensure that Work Reports are processed according to strict ordering. See *Work Package Ordering*, later, for more discussion here.
+
+Once both Availability and any additional requirements are met (including ordering and dependencies, but possibly also including reevaluation of some of the Initial Validation checks), then the second phase is executed which is known as *Integration*. This is the irreversible application of Work Report consequences into the Work Class's State Trie and (via certain permissionless host functions) the wider state of the Relay-chain. Work Results are segregated into groups based on their Work Class, joined into a `Vec` and passed through the immutable Prune function and into the mutable Accumulate function.
+
 #### Initial Validation
 
-There are a number of Initial Validation requirements which the RcBA must do in order to ensure no time is wasted on further, possibly costly, computation.
+There are a number of Initial Validation requirements which the RcBA must do in order to ensure no time is wasted on further, possibly costly, computation. Sicne the same tests are done on-chain, then for a Block Author to expect to make a valid block these tests must be done prior to actually placing the Attestations in the Relay-chain Block Body.
 
-Firstly, any given Work Report must have enough signatures in the Attestation to be considered for Initial Inclusion on-chain. Only one Work Report may be considered for inclusion from each RcVG per block.
+Firstly, any given Work Report must have enough signatures in the Attestation to be considered for Registration on-chain. Only one Work Report may be considered for Registration from each RcVG per block.
 
 Secondly, any Work Reports introduced by the RcBA must be *Recent*, defined as having a `context.header_hash` which is an ancestor of the RcBA head and whose height is less than `RECENT_BLOCKS` from the block which the RcBA is now authoring.
 
@@ -270,11 +313,11 @@ Secondly, any Work Reports introduced by the RcBA must be *Recent*, defined as h
 const RECENT_BLOCKS: u32 = 16;
 ```
 
-Thirdly, the RcBA may not include multiple Work Reports for the same Work Package. Since Work Reports become inherently invalid once they are no longer *Recent*, then this check may be simplified to ensuring that there are no Work Reports of the same Work Package within any *Recent* blocks.
+Thirdly, the RcBA may not attempt to Register multiple Work Reports for the same Work Package. Since Work Reports become inherently invalid once they are no longer *Recent*, then this check may be simplified to ensuring that there are no Work Reports of the same Work Package within any *Recent* blocks.
 
-Finally, the RcBA may not include Work Reports whose prerequisite is not itself Initially Included in *Recent* blocks.
+Finally, the RcBA may not register Work Reports whose prerequisite is not itself Registered in *Recent* blocks.
 
-In order to ensure all of the above tests are honoured by the RcBA, a block which contains Work Reports which fail any of these tests shall panic on import. The Relay-chain's on-chain logic will thus include these checks in order to ensure that they are honoured by the RcBA. We therefore introduce the *Recent Inclusions* storage item, which retaining all Work Package hashes which were Initially Included in the *Recent* blocks:
+In order to ensure all of the above tests are honoured by the RcBA, a block which contains Work Reports which fail any of these tests shall panic on import. The Relay-chain's on-chain logic will thus include these checks in order to ensure that they are honoured by the RcBA. We therefore introduce the *Recent Registrations* storage item, which retaining all Work Package hashes which were Registered in the *Recent* blocks:
 
 ```rust
 const MAX_CORES: u32 = 512;
@@ -283,21 +326,21 @@ type InclusionSet = BoundedVec<WorkPackageHash, ConstU32<MAX_CORES>>;
 type RecentInclusions = StorageValue<BoundedVec<InclusionSet, ConstU32<RECENT_BLOCKS>>>
 ```
 
-The RcBA must keep an up to date set of which Work Packages have already been Initially Included in order to avoid accidentally attempting to introduce a duplicate Work Package or one whose prerequisite has not been fulfilled. Since the currently authored block is considered *Recent*, Work Reports introduced earlier in the same block do satisfy the prerequisite of Work Packages introduced later.
+The RcBA must keep an up to date set of which Work Packages have already been Registered in order to avoid accidentally attempting to introduce a duplicate Work Package or one whose prerequisite has not been fulfilled. Since the currently authored block is considered *Recent*, Work Reports introduced earlier in the same block do satisfy the prerequisite of Work Packages introduced later.
 
-While it will generally be the case that RCVGs know precisely which Work Reports will have been introduced at the point that their Attestation arrives with the RcBA by keeping the head of the Relay-chain in sync, it will not always be possible. Therefore, RCVGs will never be punished for providing an Attestation which fails any of these tests; the Attestation will simply be kept until either:
+While it will generally be the case that RcVGs know precisely which Work Reports will have been introduced at the point that their Attestation arrives with the RcBA by keeping the head of the Relay-chain in sync, it will not always be possible. Therefore, RcVGs will never be punished for providing an Attestation which fails any of these tests; the Attestation will simply be kept until either:
 
 1. it stops being *Recent*;
-2. it becomes Initially Included on-chain; or
-3. some other Attestation of the same Work Package becomes Initially Included on-chain.
+2. it becomes Registered on-chain; or
+3. some other Attestation of the same Work Package becomes Registered on-chain.
 
 #### Availability
 
-Once the Work Report of a Work Package is Initially Included on-chain, the Work Package itself must be made *Available* through the off-chain Availability Protocol, which ensures that any dispute over the correctness of the Work Report can be easily objectively judged by all validators. Being off-chain this is not block-synchronized and any given Work Package make take one or more blocks to be made Available or may even fail.
+Once the Work Report of a Work Package is Registered on-chain, the Work Package itself must be made *Available* through the off-chain Availability Protocol, which ensures that any dispute over the correctness of the Work Report can be easily objectively judged by all validators. Being off-chain this is not block-synchronized and any given Work Package make take one or more blocks to be made Available or may even fail.
 
-Only once the a Work Report's Work Package is made Available can the processing continue with the next steps of Joining and Accumulation. Ordering requirements of Work Packages may also affect this variable latency and this is discussed later in the section *Work Package Ordering*.
+Only once the a Work Report's Work Package is made Available can the processing continue with the next steps of Joining and Accumulation. Ordering requirements of Work Packages may also affect this variable latency and this is discussed later in the section **Work Package Ordering**.
 
-#### Metering
+#### Weight Provisioning
 
 Join-Accumulate is, as the name suggests, comprised of two subordinate stages. Both stages involve executing code inside a VM on-chain. Thus code must be executed in a *metered* format, meaning it must be able to be executed in a sandboxed and deterministic fashion but also with a means of providing an upper limit on the amount of weight it may consume and a guarantee that this limit will never be breached.
 
@@ -404,35 +447,35 @@ We can already imagine three kinds of Work Class: *Parachain Validation* (as per
 
 ### Work Package Ordering
 
-At the point of Initial Inclusion of a Work Package (specifically, its Work Report) on-chain, it is trivial to ensure that the ordering respects the optional `prerequisite` field specified in the Work Package, since the RcBA need only *not* submit any on-chain which do not have their prerequisite fulfilled.
+At the point of Registration of a Work Package (specifically, its Work Report) on-chain, it is trivial to ensure that the ordering respects the optional `prerequisite` field specified in the Work Package, since the RcBA need only avoid Registering any which do not have their prerequisite fulfilled recently.
 
-However, there is a variable delay between a Work Report first being introduced on-chain in the Initial Inclusion and the Accumulation of it into the Work Class's State due to the Availability Protocol. This means that requiring the order at the point of Initial Inclusion is insufficient for guaranteeing that order at the time of Accumulation. Furthermore, the Availability Protocol may or may not actually complete for any Work Package.
+However, there is a variable delay between a Work Report first being introduced on-chain in the Registration and its eventual Integration into the Work Class's State due to the asynchronous Availability Protocol. This means that requiring the order at the point of Registration is insufficient for guaranteeing that order at the time of Accumulation. Furthermore, the Availability Protocol may or may not actually complete for any Work Package.
 
-Two alternatives present themselves: provide ordering only on a *best-effort* basis, whereby Work Reports respect the ordering requested in their Work Packages as much as possible it is not guaranteed and Work Reports may be Accumulated before, or even entirely without, their prerequisites. We call this *Soft-Ordering*. The alternative is to provide a hard guarantee that the Results of Work Packages will follow the prerequisite requirement. Unable to alter the Availability Protocol this is achieved through on-chain queuing and deferred Accumulation where needed.
+Two alternatives present themselves: provide ordering only on a *best-effort* basis, whereby Work Reports respect the ordering requested in their Work Packages as much as possible, but it is not guaranteed. Work Reports may be Accumulated before, or even entirely without, their prerequisites. We refer to this *Soft-Ordering*. The alternative is to provide a guarantee that the Results of Work Packages will always be Accumulated no earlier than the Result of any prerequisite Work Package. As we are unable to alter the Availability Protocol, this is achieved through on-chain queuing and deferred Accumulation.
 
-Both are presented as reasonable approaches for this proposal, though the Soft-Ordering variant is expected to be part of any initial implementation.
+Both are presented as reasonable approaches for this proposal, though the Soft-Ordering variant is expected to be part of any initial implementation since implementation is trivial.
 
 #### Soft-Ordering Variant
 
 In this alternative, actual ordering is only guaranteed going *into* the Availability Protocol, not at the point of Accumulation.
 
-The (on-chain) repercussion of the Availability Protocol completing for the Work Package is that each Work Result becomes scheduled for Accumulation at the end of the Relay-chain Block Execution along with other Work Results from the same Work Class. The Ordering of Initial Inclusion is replicated here for all Work Results present. If the Availability Protocol delays the Accumulation of a prerequisite Work Result, then the dependent Work Result may be Accumulated in a block prior to that of its dependency. It is assumed that the *Accumulation* logic will be able to handle this gracefully.
+The (on-chain) repercussion of the Availability Protocol completing for the Work Package is that each Work Result becomes scheduled for Accumulation at the end of the Relay-chain Block Execution along with other Work Results from the same Work Class. The Ordering of Registration is replicated here for all Work Results present. If the Availability Protocol delays the Accumulation of a prerequisite Work Result, then the dependent Work Result may be Accumulated in a block prior to that of its dependency. It is assumed that the *Accumulation* logic will be able to handle this gracefully.
 
-It is also possible (though unexpected in regular operation) that Work Packages never complete the Availability Protocol. Such Work Packages eventually time out and are discarded from Relay-chain state.
+It is also possible (though unexpected in regular operation) that Work Packages never complete the Availability Protocol. Such Work Packages eventually time-out and are discarded from Relay-chain state.
 
 #### Hard-Ordering Variant
 
 This alternative gives a guarantee that the order in which a Work Package's Items will be Accumulated will respect the stated prerequisite of that Work Package. It is more complex and relies on substantial off-chain logic to inform the on-chain logic about which Work Packages are Accumulatable.
 
-The (on-chain) repercussion of the Availability Protocol completing for the Work Package depends based on whether it has a prerequisite which is still pending Availability. Since we know that all prerequisite Work Packages must have entered the Availability Protocol due to the Initial Validation, if we are no longer tracking the Work Package and its Work Results on-chain we may safely assume that it is because we have Accumulated them and thus that the Work Package is Available.
+The (on-chain) repercussion of the Availability Protocol completing for the Work Package depends based on whether it has a prerequisite which is still pending Availability. Since we know that all prerequisite Work Packages must have entered the Availability Protocol due to the Initial Validation, if we are no longer tracking the Work Package and its Work Results on-chain we may safely assume that it is because we have Accumulated them and thus the Work Package is Available.
 
-If we are still explicitly retaining a record of the prerequisite Work Package and Work Results, we can assume that the availability process for it has not yet concluded or has already failed.
+Conversely, if the Availability process for the prerequisite Work Package has not yet concluded or has already failed, we ensure that we still explicitly retain a record of it for as long as is needed.
 
-If Availability has not yet concluded, we append a reference to (i.e. a hash of) the Work Package to a *Queue of Available Dependents* keyyed by the prerequisite Work Package. The bounding for this list may safely be quite large, and if it grows beyond the bound, the Work Results may be discarded. This could only happen if very many Work Packages are produced and processed with the same prerequisite at approximately the same point in time, and that prerequisite suffers delayed Availability yet the dependents do not: an unlikely eventuality.
+Specifically, if Availability has not yet concluded, we append a hash of the Work Package to a *Queue of Available Dependents* keyyed by the prerequisite Work Package Hash. The bounding for this list may safely be quite large, and if it grows beyond the bound, the Work Results may be discarded. This could only happen if very many Work Packages are produced and processed with the same prerequisite at approximately the same point in time, and that prerequisite suffers delayed Availability yet the dependents do not: an unlikely eventuality.
 
-In the case that we are not retaining a record of the prerequisite Work Package and Work Results, we enqueue the Work Results for Accumulation. If there is a non-empty Queue of Available Dependents for this Work Package, we record the fact that this Work Package is *Now Accumulated* in a separate storage item (to circumvent a possibly expensive read/write). If there is not, then we do not record this and will effectively stop tracking the Work Package's Availability status on-chain.
+In the case that we are not retaining a record of the prerequisite Work Package and Work Results, we aggregate the Work Results ready for Accumulation. If there is a non-empty Queue of Available Dependents for this Work Package, we record the fact that this Work Package is *Now Accumulated* in a separate storage item (to circumvent a possibly expensive read/write). If there is not, then we do not record this and will effectively stop tracking the Work Package's Availability status on-chain.
 
-Finally, after all Availability notices have been processed, but before the Accumulation happens, the RcBA may, via an extrinsic, inform the chain of Work Packages which are the prerequisite preventing available Work Packages from being Accumulated. This amounts to naming a Work Package which has both a Queue of Available Dependents and is Now Accumulated.
+Finally, after all Availability notices have been processed, but before the Accumulation happens, the RcBA may, via an extrinsic, inform the chain of Work Packages which are prerequisites preventing available Work Packages from being Accumulated. This amounts to naming a Work Package which has both a Queue of Available Dependents and is Now Accumulated. This allows those Work Results to be dequeued and aggregated for Accumulation.
 
 If Availability suffers a time-out (and retrying is not an option), or if the prerequisite has suffered a time-out, then all dependent Work Packages must be discarded in a cascading manner, a potentially daunting proposition. In a manner similar to that above, the time-out itself is recorded in on-chain storage item which itself may only be removed after the latest time at which the newest possible prerequisites (given the Initial Validation) could become available. The RcBAs may then introduce extrinsics to remove these associated storage items in an iterative fashion without the Work Results becoming Accumulated.
 
@@ -442,7 +485,7 @@ An initial implementation of this proposal would almost certainly provide only t
 
 Initial Validation are made on-chain prior to the Availabilty Protocol begins for any given Work Package. This ensures that the Work Package is still in scope $-$ i.e. recent enough and on the proper fork. However, this does not ensure that the Work Package is still in scope at the point that the Work Results are actually Accumulated. It is as yet unclear whether this is especially problematic.
 
-The same scope limit could be placed also on Accumulation; in neither variant does it introduce much additional complexity. In both cases it would require the same course of action as of Availability timing out without the possibility of retry. However whereas in the soft-variant we would not expect to see very differeny dynamics since one such time-out has no repurcissions beyond preventing the Accumulation of those Work Results, in the hard-ordering variant, it could mean a substantially greater occurance of the cascading failure logic calling into question the real purpose of the scoping: is it to protect the Validators from having to deal with indefinitely valid Work Packages or is it to protect the Accumulation logic from having to deal with the Results of older Work Packages?
+The same scope limit could be placed also on Accumulation; in neither variant does it introduce much additional complexity. In both cases it would require the same course of action as of Availability timing out without the possibility of retry. However whereas in the soft-variant we would not expect to see very different dynamics since one such time-out has no repurcissions beyond preventing the Accumulation of those Work Results, in the hard-ordering variant, it could mean a substantially greater occurance of the cascading failure logic calling into question the real purpose of the scoping: is it to protect the Validators from having to deal with indefinitely valid Work Packages or is it to protect the Accumulation logic from having to deal with the Results of older Work Packages?
 
 ### Relay-chain Storage Pallet
 
