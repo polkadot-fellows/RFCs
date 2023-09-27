@@ -98,7 +98,7 @@ impl TryFrom<EncodedWorkPackage> for v0::WorkPackage {
 }
 ```
 
-A *Work Package* is an *Authorization* together with a series of *Work Items* and a context, limited in plurality, versioned and with a maximum encoded size. The Context includes an optional reference to a Work Package (`WorkPackageHash`) which limits the relative order of the Work Package (see Work Package Ordering, later).
+A *Work Package* is an *Authorization* together with a series of *Work Items* and a context, limited in plurality, versioned and with a maximum encoded size. The Context includes an optional reference to a Work Package (`WorkPackageHash`) which limits the relative order of the Work Package (see *Work Package Ordering*, later).
 
 (The number of prerequisites of a Work Package is limited to at most one. However, we cannot trivially control the number of dependents in the same way, nor would we necessarily wish to since it would open up a griefing vector for misbehaving Work Package Builders who interrupt a sequence by introducing their own Work Packages which a prerequisite which is within another's sequence.)
 
@@ -118,7 +118,7 @@ The second consensus computation happens on-chain at the behest of the Relay-cha
 
 At some point later `T+r+i+a` (where `a` is the time to distribute the fragments of the Work Package and report their archival to the next Relay-chain Block Author) the Availability Protocol has concluded and the Relay-chain Block Author of the time brings this information on-chain in the form of a bitfield in which an entry flips from zero to one.
 
-Finally, at some point later still `T+r+i+a+o`, the Results of the Work Package are Accumulated into the common state of the Relay-chain. Here, `a` is any latency incurred due to ordering requirements and is expected to be zero in the variant of this proposal to be implemented initially. See Work Package Ordering, later.
+Finally, at some point later still `T+r+i+a+o`, the Results of the Work Package are Accumulated into the common state of the Relay-chain. Here, `a` is any latency incurred due to ordering requirements and is expected to be zero in the variant of this proposal to be implemented initially. See *Work Package Ordering*, later.
 
 ### Collect-Refine
 
@@ -262,7 +262,7 @@ The Join-Accumulate stage may be seen as a synchronized counterpart to the paral
 
 There are a number of Initial Validation requirements which the RcBA must do in order to ensure no time is wasted on further, possibly costly, computation.
 
-Firstly, any given Work Report must have enough attestation signatures to be considered for inclusion on-chain. Only one Work Report may be considered for inclusion from each RcVG per block.
+Firstly, any given Work Report must have enough signatures in the Attestation to be considered for Initial Inclusion on-chain. Only one Work Report may be considered for inclusion from each RcVG per block.
 
 Secondly, any Work Reports introduced by the RcBA must be *Recent*, defined as having a `context.header_hash` which is an ancestor of the RcBA head and whose height is less than `RECENT_BLOCKS` from the block which the RcBA is now authoring.
 
@@ -272,9 +272,9 @@ const RECENT_BLOCKS: u32 = 16;
 
 Thirdly, the RcBA may not include multiple Work Reports for the same Work Package. Since Work Reports become inherently invalid once they are no longer *Recent*, then this check may be simplified to ensuring that there are no Work Reports of the same Work Package within any *Recent* blocks.
 
-Finally, the RcBA may not include Work Reports whose prerequisite is not itself included in *Recent* blocks.
+Finally, the RcBA may not include Work Reports whose prerequisite is not itself Initially Included in *Recent* blocks.
 
-In order to ensure all of the above tests are honoured by the RcBA, a block which contains Work Reports which fail any of these tests shall panic on import. The Relay-chain's on-chain logic will thus include these checks in order to ensure that they are honoured by the RcBA. We therefore introduce the *Recent Inclusions* storage item, which retaining all Work Package hashes which were included in the *Recent* blocks:
+In order to ensure all of the above tests are honoured by the RcBA, a block which contains Work Reports which fail any of these tests shall panic on import. The Relay-chain's on-chain logic will thus include these checks in order to ensure that they are honoured by the RcBA. We therefore introduce the *Recent Inclusions* storage item, which retaining all Work Package hashes which were Initially Included in the *Recent* blocks:
 
 ```rust
 const MAX_CORES: u32 = 512;
@@ -283,13 +283,19 @@ type InclusionSet = BoundedVec<WorkPackageHash, ConstU32<MAX_CORES>>;
 type RecentInclusions = StorageValue<BoundedVec<InclusionSet, ConstU32<RECENT_BLOCKS>>>
 ```
 
-The RcBA must keep an up to date set of which Work Packages have already been included in order to avoid accidentally attempting to introduce a duplicate Work Package or one whose prerequisite has not been fulfilled. Since the currently authored block is considered *Recent*, Work Reports introduced earlier in the same block do satisfy the prerequisite of Work Packages introduced later.
+The RcBA must keep an up to date set of which Work Packages have already been Initially Included in order to avoid accidentally attempting to introduce a duplicate Work Package or one whose prerequisite has not been fulfilled. Since the currently authored block is considered *Recent*, Work Reports introduced earlier in the same block do satisfy the prerequisite of Work Packages introduced later.
 
 While it will generally be the case that RCVGs know precisely which Work Reports will have been introduced at the point that their Attestation arrives with the RcBA by keeping the head of the Relay-chain in sync, it will not always be possible. Therefore, RCVGs will never be punished for providing an Attestation which fails any of these tests; the Attestation will simply be kept until either:
 
 1. it stops being *Recent*;
-2. it becomes included on-chain; or
-3. some other Attestation of the same Work Package becomes included on-chain.
+2. it becomes Initially Included on-chain; or
+3. some other Attestation of the same Work Package becomes Initially Included on-chain.
+
+#### Availability
+
+Once the Work Report of a Work Package is Initially Included on-chain, the Work Package itself must be made *Available* through the off-chain Availability Protocol, which ensures that any dispute over the correctness of the Work Report can be easily objectively judged by all validators. Being off-chain this is not block-synchronized and any given Work Package make take one or more blocks to be made Available or may even fail.
+
+Only once the a Work Report's Work Package is made Available can the processing continue with the next steps of Joining and Accumulation. Ordering requirements of Work Packages may also affect this variable latency and this is discussed later in the section *Work Package Ordering*.
 
 #### Metering
 
@@ -307,7 +313,7 @@ struct WorkItemWeightRequirements {
 type WeightRequirements = StorageMap<WorkClass, WorkItemWeightRequirements>;
 ```
 
-Each Work Class has two weight requirements associated with it corresponding to the two pieces of permissionless on-chain Work Class logic and represent the amount of weight allotted for each Work Item of this class included in a Work Package assigned to a Core.
+Each Work Class has two weight requirements associated with it corresponding to the two pieces of permissionless on-chain Work Class logic and represent the amount of weight allotted for each Work Item of this class within in a Work Package assigned to a Core.
 
 The total amount of weight utilizable by each Work Package (`weight_per_package`) is specified as:
 
@@ -317,7 +323,7 @@ weight_per_package = relay_block_weight * safety_margin / max_cores
 
 `safety_margin` ensures that other Relay-chain system processes can happen and important transactions can be processed and is likely to be around 75%.
 
-A Work Report is only valid if all weight liabilities of all included Work Items fit within this limit:
+A Work Report is only valid if all weight liabilities of all Work Items to be Accumulated fit within this limit:
 
 ```rust
 let total_weight_requirement = work_statement
@@ -396,7 +402,7 @@ _(Note for discussion: Should we be considering light-client proof size at all h
 
 We can already imagine three kinds of Work Class: *Parachain Validation* (as per Polkadot 1.0), *Actor Progression* (as per Coreplay in a yet-to-be-proposed RFC) and Simple Ordering (placements of elements into a namespaced Merkle trie). Given how abstract the model is, one might reasonably expect many more.
 
-### Work Package Ordering and Availability
+### Work Package Ordering
 
 At the point of Initial Inclusion of a Work Package (specifically, its Work Report) on-chain, it is trivial to ensure that the ordering respects the optional `prerequisite` field specified in the Work Package, since the RcBA need only *not* submit any on-chain which do not have their prerequisite fulfilled.
 
