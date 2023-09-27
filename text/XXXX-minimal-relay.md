@@ -17,11 +17,12 @@ parachains. This is a proposal to migrate several subsystems into system paracha
 Polkadot's scaling approach allows many distinct state machines (known generally as parachains) to
 operate with common guarantees about the validity and security of their state transitions. Polkadot
 provides these common guarantees by executing the state transitions on a strict subset (a backing
-group) of the total validator set.
+group) of the Relay Chain's validator set.
 
-However, state transitions on the Relay Chain need to be executed by _all_ validators. The resources
-of the complement of a single backing group could be used to offer more cores. As in, they could be
-offering more coretime (a.k.a. blockspace) to the network.
+However, state transitions on the Relay Chain need to be executed by _all_ validators. If any of
+those state transitions can occur on parachains, then the resources of the complement of a single
+backing group could be used to offer more cores. As in, they could be offering more coretime (a.k.a.
+blockspace) to the network.
 
 By minimising state transition logic on the Relay Chain by migrating it into "system chains" -- a
 set of parachains that, with the Relay Chain, make up the Polkadot protocol -- the Polkadot
@@ -125,14 +126,14 @@ problem that remains to solve is how to deal with balances that are used for sta
 
 Migrating the staking subsystem will likely be the most complex technical undertaking, as the
 staking system cannot stop (the system MUST always have a validator set) nor run in parallel (the
-system MUST have _one_ validator set) and the system itself is made up of subsystems in the runtime
-and the node. For example, if offences are reported to the Staking parachain, validator nodes will
-need to submit their reports there.
+system MUST have _one_ validator set) and the subsystem itself is made up of subsystems in the
+runtime and the node. For example, if offences are reported to the Staking parachain, validator
+nodes will need to submit their reports there.
 
 Handling balances also introduces complications. The same balance can be used for staking and
 governance. Ideally, all balances stay on Asset Hub, and only report "credits" to system chains like
 Staking and Governance. However, staking mutates balances by issuing new DOT on era changes and for
-rewards. 
+rewards. Allowing DOT directly on the Staking parachain would simplify staking changes.
 
 There is more discussion about staking in a parachain in [Moving Staking off the Relay
 Chain](https://github.com/paritytech/polkadot-sdk/issues/491).
