@@ -628,7 +628,10 @@ Important considerations include:
 
 None.
 
-# Chat
+# Historical
+
+#### Chat Gav/Basti, 2023-09-11
+
 ```
 for this we need a pallet on the RC to allow arbitrary data to be stored for a deposit, with a safeguard that it would remain in RC state for at least 24 hours (in case of dispute); and a host function to allow the PoV to reference it.
 this issue is that for fast-changing data, you'd need to store all of the different images for 24 hours each.
