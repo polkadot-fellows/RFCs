@@ -52,13 +52,13 @@ In order of importance:
 
 ### From Old to New
 
-The current specification of the Polkadot protocol and as such Relay-chain operation is designed after a rough proposal and in line with the overall requirements of the Polkadot (1.0) whitepaper. It incorporates first-class concepts including *Proof-of-Validity* and *Parachain Validation Function*. This will no longer be considered canonical for the Polkadot protocol and to avoid confusion will be known as the *Fixed-function Parachains Legacy Model*, or just *Legacy Model* for short.
+The current specification of the Polkadot protocol, and with in the Relay-chain operation, is designed in line with the overall requirements of and terminology in the Polkadot (1.0) whitepaper. It incorporates first-class concepts including *Proof-of-Validity* and *Parachain Validation Function*. This will no longer be considered canonical for the Polkadot protocol. To avoid confusion this design will be known as the *Fixed-function Parachains Legacy Model*, or the *Legacy Model* for short.
 
 Existing parachains functionality will continue to be provided as a special case under a more general and permissionless model which is detailed presently and known as *CoreJam*.
 
 As part of this model, we introduce a number of new and interrelated concepts: *Work Package*, *Work Class*, *Work Item*, *Work Output*, *Work Result*, *Work Report* and *Work Package Attestation*, *Work Class Trie*.
 
-Focussing on continuity and reuse of existing logic, it is unsurprising that many of these have less-general analogues in the Parachains model; while this mapping can be helpful to quickly create an approximate understanding of the new concepts for those already familiar with Polkadot, care must be taken not to inadvertantly make incorrect presumptions over exact details their relationships, constraints, timing, provisions and APIs. Nonetheless, they are provided here for whatever help they may be:
+Focussing on continuity and reuse of existing logic, it is unsurprising that many of these concepts already analogues in the Parachains model, albeit ones with a less general definition. While this mapping can be helpful to quickly create an approximate understanding of the new concepts for those already familiar with Polkadot, care must be taken not to inadvertantly make incorrect presumptions over exact details of their relationships, constraints, timing, provisions and APIs. Nonetheless, they are provided here for whatever help they may be.
 
 | CoreJam model                | Legacy model      | Context |
 | --- | --- | --- |
@@ -69,8 +69,9 @@ Focussing on continuity and reuse of existing logic, it is unsurprising that man
 | *(Work Package) Attestation* | Attestation       | Output signed by members of RcVG |
 | *Registration*               | Attestation       | Placement of Attestation on-chain |
 | *Integration*                | Inclusion         | Irreversible transition of state |
-| *Builder*                    | Collator          | |
-| *Work Class Trie*            | Relay-chain state | Of the Parachains pallets |
+| *Builder*                    | Collator          | Creator of data worthy of Attestation |
+
+Additionally, the *Work Class Trie* has no immediate analogue, but may be considered as the Relay-chain state used to track the code and head data of the parachains.
 
 ### Overview
 
