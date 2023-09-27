@@ -52,9 +52,9 @@ In order of importance:
 
 ### From Old to New
 
-The current specification of the Polkadot protocol, and with in the Relay-chain operation, is designed in line with the overall requirements of and terminology in the Polkadot (1.0) whitepaper. It incorporates first-class concepts including *Proof-of-Validity* and *Parachain Validation Function*. This will no longer be considered canonical for the Polkadot protocol. To avoid confusion this design will be known as the *Fixed-function Parachains Legacy Model*, or the *Legacy Model* for short.
+The current specification of the Polkadot protocol, and with in the Relay-chain operation, is designed in line with the overall requirements of and terminology in the Polkadot (1.0) whitepaper. It incorporates first-class concepts including *Proof-of-Validity* and *Parachain Validation Function*. This will no longer be considered canonical for the Polkadot protocol. To avoid confusion, this design will be known as the *Fixed-function Parachains Legacy Model*, or the *Legacy Model* for short.
 
-Existing parachains functionality will continue to be provided as a special case under a more general and permissionless model which is detailed presently and known as *CoreJam*.
+Existing functionality relied upon by parachains will continue to be provided as a special case under a more general and permissionless model which is detailed presently and known as *CoreJam*. Transition of Polkadot to be in line with the present proposal will be necessarily imply some minor alterations of formats utilized by Cumulus, Smoldot and other light-client APIs (see the section on Compatibility). However, much of the underlying logic (in particular, consensus, disputes and availability) is retained, though its application is generalised. This proposal will only make note of the expectations regarding the changes, and presumes continuation of all other logic.
 
 As part of this model, we introduce a number of new and interrelated concepts: *Work Package*, *Work Class*, *Work Item*, *Work Output*, *Work Result*, *Work Report* and *Work Package Attestation*, *Work Class Trie*.
 
@@ -593,11 +593,15 @@ To optimize the present situation, a number of "natively implemented", fixed-fun
 
 Later implementation steps would polish (1) to replace with RISC-V (with backwards compatibility) and polish (2) to support posting receipts of timed-out/failed Work Packages on-chain for RISC-V Work Classes.
 
+A final transition may migrate the Parachains Work Class to become a regular permissionless Work Class module.
+
 ## Performance, Ergonomics and Compatibility
 
-This system must be broadly compatible with our existing Parachain Validation Function/Proof-of-Validity model, however a specific feasibility study into transitioning/migration has yet to be completed.
+The present proposal is broadly compatible with the facilities of the Legacy Model pending the integration of a Work Class specific to Parachains. Unlike other Work Classes, this is expected to be hard-coded into the Relay-chain runtime to maximize performance and minimize implementation time.
 
-To aid swift deployment, the Relay-chain may retain its existing parachain-specific logic "hardcoded", and the Coregap logic added separately, with Work Class "zero" being special-cased to mean "the hard-coded Parachain logic".
+Certain changes to active interfaces will be needed. Firstly, changes will be needed for any software (such as _Cumulus_ and _Smoldot_) relying on particular Relay-chain state trie keys (i.e. storage locations) used to track the code and head-data of parachains, so that they instead query the relevant key within the Parachains Work Class Child Trie. 
+
+Secondly, software which currently provides Proofs-of-Validity to Relay-chain Validators, such as _Cumulus_, would need to be updated to use the new Work Item/Work Package format.
 
 ## Testing, Security and Privacy
 
