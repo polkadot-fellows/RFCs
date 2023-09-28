@@ -29,11 +29,10 @@ Also, Encointer aims to update its runtime in batches with other system chains i
 
 Noteworthy: All Encointer-specific pallets will still be located in encointer's repo for the time being: https://github.com/encointer/pallets 
 
-It will still be the duty of the Encointer team to keep its runtime up to date and provide adequate test fixtures. So far, Encointer pallets have proven to be very stable and the runtime only needed to be updated every few months. 
-However, frequent dependency bumps with Polkadot releases would be beneficial for interoperability and could be streamlined with other system chains collectively by the fellowship. This would allow to upgrade all system chains jointly (including Encointer) regularly with a batch referendum 
+It will still be the duty of the Encointer team to keep its runtime up to date and provide adequate test fixtures. Frequent dependency bumps with Polkadot releases would be beneficial for interoperability and could be streamlined with other system chains but that will not be a duty of fellowship. Whenever possible, all system chains could be upgraded jointly (including Encointer) with a batch referendum.
 
 Further notes:
-* Encointer currently releases none of its crates on crates.io
+* Encointer will publish all its crates crates.io
 * Encointer does not carry out external auditing of its runtime nor pallets. It would be beneficial but not a requirement from our side if Encointer could join the auditing process of other system chains. 
 
 ## Drawbacks
