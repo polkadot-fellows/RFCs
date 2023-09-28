@@ -67,7 +67,7 @@ Focussing on continuity and reuse of existing logic, it is unsurprising that man
 | *Work Output*                | Candidate         | State-transition consequence |
 | *Work Report*                | Candidate         | Target of Attestation |
 | *(Work Package) Attestation* | Attestation       | Output signed by members of RcVG |
-| *Registration*               | Attestation       | Placement of Attestation on-chain |
+| *Reporting*                  | Attestation       | Placement of Attestation on-chain |
 | *Integration*                | Inclusion         | Irreversible transition of state |
 | *Builder*                    | Collator          | Creator of data worthy of Attestation |
 
@@ -135,7 +135,7 @@ While a Work Package is being built, the *Builder* must have a synchronized Rela
 
 The first consensus computation to be done is the Work Package having its Authorization checked in-core, hosted by the Relay-chain Validator Group. If it is determined to be authorized, then the same environment hosts the Refinement of the Work Package into a series of Work Results. This concludes the bulk of the computation that the Work Package represents. We would assume that the Relay-chain's height at this point is shortly after the authoring time, `T+r` where `r` could be as low as zero.
 
-The second consensus computation happens on-chain at the behest of the Relay-chain Block Author of the time `T+r+i`, where `i` is generally zero or one, the time taken for the Work Results to be transported from within the Core to get to the gateway of being on-chain. The computation done essentially just ensures that the Work Package is still in scope and that the prerequisite it relies upon (if any) has been submitted ahead of it. This is called the on-chain *Registration* (in the fixed-function parachains model, this is known as "attestation") and initiates the *Availability Protocol* for this Work Package once Relay-chain Validators synchronize to the block. This protocol guarantees that the Work Package will be made available for as long as we allow disputes over its validity to be made.
+The second consensus computation happens on-chain at the behest of the Relay-chain Block Author of the time `T+r+i`, where `i` is generally zero or one, the time taken for the Work Results to be transported from within the Core to get to the gateway of being on-chain. The computation done essentially just ensures that the Work Package is still in scope and that the prerequisite it relies upon (if any) has been submitted ahead of it. This is called the on-chain *Reporting* (in the fixed-function parachains model, this is known as "attestation") and initiates the *Availability Protocol* for this Work Package once Relay-chain Validators synchronize to the block. This protocol guarantees that the Work Package will be made available for as long as we allow disputes over its validity to be made.
 
 At some point later `T+r+i+a` (where `a` is the time to distribute the fragments of the Work Package and report their archival to the next Relay-chain Block Author) the Availability Protocol has concluded and the Relay-chain Block Author of the time brings this information on-chain in the form of a bitfield in which an entry flips from zero to one. At this point we can say that the Work Report's Package is *Available*.
 
@@ -282,7 +282,7 @@ struct Attestation {
 }
 ```
 
-Each Relay-chain block, every Validator Group representing a Core which is assigned work provides a series of Work Results coherent with an authorized Work Package. Validators are rewarded when they take part in their Group and process such a Work Package. Thus, together with some information concerning their execution context, they sign a *Report* concerning the work done and the results of it. This is also known as a *Candidate*. This signed Report is called an *Attestation*, and is provided to the Relay-chain block author. If no such Attestation is provided (or if the Relay-chain block author refuses to introduce it for Registration), then that Validator Group is not rewarded for that block.
+Each Relay-chain block, every Validator Group representing a Core which is assigned work provides a series of Work Results coherent with an authorized Work Package. Validators are rewarded when they take part in their Group and process such a Work Package. Thus, together with some information concerning their execution context, they sign a *Report* concerning the work done and the results of it. This is also known as a *Candidate*. This signed Report is called an *Attestation*, and is provided to the Relay-chain block author. If no such Attestation is provided (or if the Relay-chain block author refuses to introduce it for Reporting), then that Validator Group is not rewarded for that block.
 
 The process continues once the Attestations arrive at the Relay-chain Block Author.
 
@@ -294,7 +294,7 @@ Being *on-chain* (rather than *in-core* as with Collect-Refine), information and
 
 The Join-Accumulate stage may be seen as a synchronized counterpart to the parallelised Collect-Refine stage. It may be used to integrate the work done from the context of an isolated VM into a self-consistent singleton world model. In concrete terms this means ensuring that the independent work components, which cannot have been aware of each other during the Collect-Refine stage, do not conflict in some way. Less dramatically, this stage may be used to enforce ordering or provide a synchronisation point (e.g. for combining entropy in a sharded RNG). Finally, this stage may be a sensible place to manage asynchronous interactions between subcomponents of a Work Class or even different Work Classes and oversee message queue transitions.
 
-#### Registration and Integration
+#### Reporting and Integration
 
 There are two main phases of on-chain logic before a Work Package's ramifications are irreversibly assimilated into the state of the (current fork of the) Relay-chain. The first is where the Work Package is *Registered* on-chain. This is proposed through an extrinsic introduced by the RcBA and implies the successful outcome of some *Initial Validation* (described next). This kicks-off an off-chain process of *Availability* which, if successful, culminates in a second extrinsic being introduced on-chain shortly afterwards specifying that the Availability requirements of the Work Report are met.
 
@@ -306,7 +306,7 @@ Once both Availability and any additional requirements are met (including orderi
 
 There are a number of Initial Validation requirements which the RcBA must do in order to ensure no time is wasted on further, possibly costly, computation. Sicne the same tests are done on-chain, then for a Block Author to expect to make a valid block these tests must be done prior to actually placing the Attestations in the Relay-chain Block Body.
 
-Firstly, any given Work Report must have enough signatures in the Attestation to be considered for Registration on-chain. Only one Work Report may be considered for Registration from each RcVG per block.
+Firstly, any given Work Report must have enough signatures in the Attestation to be considered for Reporting on-chain. Only one Work Report may be considered for Reporting from each RcVG per block.
 
 Secondly, any Work Reports introduced by the RcBA must be *Recent*, defined as having a `context.header_hash` which is an ancestor of the RcBA head and whose height is less than `RECENT_BLOCKS` from the block which the RcBA is now authoring.
 
@@ -314,7 +314,7 @@ Secondly, any Work Reports introduced by the RcBA must be *Recent*, defined as h
 const RECENT_BLOCKS: u32 = 16;
 ```
 
-Thirdly, the RcBA may not attempt to Register multiple Work Reports for the same Work Package. Since Work Reports become inherently invalid once they are no longer *Recent*, then this check may be simplified to ensuring that there are no Work Reports of the same Work Package within any *Recent* blocks.
+Thirdly, the RcBA may not attempt to Report multiple Work Reports for the same Work Package. Since Work Reports become inherently invalid once they are no longer *Recent*, then this check may be simplified to ensuring that there are no Work Reports of the same Work Package within any *Recent* blocks.
 
 Finally, the RcBA may not register Work Reports whose prerequisite is not itself Registered in *Recent* blocks.
 
@@ -448,9 +448,9 @@ We can already imagine three kinds of Work Class: *Parachain Validation* (as per
 
 ### Work Package Ordering
 
-At the point of Registration of a Work Package (specifically, its Work Report) on-chain, it is trivial to ensure that the ordering respects the optional `prerequisite` field specified in the Work Package, since the RcBA need only avoid Registering any which do not have their prerequisite fulfilled recently.
+At the point of Reporting of a Work Package (specifically, its Work Report) on-chain, it is trivial to ensure that the ordering respects the optional `prerequisite` field specified in the Work Package, since the RcBA need only avoid Registering any which do not have their prerequisite fulfilled recently.
 
-However, there is a variable delay between a Work Report first being introduced on-chain in the Registration and its eventual Integration into the Work Class's State due to the asynchronous Availability Protocol. This means that requiring the order at the point of Registration is insufficient for guaranteeing that order at the time of Accumulation. Furthermore, the Availability Protocol may or may not actually complete for any Work Package.
+However, there is a variable delay between a Work Report first being introduced on-chain in the Reporting and its eventual Integration into the Work Class's State due to the asynchronous Availability Protocol. This means that requiring the order at the point of Reporting is insufficient for guaranteeing that order at the time of Accumulation. Furthermore, the Availability Protocol may or may not actually complete for any Work Package.
 
 Two alternatives present themselves: provide ordering only on a *best-effort* basis, whereby Work Reports respect the ordering requested in their Work Packages as much as possible, but it is not guaranteed. Work Reports may be Accumulated before, or even entirely without, their prerequisites. We refer to this *Soft-Ordering*. The alternative is to provide a guarantee that the Results of Work Packages will always be Accumulated no earlier than the Result of any prerequisite Work Package. As we are unable to alter the Availability Protocol, this is achieved through on-chain queuing and deferred Accumulation.
 
@@ -460,7 +460,7 @@ Both are presented as reasonable approaches for this proposal, though the Soft-O
 
 In this alternative, actual ordering is only guaranteed going *into* the Availability Protocol, not at the point of Accumulation.
 
-The (on-chain) repercussion of the Availability Protocol completing for the Work Package is that each Work Result becomes scheduled for Accumulation at the end of the Relay-chain Block Execution along with other Work Results from the same Work Class. The Ordering of Registration is replicated here for all Work Results present. If the Availability Protocol delays the Accumulation of a prerequisite Work Result, then the dependent Work Result may be Accumulated in a block prior to that of its dependency. It is assumed that the *Accumulation* logic will be able to handle this gracefully.
+The (on-chain) repercussion of the Availability Protocol completing for the Work Package is that each Work Result becomes scheduled for Accumulation at the end of the Relay-chain Block Execution along with other Work Results from the same Work Class. The Ordering of Reporting is replicated here for all Work Results present. If the Availability Protocol delays the Accumulation of a prerequisite Work Result, then the dependent Work Result may be Accumulated in a block prior to that of its dependency. It is assumed that the *Accumulation* logic will be able to handle this gracefully.
 
 It is also possible (though unexpected in regular operation) that Work Packages never complete the Availability Protocol. Such Work Packages eventually time-out and are discarded from Relay-chain state.
 
