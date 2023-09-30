@@ -613,6 +613,8 @@ However, this does mean that pre-existing usage of UMP and HRMP would be substan
 
 The overall situation will be improved substantially through preexisting plans, particularly the development and deployment of XCMP to avoid the need to place any datagrams on the Relay-chain which are not themselves meant for interpretation by it. The "Hermit-Relay" concept of spinning out ancilliary functionality handled by the Relay-chain to System chains will also alleviate the situation somewhat. Taken together, HRMP will no longer exist and UMP will be limited to a few System-chains making well-bounded interactions.
 
+An initial deployment of CoreJam could see the Work Output size limits temporarily increased for the Parachains Work Class to ensure existing use-cases do not suffer, but with a published schedule on reducing these to the eventual 4KB limits. This would imply the need for graceful handling by the RcBA should the aggregated Work Outputs be too large.
+
 ## Testing, Security and Privacy
 
 Standard Polkadot testing and security auditing applies.
