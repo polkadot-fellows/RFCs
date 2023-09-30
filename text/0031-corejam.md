@@ -426,17 +426,20 @@ There is an amount of weight which it is allowed to use before being forcibly te
 However, the actual amount of weight may be substantially more. Each Work Package is allotted a specific amount of weight for all on-chain activity (`weight_per_package` above) and has a weight liability defined by the weight requirements of all Work Items it contains (`total_weight_requirement` above). Any weight remaining after the liability (i.e. `weight_per_package - total_weight_requirement`) may be apportioned to the Work Classes of Items within the Report on a pro-rata basis according to the amount of weight they utilized during `refine`. Any weight unutilized by Classes within one Package may be carried over to the next Package and utilized there.
 
 ```rust
-fn get_work_storage(key: &[u8]) -> Result<Vec<u8>>;
-fn get_work_storage_len(key: &[u8]);
+fn get_work_storage(key: &[u8]) -> Option<Vec<u8>>;
+fn get_work_storage_len(key: &[u8]) -> Option<u32>;
 fn checkpoint() -> Weight;
 fn weight_remaining() -> Weight;
 fn set_work_storage(key: &[u8], value: &[u8]) -> Result<(), ()>;
 fn remove_work_storage(key: &[u8]);
+fn ump_enqueue(message: &[u8]) -> Result<(), ()>;
 ```
 
-Read-access to the entire Relay-chain state is allowed. No direct write access may be provided since `refine` is untrusted code. `set_storage` may fail if an insufficient deposit is held under the Work Class's account.
+Read-access to the entire Relay-chain state is allowed. No direct write access may be provided since `accumulate` is untrusted code. `set_storage` may fail if an insufficient deposit is held under the Work Class's account.
 
-Full access to a child trie specific to the Work Class is provided through the `work_storage` host functions. Since `refine` is permissionless and untrusted code, we must ensure that its child trie does not grow to degrade the Relay-chain's overall performance or place untenable requirements on the storage of full-nodes. To this goal, we require an account sovereign to the Work Class to be holding an amount of funds proportional to the overall storage footprint of its Child Trie. `set_work_storage` may return an error should the balance requirement not be met.
+UMP messages for the Relay-chain to interpret may be enqueued through `ump_enqueue` function. For this to succeed, the Relay-chain must have pre-authorized the use of UMP for this endpoint.
+
+Full access to a child trie specific to the Work Class is provided through the `work_storage` host functions. Since `accumulate` is permissionless and untrusted code, we must ensure that its child trie does not grow to degrade the Relay-chain's overall performance or place untenable requirements on the storage of full-nodes. To this goal, we require an account sovereign to the Work Class to be holding an amount of funds proportional to the overall storage footprint of its Child Trie. `set_work_storage` may return an error should the balance requirement not be met.
 
 Host functions are provided allowing any state changes to be committed at fail-safe checkpoints to provide resilience in case of weight overrun (or even buggy code which panics). The amount of weight remaining may also be queried without setting a checkpoint. `Weight` is expressed in a regular fashion for a solo-chain (i.e. one-dimensional).
 
