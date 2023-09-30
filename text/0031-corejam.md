@@ -205,7 +205,7 @@ type ClassCodeHash = StorageMap<ClassId, CodeHash>;
 ```
 
 ```rust
-type WorkOutputLen = ConstU32<1024>;
+type WorkOutputLen = ConstU32<4_096>;
 type WorkOutput = BoundedVec<u8, WorkOutputLen>;
 fn refine(
     payload: WorkPayload,
@@ -597,11 +597,21 @@ A final transition may migrate the Parachains Work Class to become a regular per
 
 ## Performance, Ergonomics and Compatibility
 
-The present proposal is broadly compatible with the facilities of the Legacy Model pending the integration of a Work Class specific to Parachains. Unlike other Work Classes, this is expected to be hard-coded into the Relay-chain runtime to maximize performance and minimize implementation time.
+The present proposal is broadly compatible with the facilities of the Legacy Model pending the integration of a Work Class specific to Parachains. Unlike other Work Classes, this is expected to be hard-coded into the Relay-chain runtime to maximize performance, compatibility and implementation speed.
 
-Certain changes to active interfaces will be needed. Firstly, changes will be needed for any software (such as _Cumulus_ and _Smoldot_) relying on particular Relay-chain state trie keys (i.e. storage locations) used to track the code and head-data of parachains, so that they instead query the relevant key within the Parachains Work Class Child Trie. 
+Certain changes to active interfaces will be needed. Firstly, changes will be needed for any software (such as _Cumulus_ and _Smoldot_) relying on particular Relay-chain state trie keys (i.e. storage locations) used to track the code and head-data of parachains, so that they instead query the relevant key within the Parachains Work Class Child Trie.
 
 Secondly, software which currently provides Proofs-of-Validity to Relay-chain Validators, such as _Cumulus_, would need to be updated to use the new Work Item/Work Package format.
+
+### UMP and HRMP
+
+At present, both HRMP (the stop-gap measure introduced in lieu of proper XCMP) and UMP, make substantial usage of the ability for parachains to include data in their PoV which will be interpreted on-chain by the Relay-chain. The current limit of UMP alone is 1MB. Even with the current amount of parachains, it is not possible for all parachains to be able to make use of these resources within the same block, and the difficult problem of apportioning resources in the case of contest is structurally unsolved and left for the RcBA to make an arbitrary selection.
+
+The present proposal aims to bring some clarity to this situation by limiting the amount of data which can arrive on the Relay-chain from each Work Item, and by extension from each Work Package. The specific limit proposed is 4KB per Work Item, which if we assume an average of two Work Items per Package and 250 cores, comes to a manageable 2MB and leaves plenty of headroom.
+
+However, this does mean that pre-existing usage of UMP and HRMP would be substanially impaired. For example, under these limits a future Staking System-chain would be unable to send 1,000 sets of validator keys (each taking up to around 100 bytes) to the Relay-chain within a single block.
+
+The overall situation will be improved substantially through preexisting plans, particularly the development and deployment of XCMP to avoid the need to place any datagrams on the Relay-chain which are not themselves meant for interpretation by it. The "Hermit-Relay" concept of spinning out ancilliary functionality handled by the Relay-chain to System chains will also alleviate the situation somewhat. Taken together, HRMP will no longer exist and UMP will be limited to a few System-chains making well-bounded interactions.
 
 ## Testing, Security and Privacy
 
@@ -611,7 +621,7 @@ The proposal introduces no new privacy concerns.
 
 ## Future Directions and Related Material
 
-None at present.
+We expect to see several Work Classes being built shortly after CorePlay is delivered.
 
 ## Drawbacks, Alternatives and Unknowns
 
@@ -627,200 +637,3 @@ Important considerations include:
 ## Prior Art and References
 
 None.
-
-# Historical
-
-#### Chat Gav/Basti, 2023-09-11
-
-```
-for this we need a pallet on the RC to allow arbitrary data to be stored for a deposit, with a safeguard that it would remain in RC state for at least 24 hours (in case of dispute); and a host function to allow the PoV to reference it.
-this issue is that for fast-changing data, you'd need to store all of the different images for 24 hours each.
-this would quickly get prohibitive.
-Yeah, but then we can not give these tasks that much memory. Maybe around 0.5 MiB to 1 MiB (depending on how well they compress) 
-yeah
-tasks which expect to execute alone could get ~2MB.
-Gav
-an alternative would be to require the author-network to compute the precise output itself and send it to the storage chain separately.
-and if we do this, then up to around 4.5MB.
-it's not much by today's desktop standards, but it still beats the shit out of smart contracts.
-In reply to 
-Gav
-Gav
-and if we do this, then up to around 4.5MB.
-Why can we then double it? What do I miss?
-5MB PoV limit.
-best case you need to provide the full pre-state (with which to initialize the VM) and a hash of the post-state (to verify computation)
-however, it's not clear where you get the next block's pre-state from.
-one solution is to provide both pre- and post-state into the PoV and piggy-back on Polkadot's 24-hour availability system
-(as long as you build the next block at most 24 hours from the last)
-You can get the next state by re executing? 
-Or keep it in your local cache or whatever 
-but you don't necessarily have other tasks at that time.
-or the RC state.
-Ahh I see
-or, indeed, the pre-state.
-PoV disappears after 24 hours.
-We can not recalculate all the state 
-no
-this means an average of 5MB / 2 memory bandwidth per block.
-minus a bit for smaller tasks to coordinate with gives 2 - 2.5MB.
-But if we put the post state into availability system it should work as well? 
-but we assume the PoV accounts for All of the RCV's resources.
-if it doesn't then we should just increase the PoV size.
-Yeah fine 
-i.e. if the RCV can handle 5MB PoV (availability) plus 5MB additional availability, then isn't it just easier to say 10MB PoV?
-I think the limit currently is just from the networking side
-Aka we could not even really handle these big PoVs 
-But with async backing it should now be possible 
-maybe i'm wrong here - if the limit of 5MB PoV is less about availability and more about transport from the collator, then sure, we can split it into a PoV limit and an availability limit
-and have 5MB PoV and 10MB availability.
-but i assumed that the bottleneck was just availability.
-definitely an assumption to test
-Yeah we should find out. Maybe I probably neglecting the erasure coding 
-since there is a difference between data from some other guy (pre-state) and data which you generate yourself (post-state)
-assuming i'm right about the bottleneck, then the best we could do without some form of paging (which should be easy enough to implement with jan's help) is having the post-state be computed on the author-network and placed in the storage chain.
-jan says that paging is pretty trivial to customise on his RISCV VM.
-just a segfault everytime a new page is required and we can either suspend + snapshot; or fetch + assign the page and continue.
-Gav
-just a segfault everytime a new page is required and we can either suspend + snapshot; or fetch + assign the page and continue.
-Yeah, that was also my idea.
-But yeah, for the beginning we can probably start with 0.5MiB of memory 
-we have 16KB pages currently, and we'll already likely be doing something similar for running multiple stacks
-Basti.await
-But yeah, for the beginning we can probably start with 0.5MiB of memory 
-yup
-definitely enough for a PoC.
-but we will still need a new PoV format.
-i.e. where we can:
-a) request arbitrary data from the RCTaskStorage pallet (which guarantees data placed on it cannot be removed for 24 hours after last read).
-b) progress a particular task (in whatever order) with weight spec
-c) provide data into a particular task (in whatever order) with weight spec
-we might also have a more abstract PoV protocol which allows for different classes of task.
-and specifies in Wasm or whatever exactly how to interpret a PoV
-then we reformulate the Parachain PoV into this "smart contract".
-and we would create a new Task PoV format as just another instance within this overarching protocol.
-e.g. this protocol could define UMP, DMP, XCMP and the initial version of the Actors-PoV format might reasonably not include this logic.
-but an upgrade later could allow actors to use this stuff.
-the main difference with just "hardcoding" it into the RC logic directly is that it could be permissionless - other teams could come up with their own PoV formats and protocols to determine validity.
-ok so i've thought about it a bit.
-i think there's a route forward for what i referenced up there as "generic PoVs".
-in fact they cease to be "PoVs" at this point.
-they're just "Work Packages" since you're not proving anything, you're just using the RCVs for compute.
-we would define the concept of a Work Class.
-all WPs must have a WT. the WT defines what it means to interpret/execute the WP.
-we'd initially have two WTs: Parachains and Tasks.
-WTs would be permissionless and would come with two main blobs; one (which I'll call map) which can still be in Wasm (since it runs off-chain at a level higher than the PVF) and one (called reduce) which must be strictly metered (so RISCV or very slow Wasm).
-as the name suggests, the first represents map and the second represents reduce of a map-reduce pattern.
-the first takes the WP as an argument and can inspect any data held in the RCTaskStore.
-it then either panics (invalid) or returns a fixed-size (or rather known-maximum-length) blob.
-all such blobs and panics are batched up into a Vec and fed into a WT-defined reduce function, with its max_weight = to the block_weight multiplied by the ratio of cores used for this WT compared to all cores.
-all WTs have their own child trie.
-only this reduce function may alter data in that trie.
-for the Parachain WT, this child trie would include all the parachain-specific data (code and state); the ParachainWP output type would basically be the per-chain paras-inherent arguments, and so the PWT reduce function would basically be the paras-inherent logic.
-for the Actors WT, this child trie would include Actor specific stuff like codehash (the actual code would be stored in the RCTaskStore) and RISCVVM memory hash, as well as sequence number.
-The Actor output would include enough information on which actor-combinations got (maybe) progressed to allow the proper progressions to be recorded in the Actor Child Trie by the reduce function. essentially just the logic i already define in the RFC.
-So the Actor map function would interpret the WorkPackage as a manifest and fetch all actor code, initialise each Actor's VM and start them with the entry points according to the manifest.
-with this model, anyone could add their own Work Classs.
-So if RobK/Arkadiy/Dave can implement the spec, we can focus on writing up the Actor-based map and reduce function. They need not be concerned with Actors at all.
-sound sensible?
-Good question :P 
-So the map would have access to fetch the code from the relay chain?
-And the map would be trusted code?
-That is the same for every WT? 
-neither map nor reduce are trusted
-Gav
-neither map nor reduce are trusted
-Ahh yeah, you said it
-map would only be able to read the part of RC state which is guaranteed to be available for 24 hours; this basically just means the RCTaskStorage.
-But the code executed in reduce is defined by the output of map?
-yes
-Gav
-map would only be able to read the part of RC state which is guaranteed to be available for 24 hours; this basically just means the RCTaskStorage.
-The code to execute will be referenced by the code hash and this code hash needs to be "somewhere". Currently we store in the relay chain state
-yeah, the code would need to be in the "RCTaskStore" (should be the RCWorkStore, i guess)
-there is the question about the WorkType Child Trie
-This is the child trie you mentioned? 
-(The RCTaskStore) 
-RCWorkStore is the on-chain paid data repository which guarantees data remains available for 24 hours after removal
-there is also the WorkTypeChildTrie.
-i guess this would need to guarantee some sort of dispute-availability also.
-Gav
-there is also the WorkTypeChildTrie.
-This is stored in the RC state?
-yes
-it's a child trie.
-yeah, just wanted to be sure :P 
-Gav
-i guess this would need to guarantee some sort of dispute-availability also.
-Yeah for sure. If we need the data as input of the validation
-we might need to limit this.
-yeah, i think we don't need any of this data.
-And map to reduce would be something like Vec<Work { code_hash, function, params, max_weight: Option<Weight> }>?
-map output would basically be Vec<ProvisionalProgression>
-where struct ProvisionalProgression { actor: ActorId, code: [u8;32], prestate: [u8;32], poststate: [u8;32] }
-then reduce would take a Vec<Vec<ProvisionalProgression>>
-reduce would check there are no collisions (same actor progressing from same poststate), that the code executed is the expected code hash of the actor and that the prestate fits into a coherent progression of the actor (which might not be the old poststate since the actor could be doing multiple progressions in a single RC block).
-So you want to execute the actor code from within reduce?
-no
-actor code gets executed off-chain in map.
-output of map informs reduce what it has done.
-it's up to reduce to figure out how to combine all of this into a coherent RC state update.
-But when is reduce executed? As part of the RC block execution/building?
-yeah
-reduce is on-chain,
-it accepts a Vec<WorkTypeOutput>
-WorkTypeOutput is an output specific to WorkType, i.e. WorkTypeOutput in fn map(WorkPackage) -> Result<WorkTypeOutput, WorkPackageError>
-Okay, I see where you want to go. 
-Gav
-then reduce would take a Vec<Vec<ProvisionalProgression>>
-Why this, because there can be multiple WorkPackages being progressed in one RC?
-yes, one for every core.
-those ProvisionalProgressions appearing together in an inner Vec have been co-scheduled.
-it might possibly make a difference inside of reduce to know what progressions have happened together on the same core.
-Okay. So reduce is getting all the WorkOutputs of all cores for one WT?
-precisely.
-one WT would be the whole of parachains, UMP, DMP, XCMP.
-Yeah
-another WT would be the whole actor environment.
-Actors and parachains will never be able to talk to each other? 
-yeah, we can imagine actor-v2 WT which includes the possibility of XCMP/DMP/UMP.
-but i would get a basic version of actors done first.
-Basti.await
-Actors and parachains will never be able to talk to each other? 
-I more meant "co-scheduled"
-just to show it's possible.
-In reply to 
-Basti.await
-Basti.await
-I more meant "co-scheduled"
-perhaps for actors-v3 which would allow WPs to include both parachain and actor progressions
-but we should be able to get most of the benefits leaving it as XCMP
-if actors work as well as we expect, then the need for chains will dramatically reduce
-In reply to 
-Basti.await
-Gav
-perhaps for actors-v3 which would allow WPs to include both parachain and actor progressions
-Okay, my only comment on this would be that we then need to ensure that parachains and actors are not scheduled in different groups of "WTs"
-But maybe some simple "was updated in RC block X" should be enough 
-But yeah, what you propose sounds reasonable 
-In reply to 
-Gav
-Basti.await
-Okay, my only comment on this would be that we then need to ensure that parachains and actors are not scheduled in different groups of "WTs"
-yeah, i think we would need to provide some sort of hard-coded-function on the RC to migrate between WTs in this case.
-parachains couldn't be part of two WTs at once
-Okay 
-but again, i don't see too much benefit in synchronous composability between actors and chains
-Yeah
-Just wanted to ask
-and it complicates things massively
-And I think chains are an old concept anyway with coreplay :P 
-quite.
-the level of experimentation this would provide is pretty immense
-Yes 
-This would also quite help for stuff like "elastic scaling" etc. 
-basically, just turn polkadot into a global, secure map-reduce computer. 
-We could just experiment 
-As a new WT
-yup
-```
