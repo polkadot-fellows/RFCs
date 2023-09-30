@@ -579,6 +579,18 @@ We should consider utilizing the Storage Pallet for Parachain Code and store onl
 
 Actor code is stored in the Storage Pallet. Actor-specific data including code hash, VM memory hash and sequence number is stored in the Actor Work Class Trie under that Actor's identifier. The Work Package would include pre-transition VM memories of actors to be progressed whose hash matches the VM memory hash stored on-chain and any additional data required for execution by the actors (including, perhaps, swappable memory pages). The `refine` function would initiate the relevant VMs and make entries into those VMs in line with the Work Package's manifest. The Work Output would provide a vector of actor progressions made including their identifer, pre- and post-VM memory hashes and sequence numbers. The `accumulate` function would identify and resolve any conflicting progressions and update the Actor Work Class Trie with the progressed actors' new states. More detailed information is given in the Coreplay RFC.
 
+### UMP, HRMP and Work Output bounding
+
+At present, both HRMP (the stop-gap measure introduced in lieu of proper XCMP) and UMP, make substantial usage of the ability for parachains to include data in their PoV which will be interpreted on-chain by the Relay-chain. The current limit of UMP alone is 1MB. Even with the current amount of parachains, it is not possible for all parachains to be able to make use of these resources within the same block, and the difficult problem of apportioning resources in the case of contest is structurally unsolved and left for the RcBA to make an arbitrary selection.
+
+The present proposal aims to bring some clarity to this situation by limiting the amount of data which can arrive on the Relay-chain from each Work Item, and by extension from each Work Package. The specific limit proposed is 4KB per Work Item, which if we assume an average of two Work Items per Package and 250 cores, comes to a manageable 2MB and leaves plenty of headroom.
+
+However, this does mean that pre-existing usage of UMP and HRMP would be substanially impaired. For example, under these limits a future Staking System-chain would be unable to send 1,000 sets of validator keys (each taking up to around 100 bytes) to the Relay-chain within a single block.
+
+The overall situation will be improved substantially through preexisting plans, particularly the development and deployment of XCMP to avoid the need to place any datagrams on the Relay-chain which are not themselves meant for interpretation by it. The "Hermit-Relay" concept of spinning out ancilliary functionality handled by the Relay-chain to System chains will also alleviate the situation somewhat. Taken together, HRMP will no longer exist and UMP will be limited to a few System-chains making well-bounded interactions.
+
+An initial deployment of CoreJam could see the Work Output size limits temporarily increased for the Parachains Work Class to ensure existing use-cases do not suffer, but with a published schedule on reducing these to the eventual 4KB limits. This would imply the need for graceful handling by the RcBA should the aggregated Work Outputs be too large.
+
 ### Notes on Implementation Order
 
 In order to ease the migration process from the current Polkadot on- and off-chain logic to this proposal, we can envision a partial implementation, or refactoring, which would facilitate the eventual proposal whilst remaining compatible with the pre-existing usage and avoid altering substantial code.
@@ -602,18 +614,6 @@ The present proposal is broadly compatible with the facilities of the Legacy Mod
 Certain changes to active interfaces will be needed. Firstly, changes will be needed for any software (such as _Cumulus_ and _Smoldot_) relying on particular Relay-chain state trie keys (i.e. storage locations) used to track the code and head-data of parachains, so that they instead query the relevant key within the Parachains Work Class Child Trie.
 
 Secondly, software which currently provides Proofs-of-Validity to Relay-chain Validators, such as _Cumulus_, would need to be updated to use the new Work Item/Work Package format.
-
-### UMP and HRMP
-
-At present, both HRMP (the stop-gap measure introduced in lieu of proper XCMP) and UMP, make substantial usage of the ability for parachains to include data in their PoV which will be interpreted on-chain by the Relay-chain. The current limit of UMP alone is 1MB. Even with the current amount of parachains, it is not possible for all parachains to be able to make use of these resources within the same block, and the difficult problem of apportioning resources in the case of contest is structurally unsolved and left for the RcBA to make an arbitrary selection.
-
-The present proposal aims to bring some clarity to this situation by limiting the amount of data which can arrive on the Relay-chain from each Work Item, and by extension from each Work Package. The specific limit proposed is 4KB per Work Item, which if we assume an average of two Work Items per Package and 250 cores, comes to a manageable 2MB and leaves plenty of headroom.
-
-However, this does mean that pre-existing usage of UMP and HRMP would be substanially impaired. For example, under these limits a future Staking System-chain would be unable to send 1,000 sets of validator keys (each taking up to around 100 bytes) to the Relay-chain within a single block.
-
-The overall situation will be improved substantially through preexisting plans, particularly the development and deployment of XCMP to avoid the need to place any datagrams on the Relay-chain which are not themselves meant for interpretation by it. The "Hermit-Relay" concept of spinning out ancilliary functionality handled by the Relay-chain to System chains will also alleviate the situation somewhat. Taken together, HRMP will no longer exist and UMP will be limited to a few System-chains making well-bounded interactions.
-
-An initial deployment of CoreJam could see the Work Output size limits temporarily increased for the Parachains Work Class to ensure existing use-cases do not suffer, but with a published schedule on reducing these to the eventual 4KB limits. This would imply the need for graceful handling by the RcBA should the aggregated Work Outputs be too large.
 
 ## Testing, Security and Privacy
 
