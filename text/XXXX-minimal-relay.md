@@ -107,26 +107,11 @@ Therefore, migration can take place as follows:
 User interfaces that render Identity information will need to source their data from the new system
 parachain.
 
-#### Governance
-
-Migrating governance into a parachain will be more complicated, especially as the balances used for
-voting in referenda are also used for staking. However, most of the other primitives needed for the
-migration already exist. The Treasury supports spending assets on remote chains and collectives like
-the Polkadot Technical Fellowship already function in a parachain. That is, XCM already provides the
-ability to express system origins across chains.
-
-Therefore, actually moving the governance logic into a parachain will be simple. It can run in
-parallel with the Relay Chain's governance, which can be removed when the parachain has demonstrated
-sufficient functionality. It's possible that the Relay Chain maintain a Root-level emergency track
-for situations like [parachains
-halting](https://forum.polkadot.network/t/stalled-parachains-on-kusama-post-mortem/3998). The only
-problem that remains to solve is how to deal with balances that are used for staking too.
-
 #### Staking
 
 Migrating the staking subsystem will likely be the most complex technical undertaking, as the
-staking system cannot stop (the system MUST always have a validator set) nor run in parallel (the
-system MUST have _one_ validator set) and the subsystem itself is made up of subsystems in the
+Staking system cannot stop (the system MUST always have a validator set) nor run in parallel (the
+system MUST have only _one_ validator set) and the subsystem itself is made up of subsystems in the
 runtime and the node. For example, if offences are reported to the Staking parachain, validator
 nodes will need to submit their reports there.
 
@@ -135,8 +120,29 @@ governance. Ideally, all balances stay on Asset Hub, and only report "credits" t
 Staking and Governance. However, staking mutates balances by issuing new DOT on era changes and for
 rewards. Allowing DOT directly on the Staking parachain would simplify staking changes.
 
+Given the complexity, it would be pragmatic to include the Balances pallet in the Staking parachain
+in its first version. Any other systems that use overlapping locks, most notably governance, will
+need to recognise DOT held on both Asset Hub and the Staking parachain.
+
 There is more discussion about staking in a parachain in [Moving Staking off the Relay
 Chain](https://github.com/paritytech/polkadot-sdk/issues/491).
+
+#### Governance
+
+Migrating governance into a parachain will be less complicated than staking. Most of the primitives
+needed for the migration already exist. The Treasury supports spending assets on remote chains and
+collectives like the Polkadot Technical Fellowship already function in a parachain. That is, XCM
+already provides the ability to express system origins across chains.
+
+Therefore, actually moving the governance logic into a parachain will be simple. It can run in
+parallel with the Relay Chain's governance, which can be removed when the parachain has demonstrated
+sufficient functionality. It's possible that the Relay Chain maintain a Root-level emergency track
+for situations like [parachains
+halting](https://forum.polkadot.network/t/stalled-parachains-on-kusama-post-mortem/3998).
+
+The only complication arises from the fact that both Asset Hub and the Staking parachain will have
+DOT balances; therefore, the Governance chain will need to be able to credit users' voting power
+based on balances from both locations. This is not expected to be difficult to handle.
 
 ## Drawbacks
 
@@ -181,3 +187,4 @@ Chain](https://github.com/paritytech/polkadot-sdk/issues/491).
 ## Future Directions and Related Material
 
 Ideally the Relay Chain becomes transactionless, such that not even balances are represented there.
+With Staking and Governance off the Relay Chain, this is not an unreasonable next step.
