@@ -304,7 +304,7 @@ Once both Availability and any additional requirements are met (including orderi
 
 #### Initial Validation
 
-There are a number of Initial Validation requirements which the RcBA must do in order to ensure no time is wasted on further, possibly costly, computation. Sicne the same tests are done on-chain, then for a Block Author to expect to make a valid block these tests must be done prior to actually placing the Attestations in the Relay-chain Block Body.
+There are a number of Initial Validation requirements which the RcBA must do in order to ensure no time is wasted on further, possibly costly, computation. Since the same tests are done on-chain, then for a Block Author to expect to make a valid block these tests must be done prior to actually placing the Attestations in the Relay-chain Block Body.
 
 Firstly, any given Work Report must have enough signatures in the Attestation to be considered for Reporting on-chain. Only one Work Report may be considered for Reporting from each RcVG per block.
 
