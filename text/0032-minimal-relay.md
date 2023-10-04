@@ -39,7 +39,6 @@ Ubiquitous Computer can maximise its primary offering: secure blockspace.
 The following pallets and subsystems are good candidates to migrate from the Relay Chain:
 
 - Identity
-- Preimage
 - Balances
 - Staking
 	- Staking
@@ -107,6 +106,9 @@ Therefore, migration can take place as follows:
 User interfaces that render Identity information will need to source their data from the new system
 parachain.
 
+Note: In the future, it may make sense to decommission Kusama's Identity chain and do all account
+identities via Polkadot's. However, the Kusama chain will serve as a dress rehearsal for Polkadot.
+
 #### Staking
 
 Migrating the staking subsystem will likely be the most complex technical undertaking, as the
@@ -146,7 +148,8 @@ based on balances from both locations. This is not expected to be difficult to h
 
 ## Drawbacks
 
-None at present.
+These subsystems will have reduced resources in cores than on the Relay Chain. Staking in particular
+may require some optimizations to deal with constraints.
 
 ## Testing, Security, and Privacy
 
@@ -167,6 +170,9 @@ primary resources are allocated to system performance.
 This proposal alters very little for coretime users (e.g. parachain developers). Application
 developers will need to interact with multiple chains, making ergonomic light client tools
 particularly important for application development.
+
+For existing parachains that interact with these subsystems, they will need to configure their
+runtimes to recognize the new locations in the network.
 
 ### Compatibility
 
