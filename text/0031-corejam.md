@@ -95,6 +95,8 @@ mod v0 {
     type WorkPackageHash = [u8; 32];
     struct Context {
         header_hash: HeaderHash,
+        state_root: Hash, // must be state root of block `header_hash`
+        beefy_root: Hash, // must be Beefy root of block `header_hash`
         prerequisite: Option<WorkPackageHash>,
     }
     struct WorkPackage {
@@ -131,7 +133,7 @@ Though this process happens entirely in consensus, there are two main consensus 
 
 A Work Package has several stages of consensus computation associated with its processing, which happen as the system becomes more certain that it represents a correct and useful transition of its Work Class.
 
-While a Work Package is being built, the *Builder* must have a synchronized Relay-chain node in order to supply a specific *Context*. The Context dictates a certain *Scope* for the Work Package which is used by the Basic Validation to limit which Relay-chain blocks it may be processed on to a small sequence of a specific fork (which is yet to be built, presumably). We define the Relay-chain height at this point to be `T`.
+While a Work Package is being built, the *Builder* must have a synchronized Relay-chain node in order to supply a specific *Context*. The Context dictates a certain *Scope* for the Work Package which is used by the Initial Validation to limit which Relay-chain blocks it may be processed on to a small sequence of a specific fork (which is yet to be built, presumably). We define the Relay-chain height at this point to be `T`.
 
 The first consensus computation to be done is the Work Package having its Authorization checked in-core, hosted by the Relay-chain Validator Group. If it is determined to be authorized, then the same environment hosts the Refinement of the Work Package into a series of Work Results. This concludes the bulk of the computation that the Work Package represents. We would assume that the Relay-chain's height at this point is shortly after the authoring time, `T+r` where `r` could be as low as zero.
 
@@ -205,14 +207,17 @@ type ClassCodeHash = StorageMap<ClassId, CodeHash>;
 ```
 
 ```rust
+struct PackageInfo {
+    package_hash: WorkPackageHash,
+    context: Context,
+    authorization: Authorization,
+    auth_id: Option<AuthId>,
+}
 type WorkOutputLen = ConstU32<4_096>;
 type WorkOutput = BoundedVec<u8, WorkOutputLen>;
 fn refine(
     payload: WorkPayload,
-    authorization: Authorization,
-    auth_id: Option<AuthId>,
-    context: Context,
-    package_hash: WorkPackageHash,
+    package_info: PackageInfo,
 ) -> WorkOutput;
 ```
 
@@ -248,8 +253,8 @@ fn apply_refine(item: WorkItem) -> WorkResult;
 The amount of weight used in executing the `refine` function is noted in the `WorkResult` value, and this is used later in order to help apportion on-chain weight (for the Join-Accumulate process) to the Work Classes whose items appear in the Work Packages.
 
 ```rust
-/// Secure refrence to a Work Package.
-struct WorkPackageSpec {
+/// Secure identifier for a Work Package.
+struct WorkPackageId {
     /// The hash of the encoded `EncodedWorkPackage`.
     hash: WorkPackageHash,
     /// The erasure root of the encoded `EncodedWorkPackage`.
@@ -261,7 +266,7 @@ struct WorkPackageSpec {
 /// of its Work Items.
 struct WorkReport {
     /// The specification of the underlying Work Package.
-    package_spec: WorkPackageSpec,
+    package_id: WorkPackageId,
     /// The context of the underlying Work Package.
     context: Context,
     /// The Core index under which the Work Package was Refined to generate the Report.
@@ -288,15 +293,15 @@ The process continues once the Attestations arrive at the Relay-chain Block Auth
 
 ### Join-Accumulate
 
-Join-Accumulate is a second major stage of computation and is independent from Collect-Refine. Unlike with the computation in Collect-Refine which happens contemporaneously within one of many isolated cores, the computation of Join-Accumulate is both entirely synchronous with all other computation of its stage and operates within (and has access to) the same shared state-machine.
+Join-Accumulate is the second major stage of computation and is independent from Collect-Refine. Unlike with the computation in Collect-Refine which happens contemporaneously within one of many isolated cores, the consensus computation of Join-Accumulate is both entirely synchronous with all other computation of its stage and operates within (and has access to) the same shared state-machine.
 
-Being *on-chain* (rather than *in-core* as with Collect-Refine), information and computation done in the Join-Accumulate stage is carried out (initially) by the block-author and the resultant block evaluated by all validators and full-nodes. Because of this, and unlike in-core computation, it has full access to the Relay-chain's state.
+Being *on-chain* (rather than *in-core* as with Collect-Refine), information and computation done in the Join-Accumulate stage is carried out (initially) by the Block Author and the resultant block evaluated by all Validators and full-nodes. Because of this, and unlike in-core computation, it has full access to the Relay-chain's state.
 
 The Join-Accumulate stage may be seen as a synchronized counterpart to the parallelised Collect-Refine stage. It may be used to integrate the work done from the context of an isolated VM into a self-consistent singleton world model. In concrete terms this means ensuring that the independent work components, which cannot have been aware of each other during the Collect-Refine stage, do not conflict in some way. Less dramatically, this stage may be used to enforce ordering or provide a synchronisation point (e.g. for combining entropy in a sharded RNG). Finally, this stage may be a sensible place to manage asynchronous interactions between subcomponents of a Work Class or even different Work Classes and oversee message queue transitions.
 
 #### Reporting and Integration
 
-There are two main phases of on-chain logic before a Work Package's ramifications are irreversibly assimilated into the state of the (current fork of the) Relay-chain. The first is where the Work Package is *Registered* on-chain. This is proposed through an extrinsic introduced by the RcBA and implies the successful outcome of some *Initial Validation* (described next). This kicks-off an off-chain process of *Availability* which, if successful, culminates in a second extrinsic being introduced on-chain shortly afterwards specifying that the Availability requirements of the Work Report are met.
+There are two main phases of on-chain logic before a Work Package's ramifications are irreversibly assimilated into the state of the (current fork of the) Relay-chain. The first is where the Work Package is *Reported* on-chain. This is proposed through an extrinsic introduced by the RcBA and implies the successful outcome of some *Initial Validation* (described next). This kicks-off an off-chain process of *Availability* which, if successful, culminates in a second extrinsic being introduced on-chain shortly afterwards specifying that the Availability requirements of the Work Report are met.
 
 Since this is an asynchronous process, there are no ordering guarantees on Work Reports' Availability requirements being fulfilled. There may or may not be provision for adding further delays at this point to ensure that Work Reports are processed according to strict ordering. See *Work Package Ordering*, later, for more discussion here.
 
@@ -314,30 +319,32 @@ Secondly, any Work Reports introduced by the RcBA must be *Recent*, defined as h
 const RECENT_BLOCKS: u32 = 16;
 ```
 
-Thirdly, the RcBA may not attempt to Report multiple Work Reports for the same Work Package. Since Work Reports become inherently invalid once they are no longer *Recent*, then this check may be simplified to ensuring that there are no Work Reports of the same Work Package within any *Recent* blocks.
+Thirdly, dependent elements of the Context (`context.state_root` and `context.beefy_root`) must correctly correspond to those on-chain for the block corresponding to the provided `context.header_hash`. For this to be possible, the Relay-chain is expected to track Recent state roots and beefy roots in a queue.
 
-Finally, the RcBA may not register Work Reports whose prerequisite is not itself Registered in *Recent* blocks.
+Fourthly, the RcBA may not attempt to Report multiple Work Reports for the same Work Package. Since Work Reports become inherently invalid once they are no longer *Recent*, then this check may be simplified to ensuring that there are no Work Reports of the same Work Package within any *Recent* blocks.
 
-In order to ensure all of the above tests are honoured by the RcBA, a block which contains Work Reports which fail any of these tests shall panic on import. The Relay-chain's on-chain logic will thus include these checks in order to ensure that they are honoured by the RcBA. We therefore introduce the *Recent Registrations* storage item, which retaining all Work Package hashes which were Registered in the *Recent* blocks:
+Finally, the RcBA may not register Work Reports whose prerequisite is not itself Reported in *Recent* blocks.
+
+In order to ensure all of the above tests are honoured by the RcBA, a block which contains Work Reports which fail any of these tests shall panic on import. The Relay-chain's on-chain logic will thus include these checks in order to ensure that they are honoured by the RcBA. We therefore introduce the *Recent Reports* storage item, which retaining all Work Package hashes which were Reported in the *Recent* blocks:
 
 ```rust
 const MAX_CORES: u32 = 512;
 /// Must be ordered.
-type InclusionSet = BoundedVec<WorkPackageHash, ConstU32<MAX_CORES>>;
-type RecentInclusions = StorageValue<BoundedVec<InclusionSet, ConstU32<RECENT_BLOCKS>>>
+type ReportSet = BoundedVec<WorkPackageHash, ConstU32<MAX_CORES>>;
+type RecentReports = StorageValue<BoundedVec<ReportSet, ConstU32<RECENT_BLOCKS>>>
 ```
 
-The RcBA must keep an up to date set of which Work Packages have already been Registered in order to avoid accidentally attempting to introduce a duplicate Work Package or one whose prerequisite has not been fulfilled. Since the currently authored block is considered *Recent*, Work Reports introduced earlier in the same block do satisfy the prerequisite of Work Packages introduced later.
+The RcBA must keep an up to date set of which Work Packages have already been Reported in order to avoid accidentally attempting to introduce a duplicate Work Package or one whose prerequisite has not been fulfilled. Since the currently authored block is considered *Recent*, Work Reports introduced earlier in the same block do satisfy the prerequisite of Work Packages introduced later.
 
 While it will generally be the case that RcVGs know precisely which Work Reports will have been introduced at the point that their Attestation arrives with the RcBA by keeping the head of the Relay-chain in sync, it will not always be possible. Therefore, RcVGs will never be punished for providing an Attestation which fails any of these tests; the Attestation will simply be kept until either:
 
 1. it stops being *Recent*;
-2. it becomes Registered on-chain; or
-3. some other Attestation of the same Work Package becomes Registered on-chain.
+2. it becomes Reported on-chain; or
+3. some other Attestation of the same Work Package becomes Reported on-chain.
 
 #### Availability
 
-Once the Work Report of a Work Package is Registered on-chain, the Work Package itself must be made *Available* through the off-chain Availability Protocol, which ensures that any dispute over the correctness of the Work Report can be easily objectively judged by all validators. Being off-chain this is not block-synchronized and any given Work Package make take one or more blocks to be made Available or may even fail.
+Once the Work Report of a Work Package is Reported on-chain, the Work Package itself must be made *Available* through the off-chain Availability Protocol, which ensures that any dispute over the correctness of the Work Report can be easily objectively judged by all validators. Being off-chain this is not block-synchronized and any given Work Package make take one or more blocks to be made Available or may even fail.
 
 Only once the a Work Report's Work Package is made Available can the processing continue with the next steps of Joining and Accumulation. Ordering requirements of Work Packages may also affect this variable latency and this is discussed later in the section **Work Package Ordering**.
 
@@ -379,34 +386,9 @@ total_weight_requirement <= weight_per_package
 
 Because of this, Work Report builders must be aware of any upcoming alterations to `max_cores` and build Statements which are in accordance with it not at present but also in the near future when it may have changed.
 
-#### Join and `prune`
+### Accumulate
 
-_For consideration: Place a hard limit on total weight able to be used by `prune` in any Work Package since it is normally computed twice and an attacker can force it to be computed a third time._
-
-_For consideration: Remove `prune` altogether now that we have the Basic Validity Checks._
-
-The main difference between code called in the Join stage and that in the Accumulate stage is that in the former code is required to exit successfully, within the weight limit and may not mutate any state.
-
-The Join stage involves the Relay-chain Block Author gathering together all Work Packages backed by a Validator Group in a manner similar to the current system of PoV candidates. The Work Results are grouped according to their Work Class, and the untrusted Work Class function `prune` is called once for each such group. This returns a `Vec<usize>` of invalid indices. Using this result, invalid Work Packages may be pruned and the resultant set retried with confidence that the result will be an empty `Vec`.
-
-```rust
-fn prune(outputs: Vec<WorkOutput>) -> Vec<usize>;
-```
-
-The call to the `prune` function is allocated weight equal to the length of `outputs` multiplied by the `prune` field of the Work Class's weight requirements.
-
-The `prune` function is used by the Relay-chain Block Author in order to ensure that all Work Packages which make it through the Join stage are non-conflicting and valid for the present Relay-chain state. All Work Packages are rechecked using the same procedure on-chain and the block is considered malformed (i.e. it panics) if the result is not an empty `Vec`.
-
-The `prune` function has immutable access to the Work Class's child trie state, as well as regular read-only storage access to the Relay-chain's wider state.
-
-```rust
-fn get_work_storage(key: &[u8]) -> Result<Vec<u8>>;
-fn get_work_storage_len(key: &[u8]);
-```
-
-#### Accumulate
-
-The second stage is that of Accumulate. This function is called on-chain only *after* the availability process has completed.
+The next phase, which happens on-chain, is Accumulate. This governs the amalgamation of the Work Package Outputs calculated during the Refinement stage into the Relay-chain's overall state and in particular into the various Child Tries of the Work Classes whose Items were refined. Crucially, since the Refinement happened in-core, and since all in-core logic must be disputable and therefore its inputs made *Available* for all future disputers, Accumulation of a Work Package may only take place *after* the Availability process for it has completed.
 
 The function signature to the `accumulate` entry-point in the Work Class's code blob is:
 
