@@ -121,7 +121,7 @@ impl TryFrom<EncodedWorkPackage> for v0::WorkPackage {
 
 A *Work Package* is an *Authorization* together with a series of *Work Items* and a context, limited in plurality, versioned and with a maximum encoded size. The Context includes an optional reference to a Work Package (`WorkPackageHash`) which limits the relative order of the Work Package (see **Work Package Ordering**, later).
 
-(The number of prerequisites of a Work Package is limited to at most one. However, we cannot trivially control the number of dependents in the same way, nor would we necessarily wish to since it would open up a griefing vector for misbehaving Work Package Builders who interrupt a sequence by introducing their own Work Packages which a prerequisite which is within another's sequence.)
+(The number of prerequisites of a Work Package is limited to at most one. However, we cannot trivially control the number of dependents in the same way, nor would we necessarily wish to since it would open up a griefing vector for misbehaving Work Package Builders who interrupt a sequence by introducing their own Work Packages with a prerequisite which is within another's sequence.)
 
 Work Items are a pair of class and payload, where the `class` identifies the Class of Work to be done in this item (*Work Class*).
 
