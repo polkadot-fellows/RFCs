@@ -173,7 +173,7 @@ The `code_hash` of the Authorizer is assumed to be the hash of some code accessi
 fn is_authorized(param: &AuthParam, package: &WorkPackage, core_index: CoreIndex) -> bool;
 ```
 
-If the `is_authorized` function overruns the system-wide limit or panicks on some input, it is considered equivalent to returning `false`. While it is mostly stateless (e.g. isolated from any Relay-chain state) it is provided with a `context` parameter in order to give information about a recent Relay-chain block. This allows it to be provided with a concise proof over some recent state Relay-chain state.
+If the `is_authorized` function overruns the system-wide limit or panicks on some input, it is considered equivalent to returning `false`. While it is mostly stateless (e.g. isolated from any Relay-chain state) it is provided with a `context` parameter in order to give information about a recent Relay-chain block. This allows it to be provided with a concise proof over some recent Relay-chain state.
 
 A single `Authorizer` value is associated with the index of the Core at a particular Relay-chain block and limits in some way what Work Packages may be legally processed by that Core.
 
