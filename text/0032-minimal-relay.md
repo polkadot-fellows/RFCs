@@ -81,6 +81,49 @@ Relay Chain to update validator points periodically so that it can correctly cal
 
 A pub-sub protocol may also lend itself to these types of interactions.
 
+### Functional Architecture
+
+This RFC proposes that system chains form individual components within the system's architecture and
+that these components are chosen as functional groups. This approach allows synchronous
+composibility where it is most valuable, but isolates logic in such a way that provides flexibility
+for optimal resource allocation (see [Resource Allocation](#resource-allocation)). For the
+subsystems discussed in this RFC, namely Identity, Governance, and Staking, this would mean:
+
+- People Chain, for identity and personhood logic, providing functionality related to the attributes
+  of single actors;
+- Governance Chain, for governance and system collectives, providing functionality for pluralities
+  to express their voices within the system;
+- Staking Chain, for Polkadot's staking system, including elections, nominations, reward
+  distribution, slashing, and non-interactive staking; and
+- Asset Hub, for fungible and non-fungible assets, including DOT.
+
+The Collectives chain and Asset Hub already exist, so implementation of this RFC would mean two new
+chains (People and Staking), with Governance moving to the _currently-known-as_ Collectives chain
+and Asset Hub being increasingly used for DOT over the Relay Chain.
+
+Note that one functional group will likely include many pallets, as we do not know how pallet
+configurations and interfaces will evolve over time.
+
+### Resource Allocation
+
+The system should minimise wasted blockspace. These three (and other) subsystems may not each
+consistently require a dedicated core. However, core scheduling is far more agile than functional
+grouping. While migrating functionality from one chain to another can be a multi-month endeavour,
+cores can be rescheduled almost on-the-fly.
+
+Migrations are also breaking changes to some use cases, for example other parachains that need to
+route XCM programs to particular chains. It is thus preferable to do them a single time in migrating
+off the Relay Chain, reducing the risk of needing parachain splits in the future.
+
+Therefore, chain boundaries should be based on functional grouping where synchronous composibility
+is most valuable; and efficient resource allocation should be managed by the core scheduling
+protocol.
+
+Many of these system chains (including Asset Hub) could often share a single core in a semi-round
+robin fashion (the coretime may not be uniform). When needed, for example during NPoS elections or
+slashing events, the scheduler could allocate a dedicated core to the chain in need of more
+throughput.
+
 ### Deployment
 
 Actual migrations should happen based on some prioritization. This RFC proposes to migrate Identity,
@@ -96,11 +139,12 @@ multiple purposes.
 
 Therefore, migration can take place as follows:
 
-1. A runtime upgrade will block all calls to the pallet, preventing updates to identity info.
+1. The pallet can be put in a locked state, blocking most calls to the pallet and preventing updates
+   to identity info.
 1. The frozen state will form the genesis of a new system parachain.
-1. A Relay Chain runtime upgrade will allow migrating the deposit to the parachain. The parachain
-   deposit is on the order of 1/100th of the Relay Chain's. Therefore, this will result in freeing
-   up Relay State as well as most of each user's reserved balance.
+1. Functions will be added to the pallet that allow migrating the deposit to the parachain. The
+   parachain deposit is on the order of 1/100th of the Relay Chain's. Therefore, this will result in
+   freeing up Relay State as well as most of each user's reserved balance.
 1. The pallet and any leftover state can be removed from the Relay Chain.
 
 User interfaces that render Identity information will need to source their data from the new system
@@ -145,6 +189,28 @@ halting](https://forum.polkadot.network/t/stalled-parachains-on-kusama-post-mort
 The only complication arises from the fact that both Asset Hub and the Staking parachain will have
 DOT balances; therefore, the Governance chain will need to be able to credit users' voting power
 based on balances from both locations. This is not expected to be difficult to handle.
+
+### Kusama
+
+Although Polkadot and Kusama both have system chains running, they have to date only been used for
+introducing new features or bodies, for example fungible assets or the Technical Fellowship. There
+has not yet been a migration of logic/state from the Relay Chain into a parachain. Given its more
+realistic network conditions than testnets, Kusama is the best stage for rehearsal.
+
+In the case of identity, Polkadot's system may be sufficient for the ecosystem. Therefore, Kusama
+should be used to test the migration of logic and state from Relay Chain to parachain, but these
+features may be (at the will of Kusama's governance) dropped from Kusama entirely after a successful
+migration on Polkadot.
+
+For Governance, Polkadot already has the Collectives parachain, which would become the Governance
+parachain. The entire group of DOT holders is itself a collective (the legislative body), and
+governance provides the means to express voice. Launching a Kusama Governance chain would be
+sensible to rehearse a migration.
+
+The Staking subsystem is perhaps where Kusama would provide the most value in its canary capacity.
+Staking is the subsystem most constrained by PoV limits. Ensuring that elections, payouts, session
+changes, offences/slashes, etc. work in a parachain on Kusama -- with its larger validator set --
+will give confidence to the chain's robustness on Polkadot.
 
 ## Drawbacks
 
@@ -194,3 +260,5 @@ Chain](https://github.com/paritytech/polkadot-sdk/issues/491).
 
 Ideally the Relay Chain becomes transactionless, such that not even balances are represented there.
 With Staking and Governance off the Relay Chain, this is not an unreasonable next step.
+
+With Identity on Polkadot, Kusama may opt to drop its People Chain.
