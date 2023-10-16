@@ -337,7 +337,7 @@ While it will generally be the case that RcVGs know precisely which Work Reports
 
 #### Availability
 
-Once the Work Report of a Work Package is Registered on-chain, the Work Package itself must be made *Available* through the off-chain Availability Protocol, which ensures that any dispute over the correctness of the Work Report can be easily objectively judged by all validators. Being off-chain this is not block-synchronized and any given Work Package make take one or more blocks to be made Available or may even fail.
+Once the Work Report of a Work Package is Registered on-chain, the Work Package itself must be made *Available* through the off-chain Availability Protocol, which ensures that any dispute over the correctness of the Work Report can be easily objectively judged by all validators. Being off-chain this is not block-synchronized and any given Work Package may take one or more blocks to be made Available or may even fail.
 
 Only once a Work Report's Work Package is made Available can the processing continue with the next steps of Joining and Accumulation. Ordering requirements of Work Packages may also affect this variable latency and this is discussed later in the section **Work Package Ordering**.
 
