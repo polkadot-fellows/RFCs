@@ -250,11 +250,11 @@ The amount of weight used in executing the `refine` function is noted in the `Wo
 ```rust
 /// Secure refrence to a Work Package.
 struct WorkPackageSpec {
-    /// The hash of the encoded `EncodedWorkPackage`.
+    /// The hash of the SCALE encoded `EncodedWorkPackage`.
     hash: WorkPackageHash,
-    /// The erasure root of the encoded `EncodedWorkPackage`.
+    /// The erasure root of the SCALE encoded `EncodedWorkPackage`.
     root: ErasureRoot,
-    /// The length in bytes of encoded `EncodedWorkPackage`.
+    /// The length in bytes of SCALE encoded `EncodedWorkPackage`.
     len: u32,
 }
 /// Execution report of a Work Package, mainly comprising the Results from the Refinement
