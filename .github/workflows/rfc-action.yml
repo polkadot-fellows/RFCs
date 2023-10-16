@@ -14,6 +14,6 @@ jobs:
     if: ${{ github.event.issue.pull_request && startsWith(github.event.comment.body, '/rfc') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: paritytech/rfc-action@be7c934ade5bfce5eae889db3d6a286560431333 # v0.0.3
+      - uses: paritytech/rfc-action@c8b00e2264712a7093a5b64c6ffd2298b49d41cf # v0.0.4
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
