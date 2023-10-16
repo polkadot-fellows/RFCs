@@ -277,7 +277,7 @@ struct Attestation {
     /// Which validators from the group have a signature in `attestations`.
     validators: BitVec,
     /// The signatures of the RcVG members set out in `validators` whose message is the
-    /// hash of the `report`.
+    /// hash of the `report`. The order of the signatures is the same order as the validators appear in `validators`.
     attestations: Vec<Signature>,
 }
 ```
@@ -314,7 +314,7 @@ Secondly, any Work Reports introduced by the RcBA must be *Recent*, defined as h
 const RECENT_BLOCKS: u32 = 16;
 ```
 
-Thirdly, the RcBA may not attempt to Report multiple Work Reports for the same Work Package. Since Work Reports become inherently invalid once they are no longer *Recent*, then this check may be simplified to ensuring that there are no Work Reports of the same Work Package within any *Recent* blocks.
+Thirdly, the RcBA may not attempt to report multiple Work Reports for the same Work Package. Since Work Reports become inherently invalid once they are no longer *Recent*, then this check may be simplified to ensuring that there are no Work Reports of the same Work Package within any *Recent* blocks.
 
 Finally, the RcBA may not register Work Reports whose prerequisite is not itself Registered in *Recent* blocks.
 
@@ -339,7 +339,7 @@ While it will generally be the case that RcVGs know precisely which Work Reports
 
 Once the Work Report of a Work Package is Registered on-chain, the Work Package itself must be made *Available* through the off-chain Availability Protocol, which ensures that any dispute over the correctness of the Work Report can be easily objectively judged by all validators. Being off-chain this is not block-synchronized and any given Work Package may take one or more blocks to be made Available or may even fail.
 
-Only once a Work Report's Work Package is made Available can the processing continue with the next steps of Joining and Accumulation. Ordering requirements of Work Packages may also affect this variable latency and this is discussed later in the section **Work Package Ordering**.
+Only once a Work Report's Work Package is made Available the processing continue with the next steps of Joining and Accumulation. Ordering requirements of Work Packages may also affect this variable latency and this is discussed later in the section **Work Package Ordering**.
 
 #### Weight Provisioning
 
@@ -435,7 +435,7 @@ fn remove_work_storage(key: &[u8]);
 fn ump_enqueue(message: &[u8]) -> Result<(), ()>;
 ```
 
-Read-access to the entire Relay-chain state is allowed. No direct write access may be provided since `accumulate` is untrusted code. `set_storage` may fail if an insufficient deposit is held under the Work Class's account.
+Read-access to the entire Relay-chain state is allowed. No direct write access may be provided since `accumulate` is untrusted code. `set_work_storage` may fail if an insufficient deposit is held under the Work Class's account.
 
 UMP messages for the Relay-chain to interpret may be enqueued through `ump_enqueue` function. For this to succeed, the Relay-chain must have pre-authorized the use of UMP for this endpoint.
 
