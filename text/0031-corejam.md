@@ -131,7 +131,7 @@ Though this process happens entirely in consensus, there are two main consensus 
 
 A Work Package has several stages of consensus computation associated with its processing, which happen as the system becomes more certain that it represents a correct and useful transition of its Work Class.
 
-While a Work Package is being built, the *Builder* must have a synchronized Relay-chain node in order to supply a specific *Context*. The Context dictates a certain *Scope* for the Work Package which is used by the Basic Validation to limit which Relay-chain blocks it may be processed on to a small sequence of a specific fork (which is yet to be built, presumably). We define the Relay-chain height at this point to be `T`.
+While a Work Package is being built, the *Builder* must have access to the Relay-chain state in order to supply a specific *Context*. The Context dictates a certain *Scope* for the Work Package which is used by the Basic Validation to limit which Relay-chain blocks it may be processed on to a small sequence of a specific fork (which is yet to be built, presumably). We define the Relay-chain height at this point to be `T`.
 
 The first consensus computation to be done is the Work Package having its Authorization checked in-core, hosted by the Relay-chain Validator Group. If it is determined to be authorized, then the same environment hosts the Refinement of the Work Package into a series of Work Results. This concludes the bulk of the computation that the Work Package represents. We would assume that the Relay-chain's height at this point is shortly after the authoring time, `T+r` where `r` could be as low as zero.
 
