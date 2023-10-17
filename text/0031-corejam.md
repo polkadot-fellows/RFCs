@@ -4,7 +4,7 @@
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 11 September 2023                                                                                |
 | **Description** | Parallelised, decentralised, permissionless state-machine based on a multistage Collect-Refine-Join-Accumulate model. |
-| **Authors**     | Gavin Wood, Robert Habermeier, Bastian Köcher                                                                    |
+| **Authors**     | Gavin Wood, Robert Habermeier, Bastian Köcher, Alistair Stewart                                                                    |
 
 
 ## Summary
@@ -85,7 +85,6 @@ mod v0 {
         payload: WorkPayload,
     }
     type MaxWorkItemsInPackage = ConstU32<4>;
-    type MaxWorkPackagePrerequisites = ConstU32<4>;
     enum Authorization {
         Instantaneous(InstantaneousAuth),
         Bulk(Vec<u8>),
@@ -175,7 +174,7 @@ The `code_hash` of the Authorizer is assumed to be the hash of some code accessi
 fn is_authorized(param: &AuthParam, package: &WorkPackage, core_index: CoreIndex) -> bool;
 ```
 
-If the `is_authorized` function overruns the system-wide limit or panicks on some input, it is considered equivalent to returning `false`. While it is mostly stateless (e.g. isolated from any Relay-chain state) it is provided with a `context` parameter in order to give information about a recent Relay-chain block. This allows it to be provided with a concise proof over some recent state Relay-chain state.
+If the `is_authorized` function overruns the system-wide limit or panicks on some input, it is considered equivalent to returning `false`. While it is mostly stateless (e.g. isolated from any Relay-chain state) it is provided with the package's `context` field in order to give information about a recent Relay-chain block. This allows it to be provided with a concise proof over some recent state Relay-chain state.
 
 A single `Authorizer` value is associated with the index of the Core at a particular Relay-chain block and limits in some way what Work Packages may be legally processed by that Core.
 
