@@ -150,6 +150,8 @@ The first two stages of the CoreJam process are *Collect* and *Refine*. *Collect
 
 Collection is the means of a Validator Group member attaining a Work Package which is authorized to be performed on their assigned Core at the current time. Authorization is a prerequisite for a Work Package to be included on-chain. Computation of Work Packages which are not Authorized is not rewarded. Incorrectly attesting that a Work Package is authorized is a disputable offence and can result in substantial punishment.
 
+On arrival of a Work Package, after the initial decoding, a first check is the that the `context` field is valid. This must reference a header hash of a known block which may yet be finalized and the additional fields must correspond to the data of that block.
+
 There are two kinds of Authorization corresponding to the two kinds of Coretime which are sold by Polkadot (see RFC#0001). An Authorization for usage of Instantaneous Coretime consists of a self-contained Signature of an account which own enough Instantaneous Coretime Credit in order to purchase a block of Coretime at the current rate signing a payload of the Work Package hash.
 
 RcVGs run the risk of a credit owner not having the credit at the point of eventual payment (in the Join stage, later), in which case the RcVG will not be rewarded. Credit may never be withdrawn, therefore RcVGs can safely accept a block if and only if the Credit account contains a balance of at least the product of the number of Cores assigned to IC, the price per IC core per block and the number of blocks behind the head of the finalized chain which the RcVG currently may be.
