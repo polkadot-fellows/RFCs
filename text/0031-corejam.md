@@ -54,7 +54,7 @@ In order of importance:
 
 The current specification of the Polkadot protocol, and with in the Relay-chain operation, is designed in line with the overall requirements of and terminology in the Polkadot (1.0) whitepaper. It incorporates first-class concepts including *Proof-of-Validity* and *Parachain Validation Function*. This will no longer be considered canonical for the Polkadot protocol. To avoid confusion, this design will be known as the *Fixed-function Parachains Legacy Model*, or the *Legacy Model* for short.
 
-Existing functionality relied upon by parachains will continue to be provided as a special case under a more general and permissionless model which is detailed presently and known as *CoreJam*. Transition of Polkadot to be in line with the present proposal will be necessarily imply some minor alterations of formats utilized by Cumulus, Smoldot and other light-client APIs (see the section on Compatibility). However, much of the underlying logic (in particular, consensus, disputes and availability) is retained, though its application is generalised. This proposal will only make note of the expectations regarding the changes, and presumes continuation of all other logic.
+Existing functionality relied upon by parachains will continue to be provided as a special case under a more general and permissionless model which is detailed presently and known as *CoreJam*. Transition of Polkadot to be in line with the present proposal will necessarily imply some minor alterations of formats utilized by Cumulus, Smoldot and other light-client APIs (see the section on Compatibility). However, much of the underlying logic (in particular, consensus, disputes and availability) is retained, though its application is generalised. This proposal will only make note of the expectations regarding the changes, and presumes continuation of all other logic.
 
 As part of this model, we introduce a number of new and interrelated concepts: *Work Package*, *Work Class*, *Work Item*, *Work Output*, *Work Result*, *Work Report* and *Work Package Attestation*, *Work Class Trie*.
 
@@ -122,7 +122,7 @@ impl TryFrom<EncodedWorkPackage> for v0::WorkPackage {
 
 A *Work Package* is an *Authorization* together with a series of *Work Items* and a context, limited in plurality, versioned and with a maximum encoded size. The Context includes an optional reference to a Work Package (`WorkPackageHash`) which limits the relative order of the Work Package (see **Work Package Ordering**, later).
 
-(The number of prerequisites of a Work Package is limited to at most one. However, we cannot trivially control the number of dependents in the same way, nor would we necessarily wish to since it would open up a griefing vector for misbehaving Work Package Builders who interrupt a sequence by introducing their own Work Packages which a prerequisite which is within another's sequence.)
+(The number of prerequisites of a Work Package is limited to at most one. However, we cannot trivially control the number of dependents in the same way, nor would we necessarily wish to since it would open up a griefing vector for misbehaving Work Package Builders who interrupt a sequence by introducing their own Work Packages with a prerequisite which is within another's sequence.)
 
 Work Items are a pair of class and payload, where the `class` identifies the Class of Work to be done in this item (*Work Class*).
 
@@ -132,7 +132,7 @@ Though this process happens entirely in consensus, there are two main consensus 
 
 A Work Package has several stages of consensus computation associated with its processing, which happen as the system becomes more certain that it represents a correct and useful transition of its Work Class.
 
-While a Work Package is being built, the *Builder* must have a synchronized Relay-chain node in order to supply a specific *Context*. The Context dictates a certain *Scope* for the Work Package which is used by the Initial Validation to limit which Relay-chain blocks it may be processed on to a small sequence of a specific fork (which is yet to be built, presumably). We define the Relay-chain height at this point to be `T`.
+While a Work Package is being built, the *Builder* must have access to the Relay-chain state in order to supply a specific *Context*. The Context dictates a certain *Scope* for the Work Package which is used by the Initial Validation to limit which Relay-chain blocks it may be processed on to a small sequence of a specific fork (which is yet to be built, presumably). We define the Relay-chain height at this point to be `T`.
 
 The first consensus computation to be done is the Work Package having its Authorization checked in-core, hosted by the Relay-chain Validator Group. If it is determined to be authorized, then the same environment hosts the Refinement of the Work Package into a series of Work Results. This concludes the bulk of the computation that the Work Package represents. We would assume that the Relay-chain's height at this point is shortly after the authoring time, `T+r` where `r` could be as low as zero.
 
@@ -144,7 +144,7 @@ Finally, at some point later still `T+r+i+a+o`, the Results of the Work Package 
 
 ### Collect-Refine
 
-The first two stages of the CoreJam process are *Collect* and *Refine*. *Collect* refers to the collection and authorization of Work Packages collections of items together with an authorization to utilize a Polkadot Core. *Refine* refers to the performance of computation according to the Work Packages in order to yield a *Work Result*. Finally, each Validator Group member attests to a Work Package yielding a set of Work Results and these Attestations form the basis for bringing the Results on-chain and integrating them into the Polkadot (and in particular the Work Class's) state which happens in the following stages.
+The first two stages of the CoreJam process are *Collect* and *Refine*. *Collect* refers to the collection and authorization of Work Packages (collections of items together with an authorization) to utilize a Polkadot Core. *Refine* refers to the performance of computation according to the Work Packages in order to yield a *Work Result*. Finally, each Validator Group member attests to a Work Package yielding a set of Work Results and these Attestations form the basis for bringing the Results on-chain and integrating them into the Polkadot (and in particular the Work Class's) state which happens in the following stages.
 
 #### Collection and `is_authorized`
 
@@ -174,7 +174,7 @@ The `code_hash` of the Authorizer is assumed to be the hash of some code accessi
 fn is_authorized(param: &AuthParam, package: &WorkPackage, core_index: CoreIndex) -> bool;
 ```
 
-If the `is_authorized` function overruns the system-wide limit or panicks on some input, it is considered equivalent to returning `false`. While it is mostly stateless (e.g. isolated from any Relay-chain state) it is provided with the package's `context` field in order to give information about a recent Relay-chain block. This allows it to be provided with a concise proof over some recent state Relay-chain state.
+If the `is_authorized` function overruns the system-wide limit or panicks on some input, it is considered equivalent to returning `false`. While it is mostly stateless (e.g. isolated from any Relay-chain state) it is provided with the package's `context` field in order to give information about a recent Relay-chain block. This allows it to be provided with a concise proof over some recent Relay-chain state.
 
 A single `Authorizer` value is associated with the index of the Core at a particular Relay-chain block and limits in some way what Work Packages may be legally processed by that Core.
 
@@ -252,13 +252,13 @@ fn apply_refine(item: WorkItem) -> WorkResult;
 The amount of weight used in executing the `refine` function is noted in the `WorkResult` value, and this is used later in order to help apportion on-chain weight (for the Join-Accumulate process) to the Work Classes whose items appear in the Work Packages.
 
 ```rust
-/// Secure identifier for a Work Package.
-struct WorkPackageId {
-    /// The hash of the encoded `EncodedWorkPackage`.
+/// Secure refrence to a Work Package.
+struct WorkPackageSpec {
+    /// The hash of the SCALE encoded `EncodedWorkPackage`.
     hash: WorkPackageHash,
-    /// The erasure root of the encoded `EncodedWorkPackage`.
+    /// The erasure root of the SCALE encoded `EncodedWorkPackage`.
     root: ErasureRoot,
-    /// The length in bytes of encoded `EncodedWorkPackage`.
+    /// The length in bytes of SCALE encoded `EncodedWorkPackage`.
     len: u32,
 }
 /// Execution report of a Work Package, mainly comprising the Results from the Refinement
@@ -281,7 +281,7 @@ struct Attestation {
     /// Which validators from the group have a signature in `attestations`.
     validators: BitVec,
     /// The signatures of the RcVG members set out in `validators` whose message is the
-    /// hash of the `report`.
+    /// hash of the `report`. The order of the signatures is the same order as the validators appear in `validators`.
     attestations: Vec<Signature>,
 }
 ```
@@ -308,7 +308,7 @@ Once both Availability and any additional requirements are met (including orderi
 
 #### Initial Validation
 
-There are a number of Initial Validation requirements which the RcBA must do in order to ensure no time is wasted on further, possibly costly, computation. Sicne the same tests are done on-chain, then for a Block Author to expect to make a valid block these tests must be done prior to actually placing the Attestations in the Relay-chain Block Body.
+There are a number of Initial Validation requirements which the RcBA must do in order to ensure no time is wasted on further, possibly costly, computation. Since the same tests are done on-chain, then for a Block Author to expect to make a valid block these tests must be done prior to actually placing the Attestations in the Relay-chain Block Body.
 
 Firstly, any given Work Report must have enough signatures in the Attestation to be considered for Reporting on-chain. Only one Work Report may be considered for Reporting from each RcVG per block.
 
@@ -320,7 +320,7 @@ const RECENT_BLOCKS: u32 = 16;
 
 Thirdly, dependent elements of the Context (`context.state_root` and `context.beefy_root`) must correctly correspond to those on-chain for the block corresponding to the provided `context.header_hash`. For this to be possible, the Relay-chain is expected to track Recent state roots and beefy roots in a queue.
 
-Fourthly, the RcBA may not attempt to Report multiple Work Reports for the same Work Package. Since Work Reports become inherently invalid once they are no longer *Recent*, then this check may be simplified to ensuring that there are no Work Reports of the same Work Package within any *Recent* blocks.
+Fourthly, the RcBA may not attempt to report multiple Work Reports for the same Work Package. Since Work Reports become inherently invalid once they are no longer *Recent*, then this check may be simplified to ensuring that there are no Work Reports of the same Work Package within any *Recent* blocks.
 
 Finally, the RcBA may not register Work Reports whose prerequisite is not itself Reported in *Recent* blocks.
 
@@ -343,9 +343,9 @@ While it will generally be the case that RcVGs know precisely which Work Reports
 
 #### Availability
 
-Once the Work Report of a Work Package is Reported on-chain, the Work Package itself must be made *Available* through the off-chain Availability Protocol, which ensures that any dispute over the correctness of the Work Report can be easily objectively judged by all validators. Being off-chain this is not block-synchronized and any given Work Package make take one or more blocks to be made Available or may even fail.
+Once the Work Report of a Work Package is Reported on-chain, the Work Package itself must be made *Available* through the off-chain Availability Protocol, which ensures that any dispute over the correctness of the Work Report can be easily objectively judged by all validators. Being off-chain this is not block-synchronized and any given Work Package may take one or more blocks to be made Available or may even fail.
 
-Only once the a Work Report's Work Package is made Available can the processing continue with the next steps of Joining and Accumulation. Ordering requirements of Work Packages may also affect this variable latency and this is discussed later in the section **Work Package Ordering**.
+Only once a Work Report's Work Package is made Available the processing continue with the next steps of Joining and Accumulation. Ordering requirements of Work Packages may also affect this variable latency and this is discussed later in the section **Work Package Ordering**.
 
 #### Weight Provisioning
 
@@ -416,7 +416,7 @@ fn remove_work_storage(key: &[u8]);
 fn ump_enqueue(message: &[u8]) -> Result<(), ()>;
 ```
 
-Read-access to the entire Relay-chain state is allowed. No direct write access may be provided since `accumulate` is untrusted code. `set_storage` may fail if an insufficient deposit is held under the Work Class's account.
+Read-access to the entire Relay-chain state is allowed. No direct write access may be provided since `accumulate` is untrusted code. `set_work_storage` may fail if an insufficient deposit is held under the Work Class's account.
 
 UMP messages for the Relay-chain to interpret may be enqueued through `ump_enqueue` function. For this to succeed, the Relay-chain must have pre-authorized the use of UMP for this endpoint.
 
