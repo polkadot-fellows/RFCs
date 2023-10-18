@@ -412,18 +412,26 @@ fn weight_remaining() -> Weight;
 fn set_work_storage(key: &[u8], value: &[u8]) -> Result<(), ()>;
 fn remove_work_storage(key: &[u8]);
 fn ump_enqueue(message: &[u8]) -> Result<(), ()>;
-fn transfer(destination: WorkClass, amount: u128, memo: &[u8]) -> Result<Vec<u8>, ()>;
+fn transfer(destination: WorkClass, amount: u128, memo: &[u8], weight: Weight) -> Result<Vec<u8>, ()>;
 ```
 
 Read-access to the entire Relay-chain state is allowed. No direct write access may be provided since `accumulate` is untrusted code. `set_work_storage` may fail if an insufficient deposit is held under the Work Class's account.
 
 UMP messages for the Relay-chain to interpret may be enqueued through `ump_enqueue` function. For this to succeed, the Relay-chain must have pre-authorized the use of UMP for this endpoint.
 
-Simple transfers of data and balance between Work Classes are possible by the `transfer` function. This is an entirely synchronous function which transfers the execution over to a `destination` Work Class as well as the provided `amount`. During this execution, no `checkpoint()`ing is permitted. The operation may result in error in which case all changes to state are reverted, including the balance transfer. (Weight is still used.) Since this generally requires the sending Work Class to trust the receiver not to burn their Weight, transfers will probably happen in a semi-federated fashion, with trusted hubs forming as clearing houses, both to avert any possibility of Weight misuse and to move most transfers in-core.
-
 Full access to a child trie specific to the Work Class is provided through the `work_storage` host functions. Since `accumulate` is permissionless and untrusted code, we must ensure that its child trie does not grow to degrade the Relay-chain's overall performance or place untenable requirements on the storage of full-nodes. To this goal, we require an account sovereign to the Work Class to be holding an amount of funds proportional to the overall storage footprint of its Child Trie. `set_work_storage` may return an error should the balance requirement not be met.
 
 Host functions are provided allowing any state changes to be committed at fail-safe checkpoints to provide resilience in case of weight overrun (or even buggy code which panics). The amount of weight remaining may also be queried without setting a checkpoint. `Weight` is expressed in a regular fashion for a solo-chain (i.e. one-dimensional).
+
+Simple transfers of data and balance between Work Classes are possible by the `transfer` function. This is an entirely synchronous function which transfers the execution over to a `destination` Work Class as well as the provided `amount` into their account.
+
+A new VM is set up with code according to the Work Class's `accumulate` code blob, but with a secondary entry point whose prototype is:
+
+```rust
+fn on_transfer(source: WorkClass, amount: u128, memo: Vec<u8>) -> Result<Vec<u8>, ()>;
+```
+
+During this execution, all host functions above may be used except `checkpoint()`. The operation may result in error in which case all changes to state are reverted, including the balance transfer. (Weight is still used.)
 
 Other host functions, including some to access Relay-chain hosted services such as the Balances and Storage Pallet may also be provided commensurate with this executing on-chain.
 
