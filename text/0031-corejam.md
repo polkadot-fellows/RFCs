@@ -144,7 +144,7 @@ Finally, at some point later still `T+r+i+a+o`, the Results of the Work Package 
 
 ### Collect-Refine
 
-The first two stages of the CoreJam process are *Collect* and *Refine*. *Collect* refers to the collection and authorization of Work Packages (collections of items together with an authorization) to utilize a Polkadot Core. *Refine* refers to the performance of computation according to the Work Packages in order to yield a *Work Result*. Finally, each Validator Group member attests to a Work Package yielding a set of Work Results and these Attestations form the basis for bringing the Results on-chain and integrating them into the Polkadot (and in particular the Work Class's) state which happens in the following stages.
+The first two stages of the CoreJam process are *Collect* and *Refine*. *Collect* refers to the collection and authorization of Work Packages (collections of items together with an authorization) to utilize a Polkadot Core. *Refine* refers to the performance of computation according to the Work Packages in order to yield *Work Results*. Finally, each Validator Group member attests to a Work Package yielding a series of Work Results and these Attestations form the basis for bringing the Results on-chain and integrating them into the Polkadot (and in particular the Work Class's) state which happens in the following stages.
 
 #### Collection and `is_authorized`
 
