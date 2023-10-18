@@ -140,7 +140,7 @@ The second consensus computation happens on-chain at the behest of the Relay-cha
 
 At some point later `T+r+i+a` (where `a` is the time to distribute the fragments of the Work Package and report their archival to the next Relay-chain Block Author) the Availability Protocol has concluded and the Relay-chain Block Author of the time brings this information on-chain in the form of a bitfield in which an entry flips from zero to one. At this point we can say that the Work Report's Package is *Available*.
 
-Finally, at some point later still `T+r+i+a+o`, the Results of the Work Package are aggregated into groups of Work Classes, and then *Pruned* and *Accumulated* into the common state of the Relay-chain. This process is known as *Integration* (in the fixed-function parachains model, this is known as "inclusion") and is irreversible within any given fork. Additional latency from being made *Available* to being *Integrated* (i.e. the `a` component) may be incurred due to ordering requirements, though it is expected to be zero in the variant of this proposal to be implemented initially (see **Work Package Ordering**, later).
+Finally, at some point later still `T+r+i+a+o`, the Results of the Work Package are aggregated into groups of Work Classes, and then *Pruned* and *Accumulated* into the common state of the Relay-chain. This process is known as *Integration* (in the fixed-function parachains model, this is known as "inclusion") and is irreversible within any given fork. Additional latency from being made *Available* to being *Integrated* (i.e. the `o` component) may be incurred due to ordering requirements, though it is expected to be zero in the variant of this proposal to be implemented initially (see **Work Package Ordering**, later).
 
 ### Collect-Refine
 
@@ -413,13 +413,25 @@ fn checkpoint() -> Weight;
 fn weight_remaining() -> Weight;
 fn set_work_storage(key: &[u8], value: &[u8]) -> Result<(), ()>;
 fn remove_work_storage(key: &[u8]);
-fn ump_enqueue(message: &[u8]) -> Result<(), ()>;
-fn transfer(destination: WorkClass, amount: u128, memo: &[u8], weight: Weight) -> Result<Vec<u8>, ()>;
+fn set_validators(validator_keys: &[ValidatorKey]) -> Result<(), ()>;
+fn set_code(code: &[u8]) -> Result<(), ()>;
+fn assign_core(
+    core: CoreIndex,
+    begin: BlockNumber,
+    assignment: Vec<(CoreAssignment, PartsOf57600)>,
+    end_hint: Option<BlockNumber>,
+) -> Result<(), ()>;
+fn transfer(
+    destination: WorkClass,
+    amount: u128,
+    memo: &[u8],
+    weight: Weight,
+) -> Result<Vec<u8>, ()>;
 ```
 
 Read-access to the entire Relay-chain state is allowed. No direct write access may be provided since `accumulate` is untrusted code. `set_work_storage` may fail if an insufficient deposit is held under the Work Class's account.
 
-UMP messages for the Relay-chain to interpret may be enqueued through `ump_enqueue` function. For this to succeed, the Relay-chain must have pre-authorized the use of UMP for this endpoint.
+`set_validator`, `set_code` and `assign_core` are all privileged operations and may only be called by pre-authorized Work Classes.
 
 Full access to a child trie specific to the Work Class is provided through the `work_storage` host functions. Since `accumulate` is permissionless and untrusted code, we must ensure that its child trie does not grow to degrade the Relay-chain's overall performance or place untenable requirements on the storage of full-nodes. To this goal, we require an account sovereign to the Work Class to be holding an amount of funds proportional to the overall storage footprint of its Child Trie. `set_work_storage` may return an error should the balance requirement not be met.
 
@@ -578,13 +590,13 @@ Actor code is stored in the Storage Pallet. Actor-specific data including code h
 
 At present, both HRMP (the stop-gap measure introduced in lieu of proper XCMP) and UMP, make substantial usage of the ability for parachains to include data in their PoV which will be interpreted on-chain by the Relay-chain. The current limit of UMP alone is 1MB. Even with the current amount of parachains, it is not possible for all parachains to be able to make use of these resources within the same block, and the difficult problem of apportioning resources in the case of contest is structurally unsolved and left for the RcBA to make an arbitrary selection.
 
-The present proposal aims to bring some clarity to this situation by limiting the amount of data which can arrive on the Relay-chain from each Work Item, and by extension from each Work Package. The specific limit proposed is 4KB per Work Item, which if we assume an average of two Work Items per Package and 250 cores, comes to a manageable 2MB and leaves plenty of headroom.
+The present proposal brings soundness to this situation by limiting the amount of data which can arrive on the Relay-chain from each Work Item, and by extension from each Work Package. The specific limit proposed is 4KB per Work Item, which if we assume an average of two Work Items per Package and 250 cores, comes to a manageable 2MB and leaves plenty of headroom.
 
-However, this does mean that pre-existing usage of UMP and HRMP would be substanially impaired. For example, under these limits a future Staking System-chain would be unable to send 1,000 sets of validator keys (each taking up to around 100 bytes) to the Relay-chain within a single block.
+However, this does mean that pre-existing usage of UMP and HRMP are impossible. In any case, UMP is removed entirely from the Work Class API.
 
-The overall situation will be improved substantially through preexisting plans, particularly the development and deployment of XCMP to avoid the need to place any datagrams on the Relay-chain which are not themselves meant for interpretation by it. The "Hermit-Relay" concept of spinning out ancilliary functionality handled by the Relay-chain to System chains will also alleviate the situation somewhat. Taken together, HRMP will no longer exist and UMP will be limited to a few System-chains making well-bounded interactions.
+To make up for this change, all non-"kernel" Relay-chain functionality will exist within Work Classes (parachains under CoreChains, or possibly even actors under CorePlay). This includes staking and governance functionality. The development and deployment of XCMP avoids the need to place any datagrams on the Relay-chain which are not themselves meant for interpretation by it. APIs are provided for the few operations remaining which the Relay-chain must provide (validator updates, code updates and core assignments) but may only be used by Work Classes holding the appropriate privileges. Thus taken together, neither HRMP, UMP or DMP will exist.
 
-An initial deployment of CoreJam could see the Work Output size limits temporarily increased for the Parachains Work Class to ensure existing use-cases do not suffer, but with a published schedule on reducing these to the eventual 4KB limits. This would imply the need for graceful handling by the RcBA should the aggregated Work Outputs be too large.
+An initial and hybrid deployment of CoreJam could see the Work Output size limits temporarily increased for the Parachains Work Class to ensure existing use-cases do not suffer, but with a published schedule on reducing these to the eventual 4KB limits. This would imply the need for graceful handling by the RcBA should the aggregated Work Outputs be too large.
 
 ### Notes on Implementation Order
 
