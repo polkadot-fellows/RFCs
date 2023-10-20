@@ -141,13 +141,13 @@ Finally, at some point later still `T+r+i+a+o`, the Results of the Work Package 
 
 ### Collect-Refine
 
-The first two stages of the CoreJam process are *Collect* and *Refine*. *Collect* refers to the collection and authorization of Work Packages (collections of items together with an authorization) to utilize a Polkadot Core. *Refine* refers to the performance of computation according to the Work Packages in order to yield a *Work Result*. Finally, each Validator Group member attests to a Work Package yielding a set of Work Results and these Attestations form the basis for bringing the Results on-chain and integrating them into the Polkadot (and in particular the Work Class's) state which happens in the following stages.
+The first two stages of the CoreJam process are *Collect* and *Refine*. *Collect* refers to the collection and authorization of Work Packages (collections of items together with an authorization) to utilize a Polkadot Core. *Refine* refers to the performance of computation according to the Work Packages in order to yield *Work Results*. Finally, each Validator Group member attests to a Work Package yielding a series of Work Results and these Attestations form the basis for bringing the Results on-chain and integrating them into the Polkadot (and in particular the Work Class's) state which happens in the following stages.
 
 #### Collection and `is_authorized`
 
 Collection is the means of a Validator Group member attaining a Work Package which is authorized to be performed on their assigned Core at the current time. Authorization is a prerequisite for a Work Package to be included on-chain. Computation of Work Packages which are not Authorized is not rewarded. Incorrectly attesting that a Work Package is authorized is a disputable offence and can result in substantial punishment.
 
-On arrival of a Work Package, after the initial decoding, a first check is the that the `context` field is valid. This must reference a header hash of a known block which may yet be finalized and the additional fields must correspond to the data of that block.
+On arrival of a Work Package, after the initial decoding, a first check is that the `context` field is valid. This must reference a header hash of a known block which may yet be finalized and the additional fields must correspond to the data of that block.
 
 Agile Coretime (see RFC#0001) prescribes two forms of Coretime sales: Instantaneous and Bulk. Sales of Instantaneous Coretime are no longer provided, leaving only Bulk Coretime.
 
