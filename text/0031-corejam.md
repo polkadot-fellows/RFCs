@@ -85,10 +85,7 @@ mod v0 {
         payload: WorkPayload,
     }
     type MaxWorkItemsInPackage = ConstU32<4>;
-    enum Authorization {
-        Instantaneous(InstantaneousAuth),
-        Bulk(Vec<u8>),
-    }
+    type Authorization = Vec<u8>;
     type HeaderHash = [u8; 32];
     /// Just a Blake2-256 hash of an EncodedWorkPackage.
     type WorkPackageHash = [u8; 32];
@@ -152,11 +149,9 @@ Collection is the means of a Validator Group member attaining a Work Package whi
 
 On arrival of a Work Package, after the initial decoding, a first check is the that the `context` field is valid. This must reference a header hash of a known block which may yet be finalized and the additional fields must correspond to the data of that block.
 
-There are two kinds of Authorization corresponding to the two kinds of Coretime which are sold by Polkadot (see RFC#0001). An Authorization for usage of Instantaneous Coretime consists of a self-contained Signature of an account which own enough Instantaneous Coretime Credit in order to purchase a block of Coretime at the current rate signing a payload of the Work Package hash.
+Agile Coretime (see RFC#0001) prescribes two forms of Coretime sales: Instantaneous and Bulk. Sales of Instantaneous Coretime are no longer provided, leaving only Bulk Coretime.
 
-RcVGs run the risk of a credit owner not having the credit at the point of eventual payment (in the Join stage, later), in which case the RcVG will not be rewarded. Credit may never be withdrawn, therefore RcVGs can safely accept a block if and only if the Credit account contains a balance of at least the product of the number of Cores assigned to IC, the price per IC core per block and the number of blocks behind the head of the finalized chain which the RcVG currently may be.
-
-An Authorization for usage of Bulk Coretime is more sophisticated. We introduce the concept of an *Authorizer* procedure, which is a piece of logic stored on-chain to which Bulk Coretime may be assigned. Assigning some Bulk Coretime to an Authorizer implies allowing any Work Package which passes that authorization process to utilize that Bulk Coretime in order to be submitted on-chain. It controls the circumstances under which RcVGs may be rewarded for evaluation and submission of Work Packages (and thus what Work Packages become valid to submit onto Polkadot). Authorization logic is entirely arbitrary and need not be restricted to authorizing a single collator, Work Package builder, parachain or even a single Work Class.
+We introduce the concept of an *Authorizer* procedure, which is a piece of logic stored on-chain to which Bulk Coretime may be assigned. Assigning some Bulk Coretime to an Authorizer implies allowing any Work Package which passes that authorization process to utilize that Bulk Coretime in order to be submitted on-chain. It controls the circumstances under which RcVGs may be rewarded for evaluation and submission of Work Packages (and thus what Work Packages become valid to submit onto Polkadot). Authorization logic is entirely arbitrary and need not be restricted to authorizing a single collator, Work Package builder, parachain or even a single Work Class.
 
 An *Authorizer* is a parameterized procedure:
 
