@@ -149,7 +149,7 @@ Collection is the means of a Validator Group member attaining a Work Package whi
 
 On arrival of a Work Package, after the initial decoding, a first check is that the `context` field is valid. This must reference a header hash of a known block which may yet be finalized and the additional fields must correspond to the data of that block.
 
-Agile Coretime (see RFC#0001) prescribes two forms of Coretime sales: Instantaneous and Bulk. Sales of Instantaneous Coretime are no longer provided, leaving only Bulk Coretime.
+Agile Coretime (see [RFC#0001](https://github.com/polkadot-fellows/RFCs/blob/main/text/0001-agile-coretime.md)) prescribes two forms of Coretime sales: Instantaneous and Bulk. Sales of Instantaneous Coretime are no longer provided, leaving only Bulk Coretime.
 
 We introduce the concept of an *Authorizer* procedure, which is a piece of logic stored on-chain to which Bulk Coretime may be assigned. Assigning some Bulk Coretime to an Authorizer implies allowing any Work Package which passes that authorization process to utilize that Bulk Coretime in order to be submitted on-chain. It controls the circumstances under which RcVGs may be rewarded for evaluation and submission of Work Packages (and thus what Work Packages become valid to submit onto Polkadot). Authorization logic is entirely arbitrary and need not be restricted to authorizing a single collator, Work Package builder, parachain or even a single Work Class.
 
