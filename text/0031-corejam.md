@@ -50,9 +50,16 @@ In order of importance:
 
 **CoreJam is a general model for utilization of Polkadot Cores. It is a mechanism by which Work Packages are communicated, authorized, computed and verified, and their results gathered, combined and accumulated into particular parts of the Relay-chain's state.**
 
+### Terminology
+
+Short forms of several common term are used here for brevity:
+
+- *RcVG*: Relay-chain Validator Group
+- *RcBA*: Relay-chain Block Author
+
 ### From Old to New
 
-The current specification of the Polkadot protocol, and with in the Relay-chain operation, is designed in line with the overall requirements of and terminology in the Polkadot (1.0) whitepaper. It incorporates first-class concepts including *Proof-of-Validity* and *Parachain Validation Function*. This will no longer be considered canonical for the Polkadot protocol. To avoid confusion, this design will be known as the *Fixed-function Parachains Legacy Model*, or the *Legacy Model* for short.
+The current specification of the Polkadot protocol, and with in the Relay-chain operation, is designed in line with the overall requirements of and terminology in the Polkadot (1.0) whitepaper. It incorporates first-class concepts including *Proof-of-Validity* and *Parachain Validation Function*. This will no longer be considered canonical for the Polkadot protocol. To avoid confusion, this design will be known as the *Fixed-function Parachains Model*, or the *Parachains Model* for short.
 
 Existing functionality relied upon by parachains will continue to be provided as a special case under a more general and permissionless model which is detailed presently and known as *CoreJam*. Transition of Polkadot to be in line with the present proposal will necessarily imply some minor alterations of formats utilized by Cumulus, Smoldot and other light-client APIs (see the section on Compatibility). However, much of the underlying logic (in particular, consensus, disputes and availability) is retained, though its application is generalised. This proposal will only make note of the expectations regarding the changes, and presumes continuation of all other logic.
 
@@ -121,7 +128,13 @@ A *Work Package* is an *Authorization* together with a series of *Work Items* an
 
 (The number of prerequisites of a Work Package is limited to at most one. However, we cannot trivially control the number of dependents in the same way, nor would we necessarily wish to since it would open up a griefing vector for misbehaving Work Package Builders who interrupt a sequence by introducing their own Work Packages with a prerequisite which is within another's sequence.)
 
-Work Items are a pair of class and payload, where the `class` identifies the Class of Work to be done in this item (*Work Class*).
+Work Items are a pair of class and payload, where the `class` identifies a pairing of code and state known as a *Work Class* and `payload` is a block of data which, through the aforementioned code, mutates said state in some presumably useful way.
+
+A Work Class has certain similarities to an object in a decentralized object-oriented execution environment (or, indeed, a smart contract), with the main difference being a more exotic computation architecture available to it. Similar to smart contracts, a Work Class's state is stored on-chain and transitioned only using on-chain logic. Also similar to a smart contract, resources used by a Work Class are strictly and deterministically constrained (using dynamic metering). Finally, Work Classes, like smart contracts, are able to hold funds and call into each other synchronously.
+
+However, unlike for smart contracts, the on-chain transition logic of a Work Class (known as the *Accumulate* function) cannot directly be interacted with by actors external to the consensus environment. Concretely, they cannot be transacted with. Aside from the aforementioned inter-class calling, all input data (and state progression) must come as the result of a Work Item. A Work Item is a blob of data meant for a particular Work Class and crafted by some source external to consensus. It may be thought of as akin to a transaction. The Work Item is first processed *in-core*, which is to say on one of many secure and isolated virtual decentralized processors, yielding a distillate known as a Work Result. It is this Work Result which is collated together with others of the same class and Accumulated into the Work Class.
+
+In short, a Work Class may be considered as a kind of smart contract albeit one whose transaction data is first preprocessed with cheap decentralized compute power.
 
 Though this process happens entirely in consensus, there are two main consensus environments at play, _in-core_ and _on-chain_. We therefore partition the progress into two pairs of stages: Collect & Refine and Join & Accumulate.
 
