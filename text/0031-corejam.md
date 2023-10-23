@@ -25,7 +25,7 @@ More recently, the idea of having small to medium size programs executing withou
 
 Beyond delivering additional value through the increased potential for use-cases that this flexibility allows, our motivation extends to gaining stability: a future-proof platform allowing teams to build on it without fear of high maintenance burden, continuous bitrot or a technological rug-pull at some later date. Secondly, we are motivated by reducing barriers for new teams, allowing the Polkadot platform to harness the power of the crowd which permissionless systems uniquely enable.
 
-Being extensible, the Relay-chain becomes far more open to experimentation within this paradigm than the classical Parachain Proof-of-Validity and Validation Function as is the case at present. Being permissionless opens Polkadot experimentation to individuals and teams beyond those core developers.
+Being extensible, the Relay-chain becomes far more open to experimentation within this paradigm than the serviceical Parachain Proof-of-Validity and Validation Function as is the case at present. Being permissionless opens Polkadot experimentation to individuals and teams beyond those core developers.
 
 ## Requirements
 
@@ -63,7 +63,7 @@ The current specification of the Polkadot protocol, and with in the Relay-chain 
 
 Existing functionality relied upon by parachains will continue to be provided as a special case under a more general and permissionless model which is detailed presently and known as *CoreJam*. Transition of Polkadot to be in line with the present proposal will necessarily imply some minor alterations of formats utilized by Cumulus, Smoldot and other light-client APIs (see the section on Compatibility). However, much of the underlying logic (in particular, consensus, disputes and availability) is retained, though its application is generalised. This proposal will only make note of the expectations regarding the changes, and presumes continuation of all other logic.
 
-As part of this model, we introduce a number of new and interrelated concepts: *Work Package*, *Work Class*, *Work Item*, *Work Output*, *Work Result*, *Work Report* and *Work Package Attestation*, *Work Class Trie*.
+As part of this model, we introduce a number of new and interrelated concepts: *Work Package*, *Service*, *Work Item*, *Work Output*, *Work Result*, *Work Report* and *Work Package Attestation*, *Service Trie*.
 
 Focussing on continuity and reuse of existing logic, it is unsurprising that many of these concepts already analogues in the Parachains model, albeit ones with a less general definition. While this mapping can be helpful to quickly create an approximate understanding of the new concepts for those already familiar with Polkadot, care must be taken not to inadvertantly make incorrect presumptions over exact details of their relationships, constraints, timing, provisions and APIs. Nonetheless, they are provided here for whatever help they may be.
 
@@ -78,17 +78,17 @@ Focussing on continuity and reuse of existing logic, it is unsurprising that man
 | *Integration*                | Inclusion         | Irreversible transition of state |
 | *Builder*                    | Collator          | Creator of data worthy of Attestation |
 
-Additionally, the *Work Class Trie* has no immediate analogue, but may be considered as the Relay-chain state used to track the code and head data of the parachains.
+Additionally, the *Service Trie* has no immediate analogue, but may be considered as the Relay-chain state used to track the code and head data of the parachains.
 
 ### Overview
 
 ```rust
 mod v0 {
     const PROGRESS_WEIGHT_PER_PACKAGE: Weight = MAX_BLOCK_WEIGHT * 3 / 4;
-    type WorkClass = u32;
+    type Service = u32;
     type WorkPayload = Vec<u8>;
     struct WorkItem {
-        class: WorkClass,
+        service: Service,
         payload: WorkPayload,
     }
     type MaxWorkItemsInPackage = ConstU32<4>;
@@ -128,19 +128,19 @@ A *Work Package* is an *Authorization* together with a series of *Work Items* an
 
 (The number of prerequisites of a Work Package is limited to at most one. However, we cannot trivially control the number of dependents in the same way, nor would we necessarily wish to since it would open up a griefing vector for misbehaving Work Package Builders who interrupt a sequence by introducing their own Work Packages with a prerequisite which is within another's sequence.)
 
-Work Items are a pair of class and payload, where the `class` identifies a pairing of code and state known as a *Work Class* and `payload` is a block of data which, through the aforementioned code, mutates said state in some presumably useful way.
+Work Items are a pair of service and payload, where the `service` identifies a pairing of code and state known as a *Service* and `payload` is a block of data which, through the aforementioned code, mutates said state in some presumably useful way.
 
-A Work Class has certain similarities to an object in a decentralized object-oriented execution environment (or, indeed, a smart contract), with the main difference being a more exotic computation architecture available to it. Similar to smart contracts, a Work Class's state is stored on-chain and transitioned only using on-chain logic. Also similar to a smart contract, resources used by a Work Class are strictly and deterministically constrained (using dynamic metering). Finally, Work Classes, like smart contracts, are able to hold funds and call into each other synchronously.
+A Service has certain similarities to an object in a decentralized object-oriented execution environment (or, indeed, a smart contract), with the main difference being a more exotic computation architecture available to it. Similar to smart contracts, a Service's state is stored on-chain and transitioned only using on-chain logic. Also similar to a smart contract, resources used by a Service are strictly and deterministically constrained (using dynamic metering). Finally, Servicees, like smart contracts, are able to hold funds and call into each other synchronously.
 
-However, unlike for smart contracts, the on-chain transition logic of a Work Class (known as the *Accumulate* function) cannot directly be interacted with by actors external to the consensus environment. Concretely, they cannot be transacted with. Aside from the aforementioned inter-class calling, all input data (and state progression) must come as the result of a Work Item. A Work Item is a blob of data meant for a particular Work Class and crafted by some source external to consensus. It may be thought of as akin to a transaction. The Work Item is first processed *in-core*, which is to say on one of many secure and isolated virtual decentralized processors, yielding a distillate known as a Work Result. It is this Work Result which is collated together with others of the same class and Accumulated into the Work Class.
+However, unlike for smart contracts, the on-chain transition logic of a Service (known as the *Accumulate* function) cannot directly be interacted with by actors external to the consensus environment. Concretely, they cannot be transacted with. Aside from the aforementioned inter-service calling, all input data (and state progression) must come as the result of a Work Item. A Work Item is a blob of data meant for a particular Service and crafted by some source external to consensus. It may be thought of as akin to a transaction. The Work Item is first processed *in-core*, which is to say on one of many secure and isolated virtual decentralized processors, yielding a distillate known as a Work Result. It is this Work Result which is collated together with others of the same service and Accumulated into the Service.
 
-In short, a Work Class may be considered as a kind of smart contract albeit one whose transaction data is first preprocessed with cheap decentralized compute power.
+In short, a Service may be considered as a kind of smart contract albeit one whose transaction data is first preprocessed with cheap decentralized compute power.
 
 Though this process happens entirely in consensus, there are two main consensus environments at play, _in-core_ and _on-chain_. We therefore partition the progress into two pairs of stages: Collect & Refine and Join & Accumulate.
 
 ### Processing stages of a Work Package
 
-A Work Package has several stages of consensus computation associated with its processing, which happen as the system becomes more certain that it represents a correct and useful transition of its Work Class.
+A Work Package has several stages of consensus computation associated with its processing, which happen as the system becomes more certain that it represents a correct and useful transition of its Service.
 
 While a Work Package is being built, the *Builder* must have access to the Relay-chain state in order to supply a specific *Context*. The Context dictates a certain *Scope* for the Work Package which is used by the Initial Validation to limit which Relay-chain blocks it may be processed on to a small sequence of a specific fork (which is yet to be built, presumably). We define the Relay-chain height at this point to be `T`.
 
@@ -150,11 +150,11 @@ The second consensus computation happens on-chain at the behest of the Relay-cha
 
 At some point later `T+r+i+a` (where `a` is the time to distribute the fragments of the Work Package and report their archival to the next Relay-chain Block Author) the Availability Protocol has concluded and the Relay-chain Block Author of the time brings this information on-chain in the form of a bitfield in which an entry flips from zero to one. At this point we can say that the Work Report's Package is *Available*.
 
-Finally, at some point later still `T+r+i+a+o`, the Results of the Work Package are aggregated into groups of Work Classes, and then *Pruned* and *Accumulated* into the common state of the Relay-chain. This process is known as *Integration* (in the fixed-function parachains model, this is known as "inclusion") and is irreversible within any given fork. Additional latency from being made *Available* to being *Integrated* (i.e. the `o` component) may be incurred due to ordering requirements, though it is expected to be zero in the variant of this proposal to be implemented initially (see **Work Package Ordering**, later).
+Finally, at some point later still `T+r+i+a+o`, the Results of the Work Package are aggregated into groups of Servicees, and then *Pruned* and *Accumulated* into the common state of the Relay-chain. This process is known as *Integration* (in the fixed-function parachains model, this is known as "inclusion") and is irreversible within any given fork. Additional latency from being made *Available* to being *Integrated* (i.e. the `o` component) may be incurred due to ordering requirements, though it is expected to be zero in the variant of this proposal to be implemented initially (see **Work Package Ordering**, later).
 
 ### Collect-Refine
 
-The first two stages of the CoreJam process are *Collect* and *Refine*. *Collect* refers to the collection and authorization of Work Packages (collections of items together with an authorization) to utilize a Polkadot Core. *Refine* refers to the performance of computation according to the Work Packages in order to yield *Work Results*. Finally, each Validator Group member attests to a Work Package yielding a series of Work Results and these Attestations form the basis for bringing the Results on-chain and integrating them into the Polkadot (and in particular the Work Class's) state which happens in the following stages.
+The first two stages of the CoreJam process are *Collect* and *Refine*. *Collect* refers to the collection and authorization of Work Packages (collections of items together with an authorization) to utilize a Polkadot Core. *Refine* refers to the performance of computation according to the Work Packages in order to yield *Work Results*. Finally, each Validator Group member attests to a Work Package yielding a series of Work Results and these Attestations form the basis for bringing the Results on-chain and integrating them into the Polkadot (and in particular the Service's) state which happens in the following stages.
 
 #### Collection and `is_authorized`
 
@@ -164,7 +164,7 @@ On arrival of a Work Package, after the initial decoding, a first check is that 
 
 Agile Coretime (see RFC#0001) prescribes two forms of Coretime sales: Instantaneous and Bulk. Sales of Instantaneous Coretime are no longer provided, leaving only Bulk Coretime.
 
-We introduce the concept of an *Authorizer* procedure, which is a piece of logic stored on-chain to which Bulk Coretime may be assigned. Assigning some Bulk Coretime to an Authorizer implies allowing any Work Package which passes that authorization process to utilize that Bulk Coretime in order to be submitted on-chain. It controls the circumstances under which RcVGs may be rewarded for evaluation and submission of Work Packages (and thus what Work Packages become valid to submit onto Polkadot). Authorization logic is entirely arbitrary and need not be restricted to authorizing a single collator, Work Package builder, parachain or even a single Work Class.
+We introduce the concept of an *Authorizer* procedure, which is a piece of logic stored on-chain to which Bulk Coretime may be assigned. Assigning some Bulk Coretime to an Authorizer implies allowing any Work Package which passes that authorization process to utilize that Bulk Coretime in order to be submitted on-chain. It controls the circumstances under which RcVGs may be rewarded for evaluation and submission of Work Packages (and thus what Work Packages become valid to submit onto Polkadot). Authorization logic is entirely arbitrary and need not be restricted to authorizing a single collator, Work Package builder, parachain or even a single Service.
 
 An *Authorizer* is a parameterized procedure:
 
@@ -209,7 +209,7 @@ This ensures that Validators do a strictly limited amount of work before knowing
 
 ### Refine
 
-The `refine` function is implemented as an entry-point inside a code blob which is stored on-chain and whose hash is associated with the Work Class.
+The `refine` function is implemented as an entry-point inside a code blob which is stored on-chain and whose hash is associated with the Service.
 
 ```rust
 type ClassCodeHash = StorageMap<ClassId, CodeHash>;
@@ -249,7 +249,7 @@ enum WorkError {
     Panic,
 }
 struct WorkResult {
-    class: WorkClass,
+    service: Service,
     item_hash: [u8; 32],
     result: Result<WorkOutput, WorkError>,
     weight: Weight,
@@ -257,7 +257,7 @@ struct WorkResult {
 fn apply_refine(item: WorkItem) -> WorkResult;
 ```
 
-The amount of weight used in executing the `refine` function is noted in the `WorkResult` value, and this is used later in order to help apportion on-chain weight (for the Join-Accumulate process) to the Work Classes whose items appear in the Work Packages.
+The amount of weight used in executing the `refine` function is noted in the `WorkResult` value, and this is used later in order to help apportion on-chain weight (for the Join-Accumulate process) to the Servicees whose items appear in the Work Packages.
 
 ```rust
 /// Secure refrence to a Work Package.
@@ -304,7 +304,7 @@ Join-Accumulate is the second major stage of computation and is independent from
 
 Being *on-chain* (rather than *in-core* as with Collect-Refine), information and computation done in the Join-Accumulate stage is carried out (initially) by the Block Author and the resultant block evaluated by all Validators and full-nodes. Because of this, and unlike in-core computation, it has full access to the Relay-chain's state.
 
-The Join-Accumulate stage may be seen as a synchronized counterpart to the parallelised Collect-Refine stage. It may be used to integrate the work done from the context of an isolated VM into a self-consistent singleton world model. In concrete terms this means ensuring that the independent work components, which cannot have been aware of each other during the Collect-Refine stage, do not conflict in some way. Less dramatically, this stage may be used to enforce ordering or provide a synchronisation point (e.g. for combining entropy in a sharded RNG). Finally, this stage may be a sensible place to manage asynchronous interactions between subcomponents of a Work Class or even different Work Classes and oversee message queue transitions.
+The Join-Accumulate stage may be seen as a synchronized counterpart to the parallelised Collect-Refine stage. It may be used to integrate the work done from the context of an isolated VM into a self-consistent singleton world model. In concrete terms this means ensuring that the independent work components, which cannot have been aware of each other during the Collect-Refine stage, do not conflict in some way. Less dramatically, this stage may be used to enforce ordering or provide a synchronisation point (e.g. for combining entropy in a sharded RNG). Finally, this stage may be a sensible place to manage asynchronous interactions between subcomponents of a Service or even different Servicees and oversee message queue transitions.
 
 #### Reporting and Integration
 
@@ -312,7 +312,7 @@ There are two main phases of on-chain logic before a Work Package's ramification
 
 Since this is an asynchronous process, there are no ordering guarantees on Work Reports' Availability requirements being fulfilled. There may or may not be provision for adding further delays at this point to ensure that Work Reports are processed according to strict ordering. See *Work Package Ordering*, later, for more discussion here.
 
-Once both Availability and any additional requirements are met (including ordering and dependencies, but possibly also including reevaluation of some of the Initial Validation checks), then the second phase is executed which is known as *Integration*. This is the irreversible application of Work Report consequences into the Work Class's State Trie and (via certain permissionless host functions) the wider state of the Relay-chain. Work Results are segregated into groups based on their Work Class, joined into a `Vec` and passed through the immutable Prune function and into the mutable Accumulate function.
+Once both Availability and any additional requirements are met (including ordering and dependencies, but possibly also including reevaluation of some of the Initial Validation checks), then the second phase is executed which is known as *Integration*. This is the irreversible application of Work Report consequences into the Service's State Trie and (via certain permissionless host functions) the wider state of the Relay-chain. Work Results are segregated into groups based on their Service, joined into a `Vec` and passed through the immutable Prune function and into the mutable Accumulate function.
 
 #### Initial Validation
 
@@ -361,17 +361,17 @@ Join-Accumulate is, as the name suggests, comprised of two subordinate stages. B
 
 Practically speaking, we may allow a similar VM execution metering system similar to that for the `refine` execution, whereby we do not require a strictly deterministic means of interrupting, but do require deterministic metering and only approximate interruption. This would mean that full-nodes and Relay-chain validators could be made to execute some additional margin worth of computation without payment, though any attack could easily be mitigated by attaching a fixed cost (either economically or in weight terms) to an VM invocation.
 
-Each Work Class defines some requirements it has regarding the provision of on-chain weight. Since all on-chain weight requirements must be respected of all processed Work Packages, it is important that each Work Report does not imply using more weight than its fair portion of the total available, and in doing so provides enough weight to its constituent items to meet their requirements.
+Each Service defines some requirements it has regarding the provision of on-chain weight. Since all on-chain weight requirements must be respected of all processed Work Packages, it is important that each Work Report does not imply using more weight than its fair portion of the total available, and in doing so provides enough weight to its constituent items to meet their requirements.
 
 ```rust
 struct WorkItemWeightRequirements {
     prune: Weight,
     accumulate: Weight,
 }
-type WeightRequirements = StorageMap<WorkClass, WorkItemWeightRequirements>;
+type WeightRequirements = StorageMap<Service, WorkItemWeightRequirements>;
 ```
 
-Each Work Class has two weight requirements associated with it corresponding to the two pieces of permissionless on-chain Work Class logic and represent the amount of weight allotted for each Work Item of this class within in a Work Package assigned to a Core.
+Each Service has two weight requirements associated with it corresponding to the two pieces of permissionless on-chain Service logic and represent the amount of weight allotted for each Work Item of this service within in a Work Package assigned to a Core.
 
 The total amount of weight utilizable by each Work Package (`weight_per_package`) is specified as:
 
@@ -386,7 +386,7 @@ A Work Report is only valid if all weight liabilities of all Work Items to be Ac
 ```rust
 let total_weight_requirement = work_statement
     .items
-    .map(|item| weight_requirements[item.class])
+    .map(|item| weight_requirements[item.service])
     .sum(|requirements| requirements.prune + requirements.accumulate);
 total_weight_requirement <= weight_per_package
 ```
@@ -395,24 +395,24 @@ Because of this, Work Report builders must be aware of any upcoming alterations 
 
 ### Accumulate
 
-The next phase, which happens on-chain, is Accumulate. This governs the amalgamation of the Work Package Outputs calculated during the Refinement stage into the Relay-chain's overall state and in particular into the various Child Tries of the Work Classes whose Items were refined. Crucially, since the Refinement happened in-core, and since all in-core logic must be disputable and therefore its inputs made *Available* for all future disputers, Accumulation of a Work Package may only take place *after* the Availability process for it has completed.
+The next phase, which happens on-chain, is Accumulate. This governs the amalgamation of the Work Package Outputs calculated during the Refinement stage into the Relay-chain's overall state and in particular into the various Child Tries of the Servicees whose Items were refined. Crucially, since the Refinement happened in-core, and since all in-core logic must be disputable and therefore its inputs made *Available* for all future disputers, Accumulation of a Work Package may only take place *after* the Availability process for it has completed.
 
-The function signature to the `accumulate` entry-point in the Work Class's code blob is:
+The function signature to the `accumulate` entry-point in the Service's code blob is:
 
 ```rust
 fn accumulate(results: Vec<(Authorization, Vec<(ItemHash, WorkResult)>)>);
 type ItemHash = [u8; 32];
 ```
 
-The logic in `accumulate` may need to know how the various Work Items arrived into a processed Work Package. Since a Work Package could have multiple Work Items of the same Work Class, it makes sense to have a separate inner `Vec` for Work Items sharing the Authorization (by virtue of being in the same Work Package).
+The logic in `accumulate` may need to know how the various Work Items arrived into a processed Work Package. Since a Work Package could have multiple Work Items of the same Service, it makes sense to have a separate inner `Vec` for Work Items sharing the Authorization (by virtue of being in the same Work Package).
 
 Work Items are identified by their Blake2-256 hash, known at the *Item Hash* (`ItemHash`). We provide both the Authorization of the Package and the constituent Work Item Hashes and their Results in order to allow the `refine` logic to take appropriate action in the case that an invalid Work Item was submitted (i.e. one which caused its Refine operation to panic or time-out).
 
 _(Note for later: We may wish to provide a more light-client friendly Work Item identifier than a simple hash; perhaps a Merkle root of equal-size segments.)_
 
-There is an amount of weight which it is allowed to use before being forcibly terminated and any non-committed state changes lost. The lowest amount of weight provided to `accumulate` is defined as the number of `WorkResult` values passed in `results` to `accumulate` multiplied by the `accumulate` field of the Work Class's weight requirements.
+There is an amount of weight which it is allowed to use before being forcibly terminated and any non-committed state changes lost. The lowest amount of weight provided to `accumulate` is defined as the number of `WorkResult` values passed in `results` to `accumulate` multiplied by the `accumulate` field of the Service's weight requirements.
 
-However, the actual amount of weight may be substantially more. Each Work Package is allotted a specific amount of weight for all on-chain activity (`weight_per_package` above) and has a weight liability defined by the weight requirements of all Work Items it contains (`total_weight_requirement` above). Any weight remaining after the liability (i.e. `weight_per_package - total_weight_requirement`) may be apportioned to the Work Classes of Items within the Report on a pro-rata basis according to the amount of weight they utilized during `refine`. Any weight unutilized by Classes within one Package may be carried over to the next Package and utilized there.
+However, the actual amount of weight may be substantially more. Each Work Package is allotted a specific amount of weight for all on-chain activity (`weight_per_package` above) and has a weight liability defined by the weight requirements of all Work Items it contains (`total_weight_requirement` above). Any weight remaining after the liability (i.e. `weight_per_package - total_weight_requirement`) may be apportioned to the Servicees of Items within the Report on a pro-rata basis according to the amount of weight they utilized during `refine`. Any weight unutilized by Classes within one Package may be carried over to the next Package and utilized there.
 
 ```rust
 fn get_work_storage(key: &[u8]) -> Option<Vec<u8>>;
@@ -430,27 +430,27 @@ fn assign_core(
     end_hint: Option<BlockNumber>,
 ) -> Result<(), ()>;
 fn transfer(
-    destination: WorkClass,
+    destination: Service,
     amount: u128,
     memo: &[u8],
     weight: Weight,
 ) -> Result<Vec<u8>, ()>;
 ```
 
-Read-access to the entire Relay-chain state is allowed. No direct write access may be provided since `accumulate` is untrusted code. `set_work_storage` may fail if an insufficient deposit is held under the Work Class's account.
+Read-access to the entire Relay-chain state is allowed. No direct write access may be provided since `accumulate` is untrusted code. `set_work_storage` may fail if an insufficient deposit is held under the Service's account.
 
-`set_validator`, `set_code` and `assign_core` are all privileged operations and may only be called by pre-authorized Work Classes.
+`set_validator`, `set_code` and `assign_core` are all privileged operations and may only be called by pre-authorized Servicees.
 
-Full access to a child trie specific to the Work Class is provided through the `work_storage` host functions. Since `accumulate` is permissionless and untrusted code, we must ensure that its child trie does not grow to degrade the Relay-chain's overall performance or place untenable requirements on the storage of full-nodes. To this goal, we require an account sovereign to the Work Class to be holding an amount of funds proportional to the overall storage footprint of its Child Trie. `set_work_storage` may return an error should the balance requirement not be met.
+Full access to a child trie specific to the Service is provided through the `work_storage` host functions. Since `accumulate` is permissionless and untrusted code, we must ensure that its child trie does not grow to degrade the Relay-chain's overall performance or place untenable requirements on the storage of full-nodes. To this goal, we require an account sovereign to the Service to be holding an amount of funds proportional to the overall storage footprint of its Child Trie. `set_work_storage` may return an error should the balance requirement not be met.
 
 Host functions are provided allowing any state changes to be committed at fail-safe checkpoints to provide resilience in case of weight overrun (or even buggy code which panics). The amount of weight remaining may also be queried without setting a checkpoint. `Weight` is expressed in a regular fashion for a solo-chain (i.e. one-dimensional).
 
-Simple transfers of data and balance between Work Classes are possible by the `transfer` function. This is an entirely synchronous function which transfers the execution over to a `destination` Work Class as well as the provided `amount` into their account.
+Simple transfers of data and balance between Servicees are possible by the `transfer` function. This is an entirely synchronous function which transfers the execution over to a `destination` Service as well as the provided `amount` into their account.
 
-A new VM is set up with code according to the Work Class's `accumulate` code blob, but with a secondary entry point whose prototype is:
+A new VM is set up with code according to the Service's `accumulate` code blob, but with a secondary entry point whose prototype is:
 
 ```rust
-fn on_transfer(source: WorkClass, amount: u128, memo: Vec<u8>) -> Result<Vec<u8>, ()>;
+fn on_transfer(source: Service, amount: u128, memo: Vec<u8>) -> Result<Vec<u8>, ()>;
 ```
 
 During this execution, all host functions above may be used except `checkpoint()`. The operation may result in error in which case all changes to state are reverted, including the balance transfer. (Weight is still used.)
@@ -459,13 +459,13 @@ Other host functions, including some to access Relay-chain hosted services such 
 
 _(Note for discussion: Should we be considering light-client proof size at all here?)_
 
-We can already imagine three kinds of Work Class: *Parachain Validation* (as per Polkadot 1.0), *Actor Progression* (as per Coreplay in a yet-to-be-proposed RFC) and Simple Ordering (placements of elements into a namespaced Merkle trie). Given how abstract the model is, one might reasonably expect many more.
+We can already imagine three kinds of Service: *Parachain Validation* (as per Polkadot 1.0), *Actor Progression* (as per Coreplay in a yet-to-be-proposed RFC) and Simple Ordering (placements of elements into a namespaced Merkle trie). Given how abstract the model is, one might reasonably expect many more.
 
 ### Work Package Ordering
 
 At the point of Reporting of a Work Package (specifically, its Work Report) on-chain, it is trivial to ensure that the ordering respects the optional `prerequisite` field specified in the Work Package, since the RcBA need only avoid Registering any which do not have their prerequisite fulfilled recently.
 
-However, there is a variable delay between a Work Report first being introduced on-chain in the Reporting and its eventual Integration into the Work Class's State due to the asynchronous Availability Protocol. This means that requiring the order at the point of Reporting is insufficient for guaranteeing that order at the time of Accumulation. Furthermore, the Availability Protocol may or may not actually complete for any Work Package.
+However, there is a variable delay between a Work Report first being introduced on-chain in the Reporting and its eventual Integration into the Service's State due to the asynchronous Availability Protocol. This means that requiring the order at the point of Reporting is insufficient for guaranteeing that order at the time of Accumulation. Furthermore, the Availability Protocol may or may not actually complete for any Work Package.
 
 Two alternatives present themselves: provide ordering only on a *best-effort* basis, whereby Work Reports respect the ordering requested in their Work Packages as much as possible, but it is not guaranteed. Work Reports may be Accumulated before, or even entirely without, their prerequisites. We refer to this *Soft-Ordering*. The alternative is to provide a guarantee that the Results of Work Packages will always be Accumulated no earlier than the Result of any prerequisite Work Package. As we are unable to alter the Availability Protocol, this is achieved through on-chain queuing and deferred Accumulation.
 
@@ -475,7 +475,7 @@ Both are presented as reasonable approaches for this proposal, though the Soft-O
 
 In this alternative, actual ordering is only guaranteed going *into* the Availability Protocol, not at the point of Accumulation.
 
-The (on-chain) repercussion of the Availability Protocol completing for the Work Package is that each Work Result becomes scheduled for Accumulation at the end of the Relay-chain Block Execution along with other Work Results from the same Work Class. The Ordering of Reporting is replicated here for all Work Results present. If the Availability Protocol delays the Accumulation of a prerequisite Work Result, then the dependent Work Result may be Accumulated in a block prior to that of its dependency. It is assumed that the *Accumulation* logic will be able to handle this gracefully.
+The (on-chain) repercussion of the Availability Protocol completing for the Work Package is that each Work Result becomes scheduled for Accumulation at the end of the Relay-chain Block Execution along with other Work Results from the same Service. The Ordering of Reporting is replicated here for all Work Results present. If the Availability Protocol delays the Accumulation of a prerequisite Work Result, then the dependent Work Result may be Accumulated in a block prior to that of its dependency. It is assumed that the *Accumulation* logic will be able to handle this gracefully.
 
 It is also possible (though unexpected in regular operation) that Work Packages never complete the Availability Protocol. Such Work Packages eventually time-out and are discarded from Relay-chain state.
 
@@ -569,7 +569,7 @@ trait Storage {
 
 Internally, data is stored with a reference count so that two separate usages of `store` need not be concerned about the other.
 
-Every piece of data stored for an untrusted caller requires a sizeable deposit. When used by untrusted code via a host function, the `depositor` would be set to an account controlled by the executing code (e.g. the Work Class's sovereign account).
+Every piece of data stored for an untrusted caller requires a sizeable deposit. When used by untrusted code via a host function, the `depositor` would be set to an account controlled by the executing code (e.g. the Service's sovereign account).
 
 Removing data happens in a two-phase procedure; first the data is unrequested, signalling that calling `lookup` on its hash may no longer work (it may still work if there are other
 requests active). 24 hours following this, the data is expunged with a second call which, actually removes the data from the chain assuming no other requests for it are active.
@@ -582,17 +582,17 @@ Crucially, a *Task* is no longer a first-class concept. Thus the Agile Coretime 
 
 In this proposal, we replace the concept of a Task with a more general ticketing system; Coretime is assigned to an *Authorizer* instead, a parameterized function. This would allow a succinct *Authorization* (i.e. a small blob of data) to be included in the Work Package which, when fed into the relevant Authorizer function could verify that some Work Package is indeed allowed to utilize that Core at (roughly) that time. A simple proof system would be a regular PKI signature. More complex proof systems could include more exotic cryptography (e.g. multisignatures or zk-SNARKs).
 
-In this model, we would expect any authorized Work Packages which panic or overrun to result in a punishment to the specific author by the logic of the Work Class.
+In this model, we would expect any authorized Work Packages which panic or overrun to result in a punishment to the specific author by the logic of the Service.
 
 ### Notes for migrating from a Parachain-centric model
 
-All Parachain-specific data held on the Relay-chain including the means of tracking the Head Data and Code would be held in the Parachains Work Class (Child) Trie. The Work Package would be essentially equivalent to the current PoV blob, though prefixed by the Work Class. `refine` would prove the validity of the parachain transition described in the PoV which is the Work Package. The Parachains Work Output would provide the basis for the input of what is currently termed the Paras Inherent. `accumulate` would identify and resolve any colliding transitions and manage message queue heads, much the same as the current hard-coded logic of the Relay-chain.
+All Parachain-specific data held on the Relay-chain including the means of tracking the Head Data and Code would be held in the Parachains Service (Child) Trie. The Work Package would be essentially equivalent to the current PoV blob, though prefixed by the Service. `refine` would prove the validity of the parachain transition described in the PoV which is the Work Package. The Parachains Work Output would provide the basis for the input of what is currently termed the Paras Inherent. `accumulate` would identify and resolve any colliding transitions and manage message queue heads, much the same as the current hard-coded logic of the Relay-chain.
 
-We should consider utilizing the Storage Pallet for Parachain Code and store only a hash in the Parachains Work Class Trie.
+We should consider utilizing the Storage Pallet for Parachain Code and store only a hash in the Parachains Service Trie.
 
 ### Notes for implementing the Actor Progression model
 
-Actor code is stored in the Storage Pallet. Actor-specific data including code hash, VM memory hash and sequence number is stored in the Actor Work Class Trie under that Actor's identifier. The Work Package would include pre-transition VM memories of actors to be progressed whose hash matches the VM memory hash stored on-chain and any additional data required for execution by the actors (including, perhaps, swappable memory pages). The `refine` function would initiate the relevant VMs and make entries into those VMs in line with the Work Package's manifest. The Work Output would provide a vector of actor progressions made including their identifer, pre- and post-VM memory hashes and sequence numbers. The `accumulate` function would identify and resolve any conflicting progressions and update the Actor Work Class Trie with the progressed actors' new states. More detailed information is given in the Coreplay RFC.
+Actor code is stored in the Storage Pallet. Actor-specific data including code hash, VM memory hash and sequence number is stored in the Actor Service Trie under that Actor's identifier. The Work Package would include pre-transition VM memories of actors to be progressed whose hash matches the VM memory hash stored on-chain and any additional data required for execution by the actors (including, perhaps, swappable memory pages). The `refine` function would initiate the relevant VMs and make entries into those VMs in line with the Work Package's manifest. The Work Output would provide a vector of actor progressions made including their identifer, pre- and post-VM memory hashes and sequence numbers. The `accumulate` function would identify and resolve any conflicting progressions and update the Actor Service Trie with the progressed actors' new states. More detailed information is given in the Coreplay RFC.
 
 ### UMP, HRMP and Work Output bounding
 
@@ -600,11 +600,11 @@ At present, both HRMP (the stop-gap measure introduced in lieu of proper XCMP) a
 
 The present proposal brings soundness to this situation by limiting the amount of data which can arrive on the Relay-chain from each Work Item, and by extension from each Work Package. The specific limit proposed is 4KB per Work Item, which if we assume an average of two Work Items per Package and 250 cores, comes to a manageable 2MB and leaves plenty of headroom.
 
-However, this does mean that pre-existing usage of UMP and HRMP are impossible. In any case, UMP is removed entirely from the Work Class API.
+However, this does mean that pre-existing usage of UMP and HRMP are impossible. In any case, UMP is removed entirely from the Service API.
 
-To make up for this change, all non-"kernel" Relay-chain functionality will exist within Work Classes (parachains under CoreChains, or possibly even actors under CorePlay). This includes staking and governance functionality. The development and deployment of XCMP avoids the need to place any datagrams on the Relay-chain which are not themselves meant for interpretation by it. APIs are provided for the few operations remaining which the Relay-chain must provide (validator updates, code updates and core assignments) but may only be used by Work Classes holding the appropriate privileges. Thus taken together, neither HRMP, UMP or DMP will exist.
+To make up for this change, all non-"kernel" Relay-chain functionality will exist within Servicees (parachains under CoreChains, or possibly even actors under CorePlay). This includes staking and governance functionality. The development and deployment of XCMP avoids the need to place any datagrams on the Relay-chain which are not themselves meant for interpretation by it. APIs are provided for the few operations remaining which the Relay-chain must provide (validator updates, code updates and core assignments) but may only be used by Servicees holding the appropriate privileges. Thus taken together, neither HRMP, UMP or DMP will exist.
 
-An initial and hybrid deployment of CoreJam could see the Work Output size limits temporarily increased for the Parachains Work Class to ensure existing use-cases do not suffer, but with a published schedule on reducing these to the eventual 4KB limits. This would imply the need for graceful handling by the RcBA should the aggregated Work Outputs be too large.
+An initial and hybrid deployment of CoreJam could see the Work Output size limits temporarily increased for the Parachains Service to ensure existing use-cases do not suffer, but with a published schedule on reducing these to the eventual 4KB limits. This would imply the need for graceful handling by the RcBA should the aggregated Work Outputs be too large.
 
 ### Notes on Implementation Order
 
@@ -612,21 +612,21 @@ In order to ease the migration process from the current Polkadot on- and off-cha
 
 We therefore envision an initial version of this proposal with minimal modifications to current code:
 
-1. Remain with Webassembly rather than RISC-V, both for Work Class logic and the subordinate environments which can be set up from Work Class logic. The introduction of Work Classes is a permissioned action requiring governance intervention. Work Packages will otherwise execute as per the proposal. *Minor changes to the status quo.*
+1. Remain with Webassembly rather than RISC-V, both for Service logic and the subordinate environments which can be set up from Service logic. The introduction of Servicees is a permissioned action requiring governance intervention. Work Packages will otherwise execute as per the proposal. *Minor changes to the status quo.*
 2. Attested Work Packages must finish running in time and not panic. Therefore `WorkResult` must have an `Infallible` error type. If an Attestation is posted for a Work Package which panics or times out, then this is a slashable offence. *No change to the status quo.*
 3. There should be full generalization over Work Package contents, as per the proposal. Introduction of Authorizers, `refine`, `prune` and `accumulate`. *Additional code to the status quo.*
 
-To optimize the present situation, a number of "natively implemented", fixed-function registrations will be provided. The Work Class of index zero will be used to represent the Parachains Work Class and will have a "native" (i.e. within the Wasm runtime) implementation of `refine` and `accumulate`. Secondly, a fixed-function set of Auth IDs 9,999 and lower simply represent Authorizers which accept Work Packages which contain a single Work Item of the Parachains Work Class which pertain to progressing a parachain of ID equal to the Auth ID value.
+To optimize the present situation, a number of "natively implemented", fixed-function registrations will be provided. The Service of index zero will be used to represent the Parachains Service and will have a "native" (i.e. within the Wasm runtime) implementation of `refine` and `accumulate`. Secondly, a fixed-function set of Auth IDs 9,999 and lower simply represent Authorizers which accept Work Packages which contain a single Work Item of the Parachains Service which pertain to progressing a parachain of ID equal to the Auth ID value.
 
-Later implementation steps would polish (1) to replace with RISC-V (with backwards compatibility) and polish (2) to support posting receipts of timed-out/failed Work Packages on-chain for RISC-V Work Classes.
+Later implementation steps would polish (1) to replace with RISC-V (with backwards compatibility) and polish (2) to support posting receipts of timed-out/failed Work Packages on-chain for RISC-V Servicees.
 
-A final transition may migrate the Parachains Work Class to become a regular permissionless Work Class module.
+A final transition may migrate the Parachains Service to become a regular permissionless Service module.
 
 ## Performance, Ergonomics and Compatibility
 
-The present proposal is broadly compatible with the facilities of the Legacy Model pending the integration of a Work Class specific to Parachains. Unlike other Work Classes, this is expected to be hard-coded into the Relay-chain runtime to maximize performance, compatibility and implementation speed.
+The present proposal is broadly compatible with the facilities of the Legacy Model pending the integration of a Service specific to Parachains. Unlike other Servicees, this is expected to be hard-coded into the Relay-chain runtime to maximize performance, compatibility and implementation speed.
 
-Certain changes to active interfaces will be needed. Firstly, changes will be needed for any software (such as _Cumulus_ and _Smoldot_) relying on particular Relay-chain state trie keys (i.e. storage locations) used to track the code and head-data of parachains, so that they instead query the relevant key within the Parachains Work Class Child Trie.
+Certain changes to active interfaces will be needed. Firstly, changes will be needed for any software (such as _Cumulus_ and _Smoldot_) relying on particular Relay-chain state trie keys (i.e. storage locations) used to track the code and head-data of parachains, so that they instead query the relevant key within the Parachains Service Child Trie.
 
 Secondly, software which currently provides Proofs-of-Validity to Relay-chain Validators, such as _Cumulus_, would need to be updated to use the new Work Item/Work Package format.
 
@@ -638,15 +638,15 @@ The proposal introduces no new privacy concerns.
 
 ## Future Directions and Related Material
 
-We expect to see several Work Classes being built shortly after CorePlay is delivered.
+We expect to see several Servicees being built shortly after CorePlay is delivered.
 
 ## Drawbacks, Alternatives and Unknowns
 
 Important considerations include:
 
-1. In the case of composite Work Packages, allowing synchronous (and therefore causal) interactions between the Work Items. If this were to be the case, then some sort of synchronisation sentinel would be needed to ensure that should one subpackage result without the expected effects on its Work Class State (by virtue of the `accumulate` outcome for that subpackage), that the `accumulate` of any causally entangled subpackages takes appropriate account for this (i.e. by dropping it and not effecting any changes from it).
+1. In the case of composite Work Packages, allowing synchronous (and therefore causal) interactions between the Work Items. If this were to be the case, then some sort of synchronisation sentinel would be needed to ensure that should one subpackage result without the expected effects on its Service State (by virtue of the `accumulate` outcome for that subpackage), that the `accumulate` of any causally entangled subpackages takes appropriate account for this (i.e. by dropping it and not effecting any changes from it).
 
-2. Work Items may need some degree of coordination to be useful by the `accumulate` function of their Work Class. To a large extent this is outside of the scope of this proposal's computation model by design. Through the authorization framework we assert that it is the concern of the Work Class and not of the Relay-chain validators themselves. However we must ensure that certain requirements of the parachains use-case are practically fulfillable in *some* way. Within the legacy parachain model, PoVs:
+2. Work Items may need some degree of coordination to be useful by the `accumulate` function of their Service. To a large extent this is outside of the scope of this proposal's computation model by design. Through the authorization framework we assert that it is the concern of the Service and not of the Relay-chain validators themselves. However we must ensure that certain requirements of the parachains use-case are practically fulfillable in *some* way. Within the legacy parachain model, PoVs:
     1. shouldn't be replayable;
     2. shouldn't require unbounded buffering in `accumulate` if things are submitted out-of-order;
     3. should be possible to evaluate for ordering by validators making a best-effort.
