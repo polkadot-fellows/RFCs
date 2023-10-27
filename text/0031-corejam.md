@@ -152,7 +152,7 @@ The second consensus computation happens on-chain at the behest of the Relay-cha
 
 At some point later `T+r+i+a` (where `a` is the time to distribute the fragments of the Work Package and report their archival to the next Relay-chain Block Author) the Availability Protocol has concluded and the Relay-chain Block Author of the time brings this information on-chain in the form of a bitfield in which an entry flips from zero to one. At this point we can say that the Work Report's Package is *Available*.
 
-Finally, at some point later still `T+r+i+a+o`, the Results of the Work Package are aggregated into groups of Servicees, and then *Pruned* and *Accumulated* into the common state of the Relay-chain. This process is known as *Integration* (in the fixed-function parachains model, this is known as "inclusion") and is irreversible within any given fork. Additional latency from being made *Available* to being *Integrated* (i.e. the `o` component) may be incurred due to ordering requirements, though it is expected to be zero in the variant of this proposal to be implemented initially (see **Work Package Ordering**, later).
+Finally, at some point later still `T+r+i+a+o`, the Results of the Work Package are aggregated into groups of Services, and then *Pruned* and *Accumulated* into the common state of the Relay-chain. This process is known as *Integration* (in the fixed-function parachains model, this is known as "inclusion") and is irreversible within any given fork. Additional latency from being made *Available* to being *Integrated* (i.e. the `o` component) may be incurred due to ordering requirements, though it is expected to be zero in the variant of this proposal to be implemented initially (see **[Work Package Ordering](#work-package-ordering)**, later).
 
 ### Collect-Refine
 
@@ -164,7 +164,7 @@ Collection is the means of a Validator Group member attaining a Work Package whi
 
 On arrival of a Work Package, after the initial decoding, a first check is that the `context` field is valid. This must reference a header hash of a known block which may yet be finalized and the additional fields must correspond to the data of that block.
 
-Agile Coretime (see RFC#0001) prescribes two forms of Coretime sales: Instantaneous and Bulk. Sales of Instantaneous Coretime are no longer provided, leaving only Bulk Coretime.
+Agile Coretime (see [RFC#0001](https://github.com/polkadot-fellows/RFCs/blob/main/text/0001-agile-coretime.md)) prescribes two forms of Coretime sales: Instantaneous and Bulk. Sales of Instantaneous Coretime are no longer provided, leaving only Bulk Coretime.
 
 We introduce the concept of an *Authorizer* procedure, which is a piece of logic stored on-chain to which Bulk Coretime may be assigned. Assigning some Bulk Coretime to an Authorizer implies allowing any Work Package which passes that authorization process to utilize that Bulk Coretime in order to be submitted on-chain. It controls the circumstances under which RcVGs may be rewarded for evaluation and submission of Work Packages (and thus what Work Packages become valid to submit onto Polkadot). Authorization logic is entirely arbitrary and need not be restricted to authorizing a single collator, Work Package builder, parachain or even a single Service.
 
@@ -266,7 +266,7 @@ struct WorkResult {
 fn apply_refine(item: WorkItem) -> WorkResult;
 ```
 
-The amount of weight used in executing the `refine` function is noted in the `WorkResult` value, and this is used later in order to help apportion on-chain weight (for the Join-Accumulate process) to the Servicees whose items appear in the Work Packages.
+The amount of weight used in executing the `refine` function is noted in the `WorkResult` value, and this is used later in order to help apportion on-chain weight (for the Join-Accumulate process) to the Services whose items appear in the Work Packages.
 
 ```rust
 /// Secure refrence to a Work Package.
@@ -313,7 +313,7 @@ Join-Accumulate is the second major stage of computation and is independent from
 
 Being *on-chain* (rather than *in-core* as with Collect-Refine), information and computation done in the Join-Accumulate stage is carried out (initially) by the Block Author and the resultant block evaluated by all Validators and full-nodes. Because of this, and unlike in-core computation, it has full access to the Relay-chain's state.
 
-The Join-Accumulate stage may be seen as a synchronized counterpart to the parallelised Collect-Refine stage. It may be used to integrate the work done from the context of an isolated VM into a self-consistent singleton world model. In concrete terms this means ensuring that the independent work components, which cannot have been aware of each other during the Collect-Refine stage, do not conflict in some way. Less dramatically, this stage may be used to enforce ordering or provide a synchronisation point (e.g. for combining entropy in a sharded RNG). Finally, this stage may be a sensible place to manage asynchronous interactions between subcomponents of a Service or even different Servicees and oversee message queue transitions.
+The Join-Accumulate stage may be seen as a synchronized counterpart to the parallelised Collect-Refine stage. It may be used to integrate the work done from the context of an isolated VM into a self-consistent singleton world model. In concrete terms this means ensuring that the independent work components, which cannot have been aware of each other during the Collect-Refine stage, do not conflict in some way. Less dramatically, this stage may be used to enforce ordering or provide a synchronisation point (e.g. for combining entropy in a sharded RNG). Finally, this stage may be a sensible place to manage asynchronous interactions between subcomponents of a Service or even different Services and oversee message queue transitions.
 
 #### Reporting and Integration
 
@@ -404,7 +404,7 @@ Because of this, Work Report builders must be aware of any upcoming alterations 
 
 ### Accumulate
 
-The next phase, which happens on-chain, is Accumulate. This governs the amalgamation of the Work Package Outputs calculated during the Refinement stage into the Relay-chain's overall state and in particular into the various Child Tries of the Servicees whose Items were refined. Crucially, since the Refinement happened in-core, and since all in-core logic must be disputable and therefore its inputs made *Available* for all future disputers, Accumulation of a Work Package may only take place *after* the Availability process for it has completed.
+The next phase, which happens on-chain, is Accumulate. This governs the amalgamation of the Work Package Outputs calculated during the Refinement stage into the Relay-chain's overall state and in particular into the various Child Tries of the Services whose Items were refined. Crucially, since the Refinement happened in-core, and since all in-core logic must be disputable and therefore its inputs made *Available* for all future disputers, Accumulation of a Work Package may only take place *after* the Availability process for it has completed.
 
 The function signature to the `accumulate` entry-point in the Service's code blob is:
 
@@ -421,7 +421,7 @@ _(Note for later: We may wish to provide a more light-client friendly Work Item 
 
 There is an amount of weight which it is allowed to use before being forcibly terminated and any non-committed state changes lost. The lowest amount of weight provided to `accumulate` is defined as the number of `WorkResult` values passed in `results` to `accumulate` multiplied by the `accumulate` field of the Service's weight requirements.
 
-However, the actual amount of weight may be substantially more. Each Work Package is allotted a specific amount of weight for all on-chain activity (`weight_per_package` above) and has a weight liability defined by the weight requirements of all Work Items it contains (`total_weight_requirement` above). Any weight remaining after the liability (i.e. `weight_per_package - total_weight_requirement`) may be apportioned to the Servicees of Items within the Report on a pro-rata basis according to the amount of weight they utilized during `refine`. Any weight unutilized by Classes within one Package may be carried over to the next Package and utilized there.
+However, the actual amount of weight may be substantially more. Each Work Package is allotted a specific amount of weight for all on-chain activity (`weight_per_package` above) and has a weight liability defined by the weight requirements of all Work Items it contains (`total_weight_requirement` above). Any weight remaining after the liability (i.e. `weight_per_package - total_weight_requirement`) may be apportioned to the Services of Items within the Report on a pro-rata basis according to the amount of weight they utilized during `refine`. Any weight unutilized by Classes within one Package may be carried over to the next Package and utilized there.
 
 ```rust
 /// Simple 32 bit "result" type. `u32::max_value()` down to `u32::max_value() - 255` is used to indicate an error. `0` up to `u32::max_value() - 256` are used to indicate success and a scalar value.
@@ -464,13 +464,13 @@ fn transfer(
 
 Read-access to the entire Relay-chain state is allowed. No direct write access may be provided since `accumulate` is untrusted code. `set_work_storage` may fail if an insufficient deposit is held under the Service's account.
 
-`set_validator`, `set_code` and `assign_core` are all privileged operations and may only be called by pre-authorized Servicees.
+`set_validator`, `set_code` and `assign_core` are all privileged operations and may only be called by pre-authorized Services.
 
 Full access to a child trie specific to the Service is provided through the `work_storage` host functions. Since `accumulate` is permissionless and untrusted code, we must ensure that its child trie does not grow to degrade the Relay-chain's overall performance or place untenable requirements on the storage of full-nodes. To this goal, we require an account sovereign to the Service to be holding an amount of funds proportional to the overall storage footprint of its Child Trie. `set_work_storage` may return an error should the balance requirement not be met.
 
 Host functions are provided allowing any state changes to be committed at fail-safe checkpoints to provide resilience in case of weight overrun (or even buggy code which panics). The amount of weight remaining may also be queried without setting a checkpoint. `Weight` is expressed in a regular fashion for a solo-chain (i.e. one-dimensional).
 
-Simple transfers of data and balance between Servicees are possible by the `transfer` function. This is an entirely synchronous function which transfers the execution over to a `destination` Service as well as the provided `amount` into their account.
+Simple transfers of data and balance between Services are possible by the `transfer` function. This is an entirely synchronous function which transfers the execution over to a `destination` Service as well as the provided `amount` into their account.
 
 A new VM is set up with code according to the Service's `accumulate` code blob, but with a secondary entry point whose prototype is:
 
@@ -627,7 +627,7 @@ The present proposal brings soundness to this situation by limiting the amount o
 
 However, this does mean that pre-existing usage of UMP and HRMP are impossible. In any case, UMP is removed entirely from the Service API.
 
-To make up for this change, all non-"kernel" Relay-chain functionality will exist within Servicees (parachains under CoreChains, or possibly even actors under CorePlay). This includes staking and governance functionality. The development and deployment of XCMP avoids the need to place any datagrams on the Relay-chain which are not themselves meant for interpretation by it. APIs are provided for the few operations remaining which the Relay-chain must provide (validator updates, code updates and core assignments) but may only be used by Servicees holding the appropriate privileges. Thus taken together, neither HRMP, UMP or DMP will exist.
+To make up for this change, all non-"kernel" Relay-chain functionality will exist within Services (parachains under CoreChains, or possibly even actors under CorePlay). This includes staking and governance functionality. The development and deployment of XCMP avoids the need to place any datagrams on the Relay-chain which are not themselves meant for interpretation by it. APIs are provided for the few operations remaining which the Relay-chain must provide (validator updates, code updates and core assignments) but may only be used by Services holding the appropriate privileges. Thus taken together, neither HRMP, UMP or DMP will exist.
 
 An initial and hybrid deployment of CoreJam could see the Work Output size limits temporarily increased for the Parachains Service to ensure existing use-cases do not suffer, but with a published schedule on reducing these to the eventual 4KB limits. This would imply the need for graceful handling by the RcBA should the aggregated Work Outputs be too large.
 
@@ -637,19 +637,19 @@ In order to ease the migration process from the current Polkadot on- and off-cha
 
 We therefore envision an initial version of this proposal with minimal modifications to current code:
 
-1. Remain with Webassembly rather than RISC-V, both for Service logic and the subordinate environments which can be set up from Service logic. The introduction of Servicees is a permissioned action requiring governance intervention. Work Packages will otherwise execute as per the proposal. *Minor changes to the status quo.*
+1. Remain with Webassembly rather than RISC-V, both for Service logic and the subordinate environments which can be set up from Service logic. The introduction of Services is a permissioned action requiring governance intervention. Work Packages will otherwise execute as per the proposal. *Minor changes to the status quo.*
 2. Attested Work Packages must finish running in time and not panic. Therefore `WorkResult` must have an `Infallible` error type. If an Attestation is posted for a Work Package which panics or times out, then this is a slashable offence. *No change to the status quo.*
 3. There should be full generalization over Work Package contents, as per the proposal. Introduction of Authorizers, `refine`, `prune` and `accumulate`. *Additional code to the status quo.*
 
 To optimize the present situation, a number of "natively implemented", fixed-function registrations will be provided. The Service of index zero will be used to represent the Parachains Service and will have a "native" (i.e. within the Wasm runtime) implementation of `refine` and `accumulate`. Secondly, a fixed-function set of Auth IDs 9,999 and lower simply represent Authorizers which accept Work Packages which contain a single Work Item of the Parachains Service which pertain to progressing a parachain of ID equal to the Auth ID value.
 
-Later implementation steps would polish (1) to replace with RISC-V (with backwards compatibility) and polish (2) to support posting receipts of timed-out/failed Work Packages on-chain for RISC-V Servicees.
+Later implementation steps would polish (1) to replace with RISC-V (with backwards compatibility) and polish (2) to support posting receipts of timed-out/failed Work Packages on-chain for RISC-V Services.
 
 A final transition may migrate the Parachains Service to become a regular permissionless Service module.
 
 ## Performance, Ergonomics and Compatibility
 
-The present proposal is broadly compatible with the facilities of the Legacy Model pending the integration of a Service specific to Parachains. Unlike other Servicees, this is expected to be hard-coded into the Relay-chain runtime to maximize performance, compatibility and implementation speed.
+The present proposal is broadly compatible with the facilities of the Legacy Model pending the integration of a Service specific to Parachains. Unlike other Services, this is expected to be hard-coded into the Relay-chain runtime to maximize performance, compatibility and implementation speed.
 
 Certain changes to active interfaces will be needed. Firstly, changes will be needed for any software (such as _Cumulus_ and _Smoldot_) relying on particular Relay-chain state trie keys (i.e. storage locations) used to track the code and head-data of parachains, so that they instead query the relevant key within the Parachains Service Child Trie.
 
@@ -663,7 +663,7 @@ The proposal introduces no new privacy concerns.
 
 ## Future Directions and Related Material
 
-We expect to see several Servicees being built shortly after CorePlay is delivered.
+We expect to see several Services being built shortly after CorePlay is delivered.
 
 ## Drawbacks, Alternatives and Unknowns
 
