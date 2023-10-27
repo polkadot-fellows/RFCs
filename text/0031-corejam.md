@@ -237,8 +237,15 @@ Both `refine` and `is_authorized` are only ever executed in-core. Within this en
 Several host functions (largely in line with the host functions available to Parachain Validation Function code) are supplied. One addition is:
 
 ```rust
-/// Determine the preimage of `hash` utilizing the Relay-chain Storage pallet.
-fn lookup(hash: [u8; 32]) -> Vec<u8>;
+/// Determine the preimage of `hash` utilizing the Relay-chain Storage pallet. This must
+/// always do the same thing for the same `context` regardless of the current state of the
+/// chain. This is achieved through the usage (by the host) of the specialized Storage
+/// pallet.
+///
+/// It returns `u32::max_value()` in the case that the preimage is unavailable. Otherwise
+/// it returns the length of the preimage and places the first bytes of the preimage into
+/// `buffer`, up to a maximum of `buffer_len`.
+fn lookup(hash: [u8; 32], buffer: *mut u8, buffer_len: u32) -> u32;
 ```
 
 Other host functions will allow for the possibility of executing a WebAssembly payload (for example, a Parachain Validation Function) or instantiating and entering a subordinate RISCV VM (for example for Actor Progressions).
