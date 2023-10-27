@@ -54,8 +54,8 @@ In order of importance:
 
 Short forms of several common term are used here for brevity:
 
-- *RcVG*: Relay-chain Validator Group
-- *RcBA*: Relay-chain Block Author
+- *RcVG*: Relay-chain Validator Group aka Backing group, a grouping of Relay-chain validators who act as the initial guarantors over the result of some computation done off-chain.
+- *RcBA*: Relay-chain Block Author, the author of some particular block on the Relay-chain.
 
 ### From Old to New
 
@@ -63,20 +63,22 @@ The current specification of the Polkadot protocol, and with in the Relay-chain 
 
 Existing functionality relied upon by parachains will continue to be provided as a special case under a more general and permissionless model which is detailed presently and known as *CoreJam*. Transition of Polkadot to be in line with the present proposal will necessarily imply some minor alterations of formats utilized by Cumulus, Smoldot and other light-client APIs (see the section on Compatibility). However, much of the underlying logic (in particular, consensus, disputes and availability) is retained, though its application is generalised. This proposal will only make note of the expectations regarding the changes, and presumes continuation of all other logic.
 
-As part of this model, we introduce a number of new and interrelated concepts: *Work Package*, *Service*, *Work Item*, *Work Output*, *Work Result*, *Work Report* and *Work Package Attestation*, *Service Trie*.
+As part of this model, we introduce a number of new and interrelated concepts: *Work Package*, *Service*, *Work Item*, *Work Output*, *Work Result*, *Work Report*, *Guarantee* and *Service Trie*.
 
 Focussing on continuity and reuse of existing logic, it is unsurprising that many of these concepts already analogues in the Parachains model, albeit ones with a less general definition. While this mapping can be helpful to quickly create an approximate understanding of the new concepts for those already familiar with Polkadot, care must be taken not to inadvertantly make incorrect presumptions over exact details of their relationships, constraints, timing, provisions and APIs. Nonetheless, they are provided here for whatever help they may be.
 
 | CoreJam model                | Legacy model      | Context |
 | --- | --- | --- |
+| *Core Chain*                 | Relay-chain       | Primary block-chain |
 | *Work Package*               | Proof-of-Validity | Untrusted data provided to RcVG |
 | *Work Item*                  | Proof-of-Validity | State-transition inputs and witness |
 | *Work Output*                | Candidate         | State-transition consequence |
-| *Work Report*                | Candidate         | Target of Attestation |
-| *(Work Package) Attestation* | Attestation       | Output signed by members of RcVG |
+| *Work Report*                | Candidate         | Target of attestation |
+| *(Work Package) Attestation* | Attestation       | Output signed in attestation |
 | *Reporting*                  | Attestation       | Placement of Attestation on-chain |
 | *Integration*                | Inclusion         | Irreversible transition of state |
 | *Builder*                    | Collator          | Creator of data worthy of Attestation |
+
 
 Additionally, the *Service Trie* has no immediate analogue, but may be considered as the Relay-chain state used to track the code and head data of the parachains.
 
@@ -128,11 +130,11 @@ A *Work Package* is an *Authorization* together with a series of *Work Items* an
 
 (The number of prerequisites of a Work Package is limited to at most one. However, we cannot trivially control the number of dependents in the same way, nor would we necessarily wish to since it would open up a griefing vector for misbehaving Work Package Builders who interrupt a sequence by introducing their own Work Packages with a prerequisite which is within another's sequence.)
 
-Work Items are a pair of service and payload, where the `service` identifies a pairing of code and state known as a *Service* and `payload` is a block of data which, through the aforementioned code, mutates said state in some presumably useful way.
+Work Items are a pair where the first item, `service`, itself identifies a pairing of code and state known as a *Service*; and the second item, `payload`, is a block of data which, through the aforementioned code, mutates said state in some presumably useful way.
 
-A Service has certain similarities to an object in a decentralized object-oriented execution environment (or, indeed, a smart contract), with the main difference being a more exotic computation architecture available to it. Similar to smart contracts, a Service's state is stored on-chain and transitioned only using on-chain logic. Also similar to a smart contract, resources used by a Service are strictly and deterministically constrained (using dynamic metering). Finally, Servicees, like smart contracts, are able to hold funds and call into each other synchronously.
+A Service has certain similarities to an object in a decentralized object-oriented execution environment (or, indeed, a smart contract), with the main difference being a more exotic computation architecture available to it. Similar to smart contracts, a Service's state is stored on-chain and transitioned only using on-chain logic. Also similar to a smart contract, resources used by a Service are strictly and deterministically constrained (using dynamic metering). Finally, Services, like smart contracts, are able to hold funds and call into each other synchronously.
 
-However, unlike for smart contracts, the on-chain transition logic of a Service (known as the *Accumulate* function) cannot directly be interacted with by actors external to the consensus environment. Concretely, they cannot be transacted with. Aside from the aforementioned inter-service calling, all input data (and state progression) must come as the result of a Work Item. A Work Item is a blob of data meant for a particular Service and crafted by some source external to consensus. It may be thought of as akin to a transaction. The Work Item is first processed *in-core*, which is to say on one of many secure and isolated virtual decentralized processors, yielding a distillate known as a Work Result. It is this Work Result which is collated together with others of the same service and Accumulated into the Service.
+However, unlike for smart contracts, the on-chain transition logic of a Service (known as the *Accumulate* function) cannot directly be interacted with by actors external to the consensus environment. Concretely, they cannot be transacted with. Aside from the aforementioned inter-service calling, all input data (and state progression) must come as the result of a Work Item. A Work Item is a blob of data meant for a particular Service and crafted by some source external to consensus. It may be thought of as akin to a transaction. The Work Item is first processed *in-core*, which is to say on one of many secure and isolated virtual decentralized processors, yielding a distillate known as a *Work Result*. It is this Work Result which is collated together with others of the same service and Accumulated into the Service on-chain.
 
 In short, a Service may be considered as a kind of smart contract albeit one whose transaction data is first preprocessed with cheap decentralized compute power.
 
@@ -415,26 +417,42 @@ There is an amount of weight which it is allowed to use before being forcibly te
 However, the actual amount of weight may be substantially more. Each Work Package is allotted a specific amount of weight for all on-chain activity (`weight_per_package` above) and has a weight liability defined by the weight requirements of all Work Items it contains (`total_weight_requirement` above). Any weight remaining after the liability (i.e. `weight_per_package - total_weight_requirement`) may be apportioned to the Servicees of Items within the Report on a pro-rata basis according to the amount of weight they utilized during `refine`. Any weight unutilized by Classes within one Package may be carried over to the next Package and utilized there.
 
 ```rust
-fn get_work_storage(key: &[u8]) -> Option<Vec<u8>>;
-fn get_work_storage_len(key: &[u8]) -> Option<u32>;
+/// Simple 32 bit "result" type. `u32::max_value()` down to `u32::max_value() - 255` is used to indicate an error. `0` up to `u32::max_value() - 256` are used to indicate success and a scalar value.
+pub type SimpleResult = u32;
+/// Returns `u32::max_value()` in case that `key` does not exist. Otherwise, the size of
+/// the storage entry is returned and a minimum of this value and `buffer_len` bytes are
+/// written into `buffer` from the storage value of `key`. If `buffer_len` is zero, this
+/// operation may be additionally optimized to avoid reading any value data.
+fn get_work_storage(key: &[u8], buffer: *mut [u8], buffer_len: u32) -> SimpleResult;
 fn checkpoint() -> Weight;
 fn weight_remaining() -> Weight;
-fn set_work_storage(key: &[u8], value: &[u8]) -> Result<(), ()>;
+/// Returns `u32::max_value()` on failure, `0` on success.
+fn set_work_storage(key: &[u8], value: &[u8]) -> SimpleResult;
 fn remove_work_storage(key: &[u8]);
-fn set_validators(validator_keys: &[ValidatorKey]) -> Result<(), ()>;
-fn set_code(code: &[u8]) -> Result<(), ()>;
+/// Returns `u32::max_value()` on failure, `0` on success.
+fn set_validators(validator_keys: &[ValidatorKey]) -> SimpleResult;
+/// Returns `u32::max_value()` on failure, `0` on success.
+fn set_code(code: &[u8]) -> SimpleResult;
+/// Returns `u32::max_value()` on failure, `0` on success.
 fn assign_core(
     core: CoreIndex,
     begin: BlockNumber,
     assignment: Vec<(CoreAssignment, PartsOf57600)>,
     end_hint: Option<BlockNumber>,
-) -> Result<(), ()>;
+) -> SimpleResult;
+/// Returns `u32::max_value()` in case that the operation failed or the transfer returned
+/// an error.
+/// Otherwise, the size of `Vec` returned by the `on_transfer` entry-point entry is
+/// returned and as much of the data from the `Vec` as possible is copied into the provided
+/// `buffer`.
 fn transfer(
     destination: Service,
     amount: u128,
     memo: &[u8],
     weight: Weight,
-) -> Result<Vec<u8>, ()>;
+    buffer_len: u32,
+    buffer: *mut [u8],
+) -> SimpleResult;
 ```
 
 Read-access to the entire Relay-chain state is allowed. No direct write access may be provided since `accumulate` is untrusted code. `set_work_storage` may fail if an insufficient deposit is held under the Service's account.
@@ -450,7 +468,7 @@ Simple transfers of data and balance between Servicees are possible by the `tran
 A new VM is set up with code according to the Service's `accumulate` code blob, but with a secondary entry point whose prototype is:
 
 ```rust
-fn on_transfer(source: Service, amount: u128, memo: Vec<u8>) -> Result<Vec<u8>, ()>;
+fn on_transfer(source: Service, amount: u128, memo: Vec<u8>, buffer_len: u32) -> Result<Vec<u8>, ()>;
 ```
 
 During this execution, all host functions above may be used except `checkpoint()`. The operation may result in error in which case all changes to state are reverted, including the balance transfer. (Weight is still used.)
