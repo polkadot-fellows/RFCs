@@ -9,7 +9,7 @@
 
 ## Summary
 
-This is a proposal to fundamentally alter the workload done on the Polkadot Relay-chain, both in terms of that which is done "on-chain", i.e. by all Relay Chain Validators (*Validators*) as well as that which is done "in-core", i.e. distributed among subsets of the Validators (*Validator Groups*). The target is to create a model which closely matches the underlying technical architecture and is both generic and permissionlessly extensible.
+This is a proposal to fundamentally alter the workload done on the Polkadot Relay-chain, both in terms of that which is done "on-chain", i.e. by all Relay Chain Validators (*Validators*) as well as that which is done "in-core", i.e. distributed among subsets of the Validators (*Backing Groups*). The target is to create a model which closely matches the underlying technical architecture and is both generic and permissionlessly extensible.
 
 In the proposed model, code is stored on-chain with two entry-points. Workloads are collated and processed in-core (and thus parallelized) using one entry-point, whereas the refined outputs of this processing are gathered together and an on-chain state-machine progressed according to the other.
 
@@ -54,7 +54,7 @@ In order of importance:
 
 Short forms of several common term are used here for brevity:
 
-- *RcVG*: Relay-chain Validator Group aka Backing group, a grouping of Relay-chain validators who act as the initial guarantors over the result of some computation done off-chain.
+- *RcBG*: Relay-chain Backing Group, a grouping of Relay-chain validators who act as the initial guarantors over the result of some computation done off-chain.
 - *RcBA*: Relay-chain Block Author, the author of some particular block on the Relay-chain.
 
 ### From Old to New
@@ -70,7 +70,7 @@ Focussing on continuity and reuse of existing logic, it is unsurprising that man
 | CoreJam model                | Legacy model      | Context |
 | --- | --- | --- |
 | *Core Chain*                 | Relay-chain       | Primary block-chain |
-| *Work Package*               | Proof-of-Validity | Untrusted data provided to RcVG |
+| *Work Package*               | Proof-of-Validity | Untrusted data provided to RcBG |
 | *Work Item*                  | Proof-of-Validity | State-transition inputs and witness |
 | *Work Output*                | Candidate         | State-transition consequence |
 | *Work Report*                | Candidate         | Target of attestation |
@@ -146,7 +146,7 @@ A Work Package has several stages of consensus computation associated with its p
 
 While a Work Package is being built, the *Builder* must have access to the Relay-chain state in order to supply a specific *Context*. The Context dictates a certain *Scope* for the Work Package which is used by the Initial Validation to limit which Relay-chain blocks it may be processed on to a small sequence of a specific fork (which is yet to be built, presumably). We define the Relay-chain height at this point to be `T`.
 
-The first consensus computation to be done is the Work Package having its Authorization checked in-core, hosted by the Relay-chain Validator Group. If it is determined to be authorized, then the same environment hosts the Refinement of the Work Package into a series of Work Results. This concludes the bulk of the computation that the Work Package represents. We would assume that the Relay-chain's height at this point is shortly after the authoring time, `T+r` where `r` could be as low as zero.
+The first consensus computation to be done is the Work Package having its Authorization checked in-core, hosted by the Relay-chain Backing Group. If it is determined to be authorized, then the same environment hosts the Refinement of the Work Package into a series of Work Results. This concludes the bulk of the computation that the Work Package represents. We would assume that the Relay-chain's height at this point is shortly after the authoring time, `T+r` where `r` could be as low as zero.
 
 The second consensus computation happens on-chain at the behest of the Relay-chain Block Author of the time `T+r+i`, where `i` is generally zero or one, the time taken for the Work Results to be transported from within the Core to get to the gateway of being on-chain. The computation done essentially just ensures that the Work Package is still in scope and that the prerequisite it relies upon (if any) has been submitted ahead of it. This is called the on-chain *Reporting* (in the fixed-function parachains model, this is known as "attestation") and initiates the *Availability Protocol* for this Work Package once Relay-chain Validators synchronize to the block. This protocol guarantees that the Work Package will be made available for as long as we allow disputes over its validity to be made.
 
@@ -156,17 +156,17 @@ Finally, at some point later still `T+r+i+a+o`, the Results of the Work Package 
 
 ### Collect-Refine
 
-The first two stages of the CoreJam process are *Collect* and *Refine*. *Collect* refers to the collection and authorization of Work Packages (collections of items together with an authorization) to utilize a Polkadot Core. *Refine* refers to the performance of computation according to the Work Packages in order to yield *Work Results*. Finally, each Validator Group member attests to a Work Package yielding a series of Work Results and these Attestations form the basis for bringing the Results on-chain and integrating them into the Polkadot (and in particular the Service's) state which happens in the following stages.
+The first two stages of the CoreJam process are *Collect* and *Refine*. *Collect* refers to the collection and authorization of Work Packages (collections of items together with an authorization) to utilize a Polkadot Core. *Refine* refers to the performance of computation according to the Work Packages in order to yield *Work Results*. Finally, each Backing Group member attests to a Work Package yielding a series of Work Results and these Attestations form the basis for bringing the Results on-chain and integrating them into the Polkadot (and in particular the Service's) state which happens in the following stages.
 
 #### Collection and `is_authorized`
 
-Collection is the means of a Validator Group member attaining a Work Package which is authorized to be performed on their assigned Core at the current time. Authorization is a prerequisite for a Work Package to be included on-chain. Computation of Work Packages which are not Authorized is not rewarded. Incorrectly attesting that a Work Package is authorized is a disputable offence and can result in substantial punishment.
+Collection is the means of a Backing Group member attaining a Work Package which is authorized to be performed on their assigned Core at the current time. Authorization is a prerequisite for a Work Package to be included on-chain. Computation of Work Packages which are not Authorized is not rewarded. Incorrectly attesting that a Work Package is authorized is a disputable offence and can result in substantial punishment.
 
 On arrival of a Work Package, after the initial decoding, a first check is that the `context` field is valid. This must reference a header hash of a known block which may yet be finalized and the additional fields must correspond to the data of that block.
 
 Agile Coretime (see [RFC#0001](https://github.com/polkadot-fellows/RFCs/blob/main/text/0001-agile-coretime.md)) prescribes two forms of Coretime sales: Instantaneous and Bulk. Sales of Instantaneous Coretime are no longer provided, leaving only Bulk Coretime.
 
-We introduce the concept of an *Authorizer* procedure, which is a piece of logic stored on-chain to which Bulk Coretime may be assigned. Assigning some Bulk Coretime to an Authorizer implies allowing any Work Package which passes that authorization process to utilize that Bulk Coretime in order to be submitted on-chain. It controls the circumstances under which RcVGs may be rewarded for evaluation and submission of Work Packages (and thus what Work Packages become valid to submit onto Polkadot). Authorization logic is entirely arbitrary and need not be restricted to authorizing a single collator, Work Package builder, parachain or even a single Service.
+We introduce the concept of an *Authorizer* procedure, which is a piece of logic stored on-chain to which Bulk Coretime may be assigned. Assigning some Bulk Coretime to an Authorizer implies allowing any Work Package which passes that authorization process to utilize that Bulk Coretime in order to be submitted on-chain. It controls the circumstances under which RcBGs may be rewarded for evaluation and submission of Work Packages (and thus what Work Packages become valid to submit onto Polkadot). Authorization logic is entirely arbitrary and need not be restricted to authorizing a single collator, Work Package builder, parachain or even a single Service.
 
 An *Authorizer* is a parameterized procedure:
 
@@ -186,7 +186,7 @@ The `code_hash` of the Authorizer is assumed to be the hash of some code accessi
 fn is_authorized(param: &AuthParam, package: &WorkPackage, core_index: CoreIndex) -> bool;
 ```
 
-If the `is_authorized` function overruns the system-wide limit or panicks on some input, it is considered equivalent to returning `false`. While it is mostly stateless (e.g. isolated from any Relay-chain state) it is provided with the package's `context` field in order to give information about a recent Relay-chain block. This allows it to be provided with a concise proof over some recent Relay-chain state.
+This function is executed in a metered VM and subject to a modest system-wide limitation on execution time. If it overruns this limit or panicks on some input, it is considered equivalent to returning `false`. While it is mostly stateless (e.g. isolated from any Relay-chain state) it is provided with the package's `context` field in order to give information about a recent Relay-chain block. This allows it to be provided with a concise proof over some recent Relay-chain state.
 
 A single `Authorizer` value is associated with the index of the Core at a particular Relay-chain block and limits in some way what Work Packages may be legally processed by that Core.
 
@@ -297,13 +297,13 @@ struct Attestation {
     report: WorkReport,
     /// Which validators from the group have a signature in `attestations`.
     validators: BitVec,
-    /// The signatures of the RcVG members set out in `validators` whose message is the
+    /// The signatures of the RcBG members set out in `validators` whose message is the
     /// hash of the `report`. The order of the signatures is the same order as the validators appear in `validators`.
     attestations: Vec<Signature>,
 }
 ```
 
-Each Relay-chain block, every Validator Group representing a Core which is assigned work provides a series of Work Results coherent with an authorized Work Package. Validators are rewarded when they take part in their Group and process such a Work Package. Thus, together with some information concerning their execution context, they sign a *Report* concerning the work done and the results of it. This is also known as a *Candidate*. This signed Report is called an *Attestation*, and is provided to the Relay-chain block author. If no such Attestation is provided (or if the Relay-chain block author refuses to introduce it for Reporting), then that Validator Group is not rewarded for that block.
+Each Relay-chain block, every Backing Group representing a Core which is assigned work provides a series of Work Results coherent with an authorized Work Package. Validators are rewarded when they take part in their Group and process such a Work Package. Thus, together with some information concerning their execution context, they sign a *Report* concerning the work done and the results of it. This is also known as a *Candidate*. This signed Report is called an *Attestation*, and is provided to the Relay-chain block author. If no such Attestation is provided (or if the Relay-chain block author refuses to introduce it for Reporting), then that Backing Group is not rewarded for that block.
 
 The process continues once the Attestations arrive at the Relay-chain Block Author.
 
@@ -327,7 +327,7 @@ Once both Availability and any additional requirements are met (including orderi
 
 There are a number of Initial Validation requirements which the RcBA must do in order to ensure no time is wasted on further, possibly costly, computation. Since the same tests are done on-chain, then for a Block Author to expect to make a valid block these tests must be done prior to actually placing the Attestations in the Relay-chain Block Body.
 
-Firstly, any given Work Report must have enough signatures in the Attestation to be considered for Reporting on-chain. Only one Work Report may be considered for Reporting from each RcVG per block.
+Firstly, any given Work Report must have enough signatures in the Attestation to be considered for Reporting on-chain. Only one Work Report may be considered for Reporting from each RcBG per block.
 
 Secondly, any Work Reports introduced by the RcBA must be *Recent*, defined as having a `context.header_hash` which is an ancestor of the RcBA head and whose height is less than `RECENT_BLOCKS` from the block which the RcBA is now authoring.
 
@@ -352,7 +352,7 @@ type RecentReports = StorageValue<BoundedVec<ReportSet, ConstU32<RECENT_BLOCKS>>
 
 The RcBA must keep an up to date set of which Work Packages have already been Reported in order to avoid accidentally attempting to introduce a duplicate Work Package or one whose prerequisite has not been fulfilled. Since the currently authored block is considered *Recent*, Work Reports introduced earlier in the same block do satisfy the prerequisite of Work Packages introduced later.
 
-While it will generally be the case that RcVGs know precisely which Work Reports will have been introduced at the point that their Attestation arrives with the RcBA by keeping the head of the Relay-chain in sync, it will not always be possible. Therefore, RcVGs will never be punished for providing an Attestation which fails any of these tests; the Attestation will simply be kept until either:
+While it will generally be the case that RcBGs know precisely which Work Reports will have been introduced at the point that their Attestation arrives with the RcBA by keeping the head of the Relay-chain in sync, it will not always be possible. Therefore, RcBGs will never be punished for providing an Attestation which fails any of these tests; the Attestation will simply be kept until either:
 
 1. it stops being *Recent*;
 2. it becomes Reported on-chain; or
