@@ -1,4 +1,4 @@
-# RFC-0000: Introduce `storage_proof_size` Host Function for Improved Parachain Block Utilization
+# RFC-0043: Introduce `storage_proof_size` Host Function for Improved Parachain Block Utilization
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 30 October 2023                                                                    |
