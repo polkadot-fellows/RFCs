@@ -1,25 +1,25 @@
-# RFC-0013: Prepare `BlockBuilder` and `Core` runtime API for MBMs
+# RFC-0013: Prepare `BlockBuilder` and `Core` runtime APIs for MBMs
 
 |                 |                                                                             |
 | --------------- | --------------------------------------------------------------------------- |
 | **Start Date**  | July 24, 2023 |
-| **Description** | Prepare the `BlockBuilder` and `Core` Runtime APIs for Multi-Block-Migrations.|
+| **Description** | Prepare the `BlockBuilder` and `Core` Runtime APIs for Multi-Block-Migrations. |
 | **Authors**     | Oliver Tale-Yazdi |
 
 ## Summary
 
 Introduces breaking changes to the `BlockBuilder` and `Core` runtime APIs.  
-A new function `BlockBuilder::last_inherent` is introduced and the return value of `Core::initialize_block` is changed from void to an enum.  
-The versions of both API are bumped; `BlockBuilder` to 7 and `Core` to 5.
+A new function `BlockBuilder::last_inherent` is introduced and the return value of `Core::initialize_block` is changed to an enum.  
+The versions of both APIs are bumped; `BlockBuilder` to 7 and `Core` to 5.
 
 ## Motivation
 
 There are three main motivations for this RFC:
 1. Multi-Block-Migrations: These make it possible to split a migration over multiple blocks.
-2. Pallet `poll` hook: Can be used to gradually replace `on_initialize`/`on_finalize` in places where the code does not need to be by a hard deadline.
-3. New callback `System::PostInherents`: Can replace `on_initialize`/`on_finalize` where a hard deadline is required (complements `poll`).
+2. Pallet `poll` hook: Can be used to gradually replace `on_initialize`/`on_finalize` in places where the code does not need to run by a hard deadline, since it is not guaranteed to execute each block.
+3. New callback `System::PostInherents`: Can replace `on_initialize`/`on_finalize` where a hard deadline is required (complements `poll`). It is guaranteed to execute each block.
 
-The three motivations can be implemented when fulfilling these two requirements:
+These three features can be implemented when fulfilling these two requirements:
 1. The runtime can tell the block author to not include any transactions in the block.
 2. The runtime can execute logic right after all pallet-provided inherents have been applied.
 
@@ -49,8 +49,8 @@ enum ExtrinsicInclusionMode {
 A block author MUST respect the `ExtrinsicInclusionMode` that is returned by `initialize_block`. The runtime MAY reject blocks that violate this requirement. 
 
 It is RECOMMENDED that block authors keep transactions in their transaction pool (if applicable)
-for as long as `initialize_block` returns `OnlyInherents`.  
-Backwards compatibility with the current runtime API SHOULD be implemented by the block author to not mandate a lockstep update of the authoring software.  
+for as long as `initialize_block` returns `OnlyInherents`. The assumption is that these transactions become valid once the runtime finishes the MBM.  
+Backwards compatibility with the current runtime API SHOULD be implemented by block authors to not mandate a lockstep update of the authoring software.  
 This could be achieved by checking the runtime API version and assuming that `initialize_block` does not have a return value when the version is lower than 7.
 
 ### `BlockBuilder::last_inherent`
@@ -59,11 +59,11 @@ A block author MUST always invoke `last_inherent` directly after applying all ru
 
 ### Combined
 
-Coming back to the three main motivations and how they can be implemented with these runtime APIs changes:
+Coming back to the three main features and how they can be implemented with these runtime APIs changes:
 
-**1. Multi-Block-Migrations**: The runtime is being put into lock-down mode for the duration of the migration process by returning `OnlyInherents` from `initialize_block`. This ensures that no user provided transactions can interfere with the migration process. It is absolutely necessary to ensure this since otherwise a transaction could call into un-migrated storage and violate storage invariants. The entry-point for the MBM logic is `last_inherent`. This is a good spot since any data that is touched in inherents is not MBM-migratable anyway. It could also be done before all other inherents or at the end of the block in `finalize_block`, but there is no downside from doing it in `last_inherent` and the other two motivations are in favour of this.
+**1. Multi-Block-Migrations**: The runtime is being put into lock-down mode for the duration of the migration process by returning `OnlyInherents` from `initialize_block`. This ensures that no user provided transaction can interfere with the migration process. It is absolutely necessary to ensure this, since otherwise a transaction could call into un-migrated storage and violate storage invariants. The entry-point for the MBM logic is `last_inherent`. This is a good spot, because any data that is touched in inherents, is not MBM-migratable anyway. It could also be done before all other inherents or at the end of the block in `finalize_block`, but there is no downside from doing it in `last_inherent` and the other two features are in favour of this.
 
-**2. `poll`** becomes possible by using `last_inherent` as entry-point. It would not be possible to use a pallet inherent like `System::last_inherent` to achieve this for two reasons. First is that pallets do not have access to `AllPalletsWithSystem` that is required to invoke the `poll` hook on all pallets. Second is that the runtime does currently not enforce the order or inherents. 
+**2. `poll`** becomes possible by using `last_inherent` as entry-point. It would not be possible to use a pallet inherent like `System::last_inherent` to achieve this for two reasons. First is that pallets do not have access to `AllPalletsWithSystem` that is required to invoke the `poll` hook on all pallets. Second is that the runtime does currently not enforce an order of inherents. 
 
 **3. `System::PostInherents`** can be done in the same manner as `poll`.
 
@@ -77,7 +77,7 @@ Compliance of a block author can be tested by adding specific code to the `last_
 checking that it always executes. The new logic of `initialize_block` can be tested by checking that
 the block-builder will skip transactions and optional hooks when `OnlyInherents` is returned.  
 
-Security: Implementations need to be well-audited before merging.
+Security: n/a
 
 Privacy: n/a
 
@@ -86,7 +86,7 @@ Privacy: n/a
 ### Performance
 
 The performance overhead is minimal in the sense that no clutter was added after fulfilling the
-requirements. A slight performance slow-down is expected from now additionally invoking
+requirements. A slight performance penalty is expected from invoking
 `last_inherent` once per block.
 
 ### Ergonomics
@@ -117,7 +117,7 @@ requests:
 `AllExtrinsics` and `OnlyInherents`, so if you have naming preferences; please post them.~~  
 => renamed to `ExtrinsicInclusionMode`
 
-~~Is `post_inherents` more consistent instead of `last_inherent`? Then we should change it.~~
+~~Is `post_inherents` more consistent instead of `last_inherent`? Then we should change it.~~  
 => renamed to `last_inherent`
 
 ## Future Directions and Related Material
