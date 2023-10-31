@@ -31,7 +31,7 @@ This RFC proposes the following host function signature:
 ```rust
 fn storage_proof_size() -> u64;
 ```
-The host function MUST return an unsigned 64-bit integer value representing the current proof size. In block-execution and block-import contexts, this function MUST return the current size of the proof. To achieve this, parachain node implementors need to enable proof recording for block imports. In contexts without proof recording, this function MUST return 0. 
+The host function MUST return an unsigned 64-bit integer value representing the current proof size. In block-execution and block-import contexts, this function MUST return the current size of the proof. To achieve this, parachain node implementors need to enable proof recording for block imports. In other contexts, this function MUST return 0.
 
 ## Performance, Ergonomics, and Compatibility
 ### Performance
