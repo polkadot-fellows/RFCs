@@ -8,64 +8,74 @@
 
 ## Summary
 
-Introduces breaking changes to the `BlockBuilder` and `Core` runtime APIs and bumps them to version
-5 and 7 respectively. A new function `after_inherents` is added to the `BlockBuilder` runtime API
-and the `initialize_block` function of `Core` is changed to return an enum to indicate what
-extrinsics can be applied.
+Introduces breaking changes to the `BlockBuilder` and `Core` runtime APIs.  
+A new function `BlockBuilder::last_inherent` is introduced and the return value of `Core::initialize_block` is changed from void to an enum.  
+The versions of both API are bumped; `BlockBuilder` to 7 and `Core` to 5.
 
 ## Motivation
 
-The original motivation is Multi-Block-Migrations. They require the runtime to be able to tell the
-block builder that it should not attempt to include transactions in the current block. Currently,
-there is no communication possible between runtime and block builder that could achieve this.
-Further, it is necessary to execute runtime logic right after inherent application but still before
-transaction inclusion.
+There are three main motivations for this RFC:
+1. Multi-Block-Migrations: These make it possible to split a migration over multiple blocks.
+2. Pallet `poll` hook: Can be used to gradually replace `on_initialize`/`on_finalize` in places where the code does not need to be by a hard deadline.
+3. New callback `System::PostInherents`: Can replace `on_initialize`/`on_finalize` where a hard deadline is required (complements `poll`).
 
-This RFC proposes a way of communication between the runtime and the block builder by changing the
-`initialize_block` function to return a `ExtrinsicInclusionMode` enum. Additionally, an
-`after_inherents` function is introduced that runs after inherent but before transaction
-application.  
+The three motivations can be implemented when fulfilling these two requirements:
+1. The runtime can tell the block author to not include any transactions in the block.
+2. The runtime can execute logic right after all pallet-provided inherents have been applied.
 
 ## Stakeholders
 
-- Substrate Maintainers: They will have to implement this upstream with all the testing, audit and
+- Substrate Maintainers: They have to implement this, including tests, audit and
   maintenance burden.
-- Polkadot Runtime developers: They will have to adapt to this breaking change.
+- Polkadot Runtime developers: They will have to adapt the runtime files to this breaking change.
 - Polkadot Parachain Teams: They also have to adapt to the breaking changes but then eventually have
   multi-block migrations available.
 
 ## Explanation
 
-The only relevant change is on the node side in the block authoring logic. Any further preparation
-for MBMs can happen entirely on the runtime side with the provided primitives.
 
-All block authors MUST respect the `ExtrinsicInclusionMode` that is returned by `initialize_block`.
-They MUST always invoke `after_inherents` directly after inherent application. The runtime MAY
-reject a block that violates either of those requirements.
+### `Core::initialize_block`
 
-Enum `ExtrinsicInclusionMode` has two variants:  
-- `AllExtrinsics`: All extrinsics can be applied. It is the default behaviour prior to this RFC.
-- `OnlyInherents`: Only inherents SHALL be applied by the block author. This differs from the
-  current behaviour by omitting transactions.
+This runtime API function is changed from returning `()` to `ExtrinsicInclusionMode`:
+```rust
+enum ExtrinsicInclusionMode {
+  /// All extrinsics are allowed in this block.
+  AllExtrinsics,
+  /// Only inherents are allowed in this block.
+  OnlyInherents,
+}
+```
 
-It is RECOMMENDED that block authors keep transactions in the local transaction pool (if applicable)
+A block author MUST respect the `ExtrinsicInclusionMode` that is returned by `initialize_block`. The runtime MAY reject blocks that violate this requirement. 
+
+It is RECOMMENDED that block authors keep transactions in their transaction pool (if applicable)
 for as long as `initialize_block` returns `OnlyInherents`.  
-Backwards compatibility with the current runtime API SHOULD be implemented on the node side to not
-mandate a lockstep update.
+Backwards compatibility with the current runtime API SHOULD be implemented by the block author to not mandate a lockstep update of the authoring software.  
+This could be achieved by checking the runtime API version and assuming that `initialize_block` does not have a return value when the version is lower than 7.
+
+### `BlockBuilder::last_inherent`
+
+A block author MUST always invoke `last_inherent` directly after applying all runtime-provided inherents. The runtime MAY reject blocks that violate this requirement.
+
+### Combined
+
+Coming back to the three main motivations and how they can be implemented with these runtime APIs changes:
+
+**1. Multi-Block-Migrations**: The runtime is being put into lock-down mode for the duration of the migration process by returning `OnlyInherents` from `initialize_block`. This ensures that no user provided transactions can interfere with the migration process. It is absolutely necessary to ensure this since otherwise a transaction could call into un-migrated storage and violate storage invariants. The entry-point for the MBM logic is `last_inherent`. This is a good spot since any data that is touched in inherents is not MBM-migratable anyway. It could also be done before all other inherents or at the end of the block in `finalize_block`, but there is no downside from doing it in `last_inherent` and the other two motivations are in favour of this.
+
+**2. `poll`** becomes possible by using `last_inherent` as entry-point. It would not be possible to use a pallet inherent like `System::last_inherent` to achieve this for two reasons. First is that pallets do not have access to `AllPalletsWithSystem` that is required to invoke the `poll` hook on all pallets. Second is that the runtime does currently not enforce the order or inherents. 
+
+**3. `System::PostInherents`** can be done in the same manner as `poll`.
 
 ## Drawbacks
 
-[…] drawbacks relating to performance, ergonomics, user experience, security, or privacy: None
-
-The only drawback is that the block execution logic becomes more complicated. There is more room for
-error.  
-Downstream developers will also need to adapt their code to this breaking change.
+As noted in the review comments: this cements some assumptions about the order of inherents into the `BlockBuilder` traits. It was criticized for being to rigid in its assumptions.
 
 ## Testing, Security, and Privacy
 
-Compliance of a block author can be tested by adding specific code to the `after_inherents` hook and
+Compliance of a block author can be tested by adding specific code to the `last_inherent` hook and
 checking that it always executes. The new logic of `initialize_block` can be tested by checking that
-the block-builder will skip transactions and optional hooks when `Minimal` is returned.  
+the block-builder will skip transactions and optional hooks when `OnlyInherents` is returned.  
 
 Security: Implementations need to be well-audited before merging.
 
@@ -77,7 +87,7 @@ Privacy: n/a
 
 The performance overhead is minimal in the sense that no clutter was added after fulfilling the
 requirements. A slight performance slow-down is expected from now additionally invoking
-`after_inherents` once per block.
+`last_inherent` once per block.
 
 ### Ergonomics
 
@@ -86,14 +96,12 @@ multi-block-migrations which should be a huge ergonomic advantage for parachain 
 
 ### Compatibility
 
-Backwards compatibility can only be considered on the node side since the runtime cannot be
-backwards compatible in any way. The advice here is OPTIONAL and outside of the RFC. To not degrade
+The advice here is OPTIONAL and outside of the RFC. To not degrade
 user experience, it is recommended to ensure that an updated node can still import historic blocks.
 
 ## Prior Art and References
 
-The RFC is currently being implemented in
-[substrate#14414](https://github.com/paritytech/substrate/pull/14414). Related issues and merge
+The RFC is currently being implemented in [polkadot-sdk#1781](https://github.com/paritytech/polkadot-sdk/pull/1781). Related issues and merge
 requests:
 - [Simple multi block migrations](https://github.com/paritytech/substrate/pull/14275)
 - [Execute a hook after inherent but before
@@ -107,21 +115,12 @@ requests:
 ~~Please suggest a better name for `BlockExecutiveMode`. We already tried: `RuntimeExecutiveMode`,
 `ExtrinsicInclusionMode`. The names of the modes `Normal` and `Minimal` were also called
 `AllExtrinsics` and `OnlyInherents`, so if you have naming preferences; please post them.~~  
-=> Resolved by using `ExtrinsicInclusionMode`.
+=> renamed to `ExtrinsicInclusionMode`
 
-Is `post_inherents` more consistent instead of `after_inherents`? Then we should change it.
+~~Is `post_inherents` more consistent instead of `last_inherent`? Then we should change it.~~
+=> renamed to `last_inherent`
 
 ## Future Directions and Related Material
 
-An alternative approach to this is outlined
-[here](https://github.com/paritytech/substrate/pull/14279#discussion_r1226289311) by using an
-ordering of extrinsics. In this system, all inherents would have negative priority and transactions
-positive priority. By then enforcing an order on them, there would be no hard differentiation
-between inherent and transaction for the block author anymore. That approach aims more at unifying
-the interplay between inherents and transactions, since the problem of communicating between runtime
-and block author on whether transactions should be included would not be solved by it. It also needs
-to invoke the `after_inherents` hook.  
-
-I think it can therefore be done as a future refactor to improve the code clarity and simplify the
-runtime logic. This RFC rather tries to prepare the runtime and block authors for a simple solution
-to the Multi-block migrations problem.
+The long-term future here is to move the block building logic into the runtime. Currently there is a tight dance between the block author and the runtime; the author has to call into different runtime functions in quick succession and exact order. Any misstep causes the built block to be invalid.  
+This can be unified and simplified by moving both parts of the logic into the runtime.
