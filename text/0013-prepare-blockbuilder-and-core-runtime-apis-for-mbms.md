@@ -14,7 +14,7 @@ The versions of both APIs are bumped; `BlockBuilder` to 7 and `Core` to 5.
 
 ## Motivation
 
-There are three main motivations for this RFC:
+There are three main features that motivate for this RFC:
 1. Multi-Block-Migrations: These make it possible to split a migration over multiple blocks.
 2. Pallet `poll` hook: Can be used to gradually replace `on_initialize`/`on_finalize` in places where the code does not need to run by a hard deadline, since it is not guaranteed to execute each block.
 3. New callback `System::PostInherents`: Can replace `on_initialize`/`on_finalize` where a hard deadline is required (complements `poll`). It is guaranteed to execute each block.
