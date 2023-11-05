@@ -4,9 +4,7 @@ on:
   issue_comment:
     types: [created]
 
-permissions:
-  pull-requests: write
-  contents: write
+permissions: write-all
 
 jobs:
   rfc-action:
@@ -14,6 +12,12 @@ jobs:
     if: ${{ github.event.issue.pull_request && startsWith(github.event.comment.body, '/rfc') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: paritytech/rfc-action@be7c934ade5bfce5eae889db3d6a286560431333 # v0.0.3
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate a token
+        id: generate_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app_id: ${{ secrets.RFC_BOT_APP_ID }}
+          private_key: ${{ secrets.RFC_BOT_PRIVATE_KEY }}
+      - uses: paritytech/rfc-action@58bf9d7446e85cf2a95a1600cb3616f90c3b3913 # v0.0.5
+        env:
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
