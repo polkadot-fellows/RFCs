@@ -89,7 +89,6 @@ For registering using the new rental system we will have to make modifications t
 mod pallet {
 	// -- snip --
 
-	#[pallet::call_index(9)]
 	pub fn register_rental(
 		origin: OriginFor<T>,
 		id: ParaId,
@@ -97,7 +96,6 @@ mod pallet {
 		validation_code: ValidationCode,
 	) -> DispatchResult { /* ... */ }
 
-	#[pallet::call_index(10)]
 	pub fn pay_rent(origin: OriginFor<T>, id: ParaId) -> DispatchResult {
 		/* ... */ 
 	}
@@ -149,7 +147,6 @@ If the rent isn't paid on time, and the parachain gets pruned, the new model sho
 /// NOTE: During a runtime upgrade where the pre-checking rules change this storage map should be
 /// cleared appropriately.
 #[pallet::storage]
-#[pallet::getter(fn checked_code_hash)]
 pub(super) type CheckedParachains<T: Config> =
 	StorageMap<_, Twox64Concat, ParaId, (ValidationCodeHash, HeadData)>;
 ```
