@@ -103,7 +103,7 @@ mod pallet {
 ```
 
 A call to `register_rental` will require the reservation of only a percentage of the deposit that would otherwise be required to register the validation code when using the regular model.
-As described later in the *Quick para re-registering* section below, we will also store the code hash and the head data of each parachain to enable faster re-registration after a parachain has been pruned. For this reason the total initial deposit amount is increased to account for that.
+As described later in the *Quick para re-registering* section below, we will also store the code hash of each parachain to enable faster re-registration after a parachain has been pruned. For this reason the total initial deposit amount is increased to account for that.
 ```rust
 // The logic for calculating the initial deposit for parachain registered with the 
 // new rent-based model:
@@ -138,7 +138,7 @@ Once the validation code is stored without having its rent paid the `assigner_on
 If the rent isn't paid on time, and the parachain gets pruned, the new model should provide a quick way to re-register the same validation code under the same `ParaId`. This can be achieved by skipping the pre-checking process, as the validation code hash will be stored on-chain, allowing us to easily verify that the uploaded code remains unchanged.
 
 ```rust
-/// Stores the validation code hash and head data for parachains that successfully completed the 
+/// Stores the validation code hash for parachains that successfully completed the 
 /// pre-checking process.
 ///
 /// This is stored to enable faster on-demand para re-registration in case its pvf has been earlier
@@ -147,8 +147,8 @@ If the rent isn't paid on time, and the parachain gets pruned, the new model sho
 /// NOTE: During a runtime upgrade where the pre-checking rules change this storage map should be
 /// cleared appropriately.
 #[pallet::storage]
-pub(super) type CheckedParachains<T: Config> =
-	StorageMap<_, Twox64Concat, ParaId, (ValidationCodeHash, HeadData)>;
+pub(super) type CheckedCodeHash<T: Config> =
+	StorageMap<_, Twox64Concat, ParaId, ValidationCodeHash>;
 ```
 
 To enable parachain re-registration, we should introduce a new extrinsic in the `paras-registrar` pallet that allows this. The logic of this extrinsic will be same as regular registration, with the distinction that it can be called by anyone, and the required deposit will be smaller since it only has to cover for the storage of the validation code.
