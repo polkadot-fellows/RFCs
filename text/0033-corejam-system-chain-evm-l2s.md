@@ -1,9 +1,9 @@
-# RFC-0033: CoreJam System Chain on Ethereum L2
+# RFC-0033: CoreJam System Chain on EVM L2s with OP Stack
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 5 November 2023                               |
-| **Description** | CoreJam System Chain on Ethereum L2 with OP Stack |
+| **Description** | CoreJam System Chain on EVM L2s with OP Stack |
 | **Authors**     | Sourabh Niyogi                                |
 
 ## Summary
@@ -29,7 +29,7 @@ In order of importance:
 1. This proposal must be compatible with Solidity+Ethereum to have developer and ultimately, user impact.
 2. The CoreJam implementation should be practical, needing minimal changes to OP Stack.
 3. Utilization of CoreJam must be permissionless and maintain the same security model of Optimistic Rollups.
-4. There should be a clear path for CoreJam System Chain, despite its ORU L2 setting, to support decentralization of nodes.
+4. There should be a path for the CoreJam System Chain, despite its ORU L2 setting, to support permissionless ScBG nodes and ScBA nodes.
 
 ## Stakeholders
 
@@ -67,22 +67,23 @@ Unlike Polkadot and Kusama, the CoreJam System Chain (contemplated on Ethereum a
 
 Optimistic rollups are called "optimistic" because they assume that transactions are usually valid and only require on-chain settlement on Ethereum L1 in the event of a dispute.  Fault proofs have been developed for OP Stack in 2023, described [here](https://github.com/ethereum-optimism/optimism/blob/develop/specs/fault-proof.md) which has been brought to Goerli testnet.  ORUs currently store the L2 data in L1 using Call Data, but it is widely expected that EIP-4844's blob transactions will require small adaptations to this.  This Ethereum DA capability is expected to have a short window of around 30 days, long enough for a fault proof to be submitted.
 
-CoreJam makes significant use of Data Availability (DA) resources in both the map/refine and reduce/accumulate steps.  In a Polkadot setting, CoreJam on Polkadot would use Polkadot's own DA on the Relay Chain.  However, with the CoreJam System as an Ethereum L2 ORU, it would be necessary to rely on Ethereum's blob transactions for DA instead for the critical `accumulate` "on-chain" step.  (For the "refine" step, this is not necessary.)   It is expected that OP Stack's fault proof system, in accommodating EIP-4844 would be used CoreJam ETH L2's use of blob transactions will mirror the fault proof adjustments.
+CoreJam makes significant use of Data Availability (DA) resources in both the map/refine and reduce/accumulate steps.  In a Polkadot setting, CoreJam on Polkadot would use Polkadot's own DA on the Relay Chain.  However, with the CoreJam System as an Ethereum L2 ORU, it would be necessary to rely on Ethereum's blob transactions for DA instead for the critical `accumulate` "on-chain" step.  (For the "refine" step, this is not necessary.)   It is expected that OP Stack's fault proof system would be extended to support EIP-4844.
 
 As Polkadot DA is believed to be significantly higher throughput and linear in the number of cores, this sets up the Ethereum as a place as an "on-ramp" for CoreJam application developers.  
 
 ### Overview
 
 The essence of CoreJam is to run a map-reduce-like process with:
- * `refine` mapping Work Items into Work Results
- * `accumulate` mapping Work Results into actual state mutations  
+ * `refine` mapping Work Items into Work Results "in-core" by ScBG nodes
+ * `accumulate` mapping Work Results into "on-chain" by the ScBA, given
 
 This can be done permissionlessly in Solidity/EVM Smart Contracts with the following interface:
 
 ```solidity
 interface CoreJamService {
     struct Context {
-        uint256 blockNumber;
+        uint256 block_number;
+        bytes32 header_hash;
         bytes32 prerequisite;
     }
 
@@ -260,9 +261,7 @@ type Attestation struct {
 
 Each System-chain block, every Backing Group representing a Core which is assigned work provides a series of Work Results coherent with an authorized Work Package. Validators are rewarded when they take part in their Group and process such a Work Package. Thus, together with some information concerning their execution context, they sign a *Report* concerning the work done and the results of it. This is also known as a *Candidate*. This signed Report is called an *Attestation*, and is provided to the System-chain block author. If no such Attestation is provided (or if the System-chain block author refuses to introduce it for Reporting), then that Backing Group is not rewarded for that block.
 
-WorkReports are gossiped among ScBG nodes (OP Stack nodes) to form a sufficient number attestations, which arrive at the System-chain Block Author.
-
-In an OP Stack setting, a set of OP Stack nodes all can validate the activity of the ScBA, which are chosen via some process to be part of a ScBG.  See RFC #3 and discussion of various processes, one of which should be adapted for this purpose and placed in a OP Stack setting.
+WorkReports are gossiped among ScBG nodes (OP Stack nodes, using op-geth's libp2p-based messaging) to form a sufficient number attestations, which arrive at the ScBa.   In an OP Stack setting, a set of OP Stack nodes all can validate the activity of the ScBA, which are chosen via some process to be part of a ScBG.  See RFC #3 and discussion of design alternatives, one of which should be adapted for this purpose and placed in a OP Stack setting.
 
 ### Join-Accumulate
 
@@ -286,38 +285,15 @@ There are a number of Initial Validation requirements which the ScBA must do in 
 
 Firstly, any given Work Report must have enough signatures in the Attestation to be considered for Reporting on-chain. Only one Work Report may be considered for Reporting from each ScBG per block.
 
-Secondly, any Work Reports introduced by the ScBA must be *Recent*, defined as having a `context.header_hash` which is an ancestor of the ScBA head and whose height is less than `RECENT_BLOCKS` from the block which the ScBA is now authoring.
+Secondly, any Work Reports introduced by the ScBA must be *Recent*, at a height is less than `RECENT_BLOCKS` (eg 16) from the block which the ScBA is now authoring.
 
-```golang
-const RECENT_BLOCKS uint32 = 16
-```
-
-Thirdly, dependent elements of the Context (`context.block_number`) must correctly correspond to those on-chain for the block corresponding to the provided `context.header_hash`. For this to be possible, the System-chain is expected to track Recent state roots in a queue.
+Thirdly, dependent elements of the Context (`context.block_number`) must correctly correspond to those on-chain for the block corresponding to the provided `context.header_hash`. For this to be possible, the System-chain is expected to track Recent blocks in a queue.
 
 Fourthly, the ScBA may not attempt to report multiple Work Reports for the same Work Package. Since Work Reports become inherently invalid once they are no longer *Recent*, then this check may be simplified to ensuring that there are no Work Reports of the same Work Package within any *Recent* blocks.
 
 Finally, the ScBA may not register Work Reports whose prerequisite is not itself Reported in *Recent* blocks.
 
-In order to ensure all of the above tests are honoured by the ScBA, a block which contains Work Reports which fail any of these tests shall panic on import. The System-chain's on-chain logic will thus include these checks in order to ensure that they are honoured by the ScBA. We therefore introduce the *Recent Reports* storage item, which retaining all Work Package hashes which were Reported in the *Recent* blocks:
-
-```golang
-const MAX_CORES = 512
-/// Must be ordered.
-type ReportSet = Items [MAX_CORES]WorkPackageHash
-type WorkPackageHash common.Hash
-
-type BoundedVec struct {
-	Items []WorkPackageHash
-}
-
-type ReportSet struct {
-	BoundedVec
-}
-
-type RecentReports struct {
-	StorageValue BoundedVec
-}
-```
+In order to ensure all of the above tests are honored by the ScBA, a block which contains Work Reports which fail any of these tests shall panic on import. The System-chain's on-chain logic will thus include these checks in order to ensure that they are honoured by the ScBA.  The ScBA should track *Recent Reports*, and retain all Work Package hashes which were Reported in the *Recent* blocks.
 
 The ScBA must keep an up to date set of which Work Packages have already been Reported in order to avoid accidentally attempting to introduce a duplicate Work Package or one whose prerequisite has not been fulfilled. Since the currently authored block is considered *Recent*, Work Reports introduced earlier in the same block do satisfy the prerequisite of Work Packages introduced later.
 
