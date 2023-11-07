@@ -1,4 +1,4 @@
-# RFC-0000: Lowering Deposit Requirements on Polkadot Asset Hub
+# RFC-0000: Lowering NFT Deposits on Polkadot and Kusama Asset Hubs
 
 |                 |                                                                                                    |
 | --------------- | -------------------------------------------------------------------------------------------------- |
