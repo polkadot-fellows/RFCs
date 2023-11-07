@@ -50,6 +50,7 @@ _Scroll right_
 > Note: This is only a proposal for change and it can be modified upon additional conversation.
 
 ## Drawbacks
+The contemplation of modifying deposit requirements necessitates a balanced assessment of the potential drawbacks. Highlighted below are cogent points extracted from the discourse on the [Polkadot Forum conversation](https://forum.polkadot.network/t/polkadot-assethub-high-nft-collection-deposit/4262), which provide critical perspectives on the implications of such changes:
 
 > But NFT deposits were chosen somewhat arbitrarily at genesis and it’s a good exercise to re-evaluate them and adapt if they are causing pain and if lowering them has little or no negative side effect (or if the trade-off is worth it).
 >  -> joepetrowski
@@ -68,12 +69,14 @@ _Scroll right_
 ### Performance
 This change is not expected to have a significant impact on the overall performance of the Polkadot Asset Hub. However, it is crucial to monitor the network closely, especially in the initial stages after implementation, to identify and mitigate any potential issues.
  
-One of the proposed changes we could also implement is:
+Additionally, a supplementary proposal aims to augment the network's adaptability:
 
 > Just from a technical perspective; I think the best we can do is to use a weak governance origin that is controlled by some consortium (ie. System Collective).
 > This origin could then update the NFT deposits any time the market conditions warrant it - obviously while honoring the storage deposit requirements.
 > To implement this, we need RFC#12 and the Parameters pallet from @xlc.
 >  -> OliverTY
+
+This dynamic governance approach would facilitate a responsive and agile economic model for deposit management, ensuring that the network remains both accessible and robust in the face of market volatility.
 
 ### Ergonomics
 The proposed change aims to enhance the user experience for artists, making the platform more accessible and user-friendly.
@@ -82,7 +85,7 @@ The proposed change aims to enhance the user experience for artists, making the 
 The change doesn't impact compatibility.
 
 ## Unresolved Questions
-  - The question on the optimal new deposit amount that reduces barrior to entry and prevents  accessibility with the need for state?
+- Determining the optimal new deposit amount that reduces the barrier to entry while preventing state bloat remains a subject for debate. What is the balance that allows for inclusivity without compromising the network's efficiency and security?
 
 ## Future Directions and Related Material
 
