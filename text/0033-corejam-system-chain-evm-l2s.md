@@ -3,39 +3,40 @@
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 5 November 2023                               |
-| **Description** | CoreJam System Chain on Ethereum L2 |
+| **Description** | CoreJam System Chain on Ethereum L2 with OP Stack |
 | **Authors**     | Sourabh Niyogi                                |
 
 ## Summary
 
-CoreJam (RFC [#31](https://github.com/polkadot-fellows/RFCs/pull/31)) offers a significant refactorization of the blockchain state transition to blockchain scalability with its map-reduce architecture, starting with a Polkadot/Substrate 2.0 foundation.   This proposal adapts the CoreJam architecture to EVM L2s, utilizing [OP Stack](https://stack.optimism.io/) + Solidity instead of Polkadot/Substrate.  The endpoint being proposed is a _CoreJam System chain on Ethereum L2_.   Almost all CoreJam concepts from #31 are retained (but none of Polkadot 1.0's primary "product" of parachains), but CoreJam's interfaces are replaced with Solidity/EVM Contracts + OP Stack's Golang.  
+CoreJam (RFC [#31](https://github.com/polkadot-fellows/RFCs/pull/31)) offers a significant refactorization of the blockchain state transition function with its map-reduce architecture, starting with a Polkadot/Substrate 2.0 foundation.   This proposal adapts the CoreJam architecture to EVM L2s, specifically utilizing [OP Stack](https://stack.optimism.io/) + Solidity instead of Polkadot/Substrate.  The endpoint being proposed is a _CoreJam System Chain on Ethereum L2_.   Almost all CoreJam concepts from #31 are retained (but none of Polkadot 1.0's primary "product" of parachains), where CoreJam's Rust interfaces are replaced with Solidity/EVM Contracts + OP Stack's Golang.  
 
 In this adaptation of "Collect-Refine-Join-Accumulate", a Solidity/EVM Smart Contract has two primary entry-points: `refine` and `accumulate`.  Work packages are processed "in-core" (and thus parallelized) via `refine`, and the refined outputs of this processing are gathered together and an on-chain state-machine progressed according to `accumulate`.
 
-For pedagogical reasons, the write up below retains most of the original language, with small adaptation made for the OP Stack.
+For pedagogical reasons, the write up below retains much of the original language.  
 
 ## Motivation
 
-* CoreJam impact outside Polkadot ecosystem
-* Provide On-ramp of new developers familiar with Solidity, new users with ETH liquidity and other EVM Chains
-* Reduced Time-to-market of CoreJam
+* CoreJam impact in Ethereum and other EVM L1s
+* Provide an on-ramp to CoreJam developers already familiar with Solidity
+* Reduced Time-to-market of CoreJam in OP Stack relative to Polkadot 2.0 Engineering
 
-From a usability and impact perspective, this expands the set of CoreJam developers from a small but growing number Substrate+Rust developers solely in the Polkadot ecosystem to a large but growing number of Solidity+EVM Developers in a larger number of EVM ecosystems beyond Polkadot alone.  It is believed Polkadot may benefit from an increasing number of CoreJam developers onboarded from Ethereum and other EVM Chains through this adaptation.
+From a usability and impact perspective, having CoreJam's map-reduce in Ethereum expands the set of CoreJam developers from a small but growing number Substrate+Rust developers solely in the Polkadot ecosystem to a large but growing number of Solidity developers in a larger number of EVM ecosystems beyond Polkadot alone.  Provided that Polkadot executes on its high throughput DA (proportional to number of cores), minimal relay chain scalability, and genuine L1 decentralization, it is believed Polkadot may benefit from an increasing number of CoreJam developers onboarded from Ethereum and other EVM Chains through this adaptation.
 
 ## Requirements
 
 In order of importance:
 
-1. This proposal must be compatible with Solidity+Ethereum to have developer + user impact
-2. Implementation should be practical, needing minimal changes to OP Stack.
-3. Utilization of CoreJam must be permissionless.
-4. Support decentralization of nodes.
+1. This proposal must be compatible with Solidity+Ethereum to have developer and ultimately, user impact.
+2. The CoreJam implementation should be practical, needing minimal changes to OP Stack.
+3. Utilization of CoreJam must be permissionless and maintain the same security model of Optimistic Rollups.
+4. There should be a clear path for CoreJam System Chain, despite its ORU L2 setting, to support decentralization of nodes.
 
 ## Stakeholders
 
 1. Solidity/EVM Smart Contract developers already building on EVM L1+L2 Chains needing the scalability of map-reduce.
 2. Anyone wanting to create decentralised/unstoppable/resilient applications.
 3. Anyone with exposure to the token economies of EVM Chains, specifically Ethereum.
+4. If funded by the Polkadot Treasury, DOT Stakeholders supporting this adaptation
 
 ## Explanation
 
@@ -62,103 +63,93 @@ The following two groups of participants are coordinated with OP Stack nodes:
 - *ScBG*: System-chain Backing Group, a grouping of System-chain validators who act as the initial guarantors over the result of some computation done off-chain.  These are OP Stack Nodes runing the "Map" Collect-Refine using Solidity/EVM Contracts.
 - *ScBA*: System-chain Block Author, the author of some particular block on the  CoreJam System-chain, an EVM L2 ORU also using OP Stack, and run "Reduce" Join-Accumulate using Solidity/EVM Contracts
 
-Unlike Polkadot and Kusama, the CoreJam System Chain (contemplated on Ethereum at L2, and potentially other EVM Chains) is not a relay chain: it does not offer parachain security or have a messaging protocol between parachains.  For this reason, CoreJam's RcBG and RcBA are just ScBG and ScBA.  In addition, EVM ORUs are centralized.  
+Unlike Polkadot and Kusama, the CoreJam System Chain (contemplated on Ethereum at L2, and potentially other EVM Chains) is not a relay chain: it does not offer parachain security or a messaging protocol (UMP/DMP/HRMP) between parachains.  For this reason, CoreJam's RcBG and RcBA are just ScBG and ScBA.  
+
+Optimistic rollups are called "optimistic" because they assume that transactions are usually valid and only require on-chain settlement on Ethereum L1 in the event of a dispute.  Fault proofs have been developed for OP Stack in 2023, described [here](https://github.com/ethereum-optimism/optimism/blob/develop/specs/fault-proof.md) which has been brought to Goerli testnet.  ORUs currently store the L2 data in L1 using Call Data, but it is widely expected that EIP-4844's blob transactions will require small adaptations to this.  This Ethereum DA capability is expected to have a short window of around 30 days, long enough for a fault proof to be submitted.
+
+CoreJam makes significant use of Data Availability (DA) resources in both the map/refine and reduce/accumulate steps.  In a Polkadot setting, CoreJam on Polkadot would use Polkadot's own DA on the Relay Chain.  However, with the CoreJam System as an Ethereum L2 ORU, it would be necessary to rely on Ethereum's blob transactions for DA instead for the critical `accumulate` "on-chain" step.  (For the "refine" step, this is not necessary.)   It is expected that OP Stack's fault proof system, in accommodating EIP-4844 would be used CoreJam ETH L2's use of blob transactions will mirror the fault proof adjustments.
+
+As Polkadot DA is believed to be significantly higher throughput and linear in the number of cores, this sets up the Ethereum as a place as an "on-ramp" for CoreJam application developers.  
 
 ### Overview
 
-The essence of CoreJam is to run a map-reduce process with `refine`:
- * map Work Items into Work Results using `refine`
- * Work Results using `accumulate`
+The essence of CoreJam is to run a map-reduce-like process with:
+ * `refine` mapping Work Items into Work Results
+ * `accumulate` mapping Work Results into actual state mutations  
 
 This can be done permissionlessly in Solidity/EVM Smart Contracts with the following interface:
 
 ```solidity
-pragma solidity ^0.8.0;
-
 interface CoreJamService {
-    struct Tuple {
-        CoreJam.Authorization authorization;
-        CoreJam.WorkResult[] data;
+    struct Context {
+        uint256 blockNumber;
+        bytes32 prerequisite;
     }
 
-    function refine(bytes memory payload, CoreJam.PackageInfo memory packageInfo) external pure returns (CoreJam.BoundedVecOutput memory);
+    struct WorkItem {
+        uint32 service;
+        bytes payload;
+    }
 
-    function applyRefine(CoreJam.WorkItem memory item) external pure returns (CoreJam.WorkResult memory);
+    struct WorkResult {
+        uint32 service;
+        bytes32 itemHash;
+        bytes result;
+        uint256 gas;
+    }
 
-    function accumulate(CoreJam.Tuple[] memory results) external;
+    struct WorkPackage {
+        Authorization authorization;
+        Context context;
+        WorkItem[] items;
+    }
 
-    // TODO: prune
+    // ********* IN-CORE: Any ScBG can call this -- key design question is how work packages get assigned to cores!
+    function isAuthorized(WorkPackage package, uint32 coreIndex) external view returns (bool);
+    // applyRefine maps a WorkItem into a WorkResult
+    function applyRefine(WorkItem item) external pure returns (WorkResult memory);
+    // refine maps a package containing work items into work results using applyRefine
+    function refine(WorkPackage package) external pure returns (WorkResult[] memory);
+
+    // ********* ON-CHAIN: accumulate is called by the system chain block author (ScBA) given work report attestation
+    function accumulate(WorkResult[] results) external;
+    // TODO: prune - removes conflicting items
 }
 
 contract MyCoreJamService is CoreJamService {
-    using CoreJam for *;
-
-    // ************* Any ScBG can call this
-    function refine(bytes memory payload, CoreJam.PackageInfo memory packageInfo) external pure returns (CoreJam.BoundedVecOutput memory) {
-        // Implement refine function logic here based on the provided parameters
-        // Return refined output as BoundedVecOutput
-        // Make sure to handle the logic according to your specific use case
-        CoreJam.BoundedVecOutput memory output;
-        // Implement the refining logic here
-        return output;
-    }
-
-    function applyRefine(CoreJam.WorkItem memory item) external pure returns (CoreJam.WorkResult memory) {
-        // Implement applyRefine function logic here based on the provided WorkItem
-        // Return WorkResult containing service, item_hash, result, and gas
-        // Make sure to handle the logic according to your specific use case
-        CoreJam.WorkResult memory result;
-        // Implement the applyRefine logic here
-        return result;
-    }
-
-    // Define modifier to restrict access to authorized users
-    modifier onlyRCBA(uint32 authId, CoreJam.WorkPackage memory package, uint32 coreIndex) {
-        require(CoreJam.isAuthorized(authorizers[authId].param, package, coreIndex), "Unauthorized");
+    modifier onlySCBA() {
+        // restrict accumulate to SCBA only
         _;
     }
 
-    // ************* only ScBA can call this, and it can mutate the state of others
-    function accumulate(CoreJam.Tuple[] memory results) external onlyRCBA(authId, package, coreIndex) {
-            // Implement accumulate function logic here based on the provided parameters
-            // Iterate through the input results and process each tuple as needed
-            for (uint256 i = 0; i < results.length; i++) {
-                CoreJam.Authorization memory authorization = results[i].authorization;
-                CoreJam.WorkResult[] memory workResults = results[i].data;
+    function applyRefine(WorkItem calldata item) external pure override returns (WorkResult memory) {
+    }
 
-                // Process authorization and workResults as needed
-                // ...
-                // CoreJam's transfer / on transfer is accomplished with a internal contract to another accumulate
-            }
+    function refine(WorkPackage calldata package) external pure override returns (WorkResult[] memory) {
+    }
+
+    function accumulate(Tuple[] calldata results) external override onlySCBA() {
+        // Process authorization and workResults as needed...
+        // Note: CoreJam's transfer / on transfer is accomplished with a internal contract to another accumulate
     }
 }
 ```
 
-Under ordinary circumstances, a CoreJam developer will deploy a CoreJamService along with a mechanism to add Work Items.
 
-The core insights of CoreJam is:
-* the "in-core"  Collect-Refine (with Smart Contract entry point`refine` ) supports mass parallelization and can be done with a _scalable_ distributed nodes (ScBG) organized by "core index",
-* the "on-chain" `accumulate` is done by CoreJam System Chain ScBA, fundamentally bottlenecked by the system chain
+The core insight of CoreJam is that the following map-reduce refactorization  efficiently addresses the underlying dependency graph of what can be computed in what order better than smart contracts alone, separating what can be parallelised in the `refine` step from what cannot be parallelised in the `accumulate` step
+* the "in-core"  Collect-Refine (with Smart Contract entry point`refine`) supports mass parallelization and can be done with a _scalable_ distributed nodes (ScBG) organized by "core index",
+* the "on-chain" `accumulate` done by CoreJam System Chain ScBA, fundamentally bottlenecked by the system chain
 
-It is thought that CoreJams's map-reduce refactorization efficiently addresses the underlying dependency graph of what can be computed in what order better than smart contracts alone, separating what can be parallelised in the `refine` step.
+The above is a first-pass adaptation matching RFC #31, which aims for full generality of Work Package.  Work is organized in Work Packages, and in this adaptation, Service is EVM Contract on the ETH L2 whose work items are first preprocessed with cheap decentralized compute power.  We anticipate revising the above to support streamlined Service construction.  Work Items are a pair where the first item, `service`, itself identifies a pairing of code and state known as a *Service*; and the second item, `payload`, is a block of data which, through the aforementioned code, mutates said state in some presumably useful way. Under ordinary circumstances, a CoreJam developer will deploy a CoreJamService along with a mechanism to add Work Items by users.
 
-A CoreJam Work Package are placed in EVM Optimistic Rollup (ORU) context by mapping the 3 components:
+A *Work Package* is an *Authorization* together with a series of *Work Items* and a context, limited in plurality, versioned and with a maximum encoded size. The Context includes an optional reference to a Work Package (`WorkPackageHash`) which limits the relative order of the Work Package (see **Work Package Ordering**, later).  In EVM Optimistic Rollup (ORU) context by mapping the 3 components:
 * Authorization - this just a contract address with a `isAuthorized` interface
 * Context - this is simplified in an EVM ORU to be just a block number and block hash.  This is possible because EVM L2 ORUs in OP Stack are fundamentally centralized sequencers, at least for now.  
-* Prerequisite - TBD
+* Prerequisite - TBD.  (The number of prerequisites of a Work Package is limited to at most one. However, we cannot trivially control the number of dependents in the same way, nor would we necessarily wish to since it would open up a griefing vector for misbehaving Work Package Builders who interrupt a sequence by introducing their own Work Packages with a prerequisite which is within another's sequence.)
 
-A *Work Package* is an *Authorization* together with a series of *Work Items* and a context, limited in plurality, versioned and with a maximum encoded size. The Context includes an optional reference to a Work Package (`WorkPackageHash`) which limits the relative order of the Work Package (see **Work Package Ordering**, later).
+A Service IS a smart contract stored on-chain and transitioned only using on-chain logic, strictly and deterministically constrained, holding funds and call into each other synchronously.  However, the Service's `accumulate` function cannot be transacted with and is only called by either the ScBA or a inter-service calling.  Otherwise, all input data (and state progression) must come as the result of a Work Item.   A Work Item is a blob of data meant for a particular Service and crafted by some source external to consensus, which can be a user or another Service.  It may be thought of as akin to a transaction or internal contract call.  
 
-(The number of prerequisites of a Work Package is limited to at most one. However, we cannot trivially control the number of dependents in the same way, nor would we necessarily wish to since it would open up a griefing vector for misbehaving Work Package Builders who interrupt a sequence by introducing their own Work Packages with a prerequisite which is within another's sequence.)
-
-Work Items are a pair where the first item, `service`, itself identifies a pairing of code and state known as a *Service*; and the second item, `payload`, is a block of data which, through the aforementioned code, mutates said state in some presumably useful way.
-
-A Service IS a smart contract stored on-chain and transitioned only using on-chain logic, strictly and deterministically constrained, holding funds and call into each other synchronously.
-However, the on-chain `accumulate` function cannot be transacted with and is only called by either the ScBA or a inter-service calling. Otherwise, all input data (and state progression) must come as the result of a Work Item.   A Work Item is a blob of data meant for a particular Service and crafted by some source external to consensus, which can be a user or another Service.  It may be thought of as akin to a transaction or internal contract call.  
-
-The Work Item is first processed *in-core* through `refine`, which is to say an OP Stack standalone node, yielding a distillate known as a *Work Result*. It is this Work Result which is collated together with others of the same service and Accumulated into the Service on-chain.
-
-In short, a Service is EVM Contract on the ETH L2 whose work items are first preprocessed with cheap decentralized compute power.
+The Work Item is first processed *in-core* through `refine`, which is to say an OP Stack node chosen in a System Chain Backing Group (ScBG), yielding a *Work Result*.  It is this Work Result which is collated together with others of the same service and Accumulated into the Service on-chain.
 
 Though this process happens entirely in consensus, there are two main consensus environments at play, _in-core_ and _on-chain_. We therefore partition the progress into two pairs of stages: Collect & Refine and Join & Accumulate.
 
@@ -178,38 +169,34 @@ Finally, at some point later still `T+r+i+a+o`, the Results of the Work Package 
 
 ### Collect-Refine
 
-The first two stages of the CoreJam process are *Collect* and *Refine*. *Collect* refers to the collection and authorization of Work Packages (collections of items together with an authorization) to utilize a Polkadot Core. *Refine* refers to the performance of computation according to the Work Packages in order to yield *Work Results*. Finally, each Backing Group member attests to a Work Package yielding a series of Work Results and these Attestations form the basis for bringing the Results on-chain and integrating them into the Service's state which happens in the following stages.
+The first two stages of the CoreJam process are *Collect* and *Refine*. *Collect* refers to the collection and authorization of Work Packages (collections of items together with an authorization) to utilize a ScBG Core. *Refine* refers to the performance of computation according to the Work Packages in order to yield *Work Results*. Finally, each Backing Group member attests to a Work Package yielding a series of Work Results and these Attestations form the basis for bringing the Results on-chain and integrating them into the Service's state which happens in the following stages.
 
-#### Collection and `is_authorized`
+#### Collection and `isAuthorized`
 
 Collection is the means of a Backing Group member attaining a Work Package which is authorized to be performed on their assigned Core at the current time. Authorization is a prerequisite for a Work Package to be included on-chain. Computation of Work Packages which are not Authorized is not rewarded. Incorrectly attesting that a Work Package is authorized is a disputable offence and can result in substantial punishment.
 
 On arrival of a Work Package, after the initial decoding, a first check is that the `context` field is valid. This must reference a header hash of a known block which may yet be finalized and the additional fields must correspond to the data of that block.
 
-We introduce the concept of an *Authorizer* procedure, which is a smart contract. Assigning computational resources to an Authorizer implies allowing any Work Package which passes that authorization process to utilize computational resources in order to be submitted on-chain. It controls the circumstances under which ScBGs (OP Stack standalone nodes capable of watching L2 OP Stack) may be rewarded for evaluation and submission of Work Packages (and thus what Work Packages become valid to submit onto CoreJam System Chain).  Authorization logic is entirely arbitrary and need not be restricted to authorizing a single collator, Work Package builder, or even a single Service.
-
-An *Authorizer* is a EVM Smart Contract that is executed  and is expressed in this code (which must be capable of in-core VM execution). Its entry-point prototype is:
+The *Authorizer* entry point  of:
 
 ```solidity
-interface Authorizer {
-    function isAuthorized(WorkPackage calldata package, uint32 coreIndex) external view returns (bool);
-}
+function isAuthorized(WorkPackage calldata package, uint32 coreIndex) external view returns (bool);
 ```
 
-This function is executed by a ScBG node in a _metered VM_ and subject to a modest system-wide limitation on execution time. If it overruns this limit or panics on some input, it is considered equivalent to returning `false`. While it is mostly stateless (e.g. isolated from any System-chain state) it is provided with the package's `context` field in order to give information about a recent System-chain block. This allows it to be provided with a concise proof over some recent System-chain state.
+is executed by a ScBG node in a _metered VM_ and subject to a modest system-wide limitation on execution time. If it overruns this limit or panics on some input, it is considered equivalent to returning `false`. While it is mostly stateless (e.g. isolated from any System-chain state) it is provided with the package's `context` field in order to give information about a recent System-chain block. This allows it to be provided with a concise proof over some recent System-chain state.
 
 A single `Authorizer` value is associated with the index of the Core at a particular System-chain block and limits in some way what Work Packages may be legally processed by that Core.
 
-The need of validators to be rewarded for doing work they might reasonably expect to be useful competes with that of the procurers of work to be certain to get work done which is useful to them.  With CoreJam, validators have little ability to identify a high-quality Work Package builder and the permissionless design means a greater expectation of flawed code executing in-core. Because of this, we make a slightly modified approach: Work Packages must have a valid Authorization, i.e.  `is_authorized` returns `true` when provided with the Work Package. However, Validators get rewarded for *any* such authorized Work Package, even one which ultimately panics or overruns on its evaluation.
+The need of ScBG nodes to be rewarded for doing work competes with that of the procurers of work to be certain to get work done which is useful to them.  With CoreJam, ScBG nodes have little ability to identify a high-quality Work Package builder and the permissionless design means a greater expectation of flawed code executing in-core. Because of this, we make a slightly modified approach: Work Packages must have a valid Authorization, i.e.  `isAuthorized` returns `true` when provided with the Work Package. However, Validators get rewarded for *any* such authorized Work Package, even one which ultimately panics or overruns on its evaluation.
 
-This ensures that Validators do a strictly limited amount of work before knowing whether they will be rewarded and are able to discontinue and attempt other candidates earlier than would otherwise be the case. There is the possibility of wasting computational resources by processing Work Packages which result in error, but well-written authorization procedures can mitigate this risk by making a prior validation of the Work Items.
+This ensures that ScBG nodes do a strictly limited amount of work before knowing whether they will be rewarded and are able to discontinue and attempt other candidates earlier than would otherwise be the case. There is the possibility of wasting computational resources by processing Work Packages which result in error, but well-written authorization procedures can mitigate this risk by making a prior validation of the Work Items.
 
 ### Refine
 
 The `refine` function is implemented as an entry-point inside a Service Contract Address:
 
 ```solidity
-function refine(bytes memory payload, CoreJam.PackageInfo memory packageInfo) external pure returns (CoreJam.BoundedVecOutput memory);
+function refine(PackageInfo packageInfo) external pure returns (WorkResult[] memory)
 ```
 
 Both `refine` and `isAuthorized` are only ever executed in-core.  Within this environment, we need to ensure that we can interrupt computation not long after some well-specified limit and deterministically determine when an invocation of the VM exhausts this limit. Since the exact point at which interruption of computation need not be deterministic, it is expected to be executed by a streaming JIT transpiler with a means of approximate and overshooting interruption coupled with deterministic metering.
@@ -274,6 +261,8 @@ type Attestation struct {
 Each System-chain block, every Backing Group representing a Core which is assigned work provides a series of Work Results coherent with an authorized Work Package. Validators are rewarded when they take part in their Group and process such a Work Package. Thus, together with some information concerning their execution context, they sign a *Report* concerning the work done and the results of it. This is also known as a *Candidate*. This signed Report is called an *Attestation*, and is provided to the System-chain block author. If no such Attestation is provided (or if the System-chain block author refuses to introduce it for Reporting), then that Backing Group is not rewarded for that block.
 
 WorkReports are gossiped among ScBG nodes (OP Stack nodes) to form a sufficient number attestations, which arrive at the System-chain Block Author.
+
+In an OP Stack setting, a set of OP Stack nodes all can validate the activity of the ScBA, which are chosen via some process to be part of a ScBG.  See RFC #3 and discussion of various processes, one of which should be adapted for this purpose and placed in a OP Stack setting.
 
 ### Join-Accumulate
 
@@ -340,9 +329,10 @@ While it will generally be the case that ScBGs know precisely which Work Reports
 
 #### Availability
 
-Once the Work Report of a Work Package is Reported on-chain, the Work Package itself must be made *Available* through the off-chain Availability Protocol, which ensures that any dispute over the correctness of the Work Report can be easily objectively judged by all validators. Being off-chain this is _not_ block-synchronized and any given Work Package may take one or more blocks to be made Available or may even fail.
+Once the Work Report of a Work Package is Reported on-chain, the Work Package itself must be made *Available* through the off-chain Availability Protocol, which ensures that any dispute over the correctness of the Work Report can be easily objectively judged by all validators.  Being off-chain this is _not_ block-synchronized and any given Work Package may take one or more blocks to be made Available or may even fail.
 
-Only once a Work Report's Work Package is made Available the processing continue with the next steps of Joining and Accumulation. Ordering requirements of Work Packages may also affect this variable latency and this is discussed later in the section **Work Package Ordering**.
+Only once a Work Report's Work Package is made Available the processing continue with the next steps of Joining and Accumulation.
+We will follow RFC #31's soft-ordering.
 
 #### Gas Provisioning
 
@@ -406,18 +396,12 @@ Since `accumulate` is permissionless and untrusted code, we must ensure that its
 
 Host functions are provided allowing any state changes to be committed at fail-safe checkpoints to provide resilience in case of gas overrun (or even buggy code which panics). The amount of gas remaining may also be queried without setting a checkpoint. `Gas` is expressed in a regular fashion for a solo-chain (i.e. one-dimensional).
 
-`accumulate` of one service may call `accumulate` of another service, as is common with smart contracts This is an entirely synchronous function which transfers the execution over to a `destination` Service as well as the provided `amount` into their account.  
+The `accumulate` of one service may call `accumulate` of another service via internal contract call, which may also transfer a  `value` into their account.  
 
+### CoreJam Storage API + EIP-4844
 
-
-### CoreJam Storage API
-
-To reference large, immutable and long-term data payloads both in-core (`refine`) and on-chain (`accumulate`), we expose a *CoreJam Storage API*, accessible to untrusted code through Solidity library and to trusted System-chain code via a Golang interface.
-
-Internally, data is stored with a reference count so that two separate usages of `store` need not be concerned about the other.
-
+To reference large, immutable and long-term data payloads both in-core (`refine`) and on-chain (`accumulate`), we expose a *CoreJam Storage API*, accessible to untrusted code through Solidity library and to trusted System-chain code via a Golang interface. Internally, data is stored with a reference count so that two separate usages of `store` need not be concerned about the other.
 Every piece of data stored for an untrusted caller requires a sizeable deposit. When used by untrusted code via a host function, the `depositor` would be set to an account controlled by the executing code.
-
 
 ```golang
 type Storage interface {
@@ -480,9 +464,9 @@ New OVM opcodes for each function are as follows:
 | `APEXP` | `ExpungeUntrusted(depositor AccountID, hash common.Hash) error` |  Removes the specified hash and its corresponding data from the storage, based on a request made by the specified depositor. Returns Ok(()) if the operation is successful, an error otherwise. |
 | `APSTORE` | `Store(data []byte) common.Hash` | Stores the provided data in the storage and returns the hash of the stored data.  |
 
-
 Removing data happens in a two-phase procedure; first the data is unrequested, signalling that calling `lookup` on its hash may no longer work (it may still work if there are other requests active). 24 hours following this, the data is expunged with a second call which, actually removes the data from the chain assuming no other requests for it are active.  Only once expunge is called successfuly is the deposit returned. If the data was never provided, or is additional requests are still active, then expunge may be called immediately after a successful unrequest.
 
+The above Storage API is NOT necessary to connect to Ethereum L1 via call data or the future [EIP-4844](https://www.eip4844.com/) by submitting Blob Transactions on Ethereum L1, as `accumulate` calls would be included in OP Stack Blob transactions with a future upgrade that accommodates EIP-4844 in OP Stack.   Ethereum's solution of 32 kB/sec of throughput post Dencun (part 2) and 1.3 MB/sec full danksharding should be relevant for `accumulate`.  Note that this is significantly lower than Polkadot DA's 66-133MiB/s (assuming 100-200 cores), which presumably would be used for both `refine` and `accumulate`.
 
 ### Work Package Ordering
 
@@ -492,22 +476,30 @@ Initial Validation are made on-chain prior to the Availability Protocol begins f
 
 ### Fees
 
-Fees are ETH on L2, bridged from Ethereum L1. This allows a succinct *Authorization* (i.e. a small blob of data) to be included in the Work Package which, when fed into the relevant Authorizer function could verify that some Work Package is indeed allowed to utilize that Core at (roughly) that time. A simple proof system would be a regular PKI signature. More complex proof systems could include more exotic cryptography (e.g. multisignatures or zk-SNARKs).
-
-In this model, we would expect any authorized Work Packages which panic or overrun to result in a punishment to the specific author by the logic of the Service.
+Fees are ETH on L2, bridged from Ethereum L1.  OP Stack models the L1 fees explicitly.   While both the ScBG `refine` and ScBA `accumulate` are both metered in gas usage, the relatively scarce nature of the `accumulate` stage demands a massive premium over the `refine`.  
 
 ## Performance, Ergonomics and Compatibility, Notes on Implementation in OP Stack
 
+Ethereum L2 Users of a Service on the CoreJam System Chain should be able to submit transactions that result in Work Items causing Work Packages.  CoreJam's map-reduce architecture is most valuable when significant portions of gas consumption would have been expensive to do in `accumulate` may be done at lower gas with fewer compute resources in `refine`.  
+
 We envision an initial version of this proposal with modifications to the OP Stack:
 
-1. We require a mapping between Work Packages and Core Index, with an equally easy to implement ScBG VRF, following [Dynamic Backing Groups: Preparing Cores for Agile Scheduling](https://forum.polkadot.network/t/dynamic-backing-groups-preparing-cores-for-agile-scheduling/3629/10)
-2. We require extending the [Optimistic Virtual Machine] Availability Protocol in OP Stack, using KAGOME's erasure coding, using Go C++ bindings.  It is not clear how the CoreJam Storage API relates to Optimism fraud proofs.
-3. It is not claimed that the CoreJam L2 Chain is
-
+1.  We require a Work Package scheduling system that can orchestrate a distributed array of "cores".  This in turn requires a mapping between Work Packages/Services and Core Index, with implementable ScBG strategy, following [Dynamic Backing Groups: Preparing Cores for Agile Scheduling](https://forum.polkadot.network/t/dynamic-backing-groups-preparing-cores-for-agile-scheduling/3629/10) and RFC #3.
+2. We require metering ScBG and ScBA and charging the user in "Instantaneous" ETH in a manner consistent with the relative scarcity of each resource, and compensating the cores for their contributions.  It may be essential to adopt the Bulk CoreTime model for services instead for efficiency.
+3. We require extending the [Optimistic Virtual Machine] Availability Protocol in OP Stack, using KAGOME's erasure coding or similar, using Go C++ bindings.  
+4. We require OP Stack fault proofs extended to use EIP-4844 blobs to accommodate the above
 
 ## Testing, Security and Privacy
 
-Standard testing as per OP Stack and Solidity security auditing applies.
+ORUs derive their security largely from fault proofs, where we expect to rely on OP Stack's Fault Proof / Dispute game, developed by Optimism.
+
+The fault proof mechanism must be extended to accommodate EIP-4844, not just for blocks but for the `refine` work result output.  It is necessary to extend the OP Stack Fault proof game.
+
+The precise details of Work Reports / Attestation from "in core" nodes where Attestation / Work Reports can be run by a large number of nodes participating in ScBGs needs a precise signature scheme.
+
+The fundamental work product is not Solidity contracts, but representative pedagogical service contracts merit expert attention.
+
+Testing norms have been established in OP Stack, which must be matched OP Stack implementation.
 
 The proposal introduces no new privacy concerns.
 
@@ -525,4 +517,4 @@ It is highly desirable to:
 
 ## Prior Art and References
 
-This is an adaptation of RFC #31.
+This is an adaptation of RFC #31.  We are grateful for useful feedback from both the Polkadot and Ethereum community.
