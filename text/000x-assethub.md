@@ -1,10 +1,10 @@
 # RFC-0000: Lowering Deposit Requirements on Polkadot Asset Hub
 
-|                 |                                                                                             |
-| --------------- | ------------------------------------------------------------------------------------------- |
-| **Start Date**  | 2 November 2023                                                                             |
+|                 |                                                                                                    |
+| --------------- | -------------------------------------------------------------------------------------------------- |
+| **Start Date**  | 2 November 2023                                                                                    |
 | **Description** | A proposal to reduce the minimum deposit required for collection creation on the Polkadot Asset Hub, making it more accessible and affordable for artists. |
-| **Authors**     | Aurora Poppyseed, Just_Luuuu                                                                |
+| **Authors**     | [Aurora Poppyseed](https://github.com/poppyseedDev), [Just_Luuuu](https://github.com/justLuuuu)    |
 
 ## Summary
 
