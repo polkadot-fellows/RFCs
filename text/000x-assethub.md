@@ -3,7 +3,7 @@
 |                 |                                                                                                    |
 | --------------- | -------------------------------------------------------------------------------------------------- |
 | **Start Date**  | 2 November 2023                                                                                    |
-| **Description** | A proposal to reduce the minimum deposit required for collection creation on the Polkadot Asset Hub, making it more accessible and affordable for artists. |
+| **Description** | A proposal to reduce the minimum deposit required for collection creation on the Polkadot and Kusama Asset Hub, making it more accessible and affordable for artists. |
 | **Authors**     | [Aurora Poppyseed](https://github.com/poppyseedDev), [Just_Luuuu](https://github.com/justLuuuu)    |
 
 ## Summary
