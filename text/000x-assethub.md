@@ -20,7 +20,7 @@ The current deposit of 10 DOT for collection creation on the Polkadot Asset Hub 
 - **KodaDot**: As the facilitator of artists' relations, KodaDot has a vested interest in making the platform more accessible.
 - **Polkadot Community**: Stands to benefit from an influx of artists, creators and diverse NFT collections, enhancing the overall ecosystem.
 
-Previous discussions have been held within the KodaDot community, as well as with artists expressing their concerns about the deposit amounts. Referencing to [Polkadot Forum conversation](https://forum.polkadot.network/t/polkadot-assethub-high-nft-collection-deposit/4262)
+Previous discussions have been held within the KodaDot community, as well as with artists expressing their concerns about the deposit amounts. Referencing to [Polkadot Forum conversation](https://forum.polkadot.network/t/polkadot-assethub-high-nft-collection-deposit/4262).
 
 ## Explanation
 This RFC suggests modifying the smart contract governing collection creation on the Polkadot Asset Hub to require a lower deposit. The exact amount of the reduced deposit is yet to be determined and should be discussed and agreed upon by the stakeholders. The implementation of this change requires careful consideration of the network's integrity and the prevention of spam, possibly through alternative means such as rate limiting or account verification.
@@ -79,7 +79,7 @@ Additionally, a supplementary proposal aims to augment the network's adaptabilit
 This dynamic governance approach would facilitate a responsive and agile economic model for deposit management, ensuring that the network remains both accessible and robust in the face of market volatility.
 
 ### Ergonomics
-The proposed change aims to enhance the user experience for artists, making the platform more accessible and user-friendly.
+The proposed change aims to enhance the user experience for artists, making Polkadot more accessible and user-friendly.
 
 ### Compatibility
 The change doesn't impact compatibility.
