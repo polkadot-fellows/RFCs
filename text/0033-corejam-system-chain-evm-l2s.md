@@ -442,7 +442,9 @@ New OVM opcodes for each function are as follows:
 
 Removing data happens in a two-phase procedure; first the data is unrequested, signalling that calling `lookup` on its hash may no longer work (it may still work if there are other requests active). 24 hours following this, the data is expunged with a second call which, actually removes the data from the chain assuming no other requests for it are active.  Only once expunge is called successfuly is the deposit returned. If the data was never provided, or is additional requests are still active, then expunge may be called immediately after a successful unrequest.
 
-The above Storage API is NOT necessary to connect to Ethereum L1 via call data or the future [EIP-4844](https://www.eip4844.com/) by submitting Blob Transactions on Ethereum L1, as `accumulate` calls would be included in OP Stack Blob transactions with a future upgrade that accommodates EIP-4844 in OP Stack.   Ethereum's solution of 32 kB/sec of throughput post Dencun (part 2) and 1.3 MB/sec full danksharding should be relevant for `accumulate`.  Note that this is significantly lower than Polkadot DA's 66-133MiB/s (assuming 100-200 cores), which presumably would be used for both `refine` and `accumulate`.
+The  Storage API should be connectable to Ethereum [EIP-4844](https://www.eip4844.com/) with Blob Transactions.   While `accumulate` calls would be included in OP Stack Blob transactions, the veracity of the `refine` requires that the WorkItems (which may be large in number) must also be executable on Ethereum L1, requiring the `refine` inputs to be included.  Fault proofs for both `refine` "in-core" and `accumulate` "on-chain" calls are necessary.
+
+Ethereum's solution of 32 kB/sec of throughput post Dencun (part 2) and 1.3 MB/sec full danksharding should be relevant.  Note that this is significantly lower than Polkadot DA's 66-133MiB/s (assuming 100-200 cores), which presumably would be used for both `refine` and `accumulate`.  
 
 ### Work Package Ordering
 
