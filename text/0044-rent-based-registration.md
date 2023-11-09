@@ -20,7 +20,7 @@ This new model will coexist with the existing one-time deposit payment model, of
 
 ## Requirements
 
-1. The solution SHOULD NOT affect the current model for registering validatoin code.
+1. The solution SHOULD NOT affect the current model for registering validation code.
 2. The solution SHOULD offer an easily configurable way for governance to adjust the initial deposit and recurring rent cost.
 3. The solution SHOULD provide an incentive to prune validation code for which rent is not paid.
 4. The solution SHOULD allow anyone to re-register validation code under the same `ParaId` without the need for redundant pre-checking if it was already verified before.
@@ -122,11 +122,13 @@ Once the `ParaId` is reserved and the validation code is registered the rent mus
 
 ### On-demand parachain pruning
 
-If the rent is not paid, anyone has the option to prune the on-demand parachain and claim a portion of the initial deposit reserved for storing the validation code. Pruning only removes the validation code, while the head data and validation code hash are retained. The validation code hash is stored to allow anyone to register it again as well as to enable quicker re-registration by skipping the pre-checking process.
+If the rent is not paid, anyone has the option to prune the on-demand parachain and claim a portion of the initial deposit reserved for storing the validation code. This type of 'light' pruning only removes the validation code, while the head data and validation code hash are retained. The validation code hash is stored to allow anyone to register it again as well as to enable quicker re-registration by skipping the pre-checking process.
 
 The moment the rent is no longer paid, the parachain won't be able to purchase on-demand access, meaning no new blocks are allowed. This stage is called the "hibernation" stage, during which all the parachain-related data is still stored on-chain, but new blocks are not permitted. The reason for this is to ensure that the validation code is available in case it is needed in the dispute or approval checking subsystems. Waiting for one entire session will be enough to ensure it is safe to deregister the parachain.
 
 This means that anyone can prune the parachain only once the "hibernation" stage is over, which lasts for an entire session after the moment that the rent is not paid.
+
+The pruning described here is a light form of pruning, since it only removes the validation code. As with all parachains, the parachain or para manager can use the `deregister` extrinsic to remove all associated state.
 
 ### Ensuring rent is paid 
 The `paras` pallet will be loosely coupled with the `para-registrar` pallet. This approach enables all the pallets tightly coupled with the `paras` pallet to have access to the rent status information.
