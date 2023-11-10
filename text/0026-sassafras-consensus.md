@@ -244,20 +244,20 @@ This section defines the data that is to be signed using the VRF primitive:
     }
 ```
 
-- `transcript`: represents a `ark-transcript` object.
+- `transcript`: an [`ark-transcript`](https://docs.rs/ark-transcript/latest/ark_transcript/)
+  object. In practice, this is a *special* hash of the data to sign which should not
+  influence the `VrfOutput`.
 - `vrf_input`: sequence of `VrfInputs` to be signed.
 
 To simplify the construction of a `VrfSignatureData` object, a helper function is provided:
 
-```rust
-    TranscriptData ::= OCTET_STRING;
-    
+```rust  
     fn vrf_signature_data(
         transcript_label: OCTET_STRING,
-        transcript_data: SEQUENCE_OF TranscriptData,
+        transcript_data: SEQUENCE_OF OCTET_STRING,
         vrf_inputs: SEQUENCE_OF VrfInput
     ) -> VrfSignatureData {
-        transcript = TRANSCRIPT(transcript_label);
+        let mut transcript = Tanscript::new_labeled(transcript_label);
         for data in transcript_data {
             transcript.append(data);
         }
