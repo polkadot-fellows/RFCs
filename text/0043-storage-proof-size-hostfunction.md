@@ -21,17 +21,17 @@ In addition, the current model does not account for multiple accesses to the sam
 A solution must provide a way for the runtime to track the exact storage-proof size consumed on a per-extrinsic basis.
 
 ## Stakeholders
-- **Parachain Teams:** They must include this host function in their runtime and node.
-- **Light-client Implementors:** They should include this host function in their runtime and node.
+- **Parachain Teams:** They MUST include this host function in their runtime and node.
+- **Light-client Implementors:** They SHOULD include this host function in their runtime and node.
 
 ## Explanation
 This RFC proposes a new host function that exposes the storage-proof size to the runtime. As a result, runtimes can implement storage weight reclaiming mechanisms that improve block utilization.
 
 This RFC proposes the following host function signature:
 ```rust
-fn ext_storage_proof_size_version_1() -> Option<u64>;
+fn ext_storage_proof_size_version_1() -> u64;
 ```
-The host function MUST return an `Option` of an unsigned 64-bit integer value representing the current proof size. In block-execution and block-import contexts, this function MUST return a `Some` variant including the current size of the proof. To achieve this, parachain node implementors need to enable proof recording for block imports. In other contexts, this function MUST return `None`.
+The host function MUST return an unsigned 64-bit integer value representing the current proof size. In block-execution and block-import contexts, this function MUST return the current size of the proof. To achieve this, parachain node implementors need to enable proof recording for block imports. In other contexts, this function MUST return 18446744073709551615 (u64::MAX), which represents disabled proof recording.
 
 ## Performance, Ergonomics, and Compatibility
 ### Performance
