@@ -23,7 +23,6 @@ the slot is not claimed at block production time.
 
 ## 1. Motivation
 
-
 Sassafras Protocol has been extensively documented in a comprehensive
 [research paper](https://eprint.iacr.org/2023/031.pdf). However, this RFC serves
 the purpose of conveying essential implementation details that are crucial for
@@ -94,13 +93,17 @@ subsequent conventions:
     `U<n>` as `n/8` bytes.
 
 - The function `SCALE(x: T)` returns an `OCTET_STRING` representing the
-  [`SCALE`](https://github.com/paritytech/parity-scale-codec) encoding of the
-  variable `x` with type `T`.
+  [`SCALE`](https://github.com/paritytech/parity-scale-codec) encoding of
+  `x` with type `T`.
 
 - The function `U<n>(x: OCTET_STRING)` returns a `U<n>` interpreting `x` as
   the little-endian encoding of a `n` bits unsigned integer.
 
-- The function `BLAKE2_<n>` returns <n> bytes of the standard *blake2b* hash.
+- The function `BLAKE2(n: U32, x: OCTET_STRING)` returns `n` bytes of the
+  standard *blake2b* hash of `x`.
+
+- The function `CONCAT(x₀: OCTET_STRING, ..., xₖ)` returns the concatenation of
+  the `k` octet strings `xᵢ`.
 
 ### 3.3. Incremental Introduction of Types and Functions
 
@@ -370,8 +373,8 @@ The descriptor of next epoch is the `NextEpochDescriptor`.
     Randomness ::= OCTET_STRING(SIZE(32));
 
     NextEpochDescriptor ::= SEQUENCE {
-        authorities: SEQUENCE_OF AuthorityId,
         randomness: Randomness,
+        authorities: SEQUENCE_OF AuthorityId,
         configuration: ProtocolConfiguration OPTIONAL
     }
 ```
@@ -393,20 +396,40 @@ block author, which is stored in the digest data.
 
 #### 6.1.1. Epoch Randomness
 
-Each epoch has an associated randomness value defined by the
-`NextEpochDescriptor` `Randomness` element.
+Each block ships with some entropy source in the form of bandersnatch VRF
+output. Per block randomness gets accumulated in the protocol on-chain state
+**after** block import.
 
-The first block of epoch `N` contains the randomness associated to the next epoch `N+1`.
+The exact procedure to accumulate per-block randomness is described in detail
+later, in the [Randomness Accumulator] paragraph.
 
-Randomness for epoch `N+1` is computed using the VRF output values which are associated
-to each block of epoch `N-1`.
+Next epoch `randomness` is computed as:
 
-Assuming block `Bi` is produced during epoch `N-1`. Then the randomness for epoch `N+1`
-is incrementally generated as `RandomnessAccumulator = Blake2(Bi.VrfOut)'`.
+```rust
+    next_epoch_randomness = BLAKE2(32, CONCAT(
+        accumulator,
+        curr_epoch_randomness,
+        next_epoch_index
+    ));
+```
 
-The first block produced for epoch `N` will propose as epoch `N+1` randomness the value
-of `RandomnessAccumulator` as found after the production of the last block associated
-to epoch `N-1`.
+<TODO BEGIN>
+Why we need to add `curr_epoch_randomness` to the hash?
+
+IMO this doesn't add any extra entropy to the `next_epoch_randomness` as we
+are using `accumulator`
+
+    curr_epoch_randomness = H(prev_accumulator ++ ... ++ curr_epoch_index)
+    next_epoch_randomness = H(curr_accumulator ++ curr_epoch_randomness ++ next_epoch_index)
+
+    With:
+    - curr_accumulator depending on prev_accumulator
+    - next_epoch_index depending on curr_epoch_index 
+
+    So the only extra thing curr_epoch_randomness brings to the table is `...`.
+    But if we recursively unroll this we end up `...` being the genesis randomness
+    which is always 0.
+<TODO END>
 
 #### 6.1.2. Protocol Configuration
 
@@ -436,6 +459,23 @@ A new `ProtocolConfiguration` can be submitted using a dedicated extrinsic,
 with the requirement that its origin is set to `Root`. If a valid proposal is
 submitted during epoch `N-1`, it will be embedded into the `NextEpochDescriptor`
 at the beginning of epoch `N`.
+
+#### 6.1.3. Startup Parameters
+
+Some parameters for first epoch (index = 0) are configurable via genesis configuration.
+
+```rust
+    GenesisConfig ::= SEQUENCE {
+        authorities: SEQUENCE_OF AuthorityId,
+        configuration: ProtocolConfiguration OPTIONAL
+    }
+```
+
+Randomness for first epoch is set to all zeros.
+
+The first block produced (i.e. block #1) MUST ship with a `NextEpochDescriptor`
+for next epoch. This is constructed re-using the same values used for the first
+epoch.
 
 ### 6.2. Creation and Submission of Candidate Tickets
 
@@ -673,7 +713,8 @@ specific order. The index of the authority which has the privilege to claim a
 slot is calculated as follows:
 
 ```rust
-    index = BLAKE2_64(SCALE((epoch_randomness, slot))) mod authorities_number;
+    index_bytes = BLAKE2(8, SCALE( (epoch_randomness, slot) ));
+    index = U64(index_bytes) mod authorities_number;
 ```
 
 TODO: what about using `epoch_randomness_accumulator` instead of `epoch_randomness`?
@@ -866,9 +907,9 @@ the claim should match the one given by the rule outlined in section 6.4.1.
 
 ### 6.7. Randomness Accumulator
 
-The first `VrfOutput` which ships with the `SlotClaim` `signature` is mandatory and
-is always used to provide some randomness which gets accumulated in on-chain state
-after block processing.
+The first `VrfOutput` which ships with the block's `SlotClaim` `signature`
+is mandatory and MUST be used as the entropy source for the randomness which
+gets accumulated on-chain **after** block processing.
 
 Given `claim` the instance of `SlotClaim` within the block header, and
 `accumulator` the current value for current epoch randomness accumulator,
@@ -888,7 +929,7 @@ the `accumulator` value is updated as follows:
 
     randomness = vrf_bytes(randomness_vrf_input, randomness_vrf_output, 32);
 
-    accumulator = BLAKE2_256(CONCATENATE(accumulator, randomness));
+    accumulator = BLAKE2(32, CONCAT(accumulator, randomness));
 ```
 
 The updated `accumulator` value is stored on-chain.
