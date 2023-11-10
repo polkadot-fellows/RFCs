@@ -459,7 +459,7 @@ more computation.
 
 Details about how these parameters drives the ticket validity probability
 can be found in the section dedicated to candidate ticket validation
-([ticket threshold](622-tickets-threshold)).
+([ticket threshold](0026-sassafras-consensus.md#622-tickets-threshold)).
 
 `ProtocolConfiguration` values can be adjusted via a dedicated extrinsic which
 should have origin set to `Root`. A valid configuration proposal submitted on
