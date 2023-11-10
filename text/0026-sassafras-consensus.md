@@ -257,11 +257,11 @@ To simplify the construction of a `VrfSignatureData` object, a helper function i
         transcript_data: SEQUENCE_OF OCTET_STRING,
         vrf_inputs: SEQUENCE_OF VrfInput
     ) -> VrfSignatureData {
-        let mut transcript = Tanscript::new_labeled(transcript_label);
+        let mut transcript = Transcript::new_labeled(transcript_label);
         for data in transcript_data {
             transcript.append(data);
         }
-        return VrfSignatureData { transcript, vrf_inputs }
+        VrfSignatureData { transcript, vrf_inputs }
     }
 ```
 
@@ -434,7 +434,7 @@ are using `accumulator`
 #### 6.1.2. Protocol Configuration
 
 The `ProtocolConfiguration` primarily influences certain checks carried out
-during ticket validation. It is defined as follows:
+during tickets validation. It is defined as follows:
 
 ```rust
     ProtocolConfiguration ::= SEQUENCE {
@@ -443,17 +443,28 @@ during ticket validation. It is defined as follows:
     }
 ```
 
-- `attempts_number`: number of tickets that can be submitted by each next-epoch authority.
-- `redundancy_factor`: factor that enhances the likelihood of a candidate ticket
-  being deemed valid according to some protocol specific checks.
+- `attempts_number`: max number of tickets that can be submitted by each
+  next-epoch authority.
+- `redundancy_factor`: controls the expected number of extra tickets produced
+  beyond `epoch_length`.
 
-Further details regarding this configuration can be found in the section
-dedicated to candidate ticket validation (ticket-id threshold computation).
+The max attempts number influences the anonymity of block producers. As all
+published tickets have a public attempt number less than `attempts_number`,
+if two tickets share an attempt number then they must be by different block
+producers, which reduces anonymity late in the epoch.
 
-`ProtocolConfiguration` values can be adjusted via a dedicated extrinsic which should have origin set to `Root`.
-A valid configuration proposal submitted on epoch `K` will be propagated in
-the `NextEpochDescriptor` at the begin of epoch `K+1` and will be effectively
-enacted on epoch `K+2`.
+We do not mind `max_attempts < epoch_length` though because this loss already
+becomes small when `attempts_number = 64` or `128` and larger values requires
+more computation.
+
+Details about how these parameters drives the ticket validity probability
+can be found in the section dedicated to candidate ticket validation
+([ticket threshold](622-tickets-threshold)).
+
+`ProtocolConfiguration` values can be adjusted via a dedicated extrinsic which
+should have origin set to `Root`. A valid configuration proposal submitted on
+epoch `K` will be propagated in the `NextEpochDescriptor` at the begin of epoch
+`K+1` and will be effectively enacted on epoch `K+2`.
 
 A new `ProtocolConfiguration` can be submitted using a dedicated extrinsic,
 with the requirement that its origin is set to `Root`. If a valid proposal is
