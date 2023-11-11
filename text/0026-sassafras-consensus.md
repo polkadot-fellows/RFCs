@@ -58,52 +58,55 @@ Developers contributing to the Polkadot relay-chain, which plays a pivotal role
 in facilitating the interoperability and functionality of the Sassafras Protocol
 within the broader Polkadot network.
 
+
 ## 3. Notation and Convention
 
 This section outlines the notation and conventions used throughout the document
 to ensure clarity and consistency.
 
-### 3.1. Data Structure Definitions
+### 3.1. Data Structures Definitions and Encoding
 
 Data structures are primarily defined using [ASN.1](https://en.wikipedia.org/wiki/ASN.1),
 with a few exceptions:
 - Integer types are not explicitly defined in ASN.1 and in the context of
-  this document `U<n>` should be interpreted as `n`-bit unsigned integers
-  (e.g. `U32`)
+  this document `U<n>` should be interpreted as a `n`-bit unsigned integers
 
-To ensure interoperability of serialized structures, it's important to consider
-the order of fields in their definitions.
+If no context-specific instructions are given, all types must be serialized
+using [SCALE](https://github.com/paritytech/parity-scale-codec) codec.
 
-In cases where no specific instructions are given, structures should be
-serialized using [SCALE]().
+To ensure interoperability of serialized structures, the order of the single
+fields is required to match the structures definitions found in this document.
 
 ### 3.2. Pseudo-Code
 
 Through this document it is advantageous to make use of code snippets as part
-of the comprehensive description. These code snippets shall adhere to the
-subsequent conventions:
+of the comprehensive description. These snippets shall adhere to the subsequent
+conventions:
 
 - For simplicity, code snippets are presented in a *Rust-like* pseudo-code format.
 
 - The function `BYTES(x: T)` returns an `OCTET_STRING` representing the raw
   byte array representation of the object `x` with type `T`.
-  - if `T` is `VisibleString` (aka *ascii* string): it returns the sequence of
-    bytes of its *ascii* representation.
+  - if `T` is `VisibleString` (i.e. an *ascii* string): it returns the sequence
+    of octets of its *ascii* representation.
   - if `T` is `U<n>`: it returns the little-endian encoding of the integer
-    `U<n>` as `n/8` bytes.
+    `U<n>` as `n/8` octets.
+
+- The function `U<n>(x: OCTET_STRING)` returns a `U<n>` interpreting `x` as
+  the little-endian encoding of a `n` bits unsigned integer.
 
 - The function `SCALE(x: T)` returns an `OCTET_STRING` representing the
   [`SCALE`](https://github.com/paritytech/parity-scale-codec) encoding of
   `x` with type `T`.
 
-- The function `U<n>(x: OCTET_STRING)` returns a `U<n>` interpreting `x` as
-  the little-endian encoding of a `n` bits unsigned integer.
-
 - The function `BLAKE2(n: U32, x: OCTET_STRING)` returns `n` bytes of the
-  standard *blake2b* hash of `x`.
+  standard *blake2b* hash of `x` as an `OCTET_STRING`.
 
-- The function `CONCAT(x₀: OCTET_STRING, ..., xₖ)` returns the concatenation of
-  the `k` octet strings `xᵢ`.
+- The function `CONCAT(x₀: OCTET_STRING, ..., xₖ: OCTET_STRING)` returns the
+  concatenation of the inputs as an `OCTET_STRING`.
+
+- The function `LENGTH(x: OCTET_STRING)` returns a `U32` representing the
+  number of octets in `x`.
 
 ### 3.3. Incremental Introduction of Types and Functions
 
@@ -118,36 +121,37 @@ This incremental presentation enhances readability and comprehension.
 
 ## 4. Protocol Introduction
 
-The Sassafras Protocol employs a binding mechanism between validators and slots
-through the use of a **ticket**.
+Timeline is partitioned in epochs, epochs are partitioned in slots.
 
-The protocol is organized into five discrete and asynchronous phases:
+The Sassafras protocol employs a binding mechanism between validators and slots
+through the use of a ticketing system.
+
+The protocol can be divided into five discrete and asynchronous phases:
 
 ### 4.1. Submission of Candidate Tickets
 
-Validators generate and submit their candidate tickets along with validity
-proofs to the blockchain. The validity proof ensures that the tickets are
-legitimate while maintaining the anonymity of the authorship.
+Validators generate and submit their candidate tickets to the blockchain. Each
+ticket comes with an anonymous validity proof.
 
 ### 4.2. Validation of Candidate Tickets
 
-Submitted candidate tickets undergo a validation process to verify their
-authenticity, integrity and compliance with other protocol-specific rules.
+Each candidate tickets undergo a validation process for the associated validity
+proof and compliance with other protocol-specific constraints.
 
 ### 4.3. Tickets and Slots Binding
 
 After collecting all candidate tickets, a deterministic method is employed to
-associate some of these tickets with specific slots.
+uniquely associate a subset of these tickets to the next epoch slots.
 
 ### 4.4. Claim of Ticket Ownership
 
-Validators assert ownership of tickets during the block production phase. This
+Validators prove ownership of tickets during the block production phase. This
 step establishes a secure binding between validators and their respective slots.
 
 ### 4.5. Validation of Ticket Ownership
 
-During block verification, the claims of ticket ownership are rigorously
-validated to uphold the protocol's integrity.
+During block verification, the claims of ticket ownership are validated to
+uphold the protocol's integrity.
 
 
 ## 5. Bandernatch VRFs Cryptographic Primitives
@@ -160,15 +164,10 @@ exhaustive exploration of the mathematically intensive foundations of the
 cryptographic primitive. Instead, its primary purpose is to offer a concise and
 comprehensible interpretation of the primitive within the context of this RFC.
 
-For a more detailed and mathematical understanding of Ring-VRFs, we recommend
-referring to the Ring-VRF research [paper](https://eprint.iacr.org/2023/002.pdf).
+For a more detailed understanding we recommend referring to the Ring-VRF
+research [paper](https://eprint.iacr.org/2023/002.pdf) from W3F.
 
 ### 5.1. VRF Input
-
-The VRF Input, denoted as `VrfInput`, is constructed using a domain and some
-arbitrary data using the `vrf_input(domain: OCTET_STRING, buf: OCTET_STRING)`
-function. This function is left opaque here and can be read in the actual
-reference implementation.
 
 The VRF Input, denoted as `VrfInput`, is constructed by combining a domain identifier
 with arbitrary data using the `vrf_input` function:
@@ -177,10 +176,10 @@ with arbitrary data using the `vrf_input` function:
     fn vrf_input(domain: OCTET_STRING, buf: OCTET_STRING) -> VrfInput;
 ```
 
-While the specific implementation details of this function are intentionally
-omitted here, you can find the complete implementation in the
+The specific implementation details of this function are intentionally omitted
+here, you can find a complete reference implementation in the
 [`bandersnatch_vrfs`](https://github.com/w3f/ring-vrf/blob/18614458ca4cb335c88d4e710c13906a76f51e43/bandersnatch_vrfs/src/lib.rs#L57) 
-reference implementation.
+project.
 
 Helper function to construct a `VrfInput` from a sequence of `data` items:
 
@@ -189,32 +188,41 @@ Helper function to construct a `VrfInput` from a sequence of `data` items:
         buf = OCTET_STRING(SIZE(0));
         for item in data {
             buf.append(item);
-            buf.append(length(item) as U8);
+            buf.append(LENGTH(item) as U8);
         }
         return vrf_input(domain, buf);
     }
 ```
 
+Note that we cast the length of each item to a `U8`. In the context of the
+protocol we never have to append strings longer than 255. The function is
+internal and not designed to be generic.
+
+<TODO>
+Or we should provide a generic one in bandersnatch primitive wrapper to be
+used in other contexts? 
+</TODO>
+
 ### 5.2. VRF Output
 
-Given a `VrfInput` object, the corresponding `VrfOutput`, also referred to as
-`VrfPreOutput`, is computed using a Bandersnatch secret key.
+A `VrfOutput` in this context is computed in function of a `VrfInput` and a
+`BandersnatchSecretKey`.
 
 A `VrfOutput` can be created in two ways: as a standalone object or as part of a
 VRF signature. In both scenarios, the resulting `VrfOutput` remains the same, but
 the primary difference lies in the inclusion of a signature in the latter, which
 serves to confirm its validity.
 
-In practice, the `VrfOutput` functions as a *seed* to produce a variable number
-of pseudo-random bytes. These bytes are considered 'verified' when `VrfOutput` is
-accompanied by a signature.
+In practice, the `VrfOutput` is a verifiable *seed* to produce a variable number
+of pseudo-random bytes. These bytes are considered valid when `VrfOutput` is
+accompanied by a valid signature.
 
-When used as a standalone object, `VrfOutput` is primarily employed in situations
-where the protocol necessitates to check the generated bytes according to some
-protocol specific criteria before applying the signature.
+When constructed as a standalone object, `VrfOutput` is primarily employed
+in situations where the secret key owner needs to check if the generated
+pseudo-random bytes fulfill some criteria before applying the signature.
 
 To facilitate the construction of `VrfOutput` from a secret key and `VrfInput`,
-the following helper function is used:
+the following helper function is provided:
 
 ```rust
     fn vrf_output(secret: BandernatchSecretKey, input: VrfInput) -> VrfOutput;
@@ -224,30 +232,30 @@ Additionally, a helper function is provided for producing `len` bytes from
 `VrfInput` and `VrfOutput`:
 
 ```rust
-    fn vrf_bytes(vrf_input: VrfInput, vrf_output: VrfOuput, len: U32) -> OCTET_STRING;
+    fn vrf_bytes(len: U32, input: VrfInput, output: VrfOuput) -> OCTET_STRING;
 ```
 
 Just like the `VrfInput` support function, we have intentionally excluded the
-detailed implementation of this function in this document. However, you can
-see the complete implementation in the `dleq_vrfs` reference implementation:
+detailed implementation of this function in this document. A reference implementation
+is provided in the `dleq_vrfs` library:
 - [`vrf_output`](https://github.com/w3f/ring-vrf/blob/18614458ca4cb335c88d4e710c13906a76f51e43/dleq_vrf/src/traits.rs#L75-L77)
 - [`vrf_bytes`](https://github.com/w3f/ring-vrf/blob/18614458ca4cb335c88d4e710c13906a76f51e43/dleq_vrf/src/vrf.rs#L211-L214)
 
 ### 5.3. VRF Signature Data
 
-This section defines the data that is to be signed using the VRF primitive:
+This section defines the data to be signed using the VRF primitive:
 
 ```rust
     VrfSignatureData ::= SEQUENCE {
         transcript: Transcript,
-        vrf_input: SEQUENCE_OF VrfInput 
+        inputs: SEQUENCE_OF VrfInput
     }
 ```
 
 - `transcript`: an [`ark-transcript`](https://docs.rs/ark-transcript/latest/ark_transcript/)
-  object. In practice, this is a *special* hash of the data to sign which should not
-  influence the `VrfOutput`.
-- `vrf_input`: sequence of `VrfInputs` to be signed.
+  object. In practice, this is a *special* hash of some protocol-specific data
+  to sign which should not influence the `VrfOutput`.
+- `inputs`: sequence of `VrfInputs` to be signed.
 
 To simplify the construction of a `VrfSignatureData` object, a helper function is provided:
 
@@ -255,22 +263,22 @@ To simplify the construction of a `VrfSignatureData` object, a helper function i
     fn vrf_signature_data(
         transcript_label: OCTET_STRING,
         transcript_data: SEQUENCE_OF OCTET_STRING,
-        vrf_inputs: SEQUENCE_OF VrfInput
+        inputs: SEQUENCE_OF VrfInput
     ) -> VrfSignatureData {
         let mut transcript = Transcript::new_labeled(transcript_label);
         for data in transcript_data {
             transcript.append(data);
         }
-        VrfSignatureData { transcript, vrf_inputs }
+        VrfSignatureData { transcript, inputs }
     }
 ```
 
 ### 5.4. VRF Signature
 
-Bandersnatch VRF offers two signature options: plain signature, which in
-practice is like a *Schnorr* signature, or Ring signature. The Ring signature
-option allows for anonymous signatures using a key from a predefined set of
-enabled keys, known as the ring.
+Bandersnatch VRF offers two signature flavors:
+- *plain* signature, which is much like a traditional *Schnorr* signature,
+- *ring* signature which leverages a *zk-SNARK* to allows for anonymous signatures
+  using a key from a predefined set of enabled keys, known as the ring.
 
 #### 5.4.1. Plain VRF Signature
 
@@ -286,86 +294,91 @@ plain Bandersnatch signature flavor.
     }
 ```
 
-- `signature`: represents the actual signature (opaque).
+- `signature`: the actual signature.
 - `outputs`: a sequence of `VrfOutput`s corresponding to the `VrfInput`s values.
 
-Helper function to create a `VrfSignature` from `VrfSignatureData`:
+Helper function to create a `VrfPlainSignature` from `VrfSignatureData`:
 
 ```rust
-    fn plain_vrf_sign(
+    BandersnatchSecretKey ::= OCTET_STRING;
+
+    fn vrf_sign(
         secret: BandernatchSecretKey,
         signature_data: VrfSignatureData
     ) -> VrfSignature
 ```
 
-Helper function for validating the signature and returning a Boolean value
-indicating the validity of the signature (`True` if it's valid):
+Helper function for validating the signature and returning a `BOOLEAN` value
+indicating the validity of the signature.
 
 ```rust
-    fn plain_vrf_verify(
+    BandersnatchPublicKey ::= OCTET_STRING;
+
+    fn vrf_verify(
         public: BandersnatchPublicKey,
         signature: VrfSignature
-    ) -> Boolean;
+    ) -> BOOLEAN;
 ```
 
 In this document, the types `BandersnatchSecretKey`, `BandersnatchPublicKey`
-and `PlainSignature` are intentionally left undefined as are not relevant. Their
-definitions can be found in the `bandersnatch_vrfs` reference implementation.
+and `PlainSignature` are intentionally left undefined. Their definitions can be
+found in the `bandersnatch_vrfs` reference implementation.
 
 #### 5.3.2. Ring VRF Signature
 
 This section deals with the signature process for `VrfSignatureData` using the
-Bandersnatch Ring signature flavor.
+Bandersnatch ring signature flavor.
 
 ```rust
     RingSignature ::= OCTET_STRING;
 
     RingVrfSignature ::= SEQUENCE {
         signature: RingSignature,
-        ring_proof: RingProof,
         outputs: SEQUENCE_OF VrfOutput
     }
 ```
 
-- `signature`: represents the actual signature (opaque).
-- `ring_proof`: denotes the proof of ring membership.
+- `signature`: the actual signature.
 - `outputs`: sequence of `VrfOutput` objects corresponding to the `VrfInput` values.
 
 Helper function to create a `RingVrfSignature` from `VrfSignatureData`:
 
 ```rust
+    BandersnatchRingProverKey ::= OCTET_STRING;
+    
     fn ring_vrf_sign(
-        secret: BandersnatchSecretKey,
+        secret: BandersnatchRingProverKey,
         signature_data: VrfSignatureData,
-        prover: RingProver
     ) -> RingVrfSignature;
 ```
 
-Helper function for validating the signature and returning a Boolean value
-indicating the validity of the signature (`True` if it's valid).
-It's important to note that this function does not require the signer's public key.
+Helper function for validating the signature and returning a `BOOLEAN`
+indicating the validity of the signature (`True` if it's valid). It's important
+to note that this function does not require the signer's public key.
 
 ```rust
+    BandersnatchRingVerifierKey ::= OCTET_STRING;
+
     fn ring_vrf_verify(
+        verifier: BandersnatchRingVerifierKey,
         signature: RingVrfSignature,
-        verifier: RingVerifier
-    ) -> Boolean;
+    ) -> BOOLEAN;
 ```
 
-In this document, the types `BandersnatchSecretKey`, `BandersnatchPublicKey`,
-`RingSignature`, `RingProof`, `RingProver` and `RingVerifier` are intentionally
-left undefined as are not relevant. Their definitions can be found in the
-`bandersnatch_vrfs` reference implementation.
+In this document, the types `BandersnatchRingProverKey`,
+`BandersnatchRingVerifierKey`, and `RingSignature` are intentionally left
+undefined. Their definitions can be found in the `bandersnatch_vrfs` reference
+implementation.
 
 
 ## 6. Sassafras Protocol
 
 ### 6.1. Epoch's First Block
 
-The first block produced for an epoch `N` is required to include the descriptor
-for the next epoch `N+1`.
+The first block produced for epoch `N` is required to include the descriptor for
+the next epoch `N+1`.
 
-The descriptor of next epoch is the `NextEpochDescriptor`.
+The descriptor for next epoch is `NextEpochDescriptor`.
    
 ```rust
     AuthorityId ::= BandersnatchPublicKey;
@@ -379,26 +392,26 @@ The descriptor of next epoch is the `NextEpochDescriptor`.
     }
 ```
 
-- `authorities`: list of authorities for the next epoch.
-- `randomness`: randomness value associated to the next epoch.
-- `configuration`: next epoch optional protocol configuration.
+- `randomness`: randomness value.
+- `authorities`: list of authorities.
+- `configuration`: optional protocol configuration.
 
 The `NextEpochDescriptor` must be `SCALE` encoded and embedded in the block
-header digest data.
+header digest log.
 
 The identifier for the digest element is `BYTES("SASS")`.
 
-**Security Consideration**: Instances of `NextEpochDescriptor` are generated through
-on-chain code whenever a block is identified as the first of an epoch.
-Consequently, every node executing the block has the capability to verify if
-the descriptor generated during block execution matches the one produced by the
-block author, which is stored in the digest data.
+**Security Consideration**: Instances of `NextEpochDescriptor` are generated
+through on-chain code whenever a block is identified as the first of an epoch.
+Consequently, every node executing the block should verify that the descriptor
+locally generated during block execution matches the one produced by the block
+author, which is found in the digest data before block import.
 
 #### 6.1.1. Epoch Randomness
 
-Each block ships with some entropy source in the form of bandersnatch VRF
-output. Per block randomness gets accumulated in the protocol on-chain state
-**after** block import.
+Each block ships with some entropy source in the form of bandersnatch
+`VrfOutput`. Per block randomness is accumulated in the protocol's on-chain
+state **after** block import.
 
 The exact procedure to accumulate per-block randomness is described in detail
 later, in the [Randomness Accumulator] paragraph.
@@ -406,18 +419,14 @@ later, in the [Randomness Accumulator] paragraph.
 Next epoch `randomness` is computed as:
 
 ```rust
-    next_epoch_randomness = BLAKE2(32, CONCAT(
-        accumulator,
-        curr_epoch_randomness,
-        next_epoch_index
-    ));
+    BLAKE2(32, CONCAT(accumulator, curr_epoch_randomness, next_epoch_index));
 ```
 
-<TODO BEGIN>
-Why we need to add `curr_epoch_randomness` to the hash?
+<TODO>
+Do we really need need to add `curr_epoch_randomness` to the hash?
 
-IMO this doesn't add any extra entropy to the `next_epoch_randomness` as we
-are using `accumulator`
+Looks like it doesn't add any extra entropy to the `next_epoch_randomness` as we
+are already using `accumulator`
 
     curr_epoch_randomness = H(prev_accumulator ++ ... ++ curr_epoch_index)
     next_epoch_randomness = H(curr_accumulator ++ curr_epoch_randomness ++ next_epoch_index)
@@ -429,7 +438,7 @@ are using `accumulator`
     So the only extra thing curr_epoch_randomness brings to the table is `...`.
     But if we recursively unroll this we end up `...` being the genesis randomness
     which is always 0.
-<TODO END>
+</TODO>
 
 #### 6.1.2. Protocol Configuration
 
@@ -444,32 +453,27 @@ during tickets validation. It is defined as follows:
 ```
 
 - `attempts_number`: max number of tickets that can be submitted by each
-  next-epoch authority.
+  next epoch authority.
 - `redundancy_factor`: controls the expected number of extra tickets produced
   beyond `epoch_length`.
 
-The max attempts number influences the anonymity of block producers. As all
-published tickets have a public attempt number less than `attempts_number`,
-if two tickets share an attempt number then they must be by different block
-producers, which reduces anonymity late in the epoch.
+The attempts number influences the anonymity of block producers. As all
+published tickets have a **public** attempt number less than `attempts_number`,
+all the tickets which share the attempt number value must belong to different
+block producers, which reduces anonymity late in the epoch.
 
-We do not mind `max_attempts < epoch_length` though because this loss already
-becomes small when `attempts_number = 64` or `128` and larger values requires
-more computation.
+We do not mind `max_attempts < epoch_length` though because this loss of
+anonymity already becomes small when `attempts_number = 64` or `128` and larger
+values requires more computation.
 
-Details about how these parameters drives the ticket validity probability
-can be found in the section dedicated to candidate ticket validation
+Details about how exactly these parameters drives the ticket validity
+probability can be found in the section dedicated to candidate ticket validation
 ([ticket threshold](0026-sassafras-consensus.md#622-tickets-threshold)).
 
 `ProtocolConfiguration` values can be adjusted via a dedicated extrinsic which
 should have origin set to `Root`. A valid configuration proposal submitted on
-epoch `K` will be propagated in the `NextEpochDescriptor` at the begin of epoch
-`K+1` and will be effectively enacted on epoch `K+2`.
-
-A new `ProtocolConfiguration` can be submitted using a dedicated extrinsic,
-with the requirement that its origin is set to `Root`. If a valid proposal is
-submitted during epoch `N-1`, it will be embedded into the `NextEpochDescriptor`
-at the beginning of epoch `N`.
+epoch `K` will be propagated in the `NextEpochDescriptor` at the beginning of
+epoch `K+1` and will be effectively enacted on epoch `K+2`.
 
 #### 6.1.3. Startup Parameters
 
@@ -484,21 +488,27 @@ Some parameters for first epoch (index = 0) are configurable via genesis configu
 
 Randomness for first epoch is set to all zeros.
 
-The first block produced (i.e. block #1) MUST ship with a `NextEpochDescriptor`
-for next epoch. This is constructed re-using the same values used for the first
-epoch.
+As block #0 is locally produced by every node by processing the genesis configuration,
+the first block explicitly produced by a validator for the first epoch is block #1.
+
+Block #1 must embed the `NextEpochDescriptor` for next epoch. This is
+constructed re-using the same values used for the first epoch.
 
 ### 6.2. Creation and Submission of Candidate Tickets
 
-As a shorthand notation, in this section we will refer to one of the next epoch
-validators simply as 'the validator'.
+As a shorthand notation, in this section we refer to one of the next epoch
+validators as 'the validator'.
 
-Upon the beginning of a new epoch `N`, the validator will create a set of
+Upon the beginning of a new epoch `N`, the validator will construct a set of
 'tickets' to be submitted on-chain. These tickets aim to secure ownership of one
-of the slots in the upcoming epoch `N+1`.
+or more slots in the upcoming epoch `N+1`.
 
 Each validator is allowed to submit a maximum number of tickets whose value is
 found in the next epoch `ProtocolConfiguration` `attempts_number` field.
+
+The expected ratio between the attempts and the number of tickets which are
+assigned to the next epoch slots is driven by the
+[ticket threshold](0026-sassafras-consensus.md#622-tickets-threshold).
 
 Each ticket has an associated unique identifier, denoted as `TicketId`.
 
@@ -508,12 +518,12 @@ Each ticket has an associated unique identifier, denoted as `TicketId`.
 
 #### 6.2.1. Ticket Identifier Value
 
-The value of the `TicketId` is determined through the output of the Bandersnatch
-VRF, using the following inputs:
+The value of the `TicketId` is determined by the output of the Bandersnatch VRF
+when using the following inputs:
 
-- Epoch `N+1` randomness: a `Randomness` obtained from the `NextEpochDescriptor`.
-- Epoch `N+1` index: a `U64` value tracked by the Sassafras on-chain code.
-- Attempt index: a `U32` value from `0` to `attempts_number`.
+- Next epoch randomness: `Randomness` obtained from the `NextEpochDescriptor`.
+- Next epoch index: `U64` computed as epoch start slot divided epoch duration.
+- Attempt index: `U32` value going from `0` to `attempts_number`.
 
 Let `next_epoch` be an object with the information associated to the next epoch.
 
@@ -529,20 +539,24 @@ Let `next_epoch` be an object with the information associated to the next epoch.
 
     ticket_id_vrf_output = vrf_output(AUTHORITY_SECRET_KEY, ticket_id_vrf_input);
 
-    ticket_bytes = vrf_bytes(ticket_id_vrf_input, ticket_id_vrf_output, 16);
+    ticket_bytes = vrf_bytes(16, ticket_id_vrf_input, ticket_id_vrf_output);
     ticket_id = U128(ticket_bytes);
 ```
 
 #### 6.2.2. Tickets Threshold
 
-A `TicketId` value is considered valid if it is less than the ticket threshold.
+A `TicketId` value is valid if its value is less than the ticket threshold.
 
-Parameters:
+    T = (r·s)/(a·v)
+
+Where:
 - `v`: the number of authorities (aka validators) in the epoch
 - `s`: number of slots in the epoch
 - `r`: the redundancy factor
 - `a`: number of attempts
 - `T`: ticket threshold value (`0 ≤ T ≤ 1`)
+
+##### 6.2.2.1 Formula Derivation
 
 For an epoch of `s` slots we want to have a number of tickets in expectation for
 block production equal to the `r·s`.
@@ -577,7 +591,7 @@ paragraph of the *layman description* of Sassafras protocol.
 
 #### 6.2.3. Ticket Body
 
-For every candidate ticket an associated ticket-body is constructed.
+Every candidate ticket identifier has an associated body.
 
 ```rust
     TicketBody ::= SEQUENCE {
@@ -587,7 +601,7 @@ For every candidate ticket an associated ticket-body is constructed.
     }
 ```
 
-- `attempt_index`: attempt index used to generate the associated ticket_id.
+- `attempt_index`: attempt index used to generate the associated `TicketId`.
 - `erased_pub`: Ed25519 ephemeral public key which gets erased as soon as the
   ticket is claimed.
 - `revealed_pub`: Ed25519 ephemeral public key which gets exposed as soon as the
@@ -597,10 +611,10 @@ The process of generating an erased key pair is intentionally left undefined,
 allowing the implementor the freedom to choose the most suitable strategy.
 
 Revealed key pair is generated using bytes produced by the VRF with input
-parameters equal to those employed in ticket-id generation, only the label is
-different.
+parameters equal to those employed in `TicketId` generation, only the label
+is different.
 
-Let `next_epoch` be an object with the information associated to the next epoch.
+Let `next_epoch` be an object with the information associated to the next epoch:
 
 ```rust
     revealed_vrf_input = vrf_input_from_items(
@@ -612,17 +626,17 @@ Let `next_epoch` be an object with the information associated to the next epoch.
         ]
     );
 
-    revealed_vrf_output = vrf_output(AUTHORITY_SECRET_KEY, ticket_id_vrf_input);
+    revealed_vrf_output = vrf_output(AUTHORITY_SECRET_KEY, revealed_vrf_input);
 
-    revealed_seed = vrf_bytes(revealed_vrf_input, revealed_vrf_output, 32);
+    revealed_seed = vrf_bytes(32, revealed_vrf_input, revealed_vrf_output);
     revealed_pub = ed25519_secret_from_seed(revealed_seed).public();
 ```
 
-The usage of the `EphemeralPublicKey`s will be clarified in the ticket claiming section.
+The usage of the ephemeral public keys will be clarified in the [ticket claiming](0026-sassafras-consensus.md#65-claim-of-ticket-ownership-during-block-production) section.
 
 #### 6.2.4. Ring Signature Production
 
-`TicketBody` must be signed using the Bandersnatch Ring-VRF flavor.
+`TicketBody` must be signed using the Bandersnatch [ring VRF](532-ring-vrf-signature) flavor.
 
 ```rust
     sign_data = vrf_signature_data(
@@ -630,17 +644,19 @@ The usage of the `EphemeralPublicKey`s will be clarified in the ticket claiming 
         transcript_data: [
             SCALE(ticket_body)
         ],
-        vrf_inputs: [
+        inputs: [
             ticket_id_vrf_input
         ]
     )
   
-    ring_signature = ring_vrf_sign(AUTHORITY_SECRET_KEY, RING_PROVER, sign_data)
+    ring_signature = ring_vrf_sign(RING_PROVER_KEY, sign_data)
 ```
 
-`RING_PROVER` object is constructed using the set of public keys which belong to
-the next epoch authorities and the *ZK-SNARK* initialization parameters
-(more details in the [bandersnatch_vrfs](https://github.com/w3f/ring-vrf/blob/18614458ca4cb335c88d4e710c13906a76f51e43/bandersnatch_vrfs/src/ring.rs#L91-L93) reference implementation).
+`RING_PROVER` object is constructed using the authority secret key, the set
+public keys which belong to the next epoch authorities and the *zk-SNARK*
+context parameters (more details in the
+[bandersnatch_vrfs](https://github.com/w3f/ring-vrf/blob/18614458ca4cb335c88d4e710c13906a76f51e43/bandersnatch_vrfs/src/ring.rs#L91-L93)
+reference implementation).
 
 The body and the ring signature are combined in the `TicketEnvelope`:
 
@@ -659,39 +675,38 @@ via a dedicated unsigned extrinsic.
 All the actions in the steps described by this paragraph are executed by
 on-chain code.
 
-The tickets are received via a dedicated unsigned extrinsic call.
+The tickets are received via a dedicated extrinsic call.
 
 Generic validation rules:
 - Tickets submissions must occur within the first half of the epoch.
   (TODO: I expect this is to give time to the chain finality consensus to finalize
-   the on-chain tickets before next epoch starts)
-- The transaction must be submitted by one of the current session validators.
+  the on-chain tickets before next epoch starts)
+- For unsigned extrinsics, it must be submitted by one of the current session
+  validators.
 
 Ticket specific validation rules:
-- Ring signature is verified using the on-chain `RingVerifier`.
-- Ticket identifier is computed from the (verified) `VrfOutput` contained in the
-  ring signature and its value is checked to be less than the ticket-threshold.
+- Ring signature is verified using the on-chain `BandersnatchRingVerifierKey`.
+- Ticket identifier is locally computed from the `VrfOutput` contained in the
+  `RingVrfSignature` and its value is checked to be less than the ticket-threshold.
 
 Valid tickets bodies are persisted on-chain.
 
 ### 6.4. Ticket-Slot assignment
 
-Before the beginning of the next epoch, i.e. the epoch in which the tickets are
-supposed to be claimed, the on-chain list of tickets must be associated with the
-next epoch's slots.
+Before the beginning of the next epoch, the on-chain list of tickets must be
+associated with the next epoch's slots.
 
-The assignment process can happen any time in the second half of the submission
-epoch, before the beginning of the next epoch.
+The assignment process happens in the second half of the submission epoch.
 
-There must be at most one ticket per slot.
+In the end, there must be at most one ticket per slot.
 
 - Initially, the complete list of tickets is sorted based on their ticket-id,
   with smaller values coming first.
 - In cases where there are more tickets than available slots, the list is pruned
   by removing the larger value.
-- Tickets are then assigned to the slots using an outside-in assignment strategy.
+- Tickets are then assigned to the slots using an *outside-in* assignment strategy.
 
-**Outside-In Assignment**
+#### 6.4.1. Outside-In Assignment
 
 Given an ordered sequence of tickets `[t0, t1, t2, ..., tk]` to be assigned to
 `n` slots, where `n ≥ k`, the tickets are allocated according to the following
@@ -702,42 +717,44 @@ strategy:
     tickets     : [ t1, t3, t5, ... , t4, t2, t0 ]
 ```
 
-Here `slot-index` is a relative value computed as `epoch_start_slot - epoch_slot`.
+Here `slot-index` is a relative value computed as:
 
-The association between each ticket and its corresponding slot is recorded on
-the blockchain and is publicly visible to all. What remains confidential is the
-identity of the ticket *owner*, and consequently, who possesses the authority to
-claim the corresponding slot. This information is known only to the author of
-the ticket.
+    slot-index = absolute_slot_index - epoch_start_slot
 
-#### 6.4.1. Fallback Assignment
+The association between each ticket and a slot is recorded on-chain and thus
+is public. What remains confidential is the identity of the ticket *owner*, and
+consequently, who possesses the authority to claim the corresponding slot. This
+information is known only to the author of the ticket.
 
-In cases where the number of available tickets is less than the number of epoch
-slots, some (*orphan*) slots in the middle of the epoch will remain unbounded to
-any ticket.
+#### 6.4.2. Fallback Assignment
 
-In such situations, these unassigned slots are allocated using a fallback
-assignment method.
+In case the number of available tickets is less than the number of epoch slots,
+some (*orphan*) slots in the middle of the epoch will remain unbounded to any
+ticket.
 
-The on-chain authority set contains the authorities for the current epoch in a
-specific order. The index of the authority which has the privilege to claim a
-slot is calculated as follows:
+In such situation, these unassigned slots are allocated using a fallback
+assignment strategy.
+
+The authorities registered on-chain are kept in a sorted buffer. The index of
+the authority which has the privilege to claim an unbounded slot is calculated
+as follows:
 
 ```rust
-    index_bytes = BLAKE2(8, SCALE( (epoch_randomness, slot) ));
-    index = U64(index_bytes) mod authorities_number;
+    index_bytes = BLAKE2(4, SCALE( (epoch_randomness, slot) ));
+    index = U32(index_bytes) mod authorities_number;
 ```
 
-TODO: what about using `epoch_randomness_accumulator` instead of `epoch_randomness`?
+<TODO>
+What about using `epoch_randomness_accumulator` instead of `epoch_randomness`?
 The accumulator is updated using the randomness which ships with every block, thus
 we know who is the author of block N only after block N-1 has been imported.
-Is a bit more resistant to DoS. But given the sporadic nature of secondary method
-maybe this is not a bit deal anyway.
+Is a bit more Dos resistant.
+</TODO>
 
 ### 6.5. Claim of ticket ownership during block production
 
 With tickets bound to epoch slots, every validator acquires information about
-the slots for which they are eligible to produce a block.
+the slots for which they are supposed to produce a block.
 
 The procedure for block authoring varies based on whether a given slot has an
 associated ticket according to the on-chain state.
@@ -752,7 +769,7 @@ Let `ticket_body` represent the `TicketBody` that has been committed to the on-
 chain state, `curr_epoch` denote an object containing information about the
 current epoch, and `slot` represent the absolute monotonic slot number.
 
-Follows the construction of the `VrfSignatureData`:
+Follows the construction of `VrfSignatureData`:
 
 ```rust
     randomness_vrf_input = vrf_input_from_items(
@@ -778,26 +795,30 @@ Follows the construction of the `VrfSignatureData`:
         transcript_data: [
             SCALE(ticket_body)
         ],
-        vrf_inputs: [
+        inputs: [
             randomness_vrf_input,
             revealed_vrf_input
         ]
     );
 ```
 
-The inclusion of `revealed_vrf_input` allows the verifier to reconstruct the
-`revealed_pub` key which has been committed into the `TicketBody`.
+The inclusion of `revealed_vrf_input` will generate a `VrfSignature` with a
+`VrfOutput` allowing the verifier to reconstruct a `revealed_pub` key
+which is expected to be equal to the one committed into the `TicketBody`.
 
 ##### 6.5.1.1. (Optional) Ed25519 Erased Ephemeral Key Claim
 
-As the ticket ownership was already checked using the primary method, this 
-step is purely optional and serves only to enforce the claim.
+As the ticket ownership can be claimed by reconstructing the `revealed_pub`
+entry of the ticket, this  step is purely optional and serves only to enforce
+the claim.
 
-TODO: is this step really necessary?
+<TODO>
+Is this step really necessary?
 - Isn't better to keep it simple if this step doesn't offer any extra security?
 - We already have a strong method to claim ticket ownership.
+</TODO>
 
-The *Fiat-Shamir* transform is utilized to obtain a 32-byte challenge associated
+The *Fiat-Shamir* transform is used to obtain a 32-byte challenge associated
 with the `VrfSignData` transcript.
 
 Validators employ the secret key associated with `erased_pub`, which has been
@@ -811,7 +832,7 @@ committed in the `TicketBody`, to sign this challenge.
 #### 6.5.2. Secondary Claim Method
 
 If the slot doesn't have any associated ticket then the validator is the one
-with index equal to the rule exposed in paragraph `6.4.1`.
+with index equal to the rule exposed in paragraph [6.4.2](642-fallback-assignment).
 
 Given `randomness_vrf_input` constructed as shown for the primary method, the
 `VrfSignatureData` is constructed as:
@@ -820,7 +841,7 @@ Given `randomness_vrf_input` constructed as shown for the primary method, the
     sign_data = vrf_signature_data(
         transcript_label: BYTES("sassafras-slot-claim-transcript-v1.0"),
         transcript_data: [ ],
-        vrf_inputs: [
+        inputs: [
             randomness_vrf_input
         ]
     )
@@ -842,19 +863,19 @@ which contains all the necessary information to assert ownership of the slot.
 
 - `authority_index`: index of the block author in the on-chain authorities list.
 
-- `slot`: absolute slot number (this is not the relative index within the epoch)
+- `slot`: absolute slot number (not relative with respect to the epoch start)
 
-- `signature`: This is a signature that includes one or two `VrfOutputs`.
+- `signature`: signature that includes one or two `VrfOutputs`.
   - The first `VrfOutput` is always present and is used to generate per-block
-    randomness. This is not relevant to claim ticket ownership.
+    randomness. This is used to claim ticket ownership.
   - The second `VrfOutput` is included if the slot is associated with a ticket.
-    This is relevant to claim ticket ownership using primary method.
+    This is relevant to claim ticket ownership.
 
 - `erased_signature`: optional signature providing an additional proof of ticket
   ownership (see 6.5.1.1).
 
 ```rust
-    signature = plain_vrf_sign(AUTHORITY_SECRET_KEY, sign_data);
+    signature = vrf_sign(AUTHORITY_SECRET_KEY, sign_data);
 
     claim = SlotClaim {
         authority_index,
@@ -864,43 +885,56 @@ which contains all the necessary information to assert ownership of the slot.
     }
 ```
 
-The `claim` object is *SCALE* encoded and sent as a block's header digest log
-item.
+The `claim` object is *SCALE* encoded and sent in the block's header digest log.
 
 ### 6.6. Validation of the claim during block verification
 
-Validation of `SlotClaim` object as found in the block's header.
+Validation of `SlotClaim` object found in the block's header.
 
 The procedure depends on whether the slot has an associated ticket or not
 according to the on-chain state.
 
-If there is a ticket linked to the slot, we will utilize the primary
-verification method; otherwise, the protocol resorts to the secondary one.
+If there is a ticket linked to the slot, the primary verification method will be
+used; otherwise, the protocol resorts to the secondary one.
 
-In both scenarios, the signature within the `SlotClaim` is verified using a
-`VrfSignData` that matches the one according to paragraph 6.5. If signature
-verification fails then the claim is not legit.
+In both scenarios, the signature within the `SlotClaim` is verified using
+a `VrfSignData` constructed as specified by paragraph 6.5.
 
-Given `claim` the instance of `SlotClaim` within the block header.
+Given `claim` an instance of `SlotClaim`:
 
 ```rust
-    plain_vrf_verify(AUTHORITY_PUBLIC_KEY, sign_data, claim.signature);
+    public_key = AUTHORITIES[claim.authority_index];
+
+    vrf_verify(public_key, sign_data, claim.signature);
 ```
+
+If signature verification fails then the claim is not legit.
 
 ### 6.6.1. Primary Claim Method Verification
 
 This verification is performed to confirm ticket ownership and is performed
 utilizing the second `VrfOutput` contained within the `SlotClaim` `signature`.
 
-By using the `VrfOutput` object together with the corresponding expected
-`VrfInput` the verifier should be able to reconstruct the `revealed_pub` key
-committed in the `TicketBody`. If there is a mismatch, the claim is not legit.
+By using the `VrfOutput` object together with the associated expected `VrfInput`
+the verifier should be able to reconstruct the `revealed_pub` key committed in
+the `TicketBody`. If there is a mismatch, the claim is not legit.
 
 ```rust
-    reveled_vrf_output = claim.signature.vrf_outputs[1];
+    revealed_vrf_input = vrf_input_from_items(
+        domain: BYTES("sassafras-revealed-v1.0"),
+        data: [
+            curr_epoch.randomness,
+            BYTES(curr_epoch.epoch_index),
+            BYTES(ticket_body.attempt_index)
+        ]
+    );
 
-    revealed_seed = vrf_bytes(revealed_vrf_input, revealed_vrf_output,  32);
+    reveled_vrf_output = claim.signature.outputs[1];
+
+    revealed_seed = vrf_bytes(32, revealed_vrf_input, revealed_vrf_output);
     revealed_pub = ed25519_secret_from_seed(revealed_seed).public();
+
+    assert(revealed_pub == ticket_body.revealed_pub);
 ```
 
 ##### 6.6.1.1. (Optional) Ephemeral Key Signature Check
@@ -908,22 +942,29 @@ committed in the `TicketBody`. If there is a mismatch, the claim is not legit.
 If the `erased_signature` element within the `SlotClaim` is present the
 `erased_pub` key is used to verify it.
 
-The signed challenge is generated through the identical steps as outlined in
-section 6.5.1.1.
+The signed challenge is generated with identical steps as outlined in section
+6.5.1.1.
+
+```rust
+    challenge = sign_data.transcript.challenge();
+    result = ed25519_verify(ticket_body.erased_pub, challenge, claim.erased_signature);
+
+    assert(result == true);
+```
 
 #### 6.6.2. Secondary Claim Method Verification
 
-If the slot doesn't have any associated ticket then the validator index which signed
-the claim should match the one given by the rule outlined in section 6.4.1.
+If the slot doesn't have any associated ticket then the validator index contained in
+the claim should match the one given by the rule outlined in section [6.4.2](642-fallback-assignment).
 
 ### 6.7. Randomness Accumulator
 
 The first `VrfOutput` which ships with the block's `SlotClaim` `signature`
-is mandatory and MUST be used as the entropy source for the randomness which
+is mandatory and must be used as the entropy source for the randomness which
 gets accumulated on-chain **after** block processing.
 
 Given `claim` the instance of `SlotClaim` within the block header, and
-`accumulator` the current value for current epoch randomness accumulator,
+`accumulator` the current value for the current epoch randomness accumulator,
 the `accumulator` value is updated as follows:
 
 ```rust
@@ -936,9 +977,9 @@ the `accumulator` value is updated as follows:
         ]
     );
 
-    randomness_vrf_output = claim.signature.vrf_outputs[0];
+    randomness_vrf_output = claim.signature.outputs[0];
 
-    randomness = vrf_bytes(randomness_vrf_input, randomness_vrf_output, 32);
+    randomness = vrf_bytes(32, randomness_vrf_input, randomness_vrf_output);
 
     accumulator = BLAKE2(32, CONCAT(accumulator, randomness));
 ```
@@ -946,13 +987,12 @@ the `accumulator` value is updated as follows:
 The updated `accumulator` value is stored on-chain.
 
 The randomess accumulated during epoch `N` will be used, at the start of the
-next epoch (`N+1`), as the value to be stored within the `NextEpochDescriptor`
-`randomness` element (see section 6.1) to be used as the epoch `N+2` randomness
-value. 
+next epoch (`N+1`), as an input to compute the `NextEpochDescriptor`
+`randomness` element (see section 6.1). 
 
 As outlined throughout the document, epoch randomness value secures various
 protocol-specific functions, including ticket generation and assignment of
-fallback slots (refer to section 6.4.1). Additionally, users may utilize this
+fallback slots (refer to section 6.4.2). Additionally, users may utilize this
 value for other purposes as needed.
 
 
@@ -962,12 +1002,9 @@ None
 
 ## 8. Testing, Security, and Privacy
 
-TODO ?
+The reference implementation for this RFC will be tested on testnets first.
 
-Describe the impact of the proposal on these three high-importance areas 
-- how implementations can be tested for adherence,
-- effects that the proposal has on security and
-- privacy per-se, as well as any possible implementation pitfalls which should be clearly avoided.
+An audit may be required to ensure the implementation does not introduce unwanted side effects
 
 ## 9. Performance, Ergonomics, and Compatibility
 
@@ -982,14 +1019,16 @@ which fork to follow is not opinionated and there is only one choice.
 
 ### 9.2. Ergonomics
 
-TODO ?
-
-If the proposal alters exposed interfaces to developers or end-users, which types of usage patterns have been optimized for?
+No specific considerations.
 
 ### 9.3. Compatibility
 
 The adoption of Sassafras impacts native client code and thus can't be
-introduced just via a runtime upgrade.
+introduced via a simple runtime upgrade.
+
+A deployment strategy should be carefully engineered for live networks.
+
+This subject is left open for a dedicated RFC.
 
 
 ## 10. Prior Art and References
