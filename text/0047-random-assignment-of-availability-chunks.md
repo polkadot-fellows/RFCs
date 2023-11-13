@@ -3,19 +3,25 @@
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 03 November 2023                                                                            |
-| **Description** | An evenly-distributing indirection layer between availability chunks and the validators that hold them.|
+| **Description** | An evenly-distributing indirection layer between availability chunks and validators .       |
 | **Authors**     | Alin Dima                                                                                   |
 
 ## Summary
 
-Propose a way of randomly permuting the availability chunk indices assigned to validators for a given core and relay chain block,
-in the context of [recovering available data from systematic chunks](https://github.com/paritytech/polkadot-sdk/issues/598).
+Propose a way of randomly permuting the availability chunk indices assigned to validators for a given core and relay
+chain block, in the context of
+[recovering available data from systematic chunks](https://github.com/paritytech/polkadot-sdk/issues/598).
 
 ## Motivation
 
-The relay chain node must have a deterministic way of evenly distributing the first ~(N_VALIDATORS / 3) systematic availability chunks to different validators,
-based on the session, relay chain block number and core.
-This is needed in order to optimise network load distribution as evenly as possible during availability recovery.
+Currently, the ValidatorIndex is always identical to the ChunkIndex. Since the validator array is only shuffled once
+per session, naively using the ValidatorIndex as the ChunkIndex would pose an unreasonable stress on the first N/3
+validators during an entire session, when favouring availability recovery from systematic chunks.
+
+Therefore, the relay chain node needs a deterministic way of evenly distributing the first ~(N_VALIDATORS / 3)
+systematic availability chunks to different validators, based on the session, relay chain block number and core.
+The main purpose is to ensure fair distribution of network bandwidth usage for availability recovery in general and in
+particular for systematic chunk holders. 
 
 ## Stakeholders
 
@@ -25,27 +31,39 @@ Relay chain node core developers.
 
 ### Systematic erasure codes
 
-An erasure coding algorithm is considered systematic if it preserves the original unencoded data as part of the resulting code.
+An erasure coding algorithm is considered systematic if it preserves the original unencoded data as part of the
+resulting code.
 [The implementation of the erasure coding algorithm used for polkadot's availability data](https://github.com/paritytech/reed-solomon-novelpoly) is systematic. Roughly speaking, the first N_VALIDATORS/3
-chunks of data can be cheaply concatenated to retrieve the original data, without running the resource-intensive and time-consuming decoding algorithm.
+chunks of data can be cheaply concatenated to retrieve the original data, without running the resource-intensive and
+time-consuming reconstruction algorithm.
+
+### Availability recovery now
+
+At this moment, the availability recovery process looks different based on the estimated size of the available data:
+
+(a) for small PoVs (up to 128 Kib), sequentially try requesting the unencoded data from the backing group, in a random
+order. If this fails, fallback to option (b).
+
+(b) for large PoVs (over 128 Kib), launch N parallel requests for the erasure coded chunks (currently, N has an upper
+limit of 50), until enough chunks were recovered. Validators are tried in a random order. Then, reconstruct the
+original data.
 
 ### Availability recovery from systematic chunks
 
-As part of the effort of [increasing polkadot's resource efficiency, scalability and performance](https://github.com/paritytech/roadmap/issues/26), work is under way to
-modify the Availability Recovery subsystem by leveraging systematic chunks. See [this comment](https://github.com/paritytech/polkadot-sdk/issues/598#issuecomment-1792007099)
-for preliminary performance results.
+As part of the effort of
+[increasing polkadot's resource efficiency, scalability and performance](https://github.com/paritytech/roadmap/issues/26),
+work is under way to modify the Availability Recovery subsystem by leveraging systematic chunks. See
+[this comment](https://github.com/paritytech/polkadot-sdk/issues/598#issuecomment-1792007099) for preliminary
+performance results.
 
-In this scheme, the relay chain node will first attempt to retrieve the N/3 systematic chunks from the validators that should hold them,
-before falling back to recovering from regular chunks, as before.
-
-The problem that this RFC aims to address is that, currently, the ValidatorIndex is always identical to the ChunkIndex.
-Since the validator array is only shuffled once per session, naively using the ValidatorIndex as the ChunkIndex
-would pose an unreasonable stress on the first N/3 validators during an entire session.
+In this scheme, the relay chain node will first attempt to retrieve the N/3 systematic chunks from the validators that
+should hold them, before falling back to recovering from regular chunks, as before.
 
 ### Chunk assignment function
 
 #### Properties
-The function that decides the chunk index for a validator should be parametrised by at least `(validator_index, session_index, block_number, core_index)`
+The function that decides the chunk index for a validator should be parametrised by at least
+`(validator_index, session_index, block_number, core_index)`
 and have the following properties:
 1. deterministic
 1. pseudo-random
@@ -91,55 +109,63 @@ for retrieving chunk indices in bulk for all validators at a given block and cor
 
 #### Upgrade path
 
-Considering that the Validator->Chunk mapping is critical to para consensus, the change needs to be enacted atomically via
-governance, only after all validators have upgraded the node to a version that is aware of this mapping.
-It needs to be explicitly stated that after the runtime upgrade and governance enactment, validators that run older client versions that don't
-support this mapping will not be able to participate in parachain consensus.
+Considering that the Validator->Chunk mapping is critical to para consensus, the change needs to be enacted atomically
+via governance, only after all validators have upgraded the node to a version that is aware of this mapping.
+It needs to be explicitly stated that after the runtime upgrade and governance enactment, validators that run older
+client versions that don't support this mapping will not be able to participate in parachain consensus.
 
 ### Getting access to core_index in different subsystems
 
-Availability-recovery can currently be triggered by three actors:
-1. `ApprovalVoting` subsystem of the relay chain validator.
-2. `pov_recovery` task of collators
-3. `DisputeCoordinator` subsystem of the relay chain validator.
+Availability-recovery can currently be triggered by the following steps in the polkadot protocol:
+1. During the approval voting process.
+1. By other collators of the same parachain
+3. During disputes.
 
-The one parameter of the assignment function that poses problems to some subsystems is the `core_index`.
-The `core_index` refers to the index of the core that the candidate was occupying while it was pending availability (from backing to inclusion).
+The `core_index` refers to the index of the core that the candidate was occupying while it was pending availability
+(from backing to inclusion).
+Getting the right core index for a candidate can prove troublesome. Here's a breakdown of how different parts of the
+node implementation can get access to this data:
 
-1. The `ApprovalVoting` subsystem starts the approval process on a candidate as a result to seeing a `CandidateIncluded` event.
-This event also contains the core index that the candidate is leaving, so getting access to the core index is not an issue.
-1. The `pov_recovery` task of the collators starts availability recovery in response to a `CandidateBacked` event, which enables
-easy access to the core index the candidate started occupying.
+1. The approval-voting process for a candidate begins after observing that the candidate was included. Therefore, the
+node has easy access to the block where the candidate got included (and also the core that it occupied).
+1. The `pov_recovery` task of the collators starts availability recovery in response to noticing a candidate getting
+backed, which enables easy access to the core index the candidate started occupying.
 1. Disputes may be initiated on a number of occasions:
   
-    3.a. is initiated by the current node as a result of finding an invalid candidate while doing approval work. In this case,
-  availability-recovery is not needed, since the validator already issued their vote.
+    3.a. is initiated by the validator as a result of finding an invalid candidate while participating in the
+  approval-voting protocol. In this case, availability-recovery is not needed, since the validator already issued their
+  vote.
     
-    3.b is initiated by noticing dispute votes recorded as a result of chain scraping. In this case, the subsystem
-  assumes it already has a copy of the `CandidateReceipt` as a result of scraping `CandidateBacked` events. The logic can be modified
-  to also record core indices.
+    3.b is initiated by the validator noticing dispute votes recorded on-chain. In this case, we can safely
+  assume that the backing event for that candidate has been recorded and kept in memory.
   
-    3.c is initiated as a result of getting a dispute statement from another validator. It is possible that the dispute is happening on
-  a fork that was not yet imported by this validator, so the subsystem will not always have access to the `CandidateBacked` event
-  recorded by the chain scraper.
+    3.c is initiated as a result of getting a dispute statement from another validator. It is possible that the dispute
+  is happening on a fork that was not yet imported by this validator, so the subsystem may not have seen this candidate
+  being backed.
 
 As a solution to 3.c, a new version for the disputes request-response networking protocol will be added.
 This message type will include the relay block hash where the candidate was included. This information will be used
 in order to query the runtime API and retrieve the core index that the candidate was occupying.
 
-The usage of the systematic data availability recovery feature will also be subject to all nodes using the V2 disputes networking protocol.
+The usage of the systematic data availability recovery feature will also be subject to all nodes using the V2 disputes
+networking protocol.
 
 #### Alternatives to using core_index
 
 As an alternative to core_index, the `ParaId` could be used. It has the advantage of being readily available in the
-`CandidateReceipt`, which would enable the dispute communication protocol to not change and would simplify the implementation.
-However, in the context of [CoreJam](https://github.com/polkadot-fellows/RFCs/pull/31), `ParaId`s will no longer exist (at least not in their current form).
+`CandidateReceipt`, which would enable the dispute communication protocol to not change and would simplify the
+implementation.
+However, in the context of [CoreJam](https://github.com/polkadot-fellows/RFCs/pull/31), `ParaId`s will no longer exist
+(at least not in their current form).
+
+Using the candidate hash as a random seed for a shuffle is another option.
 
 ## Drawbacks
 
 Has a fair amount of technical complexity involved:
 
-- Introduces another runtime API that is going to be issued by multiple subsystems. With adequate client-side caching, this should be acceptable.
+- Introduces another runtime API that is going to be issued by multiple subsystems. With adequate client-side caching,
+this should be acceptable.
 
 - Requires a networking protocol upgrade on the disputes request-response protocol
 
@@ -152,9 +178,12 @@ This proposal doesn't affect security or privacy.
 
 ### Performance
 
-This is a necessary optimisation, as reed-solomon erasure coding has proven to be a top consumer of CPU time in polkadot when scaling the parachain count.
+This is a necessary DA optimisation, as reed-solomon erasure coding has proven to be a top consumer of CPU time in
+polkadot as we scale up the parachain block size and number of availability cores.
 
-With this optimisation, preliminary performance results show that CPU time used for reed-solomon coding can be halved and total POV recovery time decrease by 80% for large POVs. See more [here](https://github.com/paritytech/polkadot-sdk/issues/598#issuecomment-1792007099).
+With this optimisation, preliminary performance results show that CPU time used for reed-solomon coding can be halved
+and total POV recovery time decrease by 80% for large POVs. See more
+[here](https://github.com/paritytech/polkadot-sdk/issues/598#issuecomment-1792007099).
 
 ### Ergonomics
 
@@ -163,17 +192,21 @@ Not applicable.
 ### Compatibility
 
 This is a breaking change. See "upgrade path" section above.
-All validators need to have upgraded their node versions before the feature will be enabled via a runtime upgrade and governance call.
+All validators need to have upgraded their node versions before the feature will be enabled via a runtime upgrade and
+governance call.
 
 ## Prior Art and References
 
-See comments on the [tracking issue](https://github.com/paritytech/polkadot-sdk/issues/598) and the [in-progress PR](https://github.com/paritytech/polkadot-sdk/pull/1644)
+See comments on the [tracking issue](https://github.com/paritytech/polkadot-sdk/issues/598) and the
+[in-progress PR](https://github.com/paritytech/polkadot-sdk/pull/1644)
 
 ## Unresolved Questions
 
-- Is it a future-proof idea to utilise the core index as a parameter of the chunk index compute function? Is there a better alternative that avoid complicating the implementation?
+- Is it a future-proof idea to utilise the core index as a parameter of the chunk index compute function?
+Is there a better alternative that avoid complicating the implementation?
 - Is there a better upgrade path that would preserve backwards compatibility?
 
 ## Future Directions and Related Material
 
-This enables future optimisations for the performance of availability recovery, such as retrieving batched systematic chunks from backers/approval-checkers.
+This enables future optimisations for the performance of availability recovery, such as retrieving batched systematic
+chunks from backers/approval-checkers.
