@@ -1,4 +1,4 @@
-# RFC-0000: Generate ownership proof for `SessionKeys`
+# RFC-0048: Generate ownership proof for `SessionKeys`
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
