@@ -114,7 +114,7 @@ via governance, only after all validators have upgraded the node to a version th
 It needs to be explicitly stated that after the runtime upgrade and governance enactment, validators that run older
 client versions that don't support this mapping will not be able to participate in parachain consensus.
 
-### Getting access to core_index in different subsystems
+### Getting access to core_index
 
 Availability-recovery can currently be triggered by the following steps in the polkadot protocol:
 1. During the approval voting process.
@@ -164,7 +164,7 @@ Using the candidate hash as a random seed for a shuffle is another option.
 
 Has a fair amount of technical complexity involved:
 
-- Introduces another runtime API that is going to be issued by multiple subsystems. With adequate client-side caching,
+- Introduces another runtime API that is going to be queried by multiple subsystems. With adequate client-side caching,
 this should be acceptable.
 
 - Requires a networking protocol upgrade on the disputes request-response protocol
