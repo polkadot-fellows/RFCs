@@ -8,7 +8,7 @@
 
 ## Summary
 
-This RFC proposes a change to the `WithComputedOrigin` XCM barrier and a backwards-compatible change to the `DescribeFamily` MultiLocation descriptor with the end goal of enabling the use of Universal Locations for XCM MultiLocation to AccountId conversion, which allows the use of absolute locations to maintain the same derivation result in any runtime, regardless of it's position in the family hierarchy.
+This RFC proposes a change to the `WithComputedOrigin` XCM barrier and a backwards-compatible change to the `DescribeFamily` MultiLocation descriptor with the end goal of enabling the use of Universal Locations for XCM MultiLocation to AccountId conversion, which allows the use of absolute locations to maintain the same derivation result in any runtime, regardless of its position in the family hierarchy.
 
 ## Motivation
 
