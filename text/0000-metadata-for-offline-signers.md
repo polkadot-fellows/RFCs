@@ -56,7 +56,7 @@ Implementing this RFC would remove requirement to maintain metadata portals manu
 
 ## Explanation
 
-Detailed description of metadata shortening and digest process is provided in [metadata-shortener](https://github.com/Alzymologist/metadata-shortener) crate (see `cargo doc --open` and examples).
+Detailed description of metadata shortening and digest process is provided in [metadata-shortener](https://github.com/Alzymologist/metadata-shortener) crate (see `cargo doc --open` and examples). Below are presented algorithms of the process.
 
 ### Metadata descriptor
 
@@ -67,13 +67,24 @@ Values for metadata shortening protocol version, `ExtrinsicMetadata`, SCALE-enco
 1. Types registry is stripped from `docs` fields.
 2. Types records are separated into chunks, with enum variants being individual chunks differing by variant index; each chunk consisting of `id` (same as in full metadata registry) and SCALE-encoded 'Type' description (reduced to 1-variant enum for enum variants)
 
+### Complete Binary Merkle Tree construction protocol
+
+`blake3` transformation of concatenated child nodes (`blake3(left + right)`) as merge procedure;
+
+1. Leaves are numbered in ascending order.
+2. Merge is performed using the leaf with highest index as right and node with second to highest index as left children; result is pushed to the end of nodes queue and leaves are discarded.
+3. Step (2) is repeated until no leaves or just one leaf remains; in latter case, the last leaf is pushed to the front of the nodes queue.
+4. Right node and then left node is popped from the front of the nodes queue and merged; the result is sent to the end of the queue.
+5. Step (4) is repeated until only one node remains; this is tree root.
+
 ### Digest
 
 1. Blake3 hash is computed for each chunk of modular short metadata registry.
-2. Hashes are sorted and constructed into static Merkle tree as implemented in `merkle_cbt` crate using blake3 digest of concatenated child nodes values for merging.
-3. Root hash of this tree is merged with metadata descriptor blake3 hash; this is metadata digest.
+2. Hashes are sorted in ascending order.
+3. Complete Binary Merkle Tree is constructed as described above.
+4. Root hash of this tree is merged with metadata descriptor blake3 hash; this is metadata digest.
 
-Product of concatenation of porotocol version number with resulting metadata digest MUST be included into Signed Extensions
+Product of concatenation of porotocol version number with resulting metadata digest MUST be included into Signed Extensions.
 
 ### Shortening
 
