@@ -65,13 +65,16 @@ Values for metadata shortening protocol version, `ExtrinsicMetadata`, SCALE-enco
 ### Metadata modularization
 
 1. Types registry is stripped from `docs` fields.
-2. Types records are separated into chunks, with enum variants being individual chunks differing by variant index; each chunk consisting of `id` (same as in full metadata registry) and SCALE-encoded 'Type' description (reduced to 1-variant enum for enum variants)
+2. Types records are separated into chunks, with enum variants being individual chunks differing by variant index; each chunk consisting of `id` (same as in full metadata registry) and SCALE-encoded 'Type' description (reduced to 1-variant enum for enum variants).
+3. Chunks are sorted by `id` in accending order; chunks with same `id` are sorted by enum vainant index in accending order.
 
-### Complete Binary Merkle Tree construction protocol
+### Merging protocol
 
 `blake3` transformation of concatenated child nodes (`blake3(left + right)`) as merge procedure;
 
-1. Leaves are numbered in ascending order.
+### Complete Binary Merkle Tree construction protocol
+
+1. Leaves are numbered in ascending order. Leaf index is associated with corresponding chunk.
 2. Merge is performed using the leaf with highest index as right and node with second to highest index as left children; result is pushed to the end of nodes queue and leaves are discarded.
 3. Step (2) is repeated until no leaves or just one leaf remains; in latter case, the last leaf is pushed to the front of the nodes queue.
 4. Right node and then left node is popped from the front of the nodes queue and merged; the result is sent to the end of the queue.
@@ -80,19 +83,18 @@ Values for metadata shortening protocol version, `ExtrinsicMetadata`, SCALE-enco
 ### Digest
 
 1. Blake3 hash is computed for each chunk of modular short metadata registry.
-2. Hashes are sorted in ascending order.
 3. Complete Binary Merkle Tree is constructed as described above.
-4. Root hash of this tree is merged with metadata descriptor blake3 hash; this is metadata digest.
+4. Root hash of this tree (left) is merged with metadata descriptor blake3 hash (right); this is metadata digest.
 
 Product of concatenation of porotocol version number with resulting metadata digest MUST be included into Signed Extensions.
 
 ### Shortening
 
-Shortened metadata is produced as sorted subset of modular metadata chunks selected from full set using protocol `cut_metadata` proposed in [metadata-shortener](https://github.com/Alzymologist/metadata-shortener) crate or equivalent operation that provides sufficient information for both decoding of extrinsic.
+For shortening, an attempt to decode transaction completely using provided metadata is performed with the same algorithm that would be used on the cold side. All chunks are associated with their leaf indices. An example of this protocol is proposed in [metadata-shortener](https://github.com/Alzymologist/metadata-shortener) that is based on [substrate-parser](https://github.com/Alzymologist/substrate-parser) decoding protocol; any decoding protocol could be used here as long as cold signer's design finds it appropriate for given security model.
 
 ### Transmission
 
-Shortened metadata chunks MAY be trasmitted into cold device together with Merkle proof in its entirety or in parts, depending on memory capabilities of the cold device and it ability to reconstruct larger fraction of tree. This document does not specify the manner of transmission. The order of metadata chunks MAY be arbitrary, the only requirement is that indices of nodes corresponding to chunks MUST be communicated.
+Shortened metadata chunks MAY be trasmitted into cold device together with Merkle proof in its entirety or in parts, depending on memory capabilities of the cold device and it ability to reconstruct larger fraction of tree. This document does not specify the manner of transmission. The order of metadata chunks MAY be arbitrary, the only requirement is that indices of leaf nodes in Merkle tree corresponding to chunks MUST be communicated.
 
 ### Offline verification
 
