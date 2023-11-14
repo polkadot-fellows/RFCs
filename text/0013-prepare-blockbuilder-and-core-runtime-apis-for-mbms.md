@@ -46,7 +46,7 @@ enum ExtrinsicInclusionMode {
 }
 ```
 
-A block author MUST respect the `ExtrinsicInclusionMode` that is returned by `initialize_block`. The runtime MAY reject blocks that violate this requirement. 
+A block author MUST respect the `ExtrinsicInclusionMode` that is returned by `initialize_block`. The runtime MUST reject blocks that do have forbidden extrinsics in them. 
 
 It is RECOMMENDED that block authors keep transactions in their transaction pool (if applicable)
 for as long as `initialize_block` returns `OnlyInherents`. The assumption is that these transactions become valid once the runtime finishes the MBM.  
