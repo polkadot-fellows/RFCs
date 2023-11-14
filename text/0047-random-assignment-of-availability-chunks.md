@@ -3,14 +3,15 @@
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 03 November 2023                                                                            |
-| **Description** | An evenly-distributing indirection layer between availability chunks and validators .       |
+| **Description** | An evenly-distributing indirection layer between availability chunks and validators.        |
 | **Authors**     | Alin Dima                                                                                   |
 
 ## Summary
 
 Propose a way of randomly permuting the availability chunk indices assigned to validators for a given core and relay
 chain block, in the context of
-[recovering available data from systematic chunks](https://github.com/paritytech/polkadot-sdk/issues/598).
+[recovering available data from systematic chunks](https://github.com/paritytech/polkadot-sdk/issues/598), with the
+purpose of fairly distributing network bandwidth usage.
 
 ## Motivation
 
@@ -33,9 +34,36 @@ Relay chain node core developers.
 
 An erasure coding algorithm is considered systematic if it preserves the original unencoded data as part of the
 resulting code.
-[The implementation of the erasure coding algorithm used for polkadot's availability data](https://github.com/paritytech/reed-solomon-novelpoly) is systematic. Roughly speaking, the first N_VALIDATORS/3
-chunks of data can be cheaply concatenated to retrieve the original data, without running the resource-intensive and
-time-consuming reconstruction algorithm.
+[The implementation of the erasure coding algorithm used for polkadot's availability data](https://github.com/paritytech/reed-solomon-novelpoly) is systematic.
+Roughly speaking, the first N_VALIDATORS/3 chunks of data can be cheaply concatenated to retrieve the original data,
+without running the resource-intensive and time-consuming reconstruction algorithm.
+
+Here's the concatenation procedure of systematic chunks for polkadot's erasure coding algorithm
+(minus error handling, for briefness):
+```rust
+pub fn reconstruct_from_systematic<T: Decode>(
+	n_validators: usize,
+	chunks: Vec<&[u8]>,
+) -> T {
+	let mut threshold = (n_validators - 1) / 3;
+  if !is_power_of_two(threshold) {
+    threshold = next_lower_power_of_2(threshold);
+  }
+
+	let shard_len = chunks.iter().next().unwrap().len();
+
+	let mut systematic_bytes = Vec::with_capacity(shard_len * kpow2);
+
+	for i in (0..shard_len).step_by(2) {
+		for chunk in chunks.iter().take(kpow2) {
+			systematic_bytes.push(chunk[i]);
+			systematic_bytes.push(chunk[i + 1]);
+		}
+	}
+
+	Decode::decode(&mut &systematic_bytes[..]).map_err(|err| Error::Decode(err))
+}
+```
 
 ### Availability recovery now
 
@@ -56,13 +84,13 @@ work is under way to modify the Availability Recovery subsystem by leveraging sy
 [this comment](https://github.com/paritytech/polkadot-sdk/issues/598#issuecomment-1792007099) for preliminary
 performance results.
 
-In this scheme, the relay chain node will first attempt to retrieve the N/3 systematic chunks from the validators that
+In this scheme, the relay chain node will first attempt to retrieve the ~N/3 systematic chunks from the validators that
 should hold them, before falling back to recovering from regular chunks, as before.
 
 ### Chunk assignment function
 
 #### Properties
-The function that decides the chunk index for a validator should be parametrised by at least
+The function that decides the chunk index for a validator should be parameterized by at least
 `(validator_index, session_index, block_number, core_index)`
 and have the following properties:
 1. deterministic
@@ -73,39 +101,66 @@ the function should describe a random permutation of the chunk indices
 1. considering `session_index` and `block_number` as fixed arguments, the validators that map to the first N/3 chunk indices should
 have as little overlap as possible for different cores.
 
-#### Proposed function and runtime API
+In other words we want a uniformly distributed, deterministic mapping from `ValidatorIndex` to `ChunkIndex` per block per core.
+
+#### Proposed runtime API
 
 Pseudocode:
 
 ```rust
 pub fn get_chunk_index(
-    n_validators: u32,
-    validator_index: ValidatorIndex,
-    session_index: SessionIndex,
-    block_number: BlockNumber,
-    core_index: CoreIndex
+  n_validators: u32,
+  validator_index: ValidatorIndex,
+  session_index: SessionIndex,
+  block_number: BlockNumber,
+  core_index: CoreIndex
 ) -> ChunkIndex {
-    let threshold = systematic_threshold(n_validators); // Roughly n_validators/3
-    let seed = derive_seed(session_index, block_number);
-    let mut rng: ChaCha8Rng = SeedableRng::from_seed(seed);
-    let mut chunk_indices: Vec<ChunkIndex> = (0..n_validators).map(Into::into).collect();
-    chunk_indices.shuffle(&mut rng);
+  let threshold = systematic_threshold(n_validators); // Roughly n_validators/3
+  let seed = derive_seed(session_index, block_number);
+  let mut rng: ChaCha8Rng = SeedableRng::from_seed(seed);
+  let mut chunk_indices: Vec<ChunkIndex> = (0..n_validators).map(Into::into).collect();
+  chunk_indices.shuffle(&mut rng);
 
-    let core_start_pos = threshold * core_index.0;
-    return chunk_indices[(core_start_pos + validator_index) % n_validators]
+  let core_start_pos = threshold * core_index.0;
+
+  chunk_indices[(core_start_pos + validator_index) % n_validators]
 }
 ```
 
 The function should be implemented as a runtime API, because:
 
-1. it's critical to the consensus protocol that all validators have a common view of the Validator->Chunk mapping.
 1. it enables further atomic changes to the shuffling algorithm.
 1. it enables alternative client implementations (in other languages) to use it
-1. mitigates the problem of third-party libraries changing the implementations of the `ChaCha8Rng` or the `rand::shuffle`
-that could be introduced in further versions, which would stall parachains. This would be quite an "easy" attack.
+1. considering how critical it is for parachain consensus that all validators have a common view of the Validator->Chunk
+mapping, this mitigates the problem of third-party libraries changing the implementations of the `ChaCha8Rng` or the `rand::shuffle`
+that could be introduced in further versions. This would stall parachains if only a portion of validators upgraded the node.
 
 Additionally, so that client code is able to efficiently get the mapping from the runtime, another API will be added
-for retrieving chunk indices in bulk for all validators at a given block and core.
+for retrieving chunk indices in bulk for all validators at a given block and core:
+
+```rust
+pub fn get_chunk_indices(
+  n_validators: u32,
+  session_index: SessionIndex,
+  block_number: BlockNumber,
+  core_index: CoreIndex
+) -> Vec<ChunkIndex> {
+  let threshold = systematic_threshold(n_validators); // Roughly n_validators/3
+  let seed = derive_seed(session_index, block_number);
+  let mut rng: ChaCha8Rng = SeedableRng::from_seed(seed);
+  let mut chunk_indices: Vec<ChunkIndex> = (0..n_validators).map(Into::into).collect();
+  chunk_indices.shuffle(&mut rng);
+
+  let core_start_pos = threshold * core_index.0;
+  
+  chunk_indices
+    .into_iter()
+    .cycle()
+    .skip(core_start_pos)
+    .take(n_validators)
+    .collect()
+}
+```
 
 #### Upgrade path
 
