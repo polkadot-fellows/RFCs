@@ -52,10 +52,10 @@ pub fn reconstruct_from_systematic<T: Decode>(
 
 	let shard_len = chunks.iter().next().unwrap().len();
 
-	let mut systematic_bytes = Vec::with_capacity(shard_len * kpow2);
+	let mut systematic_bytes = Vec::with_capacity(shard_len * threshold);
 
 	for i in (0..shard_len).step_by(2) {
-		for chunk in chunks.iter().take(kpow2) {
+		for chunk in chunks.iter().take(threshold) {
 			systematic_bytes.push(chunk[i]);
 			systematic_bytes.push(chunk[i + 1]);
 		}
@@ -65,7 +65,7 @@ pub fn reconstruct_from_systematic<T: Decode>(
 }
 ```
 
-In a nutshell, it performs a column-wise concatenation with 2-bit chunks.
+In a nutshell, it performs a column-wise concatenation with 2-byte chunks.
 
 ### Availability recovery now
 
