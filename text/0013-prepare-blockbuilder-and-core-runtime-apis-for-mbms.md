@@ -55,7 +55,7 @@ This could be achieved by checking the runtime API version and assuming that `in
 
 ### `BlockBuilder::last_inherent`
 
-A block author MUST always invoke `last_inherent` directly after applying all runtime-provided inherents. The runtime MAY reject blocks that violate this requirement.
+A block author MUST always invoke `last_inherent` directly after applying all runtime-provided inherents. The runtime MUST reject blocks that violate this requirement.
 
 ### Combined
 
