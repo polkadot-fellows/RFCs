@@ -48,11 +48,6 @@ enum ExtrinsicInclusionMode {
 
 A block author MUST respect the `ExtrinsicInclusionMode` that is returned by `initialize_block`. The runtime MUST reject blocks that do have forbidden extrinsics in them. 
 
-It is RECOMMENDED that block authors keep transactions in their transaction pool (if applicable)
-for as long as `initialize_block` returns `OnlyInherents`. The assumption is that these transactions become valid once the runtime finishes the MBM.  
-Backwards compatibility with the current runtime API SHOULD be implemented by block authors to not mandate a lockstep update of the authoring software.  
-This could be achieved by checking the runtime API version and assuming that `initialize_block` does not have a return value when the version is lower than 7.
-
 ### `BlockBuilder::last_inherent`
 
 A block author MUST always invoke `last_inherent` directly after applying all runtime-provided inherents. The runtime MUST reject blocks that violate this requirement.
