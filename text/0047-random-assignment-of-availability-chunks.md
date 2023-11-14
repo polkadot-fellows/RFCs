@@ -141,10 +141,9 @@ pub fn get_chunk_index(
 
   let seed = derive_seed(hash(para_id));
   let mut rng: ChaCha8Rng = SeedableRng::from_seed(seed);
-	
-	let core_start_pos = rng.gen_range(0..n_validators);
+  let para_start_pos = rng.gen_range(0..n_validators);
 
-  chunk_indices[(core_start_pos + validator_index) % n_validators]
+  chunk_indices[(para_start_pos + validator_index) % n_validators]
 }
 ```
 
@@ -165,13 +164,13 @@ pub fn get_chunk_indices(
 
   let seed = derive_seed(hash(para_id));
   let mut rng: ChaCha8Rng = SeedableRng::from_seed(seed);
-	
-	let core_start_pos = rng.gen_range(0..n_validators);
-  
+
+  let para_start_pos = rng.gen_range(0..n_validators);
+
   chunk_indices
     .into_iter()
     .cycle()
-    .skip(core_start_pos)
+    .skip(para_start_pos)
     .take(n_validators)
     .collect()
 }
