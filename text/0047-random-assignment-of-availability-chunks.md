@@ -20,7 +20,7 @@ per session, naively using the ValidatorIndex as the ChunkIndex would pose an un
 validators during an entire session, when favouring availability recovery from systematic chunks.
 
 Therefore, the relay chain node needs a deterministic way of evenly distributing the first ~(N_VALIDATORS / 3)
-systematic availability chunks to different validators, based on the session, relay chain block number and core.
+systematic availability chunks to different validators, based on the session, relay chain block and core.
 The main purpose is to ensure fair distribution of network bandwidth usage for availability recovery in general and in
 particular for systematic chunk holders. 
 
@@ -46,9 +46,9 @@ pub fn reconstruct_from_systematic<T: Decode>(
 	chunks: Vec<&[u8]>,
 ) -> T {
 	let mut threshold = (n_validators - 1) / 3;
-  if !is_power_of_two(threshold) {
-    threshold = next_lower_power_of_2(threshold);
-  }
+	if !is_power_of_two(threshold) {
+		threshold = next_lower_power_of_2(threshold);
+	}
 
 	let shard_len = chunks.iter().next().unwrap().len();
 
@@ -65,9 +65,17 @@ pub fn reconstruct_from_systematic<T: Decode>(
 }
 ```
 
+In a nutshell, it performs a column-wise concatenation with 2-bit chunks.
+
 ### Availability recovery now
 
-At this moment, the availability recovery process looks different based on the estimated size of the available data:
+According to the [polkadot protocol spec](https://spec.polkadot.network/chapter-anv#sect-candidate-recovery):
+
+> A validator should request chunks by picking peers randomly and must recover at least `f+1` chunks, where
+`n=3f+k` and `k in {1,2,3}`.
+
+For parity's polkadot node implementation, the process was further optimised. At this moment, it works differently based
+on the estimated size of the available data:
 
 (a) for small PoVs (up to 128 Kib), sequentially try requesting the unencoded data from the backing group, in a random
 order. If this fails, fallback to option (b).
@@ -80,7 +88,7 @@ original data.
 
 As part of the effort of
 [increasing polkadot's resource efficiency, scalability and performance](https://github.com/paritytech/roadmap/issues/26),
-work is under way to modify the Availability Recovery subsystem by leveraging systematic chunks. See
+work is under way to modify the Availability Recovery protocol by leveraging systematic chunks. See
 [this comment](https://github.com/paritytech/polkadot-sdk/issues/598#issuecomment-1792007099) for preliminary
 performance results.
 
@@ -90,44 +98,24 @@ should hold them, before falling back to recovering from regular chunks, as befo
 ### Chunk assignment function
 
 #### Properties
+
 The function that decides the chunk index for a validator should be parameterized by at least
-`(validator_index, session_index, block_number, core_index)`
+`(validator_index, relay_parent, para_id)`
 and have the following properties:
 1. deterministic
 1. pseudo-random
 1. relatively quick to compute and resource-efficient.
-1. when considering the other params besides `validator_index` as fixed,
-the function should describe a random permutation of the chunk indices
-1. considering `session_index` and `block_number` as fixed arguments, the validators that map to the first N/3 chunk indices should
-have as little overlap as possible for different cores.
+1. when considering the other params besides `validator_index` as fixed, the function should describe a random permutation
+of the chunk indices
+1. considering `relay_parent` as a fixed argument, the validators that map to the first N/3 chunk indices should
+have as little overlap as possible for different paras scheduled on that relay parent.
 
-In other words we want a uniformly distributed, deterministic mapping from `ValidatorIndex` to `ChunkIndex` per block per core.
+In other words, we want a uniformly distributed, deterministic mapping from `ValidatorIndex` to `ChunkIndex` per block
+per scheduled para.
 
 #### Proposed runtime API
 
-Pseudocode:
-
-```rust
-pub fn get_chunk_index(
-  n_validators: u32,
-  validator_index: ValidatorIndex,
-  session_index: SessionIndex,
-  block_number: BlockNumber,
-  core_index: CoreIndex
-) -> ChunkIndex {
-  let threshold = systematic_threshold(n_validators); // Roughly n_validators/3
-  let seed = derive_seed(session_index, block_number);
-  let mut rng: ChaCha8Rng = SeedableRng::from_seed(seed);
-  let mut chunk_indices: Vec<ChunkIndex> = (0..n_validators).map(Into::into).collect();
-  chunk_indices.shuffle(&mut rng);
-
-  let core_start_pos = threshold * core_index.0;
-
-  chunk_indices[(core_start_pos + validator_index) % n_validators]
-}
-```
-
-The function should be implemented as a runtime API, because:
+The mapping function should be implemented as a runtime API, because:
 
 1. it enables further atomic changes to the shuffling algorithm.
 1. it enables alternative client implementations (in other languages) to use it
@@ -135,23 +123,50 @@ The function should be implemented as a runtime API, because:
 mapping, this mitigates the problem of third-party libraries changing the implementations of the `ChaCha8Rng` or the `rand::shuffle`
 that could be introduced in further versions. This would stall parachains if only a portion of validators upgraded the node.
 
+
+Pseudocode:
+
+```rust
+pub fn get_chunk_index(
+  n_validators: u32,
+  validator_index: ValidatorIndex,
+  relay_parent: Hash,
+  para_id: ParaId
+) -> ChunkIndex {
+  let threshold = systematic_threshold(n_validators); // Roughly n_validators/3
+  let seed = derive_seed(relay_parent);
+  let mut rng: ChaCha8Rng = SeedableRng::from_seed(seed);
+  let mut chunk_indices: Vec<ChunkIndex> = (0..n_validators).map(Into::into).collect();
+  chunk_indices.shuffle(&mut rng);
+
+  let seed = derive_seed(hash(para_id));
+  let mut rng: ChaCha8Rng = SeedableRng::from_seed(seed);
+	
+	let core_start_pos = rng.gen_range(0..n_validators);
+
+  chunk_indices[(core_start_pos + validator_index) % n_validators]
+}
+```
+
 Additionally, so that client code is able to efficiently get the mapping from the runtime, another API will be added
 for retrieving chunk indices in bulk for all validators at a given block and core:
 
 ```rust
 pub fn get_chunk_indices(
   n_validators: u32,
-  session_index: SessionIndex,
-  block_number: BlockNumber,
-  core_index: CoreIndex
+  relay_parent: Hash,
+  para_id: ParaId
 ) -> Vec<ChunkIndex> {
   let threshold = systematic_threshold(n_validators); // Roughly n_validators/3
-  let seed = derive_seed(session_index, block_number);
+  let seed = derive_seed(relay_parent);
   let mut rng: ChaCha8Rng = SeedableRng::from_seed(seed);
   let mut chunk_indices: Vec<ChunkIndex> = (0..n_validators).map(Into::into).collect();
   chunk_indices.shuffle(&mut rng);
 
-  let core_start_pos = threshold * core_index.0;
+  let seed = derive_seed(hash(para_id));
+  let mut rng: ChaCha8Rng = SeedableRng::from_seed(seed);
+	
+	let core_start_pos = rng.gen_range(0..n_validators);
   
   chunk_indices
     .into_iter()
@@ -169,17 +184,79 @@ via governance, only after all validators have upgraded the node to a version th
 It needs to be explicitly stated that after the runtime upgrade and governance enactment, validators that run older
 client versions that don't support this mapping will not be able to participate in parachain consensus.
 
-### Getting access to core_index
+Additionally, an error will be logged when starting a validator with an older version, after the runtime was upgraded and the feature enabled.
 
-Availability-recovery can currently be triggered by the following steps in the polkadot protocol:
-1. During the approval voting process.
-1. By other collators of the same parachain
-3. During disputes.
+## Drawbacks
 
-The `core_index` refers to the index of the core that the candidate was occupying while it was pending availability
+- In terms of guaranteeing even load distribution, a simpler function that chooses the per-core start position in the
+shuffle as `threshold * core_index` would likely perform better, but considering that the core_index is not part of the
+CandidateReceipt, the implementation would be too complicated. More details in [Appendix A](#appendix-a).
+- Considering future protocol changes that aim to generalise the work polkadot is doing (like CoreJam), `ParaId`s may be
+removed from the protocol, in favour of more generic primitives. In that case, `ParaId`s in the availability recovery
+process should be replaced with a similar identifier. It's important to note that the implementation is greatly simplified
+if this identifier is part of the `CandidateReceipt` or the future analogous data structure.
+- It's a breaking change that requires most validators to be upgrade their node version.
+
+## Testing, Security, and Privacy
+
+Extensive testing will be conducted - both automated and manual.
+This proposal doesn't affect security or privacy.
+
+## Performance, Ergonomics, and Compatibility
+
+### Performance
+
+This is a necessary data availability optimisation, as reed-solomon erasure coding has proven to be a top consumer of
+CPU time in polkadot as we scale up the parachain block size and number of availability cores.
+
+With this optimisation, preliminary performance results show that CPU time used for reed-solomon coding can be halved
+and total POV recovery time decrease by 80% for large POVs. See more
+[here](https://github.com/paritytech/polkadot-sdk/issues/598#issuecomment-1792007099).
+
+### Ergonomics
+
+Not applicable.
+
+### Compatibility
+
+This is a breaking change. See [upgrade path](#upgrade-path) section above.
+All validators need to have upgraded their node versions before the feature will be enabled via a runtime upgrade and
+governance call.
+
+## Prior Art and References
+
+See comments on the [tracking issue](https://github.com/paritytech/polkadot-sdk/issues/598) and the
+[in-progress PR](https://github.com/paritytech/polkadot-sdk/pull/1644)
+
+## Unresolved Questions
+
+- Is it the best option to embed the mapping function in the runtime?
+- Is there a better upgrade path that would preserve backwards compatibility?
+- Is usage of `ParaId` the best choice for spreading out the network load during systematic chunk recovery within the
+same block?
+
+## Future Directions and Related Material
+
+This enables future optimisations for the performance of availability recovery, such as retrieving batched systematic
+chunks from backers/approval-checkers.
+
+## Appendix A
+
+This appendix explores alternatives to using the `ParaId` as the factor by which availability chunk indices are
+distributed to validators within the same relay chain block, and why they weren't chosen.
+
+### Core index
+
+Here, `core_index` refers to the index of the core that a candidate was occupying while it was pending availability
 (from backing to inclusion).
-Getting the right core index for a candidate can prove troublesome. Here's a breakdown of how different parts of the
-node implementation can get access to this data:
+
+Availability-recovery can currently be triggered by the following phases in the polkadot protocol:
+1. During the approval voting process.
+1. By other collators of the same parachain.
+1. During disputes.
+
+Getting the right core index for a candidate is troublesome. Here's a breakdown of how different parts of the
+node implementation can get access to it:
 
 1. The approval-voting process for a candidate begins after observing that the candidate was included. Therefore, the
 node has easy access to the block where the candidate got included (and also the core that it occupied).
@@ -198,70 +275,10 @@ backed, which enables easy access to the core index the candidate started occupy
   is happening on a fork that was not yet imported by this validator, so the subsystem may not have seen this candidate
   being backed.
 
-As a solution to 3.c, a new version for the disputes request-response networking protocol will be added.
-This message type will include the relay block hash where the candidate was included. This information will be used
-in order to query the runtime API and retrieve the core index that the candidate was occupying.
+A naive attempt of solving 3.c would be to add a new version for the disputes request-response networking protocol.
+Blindly passing the core index in the network payload would not work, since there is no way of validating that
+the reported core_index was indeed the one occupied by the candidate at the respective relay parent.
 
-The usage of the systematic data availability recovery feature will also be subject to all nodes using the V2 disputes
-networking protocol.
-
-#### Alternatives to using core_index
-
-As an alternative to core_index, the `ParaId` could be used. It has the advantage of being readily available in the
-`CandidateReceipt`, which would enable the dispute communication protocol to not change and would simplify the
-implementation.
-However, in the context of [CoreJam](https://github.com/polkadot-fellows/RFCs/pull/31), `ParaId`s will no longer exist
-(at least not in their current form).
-
-Using the candidate hash as a random seed for a shuffle is another option.
-
-## Drawbacks
-
-Has a fair amount of technical complexity involved:
-
-- Introduces another runtime API that is going to be queried by multiple subsystems. With adequate client-side caching,
-this should be acceptable.
-
-- Requires a networking protocol upgrade on the disputes request-response protocol
-
-## Testing, Security, and Privacy
-
-Extensive testing will be conducted - both automated and manual.
-This proposal doesn't affect security or privacy.
-
-## Performance, Ergonomics, and Compatibility
-
-### Performance
-
-This is a necessary DA optimisation, as reed-solomon erasure coding has proven to be a top consumer of CPU time in
-polkadot as we scale up the parachain block size and number of availability cores.
-
-With this optimisation, preliminary performance results show that CPU time used for reed-solomon coding can be halved
-and total POV recovery time decrease by 80% for large POVs. See more
-[here](https://github.com/paritytech/polkadot-sdk/issues/598#issuecomment-1792007099).
-
-### Ergonomics
-
-Not applicable.
-
-### Compatibility
-
-This is a breaking change. See "upgrade path" section above.
-All validators need to have upgraded their node versions before the feature will be enabled via a runtime upgrade and
-governance call.
-
-## Prior Art and References
-
-See comments on the [tracking issue](https://github.com/paritytech/polkadot-sdk/issues/598) and the
-[in-progress PR](https://github.com/paritytech/polkadot-sdk/pull/1644)
-
-## Unresolved Questions
-
-- Is it a future-proof idea to utilise the core index as a parameter of the chunk index compute function?
-Is there a better alternative that avoid complicating the implementation?
-- Is there a better upgrade path that would preserve backwards compatibility?
-
-## Future Directions and Related Material
-
-This enables future optimisations for the performance of availability recovery, such as retrieving batched systematic
-chunks from backers/approval-checkers.
+Another attempt could be to include in the message the relay block hash where the candidate was included.
+This information would be used in order to query the runtime API and retrieve the core index that the candidate was
+occupying. However, considering it's part of an unimported fork, the validator cannot call a runtime API on that block.
