@@ -86,7 +86,7 @@ Values for metadata shortening protocol version, `ExtrinsicMetadata`, SCALE-enco
 3. Complete Binary Merkle Tree is constructed as described above.
 4. Root hash of this tree (left) is merged with metadata descriptor blake3 hash (right); this is metadata digest.
 
-Product of concatenation of porotocol version number with resulting metadata digest MUST be included into Signed Extensions.
+Product of concatenation of protocol version number with resulting metadata digest MUST be included into Signed Extensions.
 
 ### Shortening
 
