@@ -13,6 +13,9 @@ income in OECD countries. This RFC proposes concrete amounts.
 
 ## Motivation
 
+One motivation for the Technical Fellowship is to provide an incentive mechanism that can induct and
+retain technical talent for the continued progress of the network.
+
 In order for members to uphold their commitment to the network, they should receive support to
 ensure that their needs are met such that they have the time to dedicate to their work on Polkadot.
 Given the high expectations of Fellows, it is reasonable to consider contributions and requirements
@@ -30,25 +33,45 @@ Although the Manifesto (Section 8) specifies a monthly allowance in DOT, this RF
 of USDT instead. The allowance is meant to provide members stability in meeting their day-to-day
 needs. Using USDT provides more stability and less speculation.
 
-Based on USDT, this RFC proposes the following _yearly_ salary levels, based on rank:
+This RFC proposes the following yearly salary levels in USDT, based on rank:
 
-1. 10,000
-2. 20,000
-3. 80,000
-4. 120,000
-5. 160,000
-6. 200,000
+| Dan | Annual Salary |
+|:---:|:-------------:|
+|   I |     10,000    |
+|  II |     20,000    |
+| III |     80,000    |
+|  IV |    120,000    |
+|   V |    160,000    |
+|  VI |    200,000    |
 
 Note that there is a sizable increase between II Dan (Proficient) and III Dan (Fellow). By the third
 Dan, it is generally expected that one is working on Polkadot as their primary focus in a full time
 capacity. The salary at this level is commensurate with average salaries in OECD countries (note:
-77,000 USD in the U.S., engineering average 100,000 USD).
+77,000 USD in the U.S., with an average engineer at 100,000 USD).
 
 The salary increases for Architects (IV, V, and VI Dan) with levels typical of senior engineers.
 
 Levels 7 and above will be determined when a member is promoted to those ranks.
 
 Allowances will be managed by the Salary pallet.
+
+### Projections
+
+Based on the current membership, the maximum yearly and monthly costs are shown below:
+
+| Dan   | Salary  | Members | Yearly    | Monthly |
+|:-----:|:-------:|:-------:| ---------:| -------:|
+|     I |  10,000 |      27 |   270,000 |  22,500 |
+|    II |  20,000 |      11 |   220,000 |  18,333 |
+|   III |  80,000 |       8 |   640,000 |  53,333 |
+|    IV | 120,000 |       3 |   360,000 |  30,000 |
+|     V | 160,000 |       5 |   800,000 |  66,667 |
+|    VI | 200,000 |       3 |   600,000 |  50,000 |
+|       |         |         |           |         |
+| Total |         |         | 2,890,000 | 240,833 |
+
+Note that these are the maximum amounts; members may choose to take a passive (lower) level. On the
+other hand, more people will likely join the Fellowship in the coming years.
 
 ## Drawbacks
 
