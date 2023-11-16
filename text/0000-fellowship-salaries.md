@@ -8,52 +8,78 @@
 
 ## Summary
 
-One paragraph summary of the RFC.
+The Fellowship Manifesto states that members should receive a monthly allowance on par with gross
+income in OECD countries. This RFC proposes concrete amounts.
 
 ## Motivation
 
-Longer motivation behind the content of the RFC, presented as a combination of both problems and requirements for the solution.
+In order for members to uphold their commitment to the network, they should receive support to
+ensure that their needs are met such that they have the time to dedicate to their work on Polkadot.
+Given the high expectations of Fellows, it is reasonable to consider contributions and requirements
+on par with a full-time job. Providing a livable wage to those making such contributions makes it
+pragmatically possible to work full-time on Polkadot.
 
 ## Stakeholders
 
-A brief catalogue of the primary stakeholder sets of this RFC, with some description of previous socialization of the proposal.
+- Fellowship members
+- Polkadot Treasury
 
 ## Explanation
 
-Detail-heavy explanation of the RFC, suitable for explanation to an implementer of the changeset. This should address corner cases in detail and provide justification behind decisions, and provide rationale for how the design meets the solution requirements.
+Although the Manifesto (Section 8) specifies a monthly allowance in DOT, this RFC proposes the use
+of USDT instead. The allowance is meant to provide members stability in meeting their day-to-day
+needs. Using USDT provides more stability and less speculation.
+
+Based on USDT, this RFC proposes the following _yearly_ salary levels, based on rank:
+
+1. 10,000
+2. 20,000
+3. 80,000
+4. 120,000
+5. 160,000
+6. 200,000
+
+Note that there is a sizable increase between II Dan (Proficient) and III Dan (Fellow). By the third
+Dan, it is generally expected that one is working on Polkadot as their primary focus in a full time
+capacity. The salary at this level is commensurate with average salaries in OECD countries (note:
+77,000 USD in the U.S., engineering average 100,000 USD).
+
+The salary increases for Architects (IV, V, and VI Dan) with levels typical of senior engineers.
+
+Levels 7 and above will be determined when a member is promoted to those ranks.
+
+Allowances will be managed by the Salary pallet.
 
 ## Drawbacks
 
-Description of recognized drawbacks to the approach given in the RFC. Non-exhaustively, drawbacks relating to performance, ergonomics, user experience, security, or privacy.
+By not using DOT for payment, the protocol relies on the stability of other assets and the ability
+to acquire them. However, the asset of choice can be changed in the future.
 
 ## Testing, Security, and Privacy
 
-Describe the the impact of the proposal on these three high-importance areas - how implementations can be tested for adherence, effects that the proposal has on security and privacy per-se, as well as any possible implementation pitfalls which should be clearly avoided.
+N/A.
 
 ## Performance, Ergonomics, and Compatibility
 
-Describe the impact of the proposal on the exposed functionality of Polkadot.
-
 ### Performance
 
-Is this an optimization or a necessary pessimization? What steps have been taken to minimize additional overhead?
+N/A
 
 ### Ergonomics
 
-If the proposal alters exposed interfaces to developers or end-users, which types of usage patterns have been optimized for?
+N/A
 
 ### Compatibility
 
-Does this proposal break compatibility with existing interfaces, older versions of implementations? Summarize necessary migrations or upgrade strategies, if any.
+N/A
 
 ## Prior Art and References
 
-Provide references to either prior art or other relevant research for the submitted design.
+- The Polkadot Fellowship Manifesto
+- [OECD Average Wages](https://data.oecd.org/earnwage/average-wages.htm#indicator-chart)
+- [Indeed: Average Salary for Engineers, United
+  States](https://www.indeed.com/career/engineer/salaries)
 
 ## Unresolved Questions
 
-Provide specific questions to discuss and address before the RFC is voted on by the Fellowship. This should include, for example, alternatives to aspects of the proposed design where the appropriate trade-off to make is unclear.
-
-## Future Directions and Related Material
-
-Describe future work which could be enabled by this RFC, if it were accepted, as well as related RFCs. This is a place to brain-dump and explore possibilities, which themselves may become their own RFCs.
+Salaries for members of rank seven and higher are not proposed here.
