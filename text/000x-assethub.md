@@ -17,7 +17,7 @@ The current deposit of 10 DOT for collection creation on the Polkadot Asset Hub 
 ## Stakeholders
 
 - **NFT Creators**: Primary beneficiaries of the proposed change, particularly those who found the current deposit requirements prohibitive.
-- **KodaDot**: As the facilitator of artists' relations, KodaDot has a vested interest in making the platform more accessible.
+- **NFT Platforms**: As the facilitator of artists' relations, KodaDot has a vested interest in making the platform more accessible.
 - **Polkadot Community**: Stands to benefit from an influx of artists, creators and diverse NFT collections, enhancing the overall ecosystem.
 
 Previous discussions have been held within the KodaDot community, as well as with artists expressing their concerns about the deposit amounts. Referencing to [Polkadot Forum conversation](https://forum.polkadot.network/t/polkadot-assethub-high-nft-collection-deposit/4262).
