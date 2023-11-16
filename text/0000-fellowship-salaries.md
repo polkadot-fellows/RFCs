@@ -20,7 +20,7 @@ In order for members to uphold their commitment to the network, they should rece
 ensure that their needs are met such that they have the time to dedicate to their work on Polkadot.
 Given the high expectations of Fellows, it is reasonable to consider contributions and requirements
 on par with a full-time job. Providing a livable wage to those making such contributions makes it
-pragmatically possible to work full-time on Polkadot.
+pragmatic to work full-time on Polkadot.
 
 ## Stakeholders
 
@@ -31,7 +31,7 @@ pragmatically possible to work full-time on Polkadot.
 
 Although the Manifesto (Section 8) specifies a monthly allowance in DOT, this RFC proposes the use
 of USDT instead. The allowance is meant to provide members stability in meeting their day-to-day
-needs. Using USDT provides more stability and less speculation.
+needs and recognize contributions. Using USDT provides more stability and less speculation.
 
 This RFC proposes the following yearly salary levels in USDT, based on rank:
 
@@ -45,7 +45,7 @@ This RFC proposes the following yearly salary levels in USDT, based on rank:
 |  VI |    200,000    |
 
 Note that there is a sizable increase between II Dan (Proficient) and III Dan (Fellow). By the third
-Dan, it is generally expected that one is working on Polkadot as their primary focus in a full time
+Dan, it is generally expected that one is working on Polkadot as their primary focus in a full-time
 capacity. The salary at this level is commensurate with average salaries in OECD countries (note:
 77,000 USD in the U.S., with an average engineer at 100,000 USD).
 
