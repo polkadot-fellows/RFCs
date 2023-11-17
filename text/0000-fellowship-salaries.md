@@ -49,11 +49,12 @@ Dan, it is generally expected that one is working on Polkadot as their primary f
 capacity. The salary at this level is commensurate with average salaries in OECD countries (note:
 77,000 USD in the U.S., with an average engineer at 100,000 USD).
 
-The salary increases for Architects (IV, V, and VI Dan) with levels typical of senior engineers.
-
-Levels 7 and above will be determined when a member is promoted to those ranks.
+The salary increases for Architects (IV, V, and VI Dan) with levels typical of senior engineers. Levels 7 and above will be determined when a member is promoted to those ranks.
 
 Allowances will be managed by the Salary pallet.
+
+Note: Goals of the Fellowship, expectations for each Dan, and conditions for promotion and demotion
+are all explained in the Manifesto. This RFC is only to propose concrete values for allowances.
 
 ### Projections
 
@@ -98,7 +99,8 @@ N/A
 
 ## Prior Art and References
 
-- The Polkadot Fellowship Manifesto
+- [The Polkadot Fellowship
+  Manifesto](https://github.com/polkadot-fellows/manifesto/blob/5e01eef15eded63f1db9be808b0f7c11bb9f4a12/manifesto.pdf)
 - [OECD Average Wages](https://data.oecd.org/earnwage/average-wages.htm#indicator-chart)
 - [Indeed: Average Salary for Engineers, United
   States](https://www.indeed.com/career/engineer/salaries)
