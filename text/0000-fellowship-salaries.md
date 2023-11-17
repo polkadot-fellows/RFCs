@@ -1,4 +1,4 @@
-# RFC-0000: Fellowship Salaries
+# RFC-0050: Fellowship Salaries
 
 |                 |                                                                               |
 | --------------- | ----------------------------------------------------------------------------- |
@@ -111,4 +111,4 @@ N/A
 
 ## Unresolved Questions
 
-Salaries for members of rank seven and higher are not proposed here.
+None at present.
