@@ -22,6 +22,9 @@ Given the high expectations of Fellows, it is reasonable to consider contributio
 on par with a full-time job. Providing a livable wage to those making such contributions makes it
 pragmatic to work full-time on Polkadot.
 
+Note: Goals of the Fellowship, expectations for each Dan, and conditions for promotion and demotion
+are all explained in the Manifesto. This RFC is only to propose concrete values for allowances.
+
 ## Stakeholders
 
 - Fellowship members
@@ -52,9 +55,6 @@ capacity. The salary at this level is commensurate with average salaries in OECD
 The salary increases for Architects (IV, V, and VI Dan) with levels typical of senior engineers. Levels 7 and above will be determined when a member is promoted to those ranks.
 
 Allowances will be managed by the Salary pallet.
-
-Note: Goals of the Fellowship, expectations for each Dan, and conditions for promotion and demotion
-are all explained in the Manifesto. This RFC is only to propose concrete values for allowances.
 
 ### Projections
 
