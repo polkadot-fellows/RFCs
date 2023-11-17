@@ -38,21 +38,24 @@ needs and recognize contributions. Using USDT provides more stability and less s
 
 This RFC proposes the following yearly salary levels in USDT, based on rank:
 
-| Dan | Annual Salary |
-|:---:|:-------------:|
-|   I |     10,000    |
-|  II |     20,000    |
-| III |     80,000    |
-|  IV |    120,000    |
-|   V |    160,000    |
-|  VI |    200,000    |
+| Dan  | Annual Salary |
+|:----:|:-------------:|
+|    I |     10,000    |
+|   II |     20,000    |
+|  III |     80,000    |
+|   IV |    120,000    |
+|    V |    160,000    |
+|   VI |    200,000    |
+|  VII |    200,000    |
+| VIII |    200,000    |
+|   IX |    200,000    |
 
 Note that there is a sizable increase between II Dan (Proficient) and III Dan (Fellow). By the third
 Dan, it is generally expected that one is working on Polkadot as their primary focus in a full-time
 capacity. The salary at this level is commensurate with average salaries in OECD countries (note:
 77,000 USD in the U.S., with an average engineer at 100,000 USD).
 
-The salary increases for Architects (IV, V, and VI Dan) with levels typical of senior engineers. Levels 7 and above will be determined when a member is promoted to those ranks.
+The salary increases for Architects (IV, V, and VI Dan) with levels typical of senior engineers.
 
 Allowances will be managed by the Salary pallet.
 
@@ -68,6 +71,7 @@ Based on the current membership, the maximum yearly and monthly costs are shown 
 |    IV | 120,000 |       3 |   360,000 |  30,000 |
 |     V | 160,000 |       5 |   800,000 |  66,667 |
 |    VI | 200,000 |       3 |   600,000 |  50,000 |
+|  > VI | 200,000 |       0 |         0 |       0 |
 |       |         |         |           |         |
 | Total |         |         | 2,890,000 | 240,833 |
 
