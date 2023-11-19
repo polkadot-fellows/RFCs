@@ -78,6 +78,10 @@ Based on the current membership, the maximum yearly and monthly costs are shown 
 Note that these are the maximum amounts; members may choose to take a passive (lower) level. On the
 other hand, more people will likely join the Fellowship in the coming years.
 
+### Updates
+
+Updates to these levels, whether the asset used or the amount, shall be done via RFC.
+
 ## Drawbacks
 
 By not using DOT for payment, the protocol relies on the stability of other assets and the ability
