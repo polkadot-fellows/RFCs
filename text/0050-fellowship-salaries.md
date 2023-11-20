@@ -32,11 +32,36 @@ are all explained in the Manifesto. This RFC is only to propose concrete values 
 
 ## Explanation
 
+This RFC proposes agreeing on salaries relative to a single level, the III Dan. As such, changes to
+the amount or asset used would only be on a single value, and all others would adjust relatively. A
+III Dan is someone whose contributions match the expectations of a full-time individual contributor.
+The salary at this level should be reasonably close to averages in OECD countries.
+
+| Dan  | Factor |
+|:----:|:------:|
+|    I |  0.125 |
+|   II |  0.25  |
+|  III |  1     |
+|   IV |  1.5   |
+|    V |  2.0   |
+|   VI |  2.5   |
+|  VII |  2.5   |
+| VIII |  2.5   |
+|   IX |  2.5   |
+
+Note that there is a sizable increase between II Dan (Proficient) and III Dan (Fellow). By the third
+Dan, it is generally expected that one is working on Polkadot as their primary focus in a full-time
+capacity.
+
+### Salary Asset
+
 Although the Manifesto (Section 8) specifies a monthly allowance in DOT, this RFC proposes the use
 of USDT instead. The allowance is meant to provide members stability in meeting their day-to-day
 needs and recognize contributions. Using USDT provides more stability and less speculation.
 
-This RFC proposes the following yearly salary levels in USDT, based on rank:
+This RFC proposes that a III Dan earn 80,000 USDT per year. The salary at this level is commensurate
+with average salaries in OECD countries (note: 77,000 USD in the U.S., with an average engineer at
+100,000 USD). The other ranks would thus earn:
 
 | Dan  | Annual Salary |
 |:----:|:-------------:|
@@ -50,12 +75,7 @@ This RFC proposes the following yearly salary levels in USDT, based on rank:
 | VIII |    200,000    |
 |   IX |    200,000    |
 
-Note that there is a sizable increase between II Dan (Proficient) and III Dan (Fellow). By the third
-Dan, it is generally expected that one is working on Polkadot as their primary focus in a full-time
-capacity. The salary at this level is commensurate with average salaries in OECD countries (note:
-77,000 USD in the U.S., with an average engineer at 100,000 USD).
-
-The salary increases for Architects (IV, V, and VI Dan) with levels typical of senior engineers.
+The salary levels for Architects (IV, V, and VI Dan) are typical of senior engineers.
 
 Allowances will be managed by the Salary pallet.
 
@@ -80,7 +100,8 @@ other hand, more people will likely join the Fellowship in the coming years.
 
 ### Updates
 
-Updates to these levels, whether the asset used or the amount, shall be done via RFC.
+Updates to these levels, whether relative ratios, the asset used, or the amount, shall be done via
+RFC.
 
 ## Drawbacks
 
