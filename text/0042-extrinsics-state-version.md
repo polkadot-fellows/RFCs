@@ -1,16 +1,18 @@
-# RFC-0042: Add Extrinsic State version to `RuntimeVersion`
+# RFC-0042: Add System version that replaces StateVersion on RuntimeVersion
 
-|                 |                                               |
-|-----------------|-----------------------------------------------|
-| **Start Date**  | 25th October 2023                             |
-| **Description** | Add extrinsic state version to RuntimeVersion |
-| **Authors**     | Vedhavyas Singareddi                          |
+|                 |                                             |
+|-----------------|---------------------------------------------|
+| **Start Date**  | 25th October 2023                           |
+| **Description** | Add System Version and remove State Version |
+| **Authors**     | Vedhavyas Singareddi                        |
 
 ## Summary
 
-At the moment, extrinsics root is derived using `StateVersion::V0` without the possibility to use different version
-unlike storage state version.
-It would be useful for projects like `Subspace` to make extrinsics state version be part of the `RuntimeVersion`.
+At the moment, we have `system_version` field on `RuntimeVersion` that derives which state version is used for the
+Storage.
+We have a use case where we want extrinsics root is derived using `StateVersion::V1`. Without defining a new field
+under `RuntimeVersion`,
+we would like to propose adding `system_version` that can be used to derive both storage and extrinsic state version.
 
 ## Motivation
 
@@ -35,9 +37,10 @@ an [implementation](https://github.com/paritytech/polkadot-sdk/pull/1691) that i
 parameter to `frame_system::Config` but that unfortunately did not feel correct.
 So we would like to [propose](https://github.com/paritytech/polkadot-sdk/pull/1968) adding this change to
 the `RuntimeVersion`
-object. The state version, if introduced, will fallback
-to using `StateVersion::V0` for runtimes with `CoreApi` version <=4
-and projects using `CoreApi` >= 5 will have the ability to pick State version they would like to use.
+object. The system version, if introduced, will be used to derive both storage and extrinsic state version.
+If system version is `0`, then both Storage and Extrinsic State version would use V0.
+If system version is `1`, then Storage State version would use V1 and Extrinsic State version would use V0.
+If system version is `2`, then both Storage and Extrinsic State version would use V1.
 
 If implemented, the new `RuntimeVersion` definition would look something similar to
 
@@ -52,27 +55,22 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 		impl_version: 0,
 		apis: RUNTIME_API_VERSIONS,
 		transaction_version: 22,
-		state_version: 1,
-		extrinsic_state_version: 0,
+		system_version: 1,
 	};
 ```
 
 ## Drawbacks
 
-Since the `CoreApi` version would need to be bumped, there would require a Runtime upgrade for existing projects
-with `extrinsic_state_version` set to `0` so that it wont brick their chain. New projects can choose between `0` or `1`
-depending on their use-case.
+There should be no drawbacks as it would replace `state_version` with same behavior but documentation should be updated
+so that chains know which `system_version` to use.
 
 ## Testing, Security, and Privacy
 
-Care should be taken when Decoding `RuntimeVersion` with `CoreApi` <=4 since this field is not available and
-documentation clear enough to indicate existing projects to continue using `StateVersion::V0` as before. This change,
 AFAIK, should not have any impact on the security or privacy.
 
 ## Performance, Ergonomics, and Compatibility
 
-Since this change introduces a new field to `RuntimeVersion`, it will be unavailable in previous Runtimes and as result,
-should always fallback to `StateVersion::V0`.
+These changes should be compatible for existing chains if they use `state_version` value for `system_verision`.
 
 ### Performance
 
@@ -84,8 +82,7 @@ This does not break any exposed Apis.
 
 ### Compatibility
 
-It does break compatibility with older runtimes and, as a result, Decoding of embed runtime version should consider
-using `CoreApi` version to decode this field or fallback to `StateVersion::V0`.
+This change should not break any compatibility.
 
 ## Prior Art and References
 
