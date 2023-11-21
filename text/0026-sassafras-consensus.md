@@ -10,12 +10,10 @@
 ## Abstract
 
 Sassafras is a novel consensus protocol designed to address the recurring
-fork-related challenges encountered in other lottery-based protocols, such as
-Babe.
+fork-related challenges encountered in other lottery-based protocols.
 
-Sassafras aims to establish a unique association between each epoch's slots
-and the validators, ensuring that there will be one and only one validator
-per slot.
+Sassafras aims to establish a unique association between each epoch's slots and
+the validators, ensuring that there is one and only one validator per slot.
 
 The protocol ensures the anonymity of the validator associated to a slot until
 the slot is not claimed at block production time.
@@ -24,9 +22,10 @@ the slot is not claimed at block production time.
 ## 1. Motivation
 
 Sassafras Protocol has been extensively documented in a comprehensive
-[research paper](https://eprint.iacr.org/2023/031.pdf). However, this RFC serves
-the purpose of conveying essential implementation details that are crucial for
-interoperability and clarifying aspects left open for implementation discretion.
+[research paper](https://eprint.iacr.org/2023/031.pdf). This RFC serves the
+purpose of conveying most of the essential implementation details that are
+crucial for interoperability and clarifying aspects left open for implementation
+discretion.
 
 ### 1.1. Relevance to Implementors
 
@@ -46,17 +45,16 @@ paves the way for integrating Sassafras into the Polkadot network.
 
 ## 2. Stakeholders
 
-### 2.1. Developers of Relay-Chains and Para-Chains
+### 2.1. Developers of Blockchains
 
-Developers responsible for creating relay-chains and para-chains within the
-Polkadot ecosystem who intend to leverage the benefits offered by the Sassafras
-Protocol.
+Developers responsible for creating blockchains who intend to leverage the
+benefits offered by the Sassafras Protocol.
 
-### 2.2. Developers of Polkadot Relay-Chain
+### 2.2. Contributors to the Polkadot Ecosystem
 
-Developers contributing to the Polkadot relay-chain, which plays a pivotal role
-in facilitating the interoperability and functionality of the Sassafras Protocol
-within the broader Polkadot network.
+Developers contributing to the Polkadot ecosystem, both relay-chain and para-chains.
+The protocol will have a central role in the next generation Polkadot relay chain
+block authoring system.
 
 
 ## 3. Notation and Convention
@@ -1053,14 +1051,25 @@ the protocol's completeness and security.
 
 These topics include:
 
-### 12.1. Deployment Strategies
+### 12.1. Interactions with the Runtime
+
+- **Outbound Interface**. Interfaces exposed by the host which are required by the runtime.
+  These are commonly dubbed *Host Functions*.
+
+- **Unrecorded Inboud Interfaces**. Interfaces exposed by the runtime which are required by the host.
+  These are commonly dubbed *Runtime APIs*.
+
+- **Transactional Inboud Interfaces**. Interfaces exposed by the runtime which alter the state.
+  These are commonly dubbed *Extrinsics* and *Inherents*.
+
+### 12.2. Deployment Strategies
 
 - **Protocol Migration**. Exploring how this protocol can seamlessly replace
   an already operational instance of another protocol is essential. Future RFCs
   should delve into the deployment strategy, including considerations for a smooth
   transition process.
 
-### 12.2. ZK-SNARK SRS Initialization Ceremony.
+### 12.3. ZK-SNARK SRS Initialization Ceremony.
 
 - **Timing and Procedure**: Determining the timing and procedure for the ZK-SNARK
   SRS (Structured Reference String) initialization ceremony. Future RFCs should
@@ -1071,7 +1080,7 @@ These topics include:
   must understand whether the SRS is shared with parachains or maintained
   independently.
 
-### 12.3. Anonymous Submission of Tickets.
+### 12.4. Anonymous Submission of Tickets.
 
 - **Mixnet Integration**: Submitting tickets directly can pose a risk of
   potential deanonymization through traffic analysis. Subsequent RFCs should
