@@ -21,11 +21,13 @@ the slot is not claimed at block production time.
 
 ## 1. Motivation
 
-Sassafras Protocol has been extensively documented in a comprehensive
-[research paper](https://eprint.iacr.org/2023/031.pdf). This RFC serves the
-purpose of conveying most of the essential implementation details that are
-crucial for interoperability and clarifying aspects left open for implementation
-discretion.
+Sassafras Protocol has been extensively documented in a comprehensive [research
+paper](https://eprint.iacr.org/2023/031.pdf) from the [Web3 foundation](https://web3.foundation)
+research team.
+
+This RFC serves the purpose of conveying most of the essential implementation
+details that are crucial for interoperability and clarifying aspects left open
+for implementation discretion.
 
 ### 1.1. Relevance to Implementors
 
@@ -152,7 +154,7 @@ During block verification, the claims of ticket ownership are validated to
 uphold the protocol's integrity.
 
 
-## 5. Bandernatch VRFs Cryptographic Primitives
+## 5. Bandersnatch VRFs Cryptographic Primitives
 
 This chapter provides a high-level overview of the Bandersnatch VRF primitive as
 it relates to the Sassafras protocol.
@@ -163,7 +165,7 @@ cryptographic primitive. Instead, its primary purpose is to offer a concise and
 comprehensible interpretation of the primitive within the context of this RFC.
 
 For a more detailed understanding we recommend referring to the Ring-VRF
-research [paper](https://eprint.iacr.org/2023/002.pdf) from W3F.
+[research paper](https://eprint.iacr.org/2023/002.pdf) from W3F.
 
 ### 5.1. VRF Input
 
@@ -412,7 +414,7 @@ Each block ships with some entropy source in the form of bandersnatch
 `accumulator` **after** block import.
 
 The exact procedure to accumulate per-block randomness is described in detail
-later, in the [randomness accumulator](#67-randomness-accumulator) paragraph.
+later, in the randomness accumulator paragraph ([6.7](#67-randomness-accumulator)).
 
 Next epoch `randomness` is computed as:
 
@@ -448,7 +450,7 @@ values requires more computation.
 
 Details about how exactly these parameters drives the ticket validity
 probability can be found in the section dedicated to candidate ticket validation
-against [threshold](0026-sassafras-consensus.md#622-tickets-threshold).
+([6.2.2](#622-tickets-threshold)).
 
 `ProtocolConfiguration` values can be adjusted via a dedicated extrinsic which
 should have origin set to `Root`. A valid configuration proposal submitted on
@@ -487,8 +489,8 @@ Each validator is allowed to submit a maximum number of tickets whose value is
 found in the next epoch `ProtocolConfiguration` `attempts_number` field.
 
 The expected ratio between the attempts and the number of tickets which are
-assigned to the next epoch slots is driven by the
-[ticket threshold](0026-sassafras-consensus.md#622-tickets-threshold).
+assigned to the next epoch slots is driven by the ticket threshold
+([6.2.2](#622-tickets-threshold)).
 
 Each ticket has an associated unique identifier, denoted as `TicketId`.
 
