@@ -409,7 +409,7 @@ author, which is found in the digest data before block import.
 
 Each block ships with some entropy source in the form of bandersnatch
 `VrfOutput`. Per block randomness is accumulated in the protocol's on-chain
-state **after** block import.
+`accumulator` **after** block import.
 
 The exact procedure to accumulate per-block randomness is described in detail
 later, in the [Randomness Accumulator] paragraph.
@@ -419,24 +419,6 @@ Next epoch `randomness` is computed as:
 ```rust
     BLAKE2(32, CONCAT(accumulator, curr_epoch_randomness, next_epoch_index));
 ```
-
-<TODO>
-Do we really need need to add `curr_epoch_randomness` to the hash?
-
-Looks like it doesn't add any extra entropy to the `next_epoch_randomness` as we
-are already using `accumulator`
-
-    curr_epoch_randomness = H(prev_accumulator ++ ... ++ curr_epoch_index)
-    next_epoch_randomness = H(curr_accumulator ++ curr_epoch_randomness ++ next_epoch_index)
-
-    With:
-    - curr_accumulator depending on prev_accumulator
-    - next_epoch_index depending on curr_epoch_index 
-
-    So the only extra thing curr_epoch_randomness brings to the table is `...`.
-    But if we recursively unroll this we end up `...` being the genesis randomness
-    which is always 0.
-</TODO>
 
 #### 6.1.2. Protocol Configuration
 
