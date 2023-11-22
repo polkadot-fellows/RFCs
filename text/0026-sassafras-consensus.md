@@ -83,13 +83,13 @@ Through this document it is advantageous to make use of code snippets as part
 of the comprehensive description. These snippets shall adhere to the subsequent
 conventions:
 
-- For simplicity, code snippets are presented in a *Rust-like* pseudo-code format.
+- For simplicity, code snippets are presented in a *Rust-like* pseudocode format.
 
 - The function `BYTES(x: T)` returns an `OCTET_STRING` representing the raw
   byte array representation of the object `x` with type `T`.
-  - if `T` is `VisibleString` (i.e. an *ascii* string): it returns the sequence
-    of octets of its *ascii* representation.
-  - if `T` is `U<n>`: it returns the little-endian encoding of the integer
+  - If `T` is `VisibleString` (i.e. an ASCII string): it returns the sequence
+    of octets of its ASCII representation.
+  - If `T` is `U<n>`: it returns the little-endian encoding of the integer
     `U<n>` as `n/8` octets.
 
 - The function `U<n>(x: OCTET_STRING)` returns a `U<n>` interpreting `x` as
@@ -614,11 +614,12 @@ Let `next_epoch` be an object with the information associated to the next epoch:
     revealed_pub = ed25519_secret_from_seed(revealed_seed).public();
 ```
 
-The usage of the ephemeral public keys will be clarified in the [ticket claiming](#65-claim-of-ticket-ownership-during-block-production) section.
+The usage of the ephemeral public keys will be clarified in the ticket claiming
+section ([6.5](#65-claim-of-ticket-ownership-during-block-production)).
 
 #### 6.2.4. Ring Signature Production
 
-`TicketBody` must be signed using the Bandersnatch [ring VRF](#542-ring-vrf-signature) flavor.
+`TicketBody` must be signed using the Bandersnatch ring VRF flavor ([5.4.2](#542-ring-vrf-signature)).
 
 ```rust
     sign_data = vrf_signature_data(
@@ -814,7 +815,8 @@ committed in the `TicketBody`, to sign this challenge.
 #### 6.5.2. Secondary Claim Method
 
 If the slot doesn't have any associated ticket then the validator is the one
-with index equal to the rule exposed in paragraph [6.4.2](642-fallback-assignment).
+with index equal to the rule exposed in the fallback assignment section
+([6.4.2](#642-fallback-assignment)).
 
 Given `randomness_vrf_input` constructed as shown for the primary method, the
 `VrfSignatureData` is constructed as:
@@ -937,7 +939,8 @@ The signed challenge is generated with identical steps as outlined in section
 #### 6.6.2. Secondary Claim Method Verification
 
 If the slot doesn't have any associated ticket then the validator index contained in
-the claim should match the one given by the rule outlined in section [6.4.2](642-fallback-assignment).
+the claim should match the one given by the rule outlined in the fallback assignment
+section ([6.4.2](#642-fallback-assignment))
 
 ### 6.7. Randomness Accumulator
 
@@ -968,7 +971,7 @@ the `accumulator` value is updated as follows:
 
 The updated `accumulator` value is stored on-chain.
 
-The randomess accumulated during epoch `N` will be used, at the start of the
+The randomness accumulated during epoch `N` will be used, at the start of the
 next epoch (`N+1`), as an input to compute the `NextEpochDescriptor`
 `randomness` element (see section 6.1). 
 
@@ -1040,10 +1043,10 @@ These topics include:
 - **Outbound Interface**. Interfaces exposed by the host which are required by the runtime.
   These are commonly dubbed *Host Functions*.
 
-- **Unrecorded Inboud Interfaces**. Interfaces exposed by the runtime which are required by the host.
+- **Unrecorded Inbound Interfaces**. Interfaces exposed by the runtime which are required by the host.
   These are commonly dubbed *Runtime APIs*.
 
-- **Transactional Inboud Interfaces**. Interfaces exposed by the runtime which alter the state.
+- **Transactional Inbound Interfaces**. Interfaces exposed by the runtime which alter the state.
   These are commonly dubbed *Extrinsics* and *Inherents*.
 
 ### 12.2. Deployment Strategies
@@ -1060,8 +1063,8 @@ These topics include:
   provide insights into whether this process should be performed before the
   deployment of Sassafras and the steps involved.
 
-- **Sharing with Parachains**: Considering the complexity of the ceremony, we
-  must understand whether the SRS is shared with parachains or maintained
+- **Sharing with Para-chains**: Considering the complexity of the ceremony, we
+  must understand whether the SRS is shared with para-chains or maintained
   independently.
 
 ### 12.4. Anonymous Submission of Tickets.
