@@ -322,7 +322,7 @@ In this document, the types `BandersnatchSecretKey`, `BandersnatchPublicKey`
 and `PlainSignature` are intentionally left undefined. Their definitions can be
 found in the `bandersnatch_vrfs` reference implementation.
 
-#### 5.3.2. Ring VRF Signature
+#### 5.4.2. Ring VRF Signature
 
 This section deals with the signature process for `VrfSignatureData` using the
 Bandersnatch ring signature flavor.
@@ -412,12 +412,12 @@ Each block ships with some entropy source in the form of bandersnatch
 `accumulator` **after** block import.
 
 The exact procedure to accumulate per-block randomness is described in detail
-later, in the [Randomness Accumulator] paragraph.
+later, in the [randomness accumulator](#67-randomness-accumulator) paragraph.
 
 Next epoch `randomness` is computed as:
 
 ```rust
-    BLAKE2(32, CONCAT(accumulator, curr_epoch_randomness, next_epoch_index));
+    next_epoch_randomness = BLAKE2(32, CONCAT(accumulator, next_epoch_index));
 ```
 
 #### 6.1.2. Protocol Configuration
@@ -448,7 +448,7 @@ values requires more computation.
 
 Details about how exactly these parameters drives the ticket validity
 probability can be found in the section dedicated to candidate ticket validation
-([ticket threshold](0026-sassafras-consensus.md#622-tickets-threshold)).
+against [threshold](0026-sassafras-consensus.md#622-tickets-threshold).
 
 `ProtocolConfiguration` values can be adjusted via a dedicated extrinsic which
 should have origin set to `Root`. A valid configuration proposal submitted on
@@ -566,8 +566,8 @@ tolerance over offline nodes and we end-up filling all the slots with tickets
 with high probability.
 
 For more details about threshold formula please refer to the 
-[Probabilities and parameters](https://research.web3.foundation/Polkadot/protocols/block-production/SASSAFRAS#probabilities-and-parameters)
-paragraph of the *layman description* of Sassafras protocol.
+[probabilities and parameters](https://research.web3.foundation/Polkadot/protocols/block-production/SASSAFRAS#probabilities-and-parameters)
+paragraph of the w3f description of the protocol.
 
 #### 6.2.3. Ticket Body
 
@@ -612,11 +612,11 @@ Let `next_epoch` be an object with the information associated to the next epoch:
     revealed_pub = ed25519_secret_from_seed(revealed_seed).public();
 ```
 
-The usage of the ephemeral public keys will be clarified in the [ticket claiming](0026-sassafras-consensus.md#65-claim-of-ticket-ownership-during-block-production) section.
+The usage of the ephemeral public keys will be clarified in the [ticket claiming](#65-claim-of-ticket-ownership-during-block-production) section.
 
 #### 6.2.4. Ring Signature Production
 
-`TicketBody` must be signed using the Bandersnatch [ring VRF](532-ring-vrf-signature) flavor.
+`TicketBody` must be signed using the Bandersnatch [ring VRF](#542-ring-vrf-signature) flavor.
 
 ```rust
     sign_data = vrf_signature_data(
