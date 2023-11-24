@@ -33,19 +33,19 @@ This RFC proposes the following changes to the client:
 
 With these changes, the memory available to the runtime is now only bounded by the available memory space (4 GiB), and optionally by the maximum amount of memory specified in the Wasm binary (see https://webassembly.github.io/spec/core/bikeshed/#memories%E2%91%A0). In Rust, the latter can be controlled during compilation with the flag `-Clink-arg=--max-memory=...`.
 
+Since the client-side change is strictly more tolerant than before, we can performance the change immediately without having to worry about backwards compatibility.
+
 This RFC proposes three alternative paths (different chains might choose to follow different paths):
 
 - Path A: add back the same memory limit to the runtime, like so:
 
     - At initialization, the runtime loads the value of `:heappages` from the storage (using `ext_storage_get` or similar), and sets a global variable to the decoded value.
-    - The runtime tracks the total amount of memory that it has allocated using its instance of `#[global_allocator]` (https://github.com/paritytech/polkadot-sdk/blob/e3242d2c1e2018395c218357046cc88caaed78f3/substrate/primitives/io/src/lib.rs#L1748-L1762). This tracking should also be added for the host functions that perform allocations.
-    - If an allocation is attempted that would go over the value in the global variable, the `unreachable` opcode is called.
+    - The runtime tracks the total amount of memory that it has allocated using its instance of `#[global_allocator]` (https://github.com/paritytech/polkadot-sdk/blob/e3242d2c1e2018395c218357046cc88caaed78f3/substrate/primitives/io/src/lib.rs#L1748-L1762). This tracking should also be added around the host functions that perform allocations.
+    - If an allocation is attempted that would go over the value in the global variable, the memory allocation fails.
 
-- Path B: defined the memory limit using the `-Clink-arg=--max-memory=...` flag.
+- Path B: define the memory limit using the `-Clink-arg=--max-memory=...` flag.
 
 - Path C: don't add anything to the runtime. This is effectively the same as setting the memory limit to ~4 GiB (compared to the current limit of 128 MiB). This solution is viable only because we're compiling for 32bits wasm rather than for example 64bits wasm. If we ever compile for 64bits wasm, this would need to be revisited.
-
-Furthermore, since the client-side change is strictly more tolerant than before, we can performance the change immediately without having to worry about backwards compatibility.
 
 Each parachain can choose the option that they prefer, but the author of this RFC strongly suggests either option C or B.
 
