@@ -411,7 +411,7 @@ author, which is found in the digest data before block import.
 
 Each block ships with some entropy source in the form of bandersnatch
 `VrfOutput`. Per block randomness is accumulated in the protocol's on-chain
-`accumulator` **after** block import.
+randomness accumulator **after** block import.
 
 The exact procedure to accumulate per-block randomness is described in detail
 later, in the randomness accumulator paragraph ([6.7](#67-randomness-accumulator)).
@@ -419,7 +419,7 @@ later, in the randomness accumulator paragraph ([6.7](#67-randomness-accumulator
 Next epoch `randomness` is computed as:
 
 ```rust
-    next_epoch_randomness = BLAKE2(32, CONCAT(accumulator, next_epoch_index));
+    next_epoch_randomness = BLAKE2(32, CONCAT(randomness_accumulator, BYTES(next_epoch_index)));
 ```
 
 #### 6.1.2. Protocol Configuration
@@ -662,8 +662,6 @@ The tickets are received via a dedicated extrinsic call.
 
 Generic validation rules:
 - Tickets submissions must occur within the first half of the epoch.
-  (TODO: I expect this is to give time to the chain finality consensus to finalize
-  the on-chain tickets before next epoch starts)
 - For unsigned extrinsics, it must be submitted by one of the current session
   validators.
 
@@ -718,21 +716,15 @@ ticket.
 In such situation, these unassigned slots are allocated using a fallback
 assignment strategy.
 
-The authorities registered on-chain are kept in a sorted buffer. The index of
-the authority which has the privilege to claim an unbounded slot is calculated
-as follows:
+The authorities registered on-chain are kept in a sorted buffer.
+
+The index of the authority which has the privilege to claim an unbounded slot is
+calculated as follows:
 
 ```rust
-    index_bytes = BLAKE2(4, SCALE( (epoch_randomness, slot) ));
+    index_bytes = BLAKE2(4, CONCAT(epoch_randomness, BYTES(slot)));
     index = U32(index_bytes) mod authorities_number;
 ```
-
-<TODO>
-What about using `epoch_randomness_accumulator` instead of `epoch_randomness`?
-The accumulator is updated using the randomness which ships with every block, thus
-we know who is the author of block N only after block N-1 has been imported.
-Is a bit more Dos resistant.
-</TODO>
 
 ### 6.5. Claim of ticket ownership during block production
 
@@ -966,7 +958,7 @@ the `accumulator` value is updated as follows:
 
     randomness = vrf_bytes(32, randomness_vrf_input, randomness_vrf_output);
 
-    accumulator = BLAKE2(32, CONCAT(accumulator, randomness));
+    randomness_accumulator = BLAKE2(32, CONCAT(randomness_accumulator, randomness));
 ```
 
 The updated `accumulator` value is stored on-chain.
