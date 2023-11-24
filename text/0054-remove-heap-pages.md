@@ -8,21 +8,21 @@
 
 ## Summary
 
-Rather that enforce a limit to the total memory consumption on the client side by loading the value at `:heap_pages`, enforce that limit on the runtime side.
+Rather that enforce a limit to the total memory consumption on the client side by loading the value at `:heappages`, enforce that limit on the runtime side.
 
 ## Motivation
 
 From the early days of Substrate up until recently, the runtime was present in two forms: the wasm runtime (wasm bytecode passed through an interpreter) and the native runtime (native code directly run by the client).
 
-Since the wasm runtime has a lower amount of memory available (4GiB maximum) compared to the native runtime, and in order to ensure sure that the wasm and native runtimes always produce the same outcome, it was necessary to clamp the amount of memory available to both runtimes to the same value.
+Since the wasm runtime has a lower amount of available memory (4 GiB maximum) compared to the native runtime, and in order to ensure sure that the wasm and native runtimes always produce the same outcome, it was necessary to clamp the amount of memory available to both runtimes to the same value.
 
-In order to achieve this, a special storage key (a "well-known" key) `:heappages` was introduced and represents the number of "wasm pages" (one page equals 64kiB) of memory that are available to the memory allocator of the runtime. If this storage key is absent, it defaults to 2048, which is 128 MiB.
+In order to achieve this, a special storage key (a "well-known" key) `:heappages` was introduced and represents the number of "wasm pages" (one page equals 64kiB) of memory that are available to the memory allocator of the runtimes. If this storage key is absent, it defaults to 2048, which is 128 MiB.
 
-The native runtime has since then been disappeared, but the concept of "heap pages" still exists. This RFC proposes a simplification to the design of Polkadot by removing the concept of "heap pages" as is currently known, and proposes an alternative.
+The native runtime has since then been disappeared, but the concept of "heap pages" still exists. This RFC proposes a simplification to the design of Polkadot by removing the concept of "heap pages" as is currently known, and proposes alternative ways to achieve the goal of limiting the amount of memory available.
 
 ## Stakeholders
 
-Client implementers.
+Client implementers and low-level runtime developers.
 
 ## Explanation
 
@@ -45,7 +45,7 @@ This RFC proposes three alternative paths (different chains might choose to foll
 
 - Path B: define the memory limit using the `-Clink-arg=--max-memory=...` flag.
 
-- Path C: don't add anything to the runtime. This is effectively the same as setting the memory limit to ~4 GiB (compared to the current limit of 128 MiB). This solution is viable only because we're compiling for 32bits wasm rather than for example 64bits wasm. If we ever compile for 64bits wasm, this would need to be revisited.
+- Path C: don't add anything to the runtime. This is effectively the same as setting the memory limit to ~4 GiB (compared to the current default limit of 128 MiB). This solution is viable only because we're compiling for 32bits wasm rather than for example 64bits wasm. If we ever compile for 64bits wasm, this would need to be revisited.
 
 Each parachain can choose the option that they prefer, but the author of this RFC strongly suggests either option C or B.
 
