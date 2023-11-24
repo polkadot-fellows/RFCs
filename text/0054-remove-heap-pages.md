@@ -1,4 +1,4 @@
-# RFC-0051: Remove the concept of "heap pages" from the client
+# RFC-0054: Remove the concept of "heap pages" from the client
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
