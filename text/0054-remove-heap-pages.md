@@ -54,6 +54,9 @@ Each parachain can choose the option that they prefer, but the author of this RF
 In case of path A, there is one situation where the behaviour pre-RFC is not equivalent to the one post-RFC: when a host function that performs an allocation (for example `ext_storage_get`) is called, without this RFC this allocation might fail due to reaching the maximum heap pages, while after this RFC this will always succeed.
 This is most likely not a problem, as storage values aren't supposed to be larger than a few megabytes at the very maximum.
 
+In the unfortunate event where the runtime runs out of memory, path B would make it more difficult to relax the memory limit, as we would need to re-upload the entire Wasm, compared to updating only `:heappages` in path A or before this RFC.
+In the case where the runtime runs out of memory only in the specific event where the Wasm runtime is modified, this could brick the chain. However, this situation is no different than the thousands of other ways that a bug in the runtime can brick a chain, and there's no reason to be particularily worried about this situation in particular.
+
 ## Testing, Security, and Privacy
 
 This RFC would reduce the chance of a consensus issue between clients.
