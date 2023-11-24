@@ -33,7 +33,7 @@ This RFC proposes the following changes to the client:
 
 With these changes, the memory available to the runtime is now only bounded by the available memory space (4 GiB), and optionally by the maximum amount of memory specified in the Wasm binary (see https://webassembly.github.io/spec/core/bikeshed/#memories%E2%91%A0). In Rust, the latter can be controlled during compilation with the flag `-Clink-arg=--max-memory=...`.
 
-This RFC proposes three alternative paths:
+This RFC proposes three alternative paths (different chains might choose to follow different paths):
 
 - Path A: add back the same memory limit to the runtime, like so:
 
@@ -47,7 +47,7 @@ This RFC proposes three alternative paths:
 
 Furthermore, since the client-side change is strictly more tolerant than before, we can performance the change immediately without having to worry about backwards compatibility.
 
-The author of this RFC suggests either option C or B.
+Each parachain can choose the option that they prefer, but the author of this RFC strongly suggests either option C or B.
 
 ## Drawbacks
 
