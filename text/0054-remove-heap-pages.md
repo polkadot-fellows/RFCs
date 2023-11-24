@@ -8,7 +8,7 @@
 
 ## Summary
 
-Rather that enforce a limit to the total memory consumption on the client side by loading the value at `:heap_pages`, enforce that limit on the runtime side by keeping track.
+Rather that enforce a limit to the total memory consumption on the client side by loading the value at `:heap_pages`, enforce that limit on the runtime side.
 
 ## Motivation
 
