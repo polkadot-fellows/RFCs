@@ -8,7 +8,7 @@
 
 ## Summary
 
-Rather that enforce a limit to the total memory consumption on the client side by loading the value at `:heappages`, enforce that limit on the runtime side.
+Rather than enforce a limit to the total memory consumption on the client side by loading the value at `:heappages`, enforce that limit on the runtime side.
 
 ## Motivation
 
