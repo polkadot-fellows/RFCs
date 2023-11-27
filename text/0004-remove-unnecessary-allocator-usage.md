@@ -184,9 +184,7 @@ Host implementers should be aware that the list of public keys (including their 
   (param $method i64) (param $uri i64) (param $meta i64) (result i32))
 ```
 
-The behaviour of this function is identical to its version 1 counterpart. Instead of allocating a buffer, writing the request identifier in it, and returning a pointer to it, the version 2 of this function simply returns the newly-assigned identifier to the HTTP request. On failure, this function returns 0. An identifier of 0 is invalid and is reserved to indicate failure.
-
-Host implementers should be aware that, because a zero identifier value was previously valid, this might require slightly more changes to the host than just adding the new function.
+The behaviour of this function is identical to its version 1 counterpart. Instead of allocating a buffer, writing the request identifier in it, and returning a pointer to it, the version 2 of this function simply returns the newly-assigned identifier to the HTTP request. On failure, this function returns `-1`. An identifier of `-1` is invalid and is reserved to indicate failure.
 
 ```wat
 (func $ext_offchain_http_request_write_body_version_2
