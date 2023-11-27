@@ -245,7 +245,7 @@ If the buffer in `out` is too small to fit the entire header name of value, only
     (param $request_id i32) (param $name i64) (param $value i64) (result i32))
 ```
 
-Instead of allocating a buffer, writing `1` or `0` in it, and returning a pointer to it, the version 2 of these functions return `0` or `-1`, where `0` indicates success and `-1` indicates failure. The runtime must interpret any non-`0` value as failure, but the client must always return `-1` in case of failure.
+Instead of allocating a buffer, writing `1` or `0` in it, and returning a pointer to it, the version 2 of these functions return `0` or `1`, where `0` indicates success and `1` indicates failure. The runtime must interpret any non-`0` value as failure, but the client must always return `1` in case of failure.
 
 ```wat
 (func $ext_offchain_local_storage_read_version_1
