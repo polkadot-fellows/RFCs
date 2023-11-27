@@ -173,7 +173,7 @@ These values are equal to the values returned on error by the version 2 (see <ht
 The functions superceded the `ext_crypto_ed25519_public_key_version_1`, `ext_crypto_sr25519_public_key_version_1`, and `ext_crypto_ecdsa_public_key_version_1` host functions.
 
 Instead of calling `ext_crypto_ed25519_public_key_version_1` in order to obtain the list of all keys at once, the runtime should instead call `ext_crypto_ed25519_num_public_keys_version_1` in order to obtain the number of public keys available, then `ext_crypto_ed25519_public_key_version_2` repeatedly.
-The `ext_crypto_ed25519_public_key_version_2` function writes the public key of the given `key_index` to the memory location designated by `out`. The `key_index` must be between 0 (included) and `n` (excluded), where `n` is the value returned by `ext_crypto_ed25519_num_public_keys_version_1`.
+The `ext_crypto_ed25519_public_key_version_2` function writes the public key of the given `key_index` to the memory location designated by `out`. The `key_index` must be between 0 (included) and `n` (excluded), where `n` is the value returned by `ext_crypto_ed25519_num_public_keys_version_1`. Execution must trap if `n` is out of range.
 
 The same explanations apply for `ext_crypto_sr25519_public_key_version_1` and `ext_crypto_ecdsa_public_key_version_1`.
 
