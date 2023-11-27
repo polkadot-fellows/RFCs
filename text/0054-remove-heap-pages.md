@@ -33,7 +33,7 @@ This RFC proposes the following changes to the client:
 
 With these changes, the memory available to the runtime is now only bounded by the available memory space (4 GiB), and optionally by the maximum amount of memory specified in the Wasm binary (see https://webassembly.github.io/spec/core/bikeshed/#memories%E2%91%A0). In Rust, the latter can be controlled during compilation with the flag `-Clink-arg=--max-memory=...`.
 
-Since the client-side change is strictly more tolerant than before, we can performance the change immediately without having to worry about backwards compatibility.
+Since the client-side change is strictly more tolerant than before, we can perform the change immediately after the runtime has been updated, and without having to worry about backwards compatibility.
 
 This RFC proposes three alternative paths (different chains might choose to follow different paths):
 
@@ -76,7 +76,7 @@ This RFC would isolate the client and runtime more from each other, making it a 
 
 ### Compatibility
 
-Not a breaking change. RFC can be applied immediately without any transition period.
+Not a breaking change. The runtime-side changes can be applied immediately (without even having to wait for changes in the client), then as soon as the runtime is updated, the client can be updated without any transition period. One can even consider updating the client before the runtime, as it corresponds to path C.
 
 ## Prior Art and References
 
