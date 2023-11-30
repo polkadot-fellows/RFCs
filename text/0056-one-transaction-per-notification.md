@@ -33,13 +33,20 @@ Low-level developers.
 To give an example, if you send one notification with three transactions, the bytes that are sent on the wire are:
 
 ```
-concat(leb128(total-size-in-bytes-of-the-rest), scale(compact(3)), scale(transaction1), scale(transaction2), scale(transaction3))
+concat(
+    leb128(total-size-in-bytes-of-the-rest),
+    scale(compact(3)), scale(transaction1), scale(transaction2), scale(transaction3)
+)
 ```
 
 But you can also send three notifications of one transaction each, in which case it is:
 
 ```
-concat(leb128(size(scale(transaction1) + 1)), scale(compact(1)), scale(transaction1), leb128(size(scale(transaction2) + 1)), scale(compact(1)), scale(transaction2), leb128(size(scale(transaction3) + 1)), scale(compact(1)), scale(transaction3))
+concat(
+    leb128(size(scale(transaction1) + 1)), scale(compact(1)), scale(transaction1),
+    leb128(size(scale(transaction2) + 1)), scale(compact(1)), scale(transaction2),
+    leb128(size(scale(transaction3) + 1)), scale(compact(1)), scale(transaction3)
+)
 ```
 
 Right now the sender can choose which of the two encoding to use. This RFC proposes to make the second encoding mandatory.
