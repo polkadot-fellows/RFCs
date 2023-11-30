@@ -1,4 +1,4 @@
-# RFC-0000: Enforce only one transaction per notification
+# RFC-0056: Enforce only one transaction per notification
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
