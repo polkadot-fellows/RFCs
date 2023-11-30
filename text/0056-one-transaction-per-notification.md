@@ -22,7 +22,7 @@ There exists three motivations behind this change:
 
 - Notifications protocols are already designed to be optimized to send many items. Currently, when it comes to transactions, each item is a `Vec<Transaction>` that consists in multiple sub-items of type `Transaction`. This two-steps hierarchy is completely unnecessary, and was originally written at a time when the networking protocol of Substrate didn't have proper multiplexing.
 
-- Notifications protocols are designed to send relatively-constant-sized messages. Having stability in the size of the messages ensures that the memory and CPU consumption of nodes is also relatively stable. To give an example, when a node receives 1000 notifications containing one transaction each, it can receive then process one transaction after the other and back-pressure the sender to slow down the sending to the speed of the receiver, and interleave notifications coming from multiple different peers. When a node receives a notification containing 1000 transactions, however, it necessarily has to buffer the 1000 transactions and process the 1000 transactions (all coming from the same peer) immediately, which adds a spike to the memory and CPU consumption of the node.
+- It makes the implementation more straight-forward by not having to repeat code related to back-pressure. See explanations below.
 
 ## Stakeholders
 
@@ -30,12 +30,27 @@ Low-level developers.
 
 ## Explanation
 
-Everything is already explained in the summary.
+To give an example, if you send one notification with three transactions, the bytes that are sent on the wire are:
+
+```
+concat(leb128(total-size-in-bytes-of-the-rest), scale(compact(3)), scale(transaction1), scale(transaction2), scale(transaction3))
+```
+
+But you can also send three notifications of one transaction each, in which case it is:
+
+```
+concat(leb128(size(scale(transaction1))), scale(compact(1)), scale(transaction1), size(scale(transaction2)), scale(compact(1)), scale(transaction2), size(scale(transaction3)), scale(compact(1)), scale(transaction3))
+```
+
+Right now the sender can choose which of the two encoding to use. This RFC proposes to make the second encoding mandatory.
 
 The format of the notification would become a SCALE-encoded `(Compact(1), Transaction)`.
 A SCALE-compact encoded `1` is one byte of value `4`. In other words, the format of the notification would become `concat(&[4], scale_encoded_transaction)`.
-
 This is equivalent to forcing the `Vec<Transaction>` to always have a length of 1, and I expect the Substrate implementation to simply modify the sending side to add a `for` loop that sends one notification per item in the `Vec`.
+
+As explained in the motivation section, this allows extracting `scale(transaction)` items without having to know how to decode them.
+
+By "flattening" the two-steps hierarchy, an implementation only needs to back-pressure individual notifications rather than back-pressure notifications and transactions within notifications.
 
 ## Drawbacks
 
