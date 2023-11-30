@@ -20,9 +20,9 @@ There exists three motivations behind this change:
 
 - It is technically impossible to decode a SCALE-encoded `Vec<Transaction>` into a list of SCALE-encoded transactions without knowing how to decode a `Transaction`. That's because a `Vec<Transaction>` consists in several `Transaction`s one after the other in memory, without any delimiter that indicates the end of a transaction and the start of the next. Unfortunately, the format of a `Transaction` is runtime-specific. This means that the code that receives notifications is necessarily tied to a specific runtime, and it is not possible to write runtime-agnostic code.
 
-- Notifications protocols are already designed to be optimized to send many items. Currently, when it comes to transactions, each item is a `Vec<Transaction>` contains in multiple sub-items of type `Transaction`. This two-steps hierarchy is completely unnecessary, and was originally written at a time when the networking protocol of Substrate didn't have proper multiplexing.
+- Notifications protocols are already designed to be optimized to send many items. Currently, when it comes to transactions, each item is a `Vec<Transaction>` that consists in multiple sub-items of type `Transaction`. This two-steps hierarchy is completely unnecessary, and was originally written at a time when the networking protocol of Substrate didn't have proper multiplexing.
 
-- Notifications protocols are designed to send relatively-constant-sized messages. Having stability in the size of the messages ensures that the memory and CPU consumption of nodes is also relatively stable. To give an example, when a node receives 1000 notifications containing one transaction each, it can receive then process one transaction after the other and back-pressure the sender to slow down the sending to the speed of the receiver, and interleave notifications coming from multiple different peers simultaneously. When a node receives a notification containing 1000 transactions, however, it necessarily has to buffer the 1000 transactions and process the 1000 transactions (all coming from the same peer) immediately, which adds a spike to the memory and CPU consumption of the node.
+- Notifications protocols are designed to send relatively-constant-sized messages. Having stability in the size of the messages ensures that the memory and CPU consumption of nodes is also relatively stable. To give an example, when a node receives 1000 notifications containing one transaction each, it can receive then process one transaction after the other and back-pressure the sender to slow down the sending to the speed of the receiver, and interleave notifications coming from multiple different peers. When a node receives a notification containing 1000 transactions, however, it necessarily has to buffer the 1000 transactions and process the 1000 transactions (all coming from the same peer) immediately, which adds a spike to the memory and CPU consumption of the node.
 
 ## Stakeholders
 
@@ -33,8 +33,9 @@ Low-level developers.
 Everything is already explained in the summary.
 
 The format of the notification would become a SCALE-encoded `(Compact(1), Transaction)`.
-A SCALE-compact encoded `1` is one byte of value `4`. In other words, the format of the notification is `concat(&[4], scale_encoded_transaction)`.
-This is equivalent to forcing the `Vec<Transaction>` to always have a length of 1.
+A SCALE-compact encoded `1` is one byte of value `4`. In other words, the format of the notification would become `concat(&[4], scale_encoded_transaction)`.
+
+This is equivalent to forcing the `Vec<Transaction>` to always have a length of 1, and I expect the Substrate implementation to simply modify the sending side to add a `for` loop that sends one notification per item in the `Vec`.
 
 ## Drawbacks
 
