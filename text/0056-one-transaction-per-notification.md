@@ -22,7 +22,7 @@ There exists three motivations behind this change:
 
 - Notifications protocols are already designed to be optimized to send many items. Currently, when it comes to transactions, each item is a `Vec<Transaction>` that consists in multiple sub-items of type `Transaction`. This two-steps hierarchy is completely unnecessary, and was originally written at a time when the networking protocol of Substrate didn't have proper multiplexing.
 
-- It makes the implementation more straight-forward by not having to repeat code related to back-pressure. See explanations below.
+- It makes the implementation way more straight-forward by not having to repeat code related to back-pressure. See explanations below.
 
 ## Stakeholders
 
@@ -43,9 +43,9 @@ But you can also send three notifications of one transaction each, in which case
 
 ```
 concat(
-    leb128(size(scale(transaction1) + 1)), scale(compact(1)), scale(transaction1),
-    leb128(size(scale(transaction2) + 1)), scale(compact(1)), scale(transaction2),
-    leb128(size(scale(transaction3) + 1)), scale(compact(1)), scale(transaction3)
+    leb128(size(scale(transaction1)) + 1), scale(compact(1)), scale(transaction1),
+    leb128(size(scale(transaction2)) + 1), scale(compact(1)), scale(transaction2),
+    leb128(size(scale(transaction3)) + 1), scale(compact(1)), scale(transaction3)
 )
 ```
 
