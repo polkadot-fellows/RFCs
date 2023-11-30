@@ -39,7 +39,7 @@ concat(leb128(total-size-in-bytes-of-the-rest), scale(compact(3)), scale(transac
 But you can also send three notifications of one transaction each, in which case it is:
 
 ```
-concat(leb128(size(scale(transaction1))), scale(compact(1)), scale(transaction1), size(scale(transaction2)), scale(compact(1)), scale(transaction2), size(scale(transaction3)), scale(compact(1)), scale(transaction3))
+concat(leb128(size(scale(transaction1) + 1)), scale(compact(1)), scale(transaction1), size(scale(transaction2) + 1), scale(compact(1)), scale(transaction2), size(scale(transaction3) + 1), scale(compact(1)), scale(transaction3))
 ```
 
 Right now the sender can choose which of the two encoding to use. This RFC proposes to make the second encoding mandatory.
