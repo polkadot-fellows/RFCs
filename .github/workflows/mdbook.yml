@@ -50,7 +50,7 @@ jobs:
       - name: Setup mdBook binary
         uses: peaceiris/actions-mdbook@adeb05db28a0c0004681db83893d56c0388ea9ea # v1.2.0
         with:
-          mdbook-version: '0.4.35'
+          mdbook-version: '0.4.36'
         # This will: 
         # - gather the proposed RFCs (constructed in the steps above).
         # - gather the approved RFCs (they exist in this repo in text/ directory)
