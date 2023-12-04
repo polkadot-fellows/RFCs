@@ -45,13 +45,8 @@ pub fn reconstruct_from_systematic<T: Decode>(
 	n_validators: usize,
 	chunks: Vec<&[u8]>,
 ) -> T {
-	let mut threshold = (n_validators - 1) / 3;
-	if !is_power_of_two(threshold) {
-		threshold = next_lower_power_of_2(threshold);
-	}
-
+	let threshold = systematic_threshold(n_validators);
 	let shard_len = chunks.iter().next().unwrap().len();
-
 	let mut systematic_bytes = Vec::with_capacity(shard_len * threshold);
 
 	for i in (0..shard_len).step_by(2) {
@@ -62,6 +57,15 @@ pub fn reconstruct_from_systematic<T: Decode>(
 	}
 
 	Decode::decode(&mut &systematic_bytes[..]).unwrap()
+}
+
+fn systematic_threshold(n_validators: usize) -> usize {
+	let mut threshold = (n_validators - 1) / 3;
+	if !is_power_of_two(threshold) {
+		threshold = next_lower_power_of_2(threshold);
+	}
+
+	threshold
 }
 ```
 
@@ -103,18 +107,22 @@ should hold them, before falling back to recovering from regular chunks, as befo
 A re-encoding step is still needed for verifying the erasure root, so the erasure coding overhead cannot be completely
 brought down to 0.
 
+Not being able to retrieve even one systematic chunk would make systematic reconstruction impossible. Therefore, backers
+can be used as a backup to retrieve a couple of missing systematic chunks, before falling back to retrieving regular
+chunks.
+
 ### Chunk assignment function
 
 #### Properties
 
 The function that decides the chunk index for a validator should be parameterized by at least
-`(validator_index, relay_parent, core_index)`
+`(validator_index, block_number, core_index)`
 and have the following properties:
 1. deterministic
 1. relatively quick to compute and resource-efficient.
 1. when considering the other params besides `validator_index` as fixed, the function should describe a permutation
 of the chunk indices
-1. considering `relay_parent` as a fixed argument, the validators that map to the first N/3 chunk indices should
+1. considering `block_number` as a fixed argument, the validators that map to the first N/3 chunk indices should
 have as little overlap as possible for different paras scheduled on that relay parent.
 
 In other words, we want a uniformly distributed, deterministic mapping from `ValidatorIndex` to `ChunkIndex` per block
@@ -145,7 +153,7 @@ pub fn get_chunk_index(
 
 ### Network protocol
 
-The request-response `/polkadot/req_chunk` protocol will be bumped to a new version (from v1 to v2).
+The request-response `/req_chunk` protocol will be bumped to a new version (from v1 to v2).
 For v1, the request and response payloads are:
 ```rust
 /// Request an availability chunk.
@@ -202,34 +210,50 @@ In practice, this is desirable during availability-distribution and systematic c
 recovery may not check this index, which is particularly useful when participating in disputes that don't allow
 for easy access to the validator->chunk mapping. See [Appendix A](#appendix-a) for more details.
 
+In any case, the requester MUST verify the chunk's proof using the provided index.
+
+During availability-recovery, given that the requester may not know (if the mapping is not available) whether the received chunk corresponds to
+the requested validator index, it has to keep track of received chunk indices and ignore duplicates. Such duplicates
+should be considered the same as an invalid/garbage response (drop it and move on to the next validator - we can't
+punish via reputation changes, because we don't know which validator misbehaved).
 
 ### Upgrade path
 
 #### Step 1: Enabling new network protocol
-In the beginning, both `/polkadot/req_chunk/1` and `/polkadot/req_chunk/2` will be supported, until all validators and
-collators have upgraded to use the new version. V1 will be considered deprecated.
+In the beginning, both `/req_chunk/1` and `/req_chunk/2` will be supported, until all validators and
+collators have upgraded to use the new version. V1 will be considered deprecated. During this step, the mapping will
+still be 1:1 (`ValidatorIndex` == `ChunkIndex`), regardless of protocol.
 Once all nodes are upgraded, a new release will be cut that removes the v1 protocol. Only once all nodes have upgraded
 to this version will step 2 commence.
 
 #### Step 2: Enabling the new validator->chunk mapping
 Considering that the Validator->Chunk mapping is critical to para consensus, the change needs to be enacted atomically
-via governance, only after all validators have upgraded the node to a version that is aware of this mapping.
-It needs to be explicitly stated that after the runtime upgrade and governance enactment, validators that run older
-client versions that don't support this mapping will not be able to participate in parachain consensus.
+via governance, only after all validators have upgraded the node to a version that is aware of this mapping,
+functionality-wise.
+It needs to be explicitly stated that after the governance enactment, validators that run older client versions that
+don't support this mapping will not be able to participate in parachain consensus.
 
-Additionally, an error will be logged when starting a validator with an older version, after the runtime was upgraded
-and the feature enabled.
+Additionally, an error will be logged when starting a validator with an older version, after the feature was enabled.
 
-On the other hand, collators will not be required to upgrade, as regular chunk recovery will work as before, granted
-that version 1 of the networking protocol has been removed.  However, they are encouraged to upgrade in order to take
-advantage of the faster systematic recovery.
+On the other hand, collators will not be required to upgrade in this step, as regular chunk recovery will work as before,
+granted that version 1 of the networking protocol has been removed. Note that collators only perform
+availability-recovery in rare, adversarial scenarios, so it is fine to not optimise for this case and let them upgrade
+at their own pace.
+
+To support enabling this feature via the runtime, we will use the `NodeFeatures` bitfield of the `HostConfiguration`
+struct (added in `https://github.com/paritytech/polkadot-sdk/pull/2177`). Adding and enabling a feature
+with this scheme does not require a runtime upgrade, but only a referendum that issues a
+`Configuration::set_node_feature` extrinsic. Once the feature is enabled and new configuration is live, the
+validator->chunk mapping ceases to be a 1:1 mapping and systematic recovery may begin.
 
 ## Drawbacks
 
 - Getting access to the `core_index` that used to be occupied by a candidate in some parts of the dispute protocol is
 very complicated (See [appendix A](#appendix-a)). This RFC assumes that availability-recovery processes initiated during
 disputes will only use regular recovery, as before. This is acceptable since disputes are rare occurrences in practice
-and is something that can be optimised later, if need be.
+and is something that can be optimised later, if need be. Adding the `core_index` to the `CandidateReceipt` would
+mitigate this problem and will likely be needed in the future for CoreJam.
+[Related discussion about `CandidateReceipt`](https://forum.polkadot.network/t/pre-rfc-discussion-candidate-receipt-format-v2/3738)
 - It's a breaking change that requires all validators and collators to upgrade their node version.
 
 ## Testing, Security, and Privacy
@@ -244,8 +268,8 @@ This proposal doesn't affect security or privacy.
 This is a necessary data availability optimisation, as reed-solomon erasure coding has proven to be a top consumer of
 CPU time in polkadot as we scale up the parachain block size and number of availability cores.
 
-With this optimisation, preliminary performance results show that CPU time used for reed-solomon coding can be halved
-and total POV recovery time decrease by 80% for large POVs. See more
+With this optimisation, preliminary performance results show that CPU time used for reed-solomon coding/decoding can be
+halved and total POV recovery time decrease by 80% for large POVs. See more
 [here](https://github.com/paritytech/polkadot-sdk/issues/598#issuecomment-1792007099).
 
 ### Ergonomics
@@ -255,7 +279,7 @@ Not applicable.
 ### Compatibility
 
 This is a breaking change. See [upgrade path](#upgrade-path) section above.
-All validators need to have upgraded their node versions before the feature will be enabled via a runtime upgrade and
+All validators need to have upgraded their node versions before the feature will be enabled via a runtime upgrade
 governance call.
 
 ## Prior Art and References
