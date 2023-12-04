@@ -17,6 +17,9 @@ we would like to propose adding `system_version` that can be used to derive both
 ## Motivation
 
 Since the extrinsic state version is always `StateVersion::V0`, deriving extrinsic root requires full extrinsic data.
+This would be problematic when we need to verify the extrinsics root if the extrinsic sizes are bigger. This problem is
+further explored in https://github.com/polkadot-fellows/RFCs/issues/19
+
 For `Subspace` project, we have an enshrined rollups called `Domain` with optimistic verification and Fraud proofs are
 used to detect malicious behavior.
 One of the `Fraud proof` variant is to derive `Domain` block extrinsic root on `Subspace`'s consensus chain.
