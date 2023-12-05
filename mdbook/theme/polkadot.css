@@ -2,10 +2,6 @@ html.polkadot {
     font-family: "Open Sans", sans-serif;
 }
 
-html.polkadot #sidebar {
-    font-family: "Unbounded", "Open Sans", sans-serif;
-}
-
 .polkadot {
     --pink500: #E6007A;
     --purple600: #442299;
