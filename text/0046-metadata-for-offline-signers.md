@@ -31,9 +31,9 @@ As of now, there is no working solution for (1), as the whole metadata has to be
 
 #### Include metadata digest into signature
 
-Some cryptographically strong digest of metadata MUST be included into signable blob. There SHALL NOT be storage overhead for this blob, nor computational overhead, on the node side; thus MUST be a constant within given runtime version, deterministically defined by metadata.
+Some cryptographically strong digest of metadata MAY be included into signable blob. There SHALL NOT be storage overhead for this blob, nor computational overhead, on the node side; thus MUST be a constant within given runtime version, deterministically defined by metadata.
 
- - Metadata information that could be used in signable extrinsic decoding MUST be be included in digest;
+ - Metadata information that could be used in signable extrinsic decoding MAY be be included in digest, its inclusion MUST be indicated in signed extensions;
  - Digest MUST be deterministic with respect to metadata;
  - Digest MUST be cryptographically strong against pre-image, both first and second;
  - Extra-metadata information necessary for extrinsic decoding and constant within runtime version MUST be included in digest;
@@ -94,7 +94,7 @@ For shortening, an attempt to decode transaction completely using provided metad
 
 ### Transmission
 
-Shortened metadata chunks MAY be trasmitted into cold device together with Merkle proof in its entirety or in parts, depending on memory capabilities of the cold device and it ability to reconstruct larger fraction of tree. This document does not specify the manner of transmission. The order of metadata chunks MAY be arbitrary, the only requirement is that indices of leaf nodes in Merkle tree corresponding to chunks MUST be communicated.
+Shortened metadata chunks MAY be trasmitted into cold device together with Merkle proof in its entirety or in parts, depending on memory capabilities of the cold device and it ability to reconstruct larger fraction of tree. This document does not specify the manner of transmission. The order of metadata chunks MAY be arbitrary, the only requirement is that indices of leaf nodes in Merkle tree corresponding to chunks MUST be communicated. Community MAY handle proof format standartization independently.
 
 ### Offline verification
 
@@ -102,13 +102,21 @@ The transmitted metadata chunks are hashed together with proof lemmas to obtain 
 
 ### Chain verification
 
-The root of metadata computed by cold device MUST be included into Signed Extensions; this way the transaction will pass as valid iff hash of metadata as seen by cold storage device is identical to consensus hash of metadata, ensuring fair signing protocol.
+The root of metadata computed by cold device MAY be included into Signed Extensions; this way the transaction will pass as valid iff hash of metadata as seen by cold storage device is identical to consensus hash of metadata, ensuring fair signing protocol.
+
+The Signed Extension representing metadata digest is a single byte representing both digest vaule inclusion and shortening protocol version; this MUST be included in Signed Extensions set. Depending on its value, a digest value is included as `additionalSigned` to signature computation according to following specification:
+
+| signed extension value | digest value   | comment                            |
+|------------------------|----------------|------------------------------------|
+| `0x00`                 |                | digest is not included             |
+| `0x01`                 | 32-byte digest | this represents protocol version 1 |
+| `0x02` - `0xFF`        | *reserved*     | reserved for future use            |
 
 ## Drawbacks
 
 ### Increased transaction size
 
-Depending on implementation details, an extra byte may be needed to indicate whether the new version of metadata verification was used; this may be needed during transaction period, or the same byte may store the version of metadata hashing protocol
+A 1-byte increase in transaction size due to signed extension value. Digest is not included in transferred transaction, only in signing process.
 
 ### Transition overhead
 
