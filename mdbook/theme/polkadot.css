@@ -48,8 +48,8 @@ html.polkadot {
     --theme-popup-border: var(--purple300);
     --theme-hover: var(--purple200);
 
-    --quote-bg: hsl(60, 5%, 75%);
-    --quote-border: hsl(60, 5%, 70%);
+    --quote-bg: var(--purple200);
+    --quote-border: var(--purple300);
 
     --warning-border: #ff8e00;
 
