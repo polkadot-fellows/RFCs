@@ -32,12 +32,13 @@ module.exports = async ({github, context}) => {
 
       /*
         We want to link the proposed RFCs to their respective PRs.
-        While we have it, we add a link to the source to markdown files.
+        While we have it, we add a link to the source to markdown files and a TOC.
         Later, we will append the text of the RFCs to those files.
       */
       fs.writeFileSync(
         `mdbook/src/proposed/${rfcFile.filename.replace('text/','')}`,
         `[(source)](${pr.html_url})\n\n`
+        + "**Table of Contents**\n\n<\!-- toc -->\n\n"
       )
     }
 }

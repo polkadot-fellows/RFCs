@@ -16,3 +16,8 @@ no-section-label = true
 [output.html.font]
 enable = true
 woff = true
+
+[preprocessor.toc]
+command = "mdbook-toc"
+renderer = ["html"]
+max-level = 3

@@ -11,12 +11,13 @@ mkdir -p src/{approved,proposed}
 # https://rust-lang.github.io/mdBook/format/summary.html
 cat SUMMARY_preface.md > src/SUMMARY.md
 
-# Copy the approved RFCs markdown files, first adding a source link at the top.
+# Copy the approved RFCs markdown files, first adding a source link at the top and a TOC.
 cd ../text/
 for f in *.md;
 do
   [ -e "$f" ] || break
   echo -e "[(source)](https://github.com/polkadot-fellows/RFCs/blob/main/text/$f)\n" > "../mdbook/src/approved/$f"
+  echo -e '**Table of Contents**\n\n<!-- toc -->\n' >> "../mdbook/src/approved/$f"
   cat "$f" >> "../mdbook/src/approved/$f"
 done
 cd -
@@ -25,7 +26,7 @@ cd -
 # forming a sidebar of all contents.
 append_rfc_to_summary () {
   local file="$1"
-  local title=$(head -n 3 $file | grep '# ') # Grab the title from the contents of the file
+  local title=$(head -n 10 $file | grep '# ') # Grab the title from the contents of the file
   local title=${title#\# } # Remove the "# " prefix
   local path=${file#./src/} # Relative path, without the src prefix (format required by mdbook)
   echo "- [$title]($path)" >> src/SUMMARY.md;
