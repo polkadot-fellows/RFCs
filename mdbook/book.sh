@@ -38,10 +38,23 @@ do
   append_rfc_to_summary "$f"
 done
 
-# Add a section header, and start adding proposed RFCs.
-echo -e "\n---\n\n# Proposed\n\n" >> src/SUMMARY.md
+# Add section headers and start adding proposed RFCs.
+echo -e "\n---\n\n# Newly Proposed\n\n" >> src/SUMMARY.md
+for f in ./src/new/*.md;
+do
+  [ -e "$f" ] || break
+  append_rfc_to_summary "$f"
+done
 
+echo -e "\n---\n\n# Proposed\n\n" >> src/SUMMARY.md
 for f in ./src/proposed/*.md;
+do
+  [ -e "$f" ] || break
+  append_rfc_to_summary "$f"
+done
+
+echo -e "\n---\n\n# Stale\n\n" >> src/SUMMARY.md
+for f in ./src/stale/*.md;
 do
   [ -e "$f" ] || break
   append_rfc_to_summary "$f"

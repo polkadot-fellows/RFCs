@@ -18,11 +18,6 @@ jobs:
       - name: Checkout this repo
         uses: actions/checkout@v3
 
-      - name: Precreate necessary directories
-        run: |
-          mkdir -p mdbook/src/proposed
-          mkdir -p patches/text
-          
       - name: Download all proposed RFCs (open PRs)
         uses: actions/github-script@v7
         with:
@@ -33,19 +28,23 @@ jobs:
         # Create the proposed RFC markdown files from the patches gather in the step above.
       - run: |
           # We execute the patches, which results in markdown files created in patches/text/*.md
-          for f in ./patches/text/*.patch;
+          for f in ./patches/*.patch;
           do
             [ -e "$f" ] || break
             git apply $f
           done;
 
-          cd patches/text/
-          # We go over the created markdown files and move them for mdbook to pick up.
-          for f in *.md
+          # We go over the created markdown files and move (append) them for mdbook to pick up.
+          for status in {new,proposed,stale}
           do
-            [ -e "$f" ] || break
-            # We append the contents - because the links to source already exist there at this point.
-            cat $f >> "../../mdbook/src/proposed/$f"
+            cd ${status}-rfcs/
+            for f in *.md
+            do
+              [ -e "$f" ] || break
+              # We append the contents - because the links to source already exist there at this point.
+              cat $f >> "../mdbook/src/$status/$f"
+            done;
+            cd -
           done;
       - name: Setup mdBook binary
         uses: peaceiris/actions-mdbook@adeb05db28a0c0004681db83893d56c0388ea9ea # v1.2.0
