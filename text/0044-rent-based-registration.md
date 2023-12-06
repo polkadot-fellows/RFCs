@@ -74,11 +74,11 @@ trait Config {
 	/// This is defined as a percentage of the deposit that would be required in the regular
 	/// model.
 	#[pallet::constant]
-	type InitialRentDeposit: Get<Perbill>;
+	type RentalDepositProportion: Get<Perbill>;
 
 	/// The recurring rental cost as a percentage of the initial rental registration deposit.
 	#[pallet::constant]
-	type RecurringRentCost: Get<Perbill>;
+	type RentalRecurringProportion: Get<Perbill>;
 }
 ```
 
@@ -113,7 +113,7 @@ let validation_code_deposit = per_byte_fee.saturating_mul((validation_code.0.len
 let head_deposit = per_byte_fee.saturating_mul((genesis_head.0.len() as u32).into())
 let hash_deposit = per_byte_fee.saturating_mul(HASH_SIZE);
 
-let deposit = T::InitialRentDeposit::get().mul_ceil(validation_code_deposit)
+let deposit = T::RentalDepositProportion::get().mul_ceil(validation_code_deposit)
 	.saturating_add(T::ParaDeposit::get())
 	.saturating_add(head_deposit)
 	.saturating_add(hash_deposit)
