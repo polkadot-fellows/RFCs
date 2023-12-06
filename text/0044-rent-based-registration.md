@@ -71,18 +71,18 @@ trait Config {
 
 	/// The initial deposit amount for registering validation code.
 	///
-	/// This is defined as a percentage of the deposit that would be required in the regular
+	/// This is defined as a proportion of the deposit that would be required in the regular
 	/// model.
 	#[pallet::constant]
 	type RentalDepositProportion: Get<Perbill>;
 
-	/// The recurring rental cost as a percentage of the initial rental registration deposit.
+	/// The recurring rental cost defined as a proportion of the initial rental registration deposit.
 	#[pallet::constant]
 	type RentalRecurringProportion: Get<Perbill>;
 }
 ```
 
-Users will be able to reserve a `ParaId` and register their validation code for a percentage of the regular deposit required. However, they must also make additional rent payments at intervals of `T::RentDuration`.
+Users will be able to reserve a `ParaId` and register their validation code for a proportion of the regular deposit required. However, they must also make additional rent payments at intervals of `T::RentDuration`.
 
 For registering using the new rental system we will have to make modifications to the `paras-registrar` pallet. We should expose two new extrinsics for this:
 ```rust
