@@ -25,7 +25,7 @@ More recently, the idea of having small to medium size programs executing withou
 
 Beyond delivering additional value through the increased potential for use-cases that this flexibility allows, our motivation extends to gaining stability: a future-proof platform allowing teams to build on it without fear of high maintenance burden, continuous bitrot or a technological rug-pull at some later date. Secondly, we are motivated by reducing barriers for new teams, allowing the Polkadot platform to harness the power of the crowd which permissionless systems uniquely enable.
 
-Being extensible, the Relay-chain becomes far more open to experimentation within this paradigm than the serviceical Parachain Proof-of-Validity and Validation Function as is the case at present. Being permissionless opens Polkadot experimentation to individuals and teams beyond those core developers.
+Being extensible, the Relay-chain becomes far more open to experimentation within this paradigm than the classical Parachain Proof-of-Validity and Validation Function as is the case at present. Being permissionless opens Polkadot experimentation to individuals and teams beyond those core developers.
 
 ## Requirements
 
