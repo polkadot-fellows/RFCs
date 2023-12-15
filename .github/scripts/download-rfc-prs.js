@@ -1,4 +1,4 @@
-const fs = require('fs')
+const fs = require('fs');
 
 // The amount of days that an RFC is considered "new".
 // Counted from the creation of a given PR.
@@ -19,6 +19,7 @@ const dateDaysBefore = (daysBefore) => {
     "new-rfcs",
     "proposed-rfcs",
     "stale-rfcs",
+    "mdbook/src/approved",
     "mdbook/src/new",
     "mdbook/src/stale",
     "mdbook/src/proposed"
