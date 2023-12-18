@@ -67,7 +67,7 @@ Implementations that have the **parachain bootnode** capability should register 
 
 The value of `randomness` can be found in the `randomness` field when calling the `BabeApi_currentEpoch` function.
 
-In order to avoid downtime when the key changes, nodes should also register themselves as a secondary key that uses a value of `randomness` equal to the `randomness` field when calling `BabeApi_nextEpoch`.
+In order to avoid downtimes when the key changes, nodes should also register themselves as a secondary key that uses a value of `randomness` equal to the `randomness` field when calling `BabeApi_nextEpoch`.
 
 Implementers should be aware that their implementation of Kademlia might already hash the key before XOR'ing it. The key is not meant to be hashed twice.
 
@@ -75,9 +75,9 @@ Implementations must not register themselves if they don't fulfill the capabilit
 
 ### Secondary DHTs
 
-Implementations that have the **history provider** capability must also participate in a secondary DHT that is comprised only of nodes with that capability. The protocol name of that secondary DHT must be `/<genesis-hash>/kad/history`.
+Implementations that have the **history provider** capability must also participate in a secondary DHT that comprises only of nodes with that capability. The protocol name of that secondary DHT must be `/<genesis-hash>/kad/history`.
 
-Similarly, implementations that have the **archive provider** capability must also participate in a secondary DHT that is comprised only of nodes with that capability and whose protocol name is `/<genesis-hash>/kad/archive`.
+Similarly, implementations that have the **archive provider** capability must also participate in a secondary DHT that comprises only of nodes with that capability and whose protocol name is `/<genesis-hash>/kad/archive`.
 
 Just like implementations must not register themselves if they don't fulfill their capability yet, they must also not participate in the secondary DHT if they don't fulfill their capability yet.
 
