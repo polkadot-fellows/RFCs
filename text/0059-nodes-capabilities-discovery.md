@@ -1,4 +1,4 @@
-# RFC-0057: Add a discovery mechanism for nodes based on their capabilities
+# RFC-0059: Add a discovery mechanism for nodes based on their capabilities
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
