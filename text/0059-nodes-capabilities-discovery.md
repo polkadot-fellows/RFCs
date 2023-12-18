@@ -8,7 +8,7 @@
 
 ## Summary
 
-This RFC proposes to make the mechanism of RFC #8 more generic by introducing the concept of "capabilities".
+This RFC proposes to make the mechanism of [RFC #8](https://github.com/polkadot-fellows/RFCs/blob/main/text/0008-parachain-bootnodes-dht.md) more generic by introducing the concept of "capabilities".
 
 Implementations can implement certain "capabilities", such as serving old block headers or being a parachain bootnode.
 
