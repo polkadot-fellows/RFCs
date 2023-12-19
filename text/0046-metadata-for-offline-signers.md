@@ -8,7 +8,7 @@
 
 ## Summary
 
-Add a metadata digest value (33-byte constant within fixed `spec_version`) to Signed Extensions to supplement signer party with proof of correct extrinsic interpretation. The digest value is generated once before release and is well-known and deterministic. The digest mechanism is designed to be modular and flexible and to support partial metadata transfer as needed by the signing party's extrinsic decoding mechanism and taking into account signing devices potentially limited communication bandwidth and memory capacity.
+Add a metadata digest value (33-byte constant within fixed `spec_version`) to Signed Extensions to supplement signer party with proof of correct extrinsic interpretation. The digest value is generated once before release and is well-known and deterministic. The digest mechanism is designed to be modular and flexible. It also supports partial metadata transfer as needed by the signing party's extrinsic decoding mechanism. This considers signing devices potentially limited communication bandwidth and/or memory capacity.
 
 ## Motivation
 
@@ -37,7 +37,8 @@ Some cryptographically strong digest of metadata MAY be included into signable b
  - Digest MUST be deterministic with respect to metadata;
  - Digest MUST be cryptographically strong against pre-image, both first and second;
  - Extra-metadata information necessary for extrinsic decoding and constant within runtime version MUST be included in digest;
- - Digest format SHOULD be versioned to allow rapid withdrawal of cold signing devices in case severe security vulnerability is found in shortener mechanism;
+ - It SHOULD be possible to quickly withdraw offline signing mechanism without access to cold signing devices;
+ - Digest format SHOULD be versioned.
  - Work necessary for proving metadata authenticity MAY be omitted at discretion of signer device design (to support automation tools).
 
 #### Reduce metadata size
@@ -50,6 +51,8 @@ Metadata should be stripped from parts that are not necessary to parse a signabl
 
 ## Stakeholders
 
+All chain teams are stakeholders, as implementing this feature would require timely effort on their side and would impact compatibility with older tools.
+
 This feature is essential for **all** offline signer tools; many regular signing tools might make use of it. In general, this RFC greatly improves security of any network implementing it, as many governing keys are used with offline signers.
 
 Implementing this RFC would remove requirement to maintain metadata portals manually, as task of metadata verification would be effectively moved to consensus mechanism of the chain.
@@ -60,7 +63,17 @@ Detailed description of metadata shortening and digest process is provided in [m
 
 ### Metadata descriptor
 
-Values for metadata shortening protocol version, `ExtrinsicMetadata`, SCALE-encoded `spec_version` and `spec_name` Strings, `u16` base58 prefix, `u8` decimals value, SCALE-encoded token unit String, should be prepared and combined as metadata descriptor.
+Values for:
+
+1. `u8` metadata shortening protocol version, 
+2. SCALE-encoded `ExtrinsicMetadata`,
+3. SCALE-encoded `spec_version` `String`
+4. SCALE-encoded `spec_name` String,
+5. `u16` base58 prefix,
+6. `u8` decimals value or `0u8` if no units are defined,
+7. SCALE-encoded token unit String or empty string if no base units are defined,
+
+constitute metadata descriptor. This is minimal information sufficient to decode any signable transaction. Proof that the signing device was presented with genuine subset of Metadata Descriptor should be validated by chain.
 
 ### Metadata modularization
 
@@ -148,7 +161,6 @@ This project was developed as Polkadot Treasury grant; relevant development link
 
 ## Unresolved Questions
 
-1. Should hash inclusion bit be added to signed extensions?
 2. How would polkadot-js handle the transition?
 3. Where would non-rust tools like Ledger apps get shortened metadata content?
 
