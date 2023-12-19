@@ -17,28 +17,12 @@ jobs:
     steps:
       - name: Checkout this repo
         uses: actions/checkout@v3
-
-      - name: Download all proposed RFCs (open PRs)
+        # Gather mdbook source files - approved (merged) files, and open PRs.
+      - name: Gather mdbook sources
         uses: actions/github-script@v7
         with:
           script: |
-            const script = require('.github/scripts/download-rfc-prs.js')
-            await script({github, context})
-
-        # Create the proposed RFC markdown files from the patches gathered in the step above.
-      - run: |
-          # We execute the patches, which results in markdown files created in patches/text/*.md
-          for f in ./patches/*.patch;
-          do
-            [ -e "$f" ] || break
-            git apply $f
-          done;
-        # Gather source files - approved (merged) files, and files created in the previous steps.
-      - name: Gather markdown files into mdbook source directory
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const script = require('.github/scripts/gather-markdown-files.js')
+            const script = require('.github/scripts/gather-mdbook-sources.js')
             await script({github, context})
       - name: Build the mdbook SUMMARY.md
         uses: actions/github-script@v7
