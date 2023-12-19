@@ -4,9 +4,8 @@ on:
   push:
     branches:
       - main
-      - rzadp/rfc-book
-  # schedule:
-  #   - cron: "0 0 * * *" # Once a day
+  schedule:
+    - cron: "0 0 * * *" # Once a day
 
 jobs:
   mdbook:
