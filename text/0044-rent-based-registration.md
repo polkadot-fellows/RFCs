@@ -157,7 +157,7 @@ To enable parachain re-registration, we should introduce a new extrinsic in the 
 
 ## Drawbacks
 
-A drawback of this RFC is that it does not reduce the cost of reserving a `ParaId`. This decision is based on the desire to avoid additional complexity in the system, as the current reservation cost is already considered reasonable.
+This RFC does not alter the process of reserving a `ParaId`, and therefore, it does not propose reducing it, even though such a reduction could be beneficial.
 
 Even though this RFC doesn't delve into the specifics of the configuration values for parachain registration but rather focuses on the mechanism, configuring it carelessly could lead to potential problems.
 
