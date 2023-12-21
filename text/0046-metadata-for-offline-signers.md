@@ -153,7 +153,7 @@ The proposal was optimized for cold storage wallets usage with minimal impact on
 
 ### Compatibility
 
-Proposal in this form is not compatible with older toold that do not implement proper MetadataV14 self-descriptive features; those would have to be upgraded to include a new signed extensions field.
+Proposal in this form is not compatible with older tools that do not implement proper MetadataV14 self-descriptive features; those would have to be upgraded to include a new signed extensions field.
 
 ## Prior Art and References
 
