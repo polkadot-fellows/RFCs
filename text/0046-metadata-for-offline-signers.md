@@ -79,7 +79,7 @@ constitute metadata descriptor. This is minimal information sufficient to decode
 
 1. Types registry is stripped from `docs` fields.
 2. Types records are separated into chunks, with enum variants being individual chunks differing by variant index; each chunk consisting of `id` (same as in full metadata registry) and SCALE-encoded 'Type' description (reduced to 1-variant enum for enum variants). Enums with 0 variants are treated as regular types.
-3. Chunks are sorted by `id` in accending order; chunks with same `id` are sorted by enum vainant index in accending order.
+3. Chunks are sorted by `id` in ascending order; chunks with same `id` are sorted by enum variant index in ascending order.
 
 ### Merging protocol
 
