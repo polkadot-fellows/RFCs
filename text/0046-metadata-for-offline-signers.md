@@ -157,7 +157,7 @@ Proposal in this form is not compatible with older toold that do not implement p
 
 ## Prior Art and References
 
-This project was developed as Polkadot Treasury grant; relevant development links are located in [metadata-offline-project](https://github.com/Alzymologist/metadata-offline-project) repository.
+This project was developed upon a Polkadot Treasury grant; relevant development links are located in [metadata-offline-project](https://github.com/Alzymologist/metadata-offline-project) repository.
 
 ## Unresolved Questions
 
