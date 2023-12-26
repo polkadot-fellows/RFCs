@@ -61,25 +61,117 @@ Implementing this RFC would remove requirement to maintain metadata portals manu
 
 Detailed description of metadata shortening and digest process is provided in [metadata-shortener](https://github.com/Alzymologist/metadata-shortener) crate (see `cargo doc --open` and examples). Below are presented algorithms of the process.
 
-### Metadata descriptor
+### Definitions
+
+#### Metadata structure
+
+Metadata in general consists of four sections:
+
+1. Types registry
+2. Pallets
+3. Extrinsic metadata
+4. Runtime type
+
+Of these, only sections 1-3 contain information required for extrinsic decoding. The most important section is (1) Types registry, that is mostly used in extrinsic decoding. It is also the largest part, thus it is modularized for fractional transmission. Part (2) contains runtime version and is otherwise useless for transaction decoding; thus its contents are reduced to this parameter and included into Metadata Descriptor. Part (3) is included into Metadata Descriptor verbatim.
+
+#### Metadata descriptor
 
 Values for:
 
 1. `u8` metadata shortening protocol version, 
 2. SCALE-encoded `ExtrinsicMetadata`,
-3. SCALE-encoded `spec_version` `String`
-4. SCALE-encoded `spec_name` String,
+3. SCALE-encoded `spec_version` `String`,
+4. SCALE-encoded `spec_name` `String`,
 5. `u16` base58 prefix,
 6. `u8` decimals value or `0u8` if no units are defined,
-7. SCALE-encoded token unit String or empty string if no base units are defined,
+7. SCALE-encoded `tokenSymbol` `String` defined on chain to identify the name of currency (available for example through `system.properties()` RPC call) or empty string if no base units are defined,
 
-constitute metadata descriptor. This is minimal information sufficient to decode any signable transaction. Proof that the signing device was presented with genuine subset of Metadata Descriptor should be validated by chain.
+```
+struct MetadataDescriptor { // really a scale-encoded enum, thus first field is enum value - only 0x01 currently supported.
+  protocol_version: u8,
+  extrinsic_metadata: Vec<u8>, // SCALE from `ExtrinsicMetadata
+  spec_version: Vec<u8>, // SCALE form `String`
+  spec_name: Vec<u8>, // SCALE from `String`
+  base58_prefix: u16,
+  decimals: u8,
+  token_symbol: Vec<u8>, // SCALE from `String`
+}
+```
+
+constitute metadata descriptor. This is minimal information that is, together with (shortened) types registry, sufficient to decode any signable transaction.
+
+#### Merkle tree
+
+A **Complete Binary Merkle Tree** (**CBMT**) is proposed as digest structure.
+
+Every node of the proposed tree has a 32-bit value.
+
+A terminal node of the tree we call **leaf**. Its value is input for digest.
+
+The top node of the tree we call **root**.
+
+All node values for non-leave nodes are not terminal are computed through non-commutative **merge** procedure of child nodes.
+
+In CBMT, all layers must be populated, except for the last one, that must have complete filling from the left.
+
+Nodes are numbered top-down and left-to-right starting with 0 at the top of tree.
+
+```
+Example 8-node tree
+
+        0
+     /     \
+    1       2
+   / \     / \
+  3   4   5   6
+ / \
+7   8
+
+Nodes 4, 5, 6, 7, 8 are leaves
+Node 0 is root
+
+```
+
+### General flow
+
+1. The metadata is converted into lean modular form (vector of chunks)
+2. A Merkle tree is constructed from the metadata chunks
+3. A root of tree (as a left element) is merged with Metadata Descriptor (as a right element)
+4. Resulting value is a constant to be included in `additionalSigned` to prove that the metadata seen by cold device is genuine
 
 ### Metadata modularization
 
 1. Types registry is stripped from `docs` fields.
 2. Types records are separated into chunks, with enum variants being individual chunks differing by variant index; each chunk consisting of `id` (same as in full metadata registry) and SCALE-encoded 'Type' description (reduced to 1-variant enum for enum variants). Enums with 0 variants are treated as regular types.
 3. Chunks are sorted by `id` in ascending order; chunks with same `id` are sorted by enum variant index in ascending order.
+
+```
+types_registry = metadataV14.types
+modularized_registry = EmptyVector<id, type>
+for (id, type) in types.registry.iterate_enumerate {
+  type.doc = Null
+  if (type is ReduceableEnum) { // false for 0-variant enums
+    for variant in type.variants.iterate {
+      variant_type = Type {
+        path: type.path
+        type_params: Null
+        type_def: TypeDef::Variant(variants: [variant])
+      }
+      modularized_registry.push(id, variant_type)
+    }
+  } else {
+    modularized_registry.push(id, type)
+  }
+}
+
+modularized_registry.sort(|a, b| {
+    if a.id == b.id { //only possible for variants
+      a.variant_index > b.variant_index
+    } else { a.id > b.id }
+  }
+)
+
+```
 
 ### Merging protocol
 
@@ -93,13 +185,25 @@ constitute metadata descriptor. This is minimal information sufficient to decode
 4. Right node and then left node is popped from the front of the nodes queue and merged; the result is sent to the end of the queue.
 5. Step (4) is repeated until only one node remains; this is tree root.
 
+```
+Resulting tree for metadata consisting of 5 nodes (numbered from 0 to 4):
+
+       root
+     /     \
+    *       *
+   / \     / \
+  *   0   1   2
+ / \
+3   4
+```
+
 ### Digest
 
 1. Blake3 hash is computed for each chunk of modular short metadata registry.
 3. Complete Binary Merkle Tree is constructed as described above.
 4. Root hash of this tree (left) is merged with metadata descriptor blake3 hash (right); this is metadata digest.
 
-Product of concatenation of protocol version number with resulting metadata digest MUST be included into Signed Extensions.
+Version number and corresponding resulting metadata digest MUST be included into Signed Extensions as specified in Chain Verification section below.
 
 ### Shortening
 
