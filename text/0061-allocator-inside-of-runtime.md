@@ -19,7 +19,7 @@ Since this RFC define a new way for allocator, we now regard the old one as `leg
 As we all know, since the allocator implementation details are defined by the substrate client, parachain/parathread cannot customize memory allocator algorithm, so the new specification allows the runtime to customize memory allocation, and then export the allocator function according to the specification for the client side to use.
 Another benefit is that some new host functions can be designed without allocating memory on the client, which may have potential performance improvements. Also it will help provide a unified and clean specification if substrate runtime support multi-targets(e.g. RISC-V).
 There is also a potential benefit. Many programming languages that support compilation to wasm may not be friendly to supporting external allocator. This is beneficial for other programming languages ​​to enter the substrate runtime ecosystem.
-The last and most important benefit is that for offchain context execution, the runtime can fully support pure wasm. What this means here is that all imported host functions could not actually be called (as stub functions), then the various verification logic of the runtime can be converted into pure wasm, which provides the possibility for the substrate runtime to run block verification in other environments ( such as in browsers and other non-substrate environments).
+The last and most important benefit is that for offchain context execution, the runtime can fully support pure wasm. What this means here is that all imported host functions could not actually be called (as stub functions), then the various verification logic of the runtime can be converted into pure wasm, which provides the possibility for the substrate runtime to run block verification in other environments (such as in browsers and other non-substrate environments).
 
 ## Stakeholders
 
@@ -58,7 +58,7 @@ Their signatures are:
 (func $realloc (param $addr i32) (param $size i32) (param $new_size i32) (result i32))
 ```
 
-Note: `dealloc`/`realloc` is not used currently, but for the functional integrity.
+Note: `dealloc`/`realloc` is not used in substrate side currently, but for the functional integrity.
 
 The following imports are disabled.
 
