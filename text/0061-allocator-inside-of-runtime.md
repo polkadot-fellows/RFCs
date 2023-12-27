@@ -72,7 +72,7 @@ The two kind of allocators(`leagcy` and `v1`) cannot know each other, and import
 The following export could be removed. The client side no need to know heap base.
 
 ```wat
-  (export "__heap_base" (global 2))
+(export "__heap_base" (global 2))
 ```
 
 ### Client side spec
