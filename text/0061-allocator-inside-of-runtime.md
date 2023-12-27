@@ -2,7 +2,7 @@
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
-| **Start Date**  | 31 December 2023                                            |
+| **Start Date**  | 27 December 2023                                            |
 | **Description** | Supporting runtime built-in allocator makes the substrate runtime more versatile |
 | **Authors**     | Jiahao Ye |
 
