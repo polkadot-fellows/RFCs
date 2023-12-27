@@ -102,8 +102,6 @@ Update template runtime to enable `v1` spec. Once the dev network runs well, it 
 
 ## Performance, Ergonomics, and Compatibility
 
-For `Compatibility`, it's 100% compatible. Only some runtime configs and executor configs need to be depreacted.
-
 ### Performance
 
 As the above says, not obvious impact about performance. And `polkadot-sdk` could offer the best practice allocator for all chains.
