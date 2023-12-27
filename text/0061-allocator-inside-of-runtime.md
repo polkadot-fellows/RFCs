@@ -111,16 +111,14 @@ Third party also could customized by theirself. So the performance could be impr
 
 Only for runtime developer, Just need to import a new crate and enable a new feature. Maybe it's convienient for other wasm-target language to implment.
 
-If the proposal alters exposed interfaces to developers or end-users, which types of usage patterns have been optimized for?
-
 ### Compatibility
 
 It's 100% compatible. Only Some runtime configs and executor configs need to be depreacted.
 
 For support new runtime spec, we MUST upgrade the client binary to support new spec of client part firstly.
 
-Add an optional primtive crate to enable the version 1 spec and disable the legacy allocator by cargo feature.
-For the first year, disable the v1 by default, and enable it by default start in the next year.
+We SHALL add an optional primtive crate to enable the version 1 spec and disable the legacy allocator by cargo feature.
+For the first year, we SHALL disable the v1 by default, and enable it by default start in the next year.
 
 ## Prior Art and References
 
