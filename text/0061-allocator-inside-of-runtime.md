@@ -8,7 +8,7 @@
 
 ## Summary
 
-Currently, substrate runtime use an simple allocator defined by host side. Every runtime must
+Currently, substrate runtime use an simple allocator defined by host side. Every runtime MUST
 import these allocator functions for normal execution. This situation make runtime code not versatile enough.
 
 So this RFC proposes to define a new spec for allocator part to make substrate runtime more generic.
@@ -31,7 +31,7 @@ No attempt was made at convincing stakeholders.
 
 This section contains a list of functions should be exported by substrate runtime.
 
-We define the spec as version 1, so the following `dummy` function `v1` must be exported to hint
+We define the spec as version 1, so the following `dummy` function `v1` MUST be exported to hint
 client that runtime is using version 1 spec, otherwise rollback to `legacy` allocator.
 The function should never be used, and its name is only for version checking.
 
@@ -119,7 +119,7 @@ If the proposal alters exposed interfaces to developers or end-users, which type
 
 It's 100% compatible. Only Some runtime configs and executor configs need to be depreacted.
 
-For support new runtime spec, we must upgrade the client binary to support new spec of client part firstly.
+For support new runtime spec, we MUST upgrade the client binary to support new spec of client part firstly.
 
 Add an optional primtive crate to enable the version 1 spec and disable the legacy allocator by cargo feature.
 For the first year, disable the v1 by default, and enable it by default start in the next year.
