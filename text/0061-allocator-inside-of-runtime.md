@@ -131,6 +131,6 @@ None at this time.
 
 ## Future Directions and Related Material
 
-The content discussed with RFC xxx is basically orthogonal, but it could still be considered together, and it is preferred that this rfc be implmentented first.
+The content discussed with [RFC-0004](https://github.com/polkadot-fellows/RFCs/pull/4) is basically orthogonal, but it could still be considered together, and it is preferred that this rfc be implmentented first.
 
 This feature could make substrate runtime be easier supported by other languages and integreted into other ecosystem.
