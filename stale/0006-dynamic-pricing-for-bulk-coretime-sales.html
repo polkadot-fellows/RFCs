@@ -1,0 +1,397 @@
+
+<!DOCTYPE HTML>
+<html lang="en" class="polkadot" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>RFC-0006: Dynamic Pricing for Bulk Coretime Sales - Polkadot Fellowship RFCs</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="An online book of RFCs approved or proposed within the Polkadot Fellowship.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/polkadot.css">
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "polkadot" : "polkadot";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('polkadot')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../introduction.html">Introduction</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Approved</li><li class="chapter-item expanded "><a href="../approved/0001-agile-coretime.html">RFC-1: Agile Coretime</a></li><li class="chapter-item expanded "><a href="../approved/0005-coretime-interface.html">RFC-5: Coretime Interface</a></li><li class="chapter-item expanded "><a href="../approved/0007-system-collator-selection.html">RFC-0007: System Collator Selection</a></li><li class="chapter-item expanded "><a href="../approved/0008-parachain-bootnodes-dht.html">RFC-0008: Store parachain bootnodes in relay chain DHT</a></li><li class="chapter-item expanded "><a href="../approved/0012-process-for-adding-new-collectives.html">RFC-0012: Process for Adding New System Collectives</a></li><li class="chapter-item expanded "><a href="../approved/0014-improve-locking-mechanism-for-parachains.html">RFC-0014: Improve locking mechanism for parachains</a></li><li class="chapter-item expanded "><a href="../approved/0022-adopt-encointer-runtime.html">RFC-0022: Adopt Encointer Runtime</a></li><li class="chapter-item expanded "><a href="../approved/0032-minimal-relay.html">RFC-0032: Minimal Relay</a></li><li class="chapter-item expanded "><a href="../approved/0050-fellowship-salaries.html">RFC-0050: Fellowship Salaries</a></li><li class="chapter-item expanded "><a href="../approved/0056-one-transaction-per-notification.html">RFC-0056: Enforce only one transaction per notification</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Newly Proposed</li><li class="chapter-item expanded "><a href="../new/0062-lowering-existential-deposit-on-assethub.html">RFC-0062: Lowering Existential Deposit on  Asset Hub for Polkadot</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Proposed</li><li class="chapter-item expanded "><a href="../proposed/0004-remove-unnecessary-allocator-usage.html">RFC-0004: Remove the host-side runtime memory allocator</a></li><li class="chapter-item expanded "><a href="../proposed/0026-sassafras-consensus.html">RFC-0026: Sassafras Consensus Protocol</a></li><li class="chapter-item expanded "><a href="../proposed/0034-xcm-absolute-location-account-derivation.html">RFC-34: XCM Absolute Location Account Derivation</a></li><li class="chapter-item expanded "><a href="../proposed/0042-extrinsics-state-version.html">RFC-0042: Add System version that replaces StateVersion on RuntimeVersion</a></li><li class="chapter-item expanded "><a href="../proposed/0043-storage-proof-size-hostfunction.html">RFC-0043: Introduce storage_proof_size Host Function for Improved Parachain Block Utilization</a></li><li class="chapter-item expanded "><a href="../proposed/0044-rent-based-registration.html">RFC-0044: Rent based registration model</a></li><li class="chapter-item expanded "><a href="../proposed/0046-metadata-for-offline-signers.html">RFC-0000: Metadata for offline signers</a></li><li class="chapter-item expanded "><a href="../proposed/0047-assignment-of-availability-chunks.html">RFC-0047: Assignment of availability chunks to validators</a></li><li class="chapter-item expanded "><a href="../proposed/0059-nodes-capabilities-discovery.html">RFC-0059: Add a discovery mechanism for nodes based on their capabilities</a></li><li class="chapter-item expanded "><a href="../proposed/0061-allocator-inside-of-runtime.html">RFC-0061: Support allocator inside of runtime</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Stale</li><li class="chapter-item expanded "><a href="../stale/0006-dynamic-pricing-for-bulk-coretime-sales.html" class="active">RFC-0006: Dynamic Pricing for Bulk Coretime Sales</a></li><li class="chapter-item expanded "><a href="../stale/0009-improved-net-light-client-requests.html">RFC-0009: Improved light client requests networking protocol</a></li><li class="chapter-item expanded "><a href="../stale/000x-assethub.html">RFC-0000: Lowering NFT Deposits on Polkadot and Kusama Asset Hubs</a></li><li class="chapter-item expanded "><a href="../stale/0010-burn-coretime-revenue.html">RFC-0010: Burn Coretime Revenue</a></li><li class="chapter-item expanded "><a href="../stale/0011-add-new-path-to-account-creation-on-asset-hubs.html">RFC-0011: Add New Path to Account Creation on Asset Hubs</a></li><li class="chapter-item expanded "><a href="../stale/0013-prepare-blockbuilder-and-core-runtime-apis-for-mbms.html">RFC-0013: Prepare BlockBuilder and Core runtime APIs for MBMs</a></li><li class="chapter-item expanded "><a href="../stale/0015-market-design-revisit.html">RFC-0015: Market Design Revisit</a></li><li class="chapter-item expanded "><a href="../stale/0020-treasurer-track-confirmation-period-duration-modification.html">RFC-0020: Treasurer Track Confirmation Period Duration Modification</a></li><li class="chapter-item expanded "><a href="../stale/0035-conviction-voting-delegation-modifications.html"> RFC-0035: Conviction Voting Delegation Modifications</a></li><li class="chapter-item expanded "><a href="../stale/0048-session-keys-runtime-api.html">RFC-0048: Generate ownership proof for SessionKeys</a></li><li class="chapter-item expanded "><a href="../stale/0054-remove-heap-pages.html">RFC-0054: Remove the concept of "heap pages" from the client</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="polkadot">Polkadot</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Polkadot Fellowship RFCs</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <p><a href="https://github.com/polkadot-fellows/RFCs/pull/6">(source)</a></p>
+<p><strong>Table of Contents</strong></p>
+<ul>
+<li><a href="#rfc-0006-dynamic-pricing-for-bulk-coretime-sales">RFC-0006: Dynamic Pricing for Bulk Coretime Sales</a>
+<ul>
+<li><a href="#summary">Summary</a></li>
+<li><a href="#motivation">Motivation</a>
+<ul>
+<li><a href="#requirements">Requirements</a></li>
+</ul>
+</li>
+<li><a href="#stakeholders">Stakeholders</a></li>
+<li><a href="#explanation">Explanation</a>
+<ul>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#parameters">Parameters</a></li>
+<li><a href="#function">Function</a></li>
+<li><a href="#pseudo-code">Pseudo-code</a></li>
+<li><a href="#properties-of-the-curve">Properties of the Curve</a></li>
+<li><a href="#example-configurations">Example Configurations</a></li>
+</ul>
+</li>
+<li><a href="#drawbacks">Drawbacks</a></li>
+<li><a href="#prior-art-and-references">Prior Art and References</a></li>
+<li><a href="#future-possibilities">Future Possibilities</a></li>
+<li><a href="#references">References</a></li>
+</ul>
+</li>
+</ul>
+<h1 id="rfc-0006-dynamic-pricing-for-bulk-coretime-sales"><a class="header" href="#rfc-0006-dynamic-pricing-for-bulk-coretime-sales">RFC-0006: Dynamic Pricing for Bulk Coretime Sales</a></h1>
+<div class="table-wrapper"><table><thead><tr><th></th><th></th></tr></thead><tbody>
+<tr><td><strong>Start Date</strong></td><td>July 09, 2023</td></tr>
+<tr><td><strong>Description</strong></td><td>A dynamic pricing model to adapt the regular price for bulk coretime sales</td></tr>
+<tr><td><strong>Authors</strong></td><td>Tommi Enenkel (Alice und Bob)</td></tr>
+<tr><td><strong>License</strong></td><td>MIT</td></tr>
+</tbody></table>
+</div>
+<h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
+<p>This RFC proposes a dynamic pricing model for the sale of Bulk Coretime on the Polkadot UC. The proposed model updates the regular price of cores for each sale period, by taking into account the number of cores sold in the previous sale, as well as a limit of cores and a target number of cores sold. It ensures a minimum price and limits price growth to a maximum price increase factor, while also giving govenance control over the steepness of the price change curve. It allows governance to address challenges arising from changing market conditions and should offer predictable and controlled price adjustments.</p>
+<p>Accompanying visualizations are provided at [1].</p>
+<h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
+<p>RFC-1 proposes periodic Bulk Coretime Sales as a mechanism to sell continouos regions of blockspace (suggested to be 4 weeks in length). A number of Blockspace Regions (compare RFC-1 &amp; RFC-3) are provided for sale to the Broker-Chain each period and shall be sold in a way that provides value-capture for the Polkadot network. The exact pricing mechanism is out of scope for RFC-1 and shall be provided by this RFC. </p>
+<p>A dynamic pricing model is needed. A limited number of Regions are offered for sale each period. The model needs to find the price for a period based on supply and demand of the previous period.</p>
+<p>The model shall give Coretime consumers predictability about upcoming price developments and confidence that Polkadot governance can adapt the pricing model to changing market conditions.</p>
+<h3 id="requirements"><a class="header" href="#requirements">Requirements</a></h3>
+<ol>
+<li>The solution SHOULD provide a dynamic pricing model that increases price with growing demand and reduces price with shrinking demand.</li>
+<li>The solution SHOULD have a slow rate of change for price if the number of Regions sold is close to a given sales target and increase the rate of change as the number of sales deviates from the target.</li>
+<li>The solution SHOULD provide the possibility to always have a minimum price per Region.</li>
+<li>The solution SHOULD provide a maximum factor of price increase should the limit of Regions sold per period be reached.</li>
+<li>The solution should allow governance to control the steepness of the price function</li>
+</ol>
+<h2 id="stakeholders"><a class="header" href="#stakeholders">Stakeholders</a></h2>
+<p>The primary stakeholders of this RFC are:</p>
+<ul>
+<li>Protocol researchers and evelopers</li>
+<li>Polkadot DOT token holders</li>
+<li>Polkadot parachains teams</li>
+<li>Brokers involved in the trade of Bulk Coretime</li>
+</ul>
+<h2 id="explanation"><a class="header" href="#explanation">Explanation</a></h2>
+<h3 id="overview"><a class="header" href="#overview">Overview</a></h3>
+<p>The dynamic pricing model sets the new price based on supply and demand in the previous period. The model is a function of the number of Regions sold, piecewise-defined by two power functions.</p>
+<ul>
+<li>The left side ranges from 0 to the target. It represents situations where demand was lower than the target.</li>
+<li>The right side ranges from the target to limit. It represents situations where demand was higher than the target.</li>
+</ul>
+<p>The curve of the function forms a plateau around the target and then falls off to the left and rises up to the right. The shape of the plateau can be controlled via a scale factor for the left side and right side of the function respectively.</p>
+<h3 id="parameters"><a class="header" href="#parameters">Parameters</a></h3>
+<p>From here on, we will also refer to Regions sold as 'cores' to stay congruent with RFC-1.</p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Suggested Value</th><th>Description</th><th>Constraints</th></tr></thead><tbody>
+<tr><td><code>BULK_LIMIT</code></td><td>45</td><td>The maximum number of cores being sold</td><td><code>0 &lt; BULK_LIMIT</code></td></tr>
+<tr><td><code>BULK_TARGET</code></td><td>30</td><td>The target number of cores being sold</td><td><code>0 &lt; BULK_TARGET &lt;= BULK_LIMIT</code></td></tr>
+<tr><td><code>MIN_PRICE</code></td><td>1</td><td>The minimum price a core will always cost.</td><td><code>0 &lt; MIN_PRICE</code></td></tr>
+<tr><td><code>MAX_PRICE_INCREASE_FACTOR</code></td><td>2</td><td>The maximum factor by which the price can change.</td><td><code>1 &lt; MAX_PRICE_INCREASE_FACTOR</code></td></tr>
+<tr><td><code>SCALE_DOWN</code></td><td>2</td><td>The steepness of the left side of the function.</td><td><code>0 &lt; SCALE_DOWN</code></td></tr>
+<tr><td><code>SCALE_UP</code></td><td>2</td><td>The steepness of the right side of the function.</td><td><code>0 &lt; SCALE_UP</code></td></tr>
+</tbody></table>
+</div>
+<h3 id="function"><a class="header" href="#function">Function</a></h3>
+<pre><code class="language-math">P(n) = \begin{cases} 
+    (P_{\text{old}} - P_{\text{min}}) \left(1 - \left(\frac{T - n}{T}\right)^d\right) + P_{\text{min}} &amp; \text{if } n \leq T \\
+    ((F - 1) \cdot P_{\text{old}} \cdot \left(\frac{n - T}{L - T}\right)^u) + P_{\text{old}} &amp; \text{if } n &gt; T 
+\end{cases}
+</code></pre>
+<ul>
+<li>$P_{\text{old}}$ is the <code>old_price</code>, the price of a core in the previous period.</li>
+<li>$P_{\text{min}}$ is the <code>MIN_PRICE</code>, the minimum price a core will always cost.</li>
+<li>$F$ is the <code>MAX_PRICE_INCREASE_FACTOR</code>, the factor by which the price maximally can change from one period to another.</li>
+<li>$d$ is the <code>SCALE_DOWN</code>, the steepness of the left side of the function.</li>
+<li>$u$ is the <code>SCALE_UP</code>, the steepness of the right side of the function.</li>
+<li>$T$ is the <code>BULK_TARGET</code>, the target number of cores being sold.</li>
+<li>$L$ is the <code>BULK_LIMIT</code>, the maximum number of cores being sold.</li>
+<li>$n$ is <code>cores_sold</code>, the number of cores being sold.</li>
+</ul>
+<h4 id="left-side"><a class="header" href="#left-side">Left side</a></h4>
+<p>The left side is a power function that describes an increasing concave downward curvature that approaches <code>old_price</code>. We realize this by using the form $y = a(1 - x^d)$, usually used as a downward sloping curve, but in our case flipped horizontally by letting the argument $x = \frac{T-n}{T}$ decrease with $n$, doubly inversing the curve.</p>
+<p>This approach is chosen over a decaying exponential because it let's us a better control the shape of the plateau, especially allowing us to get a straight line by setting <code>SCALE_DOWN</code> to $1$.</p>
+<h4 id="ride-side"><a class="header" href="#ride-side">Ride side</a></h4>
+<p>The right side is a power function of the form $y = a(x^u)$.</p>
+<h3 id="pseudo-code"><a class="header" href="#pseudo-code">Pseudo-code</a></h3>
+<pre><code>NEW_PRICE := IF CORES_SOLD &lt;= BULK_TARGET THEN
+    (OLD_PRICE - MIN_PRICE) * (1 - ((BULK_TARGET - CORES_SOLD)^SCALE_DOWN / BULK_TARGET^SCALE_DOWN)) + MIN_PRICE
+ELSE
+    ((MAX_PRICE_INCREASE_FACTOR - 1) * OLD_PRICE * ((CORES_SOLD - BULK_TARGET)^SCALE_UP / (BULK_LIMIT - BULK_TARGET)^SCALE_UP)) + OLD_PRICE
+END IF
+</code></pre>
+<h3 id="properties-of-the-curve"><a class="header" href="#properties-of-the-curve">Properties of the Curve</a></h3>
+<h4 id="minimum-price"><a class="header" href="#minimum-price">Minimum Price</a></h4>
+<p>We introduce <code>MIN_PRICE</code> to control the minimum price.</p>
+<p>The left side of the function shall be allowed to come close to 0 if cores sold approaches 0. The rationale is that if there are actually 0 cores sold, the previous sale price was too high and the price needs to adapt quickly.</p>
+<h4 id="price-forms-a-plateau-around-the-target"><a class="header" href="#price-forms-a-plateau-around-the-target">Price forms a plateau around the target</a></h4>
+<p>If the number of cores is close to <code>BULK_TARGET</code>, less extreme price changes might be sensible. This ensures that a drop in sold cores or an increase doesn’t lead to immediate price changes, but rather slowly adapts. Only if more extreme changes in the number of sold cores occur, does the price slope increase.</p>
+<p>We introduce <code>SCALE_DOWN</code> and <code>SCALE_UP</code> to control for the steepness of the left and the right side of the function respectively.</p>
+<h4 id="max-price-increase-factor"><a class="header" href="#max-price-increase-factor">Max price increase factor</a></h4>
+<p>We introduce <code>MAX_PRICE_INCREASE_FACTOR</code> as the factor that controls how much the price may increase from one period to another.</p>
+<p>Introducing this variable gives governance an additional control lever and avoids the necessity for a future runtime upgrade.</p>
+<h3 id="example-configurations"><a class="header" href="#example-configurations">Example Configurations</a></h3>
+<h4 id="baseline"><a class="header" href="#baseline">Baseline</a></h4>
+<p>This example proposes the baseline parameters. If not mentioned otherwise, other examples use these values. </p>
+<p>The minimum price of a core is 1 DOT, the price can double every 4 weeks. Price change around <code>BULK_TARGET</code> is dampened slightly.</p>
+<pre><code>BULK_TARGET = 30
+BULK_LIMIT = 45
+MIN_PRICE = 1
+MAX_PRICE_INCREASE_FACTOR = 2
+SCALE_DOWN = 2
+SCALE_UP = 2
+OLD_PRICE = 1000
+</code></pre>
+<h4 id="more-aggressive-pricing"><a class="header" href="#more-aggressive-pricing">More aggressive pricing</a></h4>
+<p>We might want to have a more aggressive price growth, allowing the price to triple every 4 weeks and have a linear increase in price on the right side.</p>
+<pre><code>BULK_TARGET = 30
+BULK_LIMIT = 45
+MIN_PRICE = 1
+MAX_PRICE_INCREASE_FACTOR = 3
+SCALE_DOWN = 2
+SCALE_UP = 1
+OLD_PRICE = 1000
+</code></pre>
+<h4 id="conservative-pricing-to-ensure-quick-corrections-in-an-affluent-market"><a class="header" href="#conservative-pricing-to-ensure-quick-corrections-in-an-affluent-market">Conservative pricing to ensure quick corrections in an affluent market</a></h4>
+<p>If governance considers the risk that a sudden surge in DOT price might price chains out from bulk coretime markets, it can ensure the model quickly reacts to a quick drop in demand, by setting 0 &lt; SCALE_DOWN &lt; 1 and setting the max price increase factor more conservatively.</p>
+<pre><code>BULK_TARGET = 30
+BULK_LIMIT = 45
+MIN_PRICE = 1
+MAX_PRICE_INCREASE_FACTOR = 1.5
+SCALE_DOWN = 0.5
+SCALE_UP = 2
+OLD_PRICE = 1000
+</code></pre>
+<h4 id="linear-pricing"><a class="header" href="#linear-pricing">Linear pricing</a></h4>
+<p>By setting the scaling factors to 1 and potentially adapting the max price increase, we can achieve a linear function</p>
+<pre><code>BULK_TARGET = 30
+BULK_LIMIT = 45
+MIN_PRICE = 1
+MAX_PRICE_INCREASE_FACTOR = 1.5
+SCALE_DOWN = 1
+SCALE_UP = 1
+OLD_PRICE = 1000
+</code></pre>
+<h2 id="drawbacks"><a class="header" href="#drawbacks">Drawbacks</a></h2>
+<p>None at present.</p>
+<h2 id="prior-art-and-references"><a class="header" href="#prior-art-and-references">Prior Art and References</a></h2>
+<p>This pricing model is based on the requirements from the basic linear solution proposed in RFC-1, which is a simple dynamic pricing model and only used as proof. The present model adds additional considerations to make the model more adaptable under real conditions. </p>
+<h2 id="future-possibilities"><a class="header" href="#future-possibilities">Future Possibilities</a></h2>
+<p>This RFC, if accepted, shall be implemented in conjunction with RFC-1.</p>
+<h2 id="references"><a class="header" href="#references">References</a></h2>
+<ul>
+<li>[1] Polkadot forum post with visualizations: <a href="https://forum.polkadot.network/t/dynamic-pricing-for-bulk-coretime-sales/3359">Dynamic Pricing for Bulk Coretime Sales</a></li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../proposed/0061-allocator-inside-of-runtime.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../stale/0009-improved-net-light-client-requests.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../proposed/0061-allocator-inside-of-runtime.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../stale/0009-improved-net-light-client-requests.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

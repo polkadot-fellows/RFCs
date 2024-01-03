@@ -1,0 +1,469 @@
+
+<!DOCTYPE HTML>
+<html lang="en" class="polkadot" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>RFC-0032: Minimal Relay - Polkadot Fellowship RFCs</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="An online book of RFCs approved or proposed within the Polkadot Fellowship.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/polkadot.css">
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "polkadot" : "polkadot";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('polkadot')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../introduction.html">Introduction</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Approved</li><li class="chapter-item expanded "><a href="../approved/0001-agile-coretime.html">RFC-1: Agile Coretime</a></li><li class="chapter-item expanded "><a href="../approved/0005-coretime-interface.html">RFC-5: Coretime Interface</a></li><li class="chapter-item expanded "><a href="../approved/0007-system-collator-selection.html">RFC-0007: System Collator Selection</a></li><li class="chapter-item expanded "><a href="../approved/0008-parachain-bootnodes-dht.html">RFC-0008: Store parachain bootnodes in relay chain DHT</a></li><li class="chapter-item expanded "><a href="../approved/0012-process-for-adding-new-collectives.html">RFC-0012: Process for Adding New System Collectives</a></li><li class="chapter-item expanded "><a href="../approved/0014-improve-locking-mechanism-for-parachains.html">RFC-0014: Improve locking mechanism for parachains</a></li><li class="chapter-item expanded "><a href="../approved/0022-adopt-encointer-runtime.html">RFC-0022: Adopt Encointer Runtime</a></li><li class="chapter-item expanded "><a href="../approved/0032-minimal-relay.html" class="active">RFC-0032: Minimal Relay</a></li><li class="chapter-item expanded "><a href="../approved/0050-fellowship-salaries.html">RFC-0050: Fellowship Salaries</a></li><li class="chapter-item expanded "><a href="../approved/0056-one-transaction-per-notification.html">RFC-0056: Enforce only one transaction per notification</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Newly Proposed</li><li class="chapter-item expanded "><a href="../new/0062-lowering-existential-deposit-on-assethub.html">RFC-0062: Lowering Existential Deposit on  Asset Hub for Polkadot</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Proposed</li><li class="chapter-item expanded "><a href="../proposed/0004-remove-unnecessary-allocator-usage.html">RFC-0004: Remove the host-side runtime memory allocator</a></li><li class="chapter-item expanded "><a href="../proposed/0026-sassafras-consensus.html">RFC-0026: Sassafras Consensus Protocol</a></li><li class="chapter-item expanded "><a href="../proposed/0034-xcm-absolute-location-account-derivation.html">RFC-34: XCM Absolute Location Account Derivation</a></li><li class="chapter-item expanded "><a href="../proposed/0042-extrinsics-state-version.html">RFC-0042: Add System version that replaces StateVersion on RuntimeVersion</a></li><li class="chapter-item expanded "><a href="../proposed/0043-storage-proof-size-hostfunction.html">RFC-0043: Introduce storage_proof_size Host Function for Improved Parachain Block Utilization</a></li><li class="chapter-item expanded "><a href="../proposed/0044-rent-based-registration.html">RFC-0044: Rent based registration model</a></li><li class="chapter-item expanded "><a href="../proposed/0046-metadata-for-offline-signers.html">RFC-0000: Metadata for offline signers</a></li><li class="chapter-item expanded "><a href="../proposed/0047-assignment-of-availability-chunks.html">RFC-0047: Assignment of availability chunks to validators</a></li><li class="chapter-item expanded "><a href="../proposed/0059-nodes-capabilities-discovery.html">RFC-0059: Add a discovery mechanism for nodes based on their capabilities</a></li><li class="chapter-item expanded "><a href="../proposed/0061-allocator-inside-of-runtime.html">RFC-0061: Support allocator inside of runtime</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Stale</li><li class="chapter-item expanded "><a href="../stale/0006-dynamic-pricing-for-bulk-coretime-sales.html">RFC-0006: Dynamic Pricing for Bulk Coretime Sales</a></li><li class="chapter-item expanded "><a href="../stale/0009-improved-net-light-client-requests.html">RFC-0009: Improved light client requests networking protocol</a></li><li class="chapter-item expanded "><a href="../stale/000x-assethub.html">RFC-0000: Lowering NFT Deposits on Polkadot and Kusama Asset Hubs</a></li><li class="chapter-item expanded "><a href="../stale/0010-burn-coretime-revenue.html">RFC-0010: Burn Coretime Revenue</a></li><li class="chapter-item expanded "><a href="../stale/0011-add-new-path-to-account-creation-on-asset-hubs.html">RFC-0011: Add New Path to Account Creation on Asset Hubs</a></li><li class="chapter-item expanded "><a href="../stale/0013-prepare-blockbuilder-and-core-runtime-apis-for-mbms.html">RFC-0013: Prepare BlockBuilder and Core runtime APIs for MBMs</a></li><li class="chapter-item expanded "><a href="../stale/0015-market-design-revisit.html">RFC-0015: Market Design Revisit</a></li><li class="chapter-item expanded "><a href="../stale/0020-treasurer-track-confirmation-period-duration-modification.html">RFC-0020: Treasurer Track Confirmation Period Duration Modification</a></li><li class="chapter-item expanded "><a href="../stale/0035-conviction-voting-delegation-modifications.html"> RFC-0035: Conviction Voting Delegation Modifications</a></li><li class="chapter-item expanded "><a href="../stale/0048-session-keys-runtime-api.html">RFC-0048: Generate ownership proof for SessionKeys</a></li><li class="chapter-item expanded "><a href="../stale/0054-remove-heap-pages.html">RFC-0054: Remove the concept of "heap pages" from the client</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="polkadot">Polkadot</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Polkadot Fellowship RFCs</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <p><a href="https://github.com/polkadot-fellows/RFCs/blob/main/text/0032-minimal-relay.md">(source)</a></p>
+<p><strong>Table of Contents</strong></p>
+<ul>
+<li><a href="#rfc-0032-minimal-relay">RFC-0032: Minimal Relay</a>
+<ul>
+<li><a href="#summary">Summary</a></li>
+<li><a href="#motivation">Motivation</a></li>
+<li><a href="#stakeholders">Stakeholders</a></li>
+<li><a href="#explanation">Explanation</a>
+<ul>
+<li><a href="#migrations">Migrations</a></li>
+<li><a href="#interfaces">Interfaces</a></li>
+<li><a href="#functional-architecture">Functional Architecture</a></li>
+<li><a href="#resource-allocation">Resource Allocation</a></li>
+<li><a href="#deployment">Deployment</a></li>
+<li><a href="#kusama">Kusama</a></li>
+</ul>
+</li>
+<li><a href="#drawbacks">Drawbacks</a></li>
+<li><a href="#testing-security-and-privacy">Testing, Security, and Privacy</a></li>
+<li><a href="#performance-ergonomics-and-compatibility">Performance, Ergonomics, and Compatibility</a>
+<ul>
+<li><a href="#performance">Performance</a></li>
+<li><a href="#ergonomics">Ergonomics</a></li>
+<li><a href="#compatibility">Compatibility</a></li>
+</ul>
+</li>
+<li><a href="#prior-art-and-references">Prior Art and References</a></li>
+<li><a href="#unresolved-questions">Unresolved Questions</a></li>
+<li><a href="#future-directions-and-related-material">Future Directions and Related Material</a></li>
+</ul>
+</li>
+</ul>
+<h1 id="rfc-0032-minimal-relay"><a class="header" href="#rfc-0032-minimal-relay">RFC-0032: Minimal Relay</a></h1>
+<div class="table-wrapper"><table><thead><tr><th></th><th></th></tr></thead><tbody>
+<tr><td><strong>Start Date</strong></td><td>20 September 2023</td></tr>
+<tr><td><strong>Description</strong></td><td>Proposal to minimise Relay Chain functionality.</td></tr>
+<tr><td><strong>Authors</strong></td><td>Joe Petrowski, Gavin Wood</td></tr>
+</tbody></table>
+</div>
+<h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
+<p>The Relay Chain contains most of the core logic for the Polkadot network. While this was necessary
+prior to the launch of parachains and development of XCM, most of this logic can exist in
+parachains. This is a proposal to migrate several subsystems into system parachains.</p>
+<h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
+<p>Polkadot's scaling approach allows many distinct state machines (known generally as parachains) to
+operate with common guarantees about the validity and security of their state transitions. Polkadot
+provides these common guarantees by executing the state transitions on a strict subset (a backing
+group) of the Relay Chain's validator set.</p>
+<p>However, state transitions on the Relay Chain need to be executed by <em>all</em> validators. If any of
+those state transitions can occur on parachains, then the resources of the complement of a single
+backing group could be used to offer more cores. As in, they could be offering more coretime (a.k.a.
+blockspace) to the network.</p>
+<p>By minimising state transition logic on the Relay Chain by migrating it into &quot;system chains&quot; -- a
+set of parachains that, with the Relay Chain, make up the Polkadot protocol -- the Polkadot
+Ubiquitous Computer can maximise its primary offering: secure blockspace.</p>
+<h2 id="stakeholders"><a class="header" href="#stakeholders">Stakeholders</a></h2>
+<ul>
+<li>Parachains that interact with affected logic on the Relay Chain;</li>
+<li>Core protocol and XCM format developers;</li>
+<li>Tooling, block explorer, and UI developers.</li>
+</ul>
+<h2 id="explanation"><a class="header" href="#explanation">Explanation</a></h2>
+<p>The following pallets and subsystems are good candidates to migrate from the Relay Chain:</p>
+<ul>
+<li>Identity</li>
+<li>Balances</li>
+<li>Staking
+<ul>
+<li>Staking</li>
+<li>Election Provider</li>
+<li>Bags List</li>
+<li>NIS</li>
+<li>Nomination Pools</li>
+<li>Fast Unstake</li>
+</ul>
+</li>
+<li>Governance
+<ul>
+<li>Treasury and Bounties</li>
+<li>Conviction Voting</li>
+<li>Referenda</li>
+</ul>
+</li>
+</ul>
+<p>Note: The Auctions and Crowdloan pallets will be replaced by Coretime, its system chain and
+interface described in RFC-1 and RFC-5, respectively.</p>
+<h3 id="migrations"><a class="header" href="#migrations">Migrations</a></h3>
+<p>Some subsystems are simpler to move than others. For example, migrating Identity can be done by
+simply preventing state changes in the Relay Chain, using the Identity-related state as the genesis
+for a new chain, and launching that new chain with the genesis and logic (pallet) needed.</p>
+<p>Other subsystems cannot experience any downtime like this because they are essential to the
+network's functioning, like Staking and Governance. However, these can likely coexist with a
+similarly-permissioned system chain for some time, much like how &quot;Gov1&quot; and &quot;OpenGov&quot; coexisted at
+the latter's introduction.</p>
+<p>Specific migration plans will be included in release notes of runtimes from the Polkadot Fellowship
+when beginning the work of migrating a particular subsystem.</p>
+<h3 id="interfaces"><a class="header" href="#interfaces">Interfaces</a></h3>
+<p>The Relay Chain, in many cases, will still need to interact with these subsystems, especially
+Staking and Governance. These subsystems will require making some APIs available either via
+dispatchable calls accessible to XCM <code>Transact</code> or possibly XCM <code>Instruction</code>s in future versions.</p>
+<p>For example, Staking provides a pallet-API to register points (e.g. for block production) and
+offences (e.g. equivocation). With Staking in a system chain, that chain would need to allow the
+Relay Chain to update validator points periodically so that it can correctly calculate rewards.</p>
+<p>A pub-sub protocol may also lend itself to these types of interactions.</p>
+<h3 id="functional-architecture"><a class="header" href="#functional-architecture">Functional Architecture</a></h3>
+<p>This RFC proposes that system chains form individual components within the system's architecture and
+that these components are chosen as functional groups. This approach allows synchronous
+composibility where it is most valuable, but isolates logic in such a way that provides flexibility
+for optimal resource allocation (see <a href="#resource-allocation">Resource Allocation</a>). For the
+subsystems discussed in this RFC, namely Identity, Governance, and Staking, this would mean:</p>
+<ul>
+<li>People Chain, for identity and personhood logic, providing functionality related to the attributes
+of single actors;</li>
+<li>Governance Chain, for governance and system collectives, providing functionality for pluralities
+to express their voices within the system;</li>
+<li>Staking Chain, for Polkadot's staking system, including elections, nominations, reward
+distribution, slashing, and non-interactive staking; and</li>
+<li>Asset Hub, for fungible and non-fungible assets, including DOT.</li>
+</ul>
+<p>The Collectives chain and Asset Hub already exist, so implementation of this RFC would mean two new
+chains (People and Staking), with Governance moving to the <em>currently-known-as</em> Collectives chain
+and Asset Hub being increasingly used for DOT over the Relay Chain.</p>
+<p>Note that one functional group will likely include many pallets, as we do not know how pallet
+configurations and interfaces will evolve over time.</p>
+<h3 id="resource-allocation"><a class="header" href="#resource-allocation">Resource Allocation</a></h3>
+<p>The system should minimise wasted blockspace. These three (and other) subsystems may not each
+consistently require a dedicated core. However, core scheduling is far more agile than functional
+grouping. While migrating functionality from one chain to another can be a multi-month endeavour,
+cores can be rescheduled almost on-the-fly.</p>
+<p>Migrations are also breaking changes to some use cases, for example other parachains that need to
+route XCM programs to particular chains. It is thus preferable to do them a single time in migrating
+off the Relay Chain, reducing the risk of needing parachain splits in the future.</p>
+<p>Therefore, chain boundaries should be based on functional grouping where synchronous composibility
+is most valuable; and efficient resource allocation should be managed by the core scheduling
+protocol.</p>
+<p>Many of these system chains (including Asset Hub) could often share a single core in a semi-round
+robin fashion (the coretime may not be uniform). When needed, for example during NPoS elections or
+slashing events, the scheduler could allocate a dedicated core to the chain in need of more
+throughput.</p>
+<h3 id="deployment"><a class="header" href="#deployment">Deployment</a></h3>
+<p>Actual migrations should happen based on some prioritization. This RFC proposes to migrate Identity,
+Staking, and Governance as the systems to work on first. A brief discussion on the factors involved
+in each one:</p>
+<h4 id="identity"><a class="header" href="#identity">Identity</a></h4>
+<p>Identity will be one of the simpler pallets to migrate into a system chain, as its logic is largely
+self-contained and it does not &quot;share&quot; balances with other subsystems. As in, any DOT is held in
+reserve as a storage deposit and cannot be simultaneously used the way locked DOT can be locked for
+multiple purposes.</p>
+<p>Therefore, migration can take place as follows:</p>
+<ol>
+<li>The pallet can be put in a locked state, blocking most calls to the pallet and preventing updates
+to identity info.</li>
+<li>The frozen state will form the genesis of a new system parachain.</li>
+<li>Functions will be added to the pallet that allow migrating the deposit to the parachain. The
+parachain deposit is on the order of 1/100th of the Relay Chain's. Therefore, this will result in
+freeing up Relay State as well as most of each user's reserved balance.</li>
+<li>The pallet and any leftover state can be removed from the Relay Chain.</li>
+</ol>
+<p>User interfaces that render Identity information will need to source their data from the new system
+parachain.</p>
+<p>Note: In the future, it may make sense to decommission Kusama's Identity chain and do all account
+identities via Polkadot's. However, the Kusama chain will serve as a dress rehearsal for Polkadot.</p>
+<h4 id="staking"><a class="header" href="#staking">Staking</a></h4>
+<p>Migrating the staking subsystem will likely be the most complex technical undertaking, as the
+Staking system cannot stop (the system MUST always have a validator set) nor run in parallel (the
+system MUST have only <em>one</em> validator set) and the subsystem itself is made up of subsystems in the
+runtime and the node. For example, if offences are reported to the Staking parachain, validator
+nodes will need to submit their reports there.</p>
+<p>Handling balances also introduces complications. The same balance can be used for staking and
+governance. Ideally, all balances stay on Asset Hub, and only report &quot;credits&quot; to system chains like
+Staking and Governance. However, staking mutates balances by issuing new DOT on era changes and for
+rewards. Allowing DOT directly on the Staking parachain would simplify staking changes.</p>
+<p>Given the complexity, it would be pragmatic to include the Balances pallet in the Staking parachain
+in its first version. Any other systems that use overlapping locks, most notably governance, will
+need to recognise DOT held on both Asset Hub and the Staking parachain.</p>
+<p>There is more discussion about staking in a parachain in <a href="https://github.com/paritytech/polkadot-sdk/issues/491">Moving Staking off the Relay
+Chain</a>.</p>
+<h4 id="governance"><a class="header" href="#governance">Governance</a></h4>
+<p>Migrating governance into a parachain will be less complicated than staking. Most of the primitives
+needed for the migration already exist. The Treasury supports spending assets on remote chains and
+collectives like the Polkadot Technical Fellowship already function in a parachain. That is, XCM
+already provides the ability to express system origins across chains.</p>
+<p>Therefore, actually moving the governance logic into a parachain will be simple. It can run in
+parallel with the Relay Chain's governance, which can be removed when the parachain has demonstrated
+sufficient functionality. It's possible that the Relay Chain maintain a Root-level emergency track
+for situations like <a href="https://forum.polkadot.network/t/stalled-parachains-on-kusama-post-mortem/3998">parachains
+halting</a>.</p>
+<p>The only complication arises from the fact that both Asset Hub and the Staking parachain will have
+DOT balances; therefore, the Governance chain will need to be able to credit users' voting power
+based on balances from both locations. This is not expected to be difficult to handle.</p>
+<h3 id="kusama"><a class="header" href="#kusama">Kusama</a></h3>
+<p>Although Polkadot and Kusama both have system chains running, they have to date only been used for
+introducing new features or bodies, for example fungible assets or the Technical Fellowship. There
+has not yet been a migration of logic/state from the Relay Chain into a parachain. Given its more
+realistic network conditions than testnets, Kusama is the best stage for rehearsal.</p>
+<p>In the case of identity, Polkadot's system may be sufficient for the ecosystem. Therefore, Kusama
+should be used to test the migration of logic and state from Relay Chain to parachain, but these
+features may be (at the will of Kusama's governance) dropped from Kusama entirely after a successful
+migration on Polkadot.</p>
+<p>For Governance, Polkadot already has the Collectives parachain, which would become the Governance
+parachain. The entire group of DOT holders is itself a collective (the legislative body), and
+governance provides the means to express voice. Launching a Kusama Governance chain would be
+sensible to rehearse a migration.</p>
+<p>The Staking subsystem is perhaps where Kusama would provide the most value in its canary capacity.
+Staking is the subsystem most constrained by PoV limits. Ensuring that elections, payouts, session
+changes, offences/slashes, etc. work in a parachain on Kusama -- with its larger validator set --
+will give confidence to the chain's robustness on Polkadot.</p>
+<h2 id="drawbacks"><a class="header" href="#drawbacks">Drawbacks</a></h2>
+<p>These subsystems will have reduced resources in cores than on the Relay Chain. Staking in particular
+may require some optimizations to deal with constraints.</p>
+<h2 id="testing-security-and-privacy"><a class="header" href="#testing-security-and-privacy">Testing, Security, and Privacy</a></h2>
+<p>Standard audit/review requirements apply. More powerful multi-chain integration test tools would be
+useful in developement.</p>
+<h2 id="performance-ergonomics-and-compatibility"><a class="header" href="#performance-ergonomics-and-compatibility">Performance, Ergonomics, and Compatibility</a></h2>
+<p>Describe the impact of the proposal on the exposed functionality of Polkadot.</p>
+<h3 id="performance"><a class="header" href="#performance">Performance</a></h3>
+<p>This is an optimization. The removal of public/user transactions on the Relay Chain ensures that its
+primary resources are allocated to system performance.</p>
+<h3 id="ergonomics"><a class="header" href="#ergonomics">Ergonomics</a></h3>
+<p>This proposal alters very little for coretime users (e.g. parachain developers). Application
+developers will need to interact with multiple chains, making ergonomic light client tools
+particularly important for application development.</p>
+<p>For existing parachains that interact with these subsystems, they will need to configure their
+runtimes to recognize the new locations in the network.</p>
+<h3 id="compatibility"><a class="header" href="#compatibility">Compatibility</a></h3>
+<p>Implementing this proposal will require some changes to pallet APIs and/or a pub-sub protocol.
+Application developers will need to interact with multiple chains in the network.</p>
+<h2 id="prior-art-and-references"><a class="header" href="#prior-art-and-references">Prior Art and References</a></h2>
+<ul>
+<li><a href="https://github.com/paritytech/polkadot/issues/323">Transactionless Relay-chain</a></li>
+<li><a href="https://github.com/paritytech/polkadot-sdk/issues/491">Moving Staking off the Relay Chain</a></li>
+</ul>
+<h2 id="unresolved-questions"><a class="header" href="#unresolved-questions">Unresolved Questions</a></h2>
+<p>There remain some implementation questions, like how to use balances for both Staking and
+Governance. See, for example, <a href="https://github.com/paritytech/polkadot-sdk/issues/491">Moving Staking off the Relay
+Chain</a>.</p>
+<h2 id="future-directions-and-related-material"><a class="header" href="#future-directions-and-related-material">Future Directions and Related Material</a></h2>
+<p>Ideally the Relay Chain becomes transactionless, such that not even balances are represented there.
+With Staking and Governance off the Relay Chain, this is not an unreasonable next step.</p>
+<p>With Identity on Polkadot, Kusama may opt to drop its People Chain.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../approved/0022-adopt-encointer-runtime.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../approved/0050-fellowship-salaries.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../approved/0022-adopt-encointer-runtime.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../approved/0050-fellowship-salaries.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>
