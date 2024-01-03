@@ -1,0 +1,49 @@
+name: mdBook
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "0 0 * * *" # Once a day
+
+jobs:
+  mdbook:
+    runs-on: ubuntu-latest
+    permissions:
+      # For writing to gh-pages branch.
+      contents: write
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v3
+        # Gather mdbook source files - approved (merged) files, and open PRs.
+      - name: Gather mdbook sources
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const script = require('.github/scripts/gather-mdbook-sources.js')
+            await script({github, context})
+      - name: Build the mdbook SUMMARY.md
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const script = require('.github/scripts/build-mdbook-summary.js')
+            await script({github, context})
+      - name: Setup mdBook binary
+        uses: peaceiris/actions-mdbook@adeb05db28a0c0004681db83893d56c0388ea9ea # v1.2.0
+        with:
+          mdbook-version: '0.4.36'
+      - name: Install dependencies
+        run: |
+          cargo install mdbook-toc@0.14.1
+      - name: Generate the mdbook
+        run: |
+          cd mdbook
+          rm -rf ./book/
+          mdbook build --dest-dir ./book/
+
+      - name: Deploy to github pages
+        uses: peaceiris/actions-gh-pages@373f7f263a76c20808c831209c920827a82a2847 # v3.9.3
+        with:
+          publish_dir: ./mdbook/book
+          github_token: ${{ secrets.GITHUB_TOKEN }}
