@@ -631,7 +631,7 @@ Where:
 - `attempt_index`: value going from `0` to `attempts_number` as a `U32`.
 
 The ephemeral public keys are also used for claiming the tickets on block production.
-Refer to section [6.5](#65-claim-of-ticket-ownership-during-block-production) for details.
+Refer to section [6.5](#65-slot-claim-production) for details.
 
 #### 6.2.4. Ring Signature Production
 
@@ -719,7 +719,7 @@ information is known only to the author of the ticket.
 
 In case the number of available tickets is less than the number of epoch slots,
 some *orphan* slots in the middle of the epoch will remain unbounded to any
-ticket. For claiming strategy refer to [6.5.2](652-secondary-claim-method).
+ticket. For claiming strategy refer to [6.5.2](#652-secondary-claim-method).
 
 ### 6.5. Slot Claim Production
 
@@ -802,14 +802,14 @@ Is this step really necessary?
 #### 6.5.2. Secondary Method
 
 By noting that the authorities registered on-chain are kept in an ordered list,
-the index of the authority which has the privilege to claim an orphan slot is:
+the index of the authority which has the privilege to claim an *orphan* slot is:
 
 ```rust
     index_bytes = BLAKE2(4, CONCAT(epoch_randomness, BYTES(slot)));
     index = U32(index_bytes) mod authorities_number;
 ```
 
-Given `randomness_vrf_input` constructed as shown for the primary method ([6.5.1](#primary-method)),
+Given `randomness_vrf_input` constructed as shown for the primary method ([6.5.1](#651-primary-method)),
 the `VrfSignatureData` is constructed as:
 
 ```rust
@@ -853,9 +853,9 @@ Where:
 - `authority_index`: index of the block author in the on-chain authorities list.
 - `slot`: slot number (absolute, not relative to the epoch start)
 - `signature`: signature relative to the `sign_data` constructed via the
-   primary [6.5.1](#primary-method) or secondary ([6.5.2](#secondary-method)) method.
+   primary [6.5.1](#651-primary-method) or secondary ([6.5.2](#652-secondary-method)) method.
 - `erased_signature`: optional signature providing an additional proof of ticket
-  ownership ([6.5.1.1](#6511-ed25519-erased-ephemeral-key-claim).
+  ownership ([6.5.1.1](#6511-ephemeral-key-claim)).
 
 The signature includes one or two `VrfPreOutputs`.
 - The first is always present and is used to generate per-block randomness
