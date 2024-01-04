@@ -719,7 +719,7 @@ information is known only to the author of the ticket.
 
 In case the number of available tickets is less than the number of epoch slots,
 some *orphan* slots in the middle of the epoch will remain unbounded to any
-ticket. For claiming strategy refer to [6.5.2](#652-secondary-claim-method).
+ticket. For claiming strategy refer to [6.5.2](#652-secondary-method).
 
 ### 6.5. Slot Claim Production
 
