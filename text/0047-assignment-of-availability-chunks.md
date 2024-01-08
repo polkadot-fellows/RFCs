@@ -8,8 +8,7 @@
 
 ## Summary
 
-Propose a way of permuting the availability chunk indices assigned to validators for a given core and relay
-chain block, in the context of
+Propose a way of permuting the availability chunk indices assigned to validators, in the context of
 [recovering available data from systematic chunks](https://github.com/paritytech/polkadot-sdk/issues/598), with the
 purpose of fairly distributing network bandwidth usage.
 
@@ -38,40 +37,12 @@ resulting code.
 Roughly speaking, the first N_VALIDATORS/3 chunks of data can be cheaply concatenated to retrieve the original data,
 without running the resource-intensive and time-consuming reconstruction algorithm.
 
-Here's the concatenation procedure of systematic chunks for polkadot's erasure coding algorithm
-(minus error handling, for briefness):
-```rust
-pub fn reconstruct_from_systematic<T: Decode>(
-	n_validators: usize,
-	chunks: Vec<&[u8]>,
-) -> T {
-	let threshold = systematic_threshold(n_validators);
-	let shard_len = chunks.iter().next().unwrap().len();
-	let mut systematic_bytes = Vec::with_capacity(shard_len * threshold);
-
-	for i in (0..shard_len).step_by(2) {
-		for chunk in chunks.iter().take(threshold) {
-			systematic_bytes.push(chunk[i]);
-			systematic_bytes.push(chunk[i + 1]);
-		}
-	}
-
-	Decode::decode(&mut &systematic_bytes[..]).unwrap()
-}
-
-fn systematic_threshold(n_validators: usize) -> usize {
-	let mut threshold = (n_validators - 1) / 3;
-	if !is_power_of_two(threshold) {
-		threshold = next_lower_power_of_2(threshold);
-	}
-
-	threshold
-}
-```
+You can find the concatenation procedure of systematic chunks for polkadot's erasure coding algorithm
+[here](https://github.com/paritytech/reed-solomon-novelpoly/blob/be3751093e60adc20c19967f5443158552829011/reed-solomon-novelpoly/src/novel_poly_basis/mod.rs#L247)
 
 In a nutshell, it performs a column-wise concatenation with 2-byte chunks.
 The output could be zero-padded at the end, so scale decoding must be aware of the expected length in bytes and ignore
-trailing zeros.
+trailing zeros (this assertion is already being made for regular reconstruction).
 
 ### Availability recovery at present
 
@@ -115,18 +86,15 @@ chunks.
 
 #### Properties
 
-The function that decides the chunk index for a validator should be parameterized by at least
-`(validator_index, block_number, core_index)`
+The function that decides the chunk index for a validator will be parameterized by at least
+`(validator_index, core_index)`
 and have the following properties:
 1. deterministic
 1. relatively quick to compute and resource-efficient.
-1. when considering the other params besides `validator_index` as fixed, the function should describe a permutation
-of the chunk indices
-1. considering `block_number` as a fixed argument, the validators that map to the first N/3 chunk indices should
-have as little overlap as possible for different paras scheduled on that relay parent.
+1. when considering a fixed `core_index`, the function should describe a permutation of the chunk indices
+1. the validators that map to the first N/3 chunk indices should have as little overlap as possible for different cores.
 
-In other words, we want a uniformly distributed, deterministic mapping from `ValidatorIndex` to `ChunkIndex` per block
-per core.
+In other words, we want a uniformly distributed, deterministic mapping from `ValidatorIndex` to `ChunkIndex` per core.
 
 It's desirable to not embed this function in the runtime, for performance and complexity reasons.
 However, this means that the function needs to be kept very simple and with minimal or no external dependencies.
@@ -145,7 +113,7 @@ pub fn get_chunk_index(
   core_index: CoreIndex
 ) -> ChunkIndex {
   let threshold = systematic_threshold(n_validators); // Roughly n_validators/3
-  let core_start_pos = abs(core_index - block_number) * threshold;
+  let core_start_pos = core_index * threshold;
 
   (core_start_pos + validator_index) % n_validators
 }
@@ -198,11 +166,12 @@ pub struct ChunkResponse {
 ```
 
 An important thing to note is that in version 1, the `ValidatorIndex` value is always equal to the `ChunkIndex`.
-Until the feature is enabled, this will also be true for version 2. However, after the feature is enabled,
-this will generally not be true.
+Until the chunk rotation feature is enabled, this will also be true for version 2. However, after the feature is
+enabled, this will generally not be true.
 
 The requester will send the request to validator with index `V`. The responder will map the `V` validator index to the
-`C` chunk index and respond with the `C`-th chunk.
+`C` chunk index and respond with the `C`-th chunk. This mapping can be seamless, by having each validator store their
+chunk by `ValidatorIndex` (just as before).
 
 The protocol implementation MAY check the returned `ChunkIndex` against the expected mapping to ensure that
 it received the right chunk.
@@ -212,10 +181,10 @@ for easy access to the validator->chunk mapping. See [Appendix A](#appendix-a) f
 
 In any case, the requester MUST verify the chunk's proof using the provided index.
 
-During availability-recovery, given that the requester may not know (if the mapping is not available) whether the received chunk corresponds to
-the requested validator index, it has to keep track of received chunk indices and ignore duplicates. Such duplicates
-should be considered the same as an invalid/garbage response (drop it and move on to the next validator - we can't
-punish via reputation changes, because we don't know which validator misbehaved).
+During availability-recovery, given that the requester may not know (if the mapping is not available) whether the
+received chunk corresponds to the requested validator index, it has to keep track of received chunk indices and ignore
+duplicates. Such duplicates should be considered the same as an invalid/garbage response (drop it and move on to the
+next validator - we can't punish via reputation changes, because we don't know which validator misbehaved).
 
 ### Upgrade path
 
@@ -235,10 +204,10 @@ don't support this mapping will not be able to participate in parachain consensu
 
 Additionally, an error will be logged when starting a validator with an older version, after the feature was enabled.
 
-On the other hand, collators will not be required to upgrade in this step, as regular chunk recovery will work as before,
-granted that version 1 of the networking protocol has been removed. Note that collators only perform
-availability-recovery in rare, adversarial scenarios, so it is fine to not optimise for this case and let them upgrade
-at their own pace.
+On the other hand, collators will not be required to upgrade in this step (but are still require to upgrade for step 1),
+as regular chunk recovery will work as before, granted that version 1 of the networking protocol has been removed.
+Note that collators only perform availability-recovery in rare, adversarial scenarios, so it is fine to not optimise for
+this case and let them upgrade at their own pace.
 
 To support enabling this feature via the runtime, we will use the `NodeFeatures` bitfield of the `HostConfiguration`
 struct (added in `https://github.com/paritytech/polkadot-sdk/pull/2177`). Adding and enabling a feature
@@ -252,9 +221,9 @@ validator->chunk mapping ceases to be a 1:1 mapping and systematic recovery may 
 very complicated (See [appendix A](#appendix-a)). This RFC assumes that availability-recovery processes initiated during
 disputes will only use regular recovery, as before. This is acceptable since disputes are rare occurrences in practice
 and is something that can be optimised later, if need be. Adding the `core_index` to the `CandidateReceipt` would
-mitigate this problem and will likely be needed in the future for CoreJam.
-[Related discussion about `CandidateReceipt`](https://forum.polkadot.network/t/pre-rfc-discussion-candidate-receipt-format-v2/3738)
-- It's a breaking change that requires all validators and collators to upgrade their node version.
+mitigate this problem and will likely be needed in the future for CoreJam and/or Elastic scaling.
+[Related discussion about updating `CandidateReceipt`](https://forum.polkadot.network/t/pre-rfc-discussion-candidate-receipt-format-v2/3738)
+- It's a breaking change that requires all validators and collators to upgrade their node version at least once.
 
 ## Testing, Security, and Privacy
 
@@ -279,7 +248,7 @@ Not applicable.
 ### Compatibility
 
 This is a breaking change. See [upgrade path](#upgrade-path) section above.
-All validators need to have upgraded their node versions before the feature will be enabled via a runtime upgrade
+All validators and collators need to have upgraded their node versions before the feature will be enabled via a
 governance call.
 
 ## Prior Art and References
@@ -289,7 +258,7 @@ See comments on the [tracking issue](https://github.com/paritytech/polkadot-sdk/
 
 ## Unresolved Questions
 
-- Is there a better upgrade path that would preserve backwards compatibility?
+Not applicable.
 
 ## Future Directions and Related Material
 
@@ -335,3 +304,6 @@ the reported core_index was indeed the one occupied by the candidate at the resp
 Another attempt could be to include in the message the relay block hash where the candidate was included.
 This information would be used in order to query the runtime API and retrieve the core index that the candidate was
 occupying. However, considering it's part of an unimported fork, the validator cannot call a runtime API on that block.
+
+Adding the `core_index` to the `CandidateReceipt` would solve this problem and would enable systematic recovery for all
+dispute scenarios.
