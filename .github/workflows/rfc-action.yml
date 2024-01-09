@@ -11,6 +11,7 @@ jobs:
     name: Handle an RFC-related command
     if: ${{ github.event.issue.pull_request && startsWith(github.event.comment.body, '/rfc') }}
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Generate a token
         id: generate_token
@@ -18,6 +19,6 @@ jobs:
         with:
           app_id: ${{ secrets.RFC_BOT_APP_ID }}
           private_key: ${{ secrets.RFC_BOT_PRIVATE_KEY }}
-      - uses: paritytech/rfc-action@58bf9d7446e85cf2a95a1600cb3616f90c3b3913 # v0.0.5
+      - uses: paritytech/rfc-action@c673cf6776a2f266c7d8cbb29bc2159bea2cdd78 # v0.0.6
         env:
           GH_TOKEN: ${{ steps.generate_token.outputs.token }}
