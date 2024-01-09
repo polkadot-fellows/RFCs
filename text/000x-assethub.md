@@ -8,7 +8,7 @@
 
 ## Summary
 
-This RFC proposes a change to the current deposit requirements on the Polkadot and Kusama Asset Hub for creating NFT collections. The objective is to lower the barrier to entry for artists, fostering a more inclusive and vibrant ecosystem, while maintaining network integrity and preventing spam.
+This RFC proposes changing the current deposit requirements on the Polkadot and Kusama Asset Hub for creating NFT collections. The objective is to lower the barrier to entry for artists, fostering a more inclusive and vibrant ecosystem while maintaining network integrity and preventing spam.
 
 ## Motivation
 
@@ -23,7 +23,7 @@ The current deposit of 10 DOT for collection creation on the Polkadot Asset Hub 
 Previous discussions have been held within the KodaDot community, as well as with artists expressing their concerns about the deposit amounts. Referencing to [Polkadot Forum conversation](https://forum.polkadot.network/t/polkadot-assethub-high-nft-collection-deposit/4262).
 
 ## Explanation
-This RFC suggests modifying the smart contract governing collection creation on the Polkadot Asset Hub to require a lower deposit. The exact amount of the reduced deposit is yet to be determined and should be discussed and agreed upon by the stakeholders. The implementation of this change requires careful consideration of the network's integrity and the prevention of spam, possibly through alternative means such as rate limiting or account verification.
+This RFC suggests modifying the smart contract governing collection creation on the Polkadot Asset Hub to require a lower deposit. The amount of the reduced deposit is yet to be determined. It should be discussed and agreed upon by the stakeholders. Implementing this change requires careful consideration of the network's integrity and the prevention of spam, possibly through alternative means such as rate limiting or account verification.
 
 **Prices and Proposed Prices on Polkadot Asset Hub:**
 _Scroll right_
@@ -50,7 +50,7 @@ _Scroll right_
 > Note: This is only a proposal for change and it can be modified upon additional conversation.
 
 ## Drawbacks
-The contemplation of modifying deposit requirements necessitates a balanced assessment of the potential drawbacks. Highlighted below are cogent points extracted from the discourse on the [Polkadot Forum conversation](https://forum.polkadot.network/t/polkadot-assethub-high-nft-collection-deposit/4262), which provide critical perspectives on the implications of such changes:
+Modifying deposit requirements necessitates a balanced assessment of the potential drawbacks. Highlighted below are cogent points extracted from the discourse on the [Polkadot Forum conversation](https://forum.polkadot.network/t/polkadot-assethub-high-nft-collection-deposit/4262), which provide critical perspectives on the implications of such changes:
 
 > But NFT deposits were chosen somewhat arbitrarily at genesis and it’s a good exercise to re-evaluate them and adapt if they are causing pain and if lowering them has little or no negative side effect (or if the trade-off is worth it).
 >  -> joepetrowski
@@ -67,7 +67,7 @@ The contemplation of modifying deposit requirements necessitates a balanced asse
 ## Performance, Ergonomics, and Compatibility
 
 ### Performance
-This change is not expected to have a significant impact on the overall performance of the Polkadot Asset Hub. However, it is crucial to monitor the network closely, especially in the initial stages after implementation, to identify and mitigate any potential issues.
+This change is not expected to have a significant impact on the overall performance of the Polkadot Asset Hub. However, monitoring the network closely, especially in the initial stages after implementation, is crucial to identify and mitigate any potential issues.
  
 Additionally, a supplementary proposal aims to augment the network's adaptability:
 
@@ -76,7 +76,7 @@ Additionally, a supplementary proposal aims to augment the network's adaptabilit
 > To implement this, we need RFC#12 and the Parameters pallet from @xlc.
 >  -> OliverTY
 
-This dynamic governance approach would facilitate a responsive and agile economic model for deposit management, ensuring that the network remains both accessible and robust in the face of market volatility.
+This dynamic governance approach would facilitate a responsive and agile economic model for deposit management, ensuring that the network remains accessible and robust in the face of market volatility.
 
 ### Ergonomics
 The proposed change aims to enhance the user experience for artists, making Polkadot more accessible and user-friendly.
@@ -85,7 +85,7 @@ The proposed change aims to enhance the user experience for artists, making Polk
 The change doesn't impact compatibility.
 
 ## Unresolved Questions
-- Determining the optimal new deposit amount that reduces the barrier to entry while preventing state bloat remains a subject for debate. What is the balance that allows for inclusivity without compromising the network's efficiency and security?
+- Determining the optimal new deposit amount that reduces the barrier to entry while preventing state bloat remains a subject for debate. What balance allows for inclusivity without compromising the network's efficiency and security?
 
 ## Future Directions and Related Material
 
