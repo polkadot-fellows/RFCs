@@ -14,7 +14,7 @@ This RFC proposes changing the current deposit requirements on the Polkadot and 
 
 The current deposit of 10 DOT for collection creation on the Polkadot Asset Hub presents a significant financial barrier for many artists. By lowering the deposit requirements, we aim to encourage more artists to participate in the Polkadot NFT ecosystem, thereby enriching the diversity and vibrancy of the community and its offerings.
 
-Actual implementation of deposit is an arbitrary number coming from [Uniques pallet](https://github.com/paritytech/polkadot-sdk/blob/master/cumulus/parachains/runtimes/assets/asset-hub-rococo/src/lib.rs#L757). It is not a result of any economic analysis. The goal of this proposal is to adjust the deposit from constants to the dynamic pricing based on the `deposit` function with respect to stakeholders.
+The actual implementation of the deposit is an arbitrary number coming from [Uniques pallet](https://github.com/paritytech/polkadot-sdk/blob/master/cumulus/parachains/runtimes/assets/asset-hub-rococo/src/lib.rs#L757). It is not a result of any economic analysis. This proposal aims to adjust the deposit from constant to dynamic pricing based on the `deposit` function with respect to stakeholders.
 
 ### Requirements
 
@@ -23,14 +23,14 @@ Actual implementation of deposit is an arbitrary number coming from [Uniques pal
 ## Stakeholders
 
 - **NFT Creators**: Primary beneficiaries of the proposed change, particularly those who found the current deposit requirements prohibitive.
-- **NFT Platforms**: As the facilitator of artists' relations, KodaDot has a vested interest in making the platform more accessible.
+- **NFT Platforms**: As the facilitator of artists' relations, NFT Marketplaces has a vested interest in onboarding new users and making the platform more accessible.
 - **dApp Developers**: Making the blockspace more accessible will encourage developers to create and build unique dApps in the Polkadot ecosystem.
 - **Polkadot Community**: Stands to benefit from an influx of artists, creators and diverse NFT collections, enhancing the overall ecosystem.
 
-Previous discussions have been held within the KodaDot community, as well as with artists expressing their concerns about the deposit amounts. Referencing to [Polkadot Forum conversation](https://forum.polkadot.network/t/polkadot-assethub-high-nft-collection-deposit/4262).
+Previous discussions have been held within the Polkadot Forum community and with artists expressing their concerns about the deposit amounts. [Link](https://forum.polkadot.network/t/polkadot-assethub-high-nft-collection-deposit/4262).
 
 ## Explanation
-This RFC suggests modifying deposit constants defined in the `nfts` pallet on the Polkadot Asset Hub to require a lower deposit. The amount of the reduced deposit should be determined by `deposit` adjusted by pricing mechanism (arbitrary number/another pricing function). 
+This RFC suggests modifying deposit constants defined in the `nfts` pallet on the Polkadot Asset Hub to require a lower deposit. The reduced deposit amount should be determined by the `deposit` adjusted by the pricing mechanism (arbitrary number/another pricing function). 
 
 [Current deposit requirements are as follows](https://github.com/paritytech/polkadot-sdk/blob/master/cumulus/parachains/runtimes/assets/asset-hub-rococo/src/lib.rs#L757):
 
@@ -55,7 +55,7 @@ parameter_types! {
 }
 ```
 
-The proposed change would modify the deposit constants to require a lower deposit. The amount of the reduced deposit should be determined by `deposit` adjusted by arbitrary number.
+The proposed change would modify the deposit constants to require a lower deposit. The reduced deposit amount should be determined by `deposit` adjusted by an arbitrary number.
 
 ```rust
 parameter_types! {
@@ -90,7 +90,7 @@ _Scroll right_
 | attributeDepositBase      | 0.00666666666 KSM                | 0.15333333318 $        | 3.333333333 $                 | 0.000666666666 KSM        | 0.015333333318 $                 | 0.3333333333 $                         |
 
 ```
-> Note: This is only a proposal for change and it can be modified upon additional conversation.
+> Note: This is only a proposal for change and can be modified upon additional conversation.
 
 ## Drawbacks
 Modifying deposit requirements necessitates a balanced assessment of the potential drawbacks. Highlighted below are cogent points extracted from the discourse on the [Polkadot Forum conversation](https://forum.polkadot.network/t/polkadot-assethub-high-nft-collection-deposit/4262), which provide critical perspectives on the implications of such changes:
@@ -127,7 +127,7 @@ This dynamic governance approach would facilitate a responsive and agile economi
 The proposed change aims to enhance the user experience for artists, making Polkadot more accessible and user-friendly.
 
 ### Compatibility
-The change doesn't impact compatibility.
+The change does not impact compatibility as `redeposit` function is already implemented.
 
 ## Unresolved Questions
 None.
