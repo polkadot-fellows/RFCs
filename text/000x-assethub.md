@@ -14,7 +14,7 @@ This RFC proposes changing the current deposit requirements on the Polkadot and 
 
 The current deposit of 10 DOT for collection creation on the Polkadot Asset Hub presents a significant financial barrier for many artists. By lowering the deposit requirements, we aim to encourage more artists to participate in the Polkadot NFT ecosystem, thereby enriching the diversity and vibrancy of the community and its offerings.
 
-Actual implementation of deposit is an arbitrary number coming from [Uniques pallet](). It is not a result of any economic analysis. The current deposit requirements are as follows: 
+Actual implementation of deposit is an arbitrary number coming from [Uniques pallet](https://github.com/paritytech/polkadot-sdk/blob/master/cumulus/parachains/runtimes/assets/asset-hub-rococo/src/lib.rs#L757). It is not a result of any economic analysis. The goal of this proposal is to adjust the deposit from constants to the dynamic pricing based on the `deposit` function with respect to stakeholders.
 
 ### Requirements
 
@@ -130,7 +130,7 @@ The proposed change aims to enhance the user experience for artists, making Polk
 The change doesn't impact compatibility.
 
 ## Unresolved Questions
-- Determining the optimal new deposit amount that reduces the barrier to entry while preventing state bloat remains a subject for debate. What balance allows for inclusivity without compromising the network's efficiency and security?
+None.
 
 ## Future Directions and Related Material
 
