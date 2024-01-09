@@ -14,24 +14,67 @@ This RFC proposes changing the current deposit requirements on the Polkadot and 
 
 The current deposit of 10 DOT for collection creation on the Polkadot Asset Hub presents a significant financial barrier for many artists. By lowering the deposit requirements, we aim to encourage more artists to participate in the Polkadot NFT ecosystem, thereby enriching the diversity and vibrancy of the community and its offerings.
 
+Actual implementation of deposit is an arbitrary number coming from [Uniques pallet](). It is not a result of any economic analysis. The current deposit requirements are as follows: 
+
+### Requirements
+
+- Deposit SHOULD be derived from `deposit` function adjusted by correspoding pricing mechansim.
+
 ## Stakeholders
 
 - **NFT Creators**: Primary beneficiaries of the proposed change, particularly those who found the current deposit requirements prohibitive.
 - **NFT Platforms**: As the facilitator of artists' relations, KodaDot has a vested interest in making the platform more accessible.
+- **dApp Developers**: Making the blockspace more accessible will encourage developers to create and build unique dApps in the Polkadot ecosystem.
 - **Polkadot Community**: Stands to benefit from an influx of artists, creators and diverse NFT collections, enhancing the overall ecosystem.
 
 Previous discussions have been held within the KodaDot community, as well as with artists expressing their concerns about the deposit amounts. Referencing to [Polkadot Forum conversation](https://forum.polkadot.network/t/polkadot-assethub-high-nft-collection-deposit/4262).
 
 ## Explanation
-This RFC suggests modifying the smart contract governing collection creation on the Polkadot Asset Hub to require a lower deposit. The amount of the reduced deposit is yet to be determined. It should be discussed and agreed upon by the stakeholders. Implementing this change requires careful consideration of the network's integrity and the prevention of spam, possibly through alternative means such as rate limiting or account verification.
+This RFC suggests modifying deposit constants defined in the `nfts` pallet on the Polkadot Asset Hub to require a lower deposit. The amount of the reduced deposit should be determined by `deposit` adjusted by pricing mechanism (arbitrary number/another pricing function). 
+
+[Current deposit requirements are as follows](https://github.com/paritytech/polkadot-sdk/blob/master/cumulus/parachains/runtimes/assets/asset-hub-rococo/src/lib.rs#L757):
+
+
+```rust
+parameter_types! {
+	// re-use the Uniques deposits
+	pub const NftsCollectionDeposit: Balance = UniquesCollectionDeposit::get();
+	pub const NftsItemDeposit: Balance = UniquesItemDeposit::get();
+	pub const NftsMetadataDepositBase: Balance = UniquesMetadataDepositBase::get();
+	pub const NftsAttributeDepositBase: Balance = UniquesAttributeDepositBase::get();
+	pub const NftsDepositPerByte: Balance = UniquesDepositPerByte::get();
+}
+
+// 
+parameter_types! {
+	pub const UniquesCollectionDeposit: Balance = UNITS / 10; // 1 / 10 UNIT deposit to create a collection
+	pub const UniquesItemDeposit: Balance = UNITS / 1_000; // 1 / 1000 UNIT deposit to mint an item
+	pub const UniquesMetadataDepositBase: Balance = deposit(1, 129);
+	pub const UniquesAttributeDepositBase: Balance = deposit(1, 0);
+	pub const UniquesDepositPerByte: Balance = deposit(0, 1);
+}
+```
+
+The proposed change would modify the deposit constants to require a lower deposit. The amount of the reduced deposit should be determined by `deposit` adjusted by arbitrary number.
+
+```rust
+parameter_types! {
+	pub const NftsCollectionDeposit: Balance = deposit(1, 130);
+	pub const NftsItemDeposit: Balance = deposit(1, 164) / 40;
+	pub const NftsMetadataDepositBase: Balance = deposit(1, 129) / 10;
+	pub const NftsAttributeDepositBase: Balance = deposit(1, 0) / 10;
+	pub const NftsDepositPerByte: Balance = deposit(0, 1);
+}
+```
+
 
 **Prices and Proposed Prices on Polkadot Asset Hub:**
 _Scroll right_
 ```
 | **Name**                  | **Current price implementation** | **Price if DOT = 5$**  | **Price if DOT goes to 50$**  | **Proposed Price in DOT** | **Proposed Price if DOT = 5$**   | **Proposed Price if DOT goes to 50$**|
 |---------------------------|----------------------------------|------------------------|-------------------------------|---------------------------|----------------------------------|--------------------------------------|
-| collectionDeposit         | 10 DOT                           | 50 $                   | 500 $                         | 0.1 DOT                   | 0.5 $                            | 5$                                   |
-| itemDeposit               | 0.01 DOT                         | 0.05 $                 | 0.5 $                         | 0.001 DOT                 | 0.005 $                          | 0.05$                                |
+| collectionDeposit         | 10 DOT                           | 50 $                   | 500 $                         | 0.20064 DOT                   | ~1 $                            | 10.32$                                   |
+| itemDeposit               | 0.01 DOT                         | 0.05 $                 | 0.5 $                         | 0.005 DOT                 | 0.025 $                          | 0.251$                                |
 | metadataDepositBase       | 0.20129 DOT                      | 1.00645 $              | 10.0645 $                     | 0.0020129 DOT             | 0.0100645 $                      | 0.100645$                            |
 | attributeDepositBase      | 0.2 DOT                          | 1 $                    | 10 $                          | 0.002 DOT                 | 0.01 $                           | 0.1$                                 |
 ```
@@ -63,6 +106,8 @@ Modifying deposit requirements necessitates a balanced assessment of the potenti
 
 
 ## Testing, Security, and Privacy
+
+The change is backwards compatible. The prevention of "spam" could be prevented by OpenGov proposal to `forceDestoy` list of collections that are not suitable.
 
 ## Performance, Ergonomics, and Compatibility
 
