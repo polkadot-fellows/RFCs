@@ -133,5 +133,5 @@ The change does not impact compatibility as `redeposit` function is already impl
 None.
 
 ## Future Directions and Related Material
-
+-
 If accepted, this RFC could pave the way for further discussions and proposals aimed at enhancing the inclusivity and accessibility of the Polkadot ecosystem. Future work could also explore having a weak governance origin for deposits as proposed by Oliver.
