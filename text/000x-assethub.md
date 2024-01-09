@@ -130,7 +130,7 @@ The proposed change aims to enhance the user experience for artists, making Polk
 The change does not impact compatibility as `redeposit` function is already implemented.
 
 ## Unresolved Questions
-None.
+-
 
 ## Future Directions and Related Material
 -
