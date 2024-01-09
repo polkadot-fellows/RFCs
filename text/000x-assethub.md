@@ -30,10 +30,17 @@ The actual implementation of the deposit is an arbitrary number coming from [Uni
 Previous discussions have been held within the Polkadot Forum community and with artists expressing their concerns about the deposit amounts. [Link](https://forum.polkadot.network/t/polkadot-assethub-high-nft-collection-deposit/4262).
 
 ## Explanation
+This RFC proposes a revision of the deposit constants in the nfts pallet on the Polkadot Asset Hub. The new deposit amounts would be determined by a standard deposit formula.
+
 This RFC suggests modifying deposit constants defined in the `nfts` pallet on the Polkadot Asset Hub to require a lower deposit. The reduced deposit amount should be determined by the `deposit` adjusted by the pricing mechanism (arbitrary number/another pricing function). 
 
-[Current deposit requirements are as follows](https://github.com/paritytech/polkadot-sdk/blob/master/cumulus/parachains/runtimes/assets/asset-hub-rococo/src/lib.rs#L757):
 
+
+### Current code structure
+
+[Current deposit requirements are as follows](https://github.com/paritytech/polkadot-sdk/blob/master/cumulus/parachains/runtimes/assets/asset-hub-rococo/src/lib.rs#L757)
+
+Looking at the current code structure the currently implemented we can find that the pricing re-uses the logic of how Uniques are defined:
 
 ```rust
 parameter_types! {
@@ -44,8 +51,10 @@ parameter_types! {
 	pub const NftsAttributeDepositBase: Balance = UniquesAttributeDepositBase::get();
 	pub const NftsDepositPerByte: Balance = UniquesDepositPerByte::get();
 }
+```
 
-// 
+And looking back on the code we can find that the Uniques are defined in such a way:
+```rust
 parameter_types! {
 	pub const UniquesCollectionDeposit: Balance = UNITS / 10; // 1 / 10 UNIT deposit to create a collection
 	pub const UniquesItemDeposit: Balance = UNITS / 1_000; // 1 / 1000 UNIT deposit to mint an item
@@ -54,8 +63,44 @@ parameter_types! {
 	pub const UniquesDepositPerByte: Balance = deposit(0, 1);
 }
 ```
+As we can see in the code definition above the current code does not use the `deposit` funtion when the collection in the following instances: `UniquesCollectionDeposit` and  `UniquesItemDeposit`.
 
+### Modifying the code to by Using the Deposit Function
+
+As
 The proposed change would modify the deposit constants to require a lower deposit. The reduced deposit amount should be determined by `deposit` adjusted by an arbitrary number.
+
+```rust
+parameter_types! {
+	pub const NftsCollectionDeposit: Balance = deposit(1, 130);
+	pub const NftsItemDeposit: Balance = deposit(1, 164);
+	pub const NftsMetadataDepositBase: Balance = deposit(1, 129);
+	pub const NftsAttributeDepositBase: Balance = deposit(1, 0);
+	pub const NftsDepositPerByte: Balance = deposit(0, 1);
+}
+```
+
+Calculations viewed bellow were calculated by using the following repository [rfc-pricing](https://github.com/vikiival/rfc-pricing).
+**Polkadot**
+| **Name**                  | **Current price implementation** | **Proposed Modified by using the new deposit function** |
+|---------------------------|----------------------------------|-------------------------|
+| collectionDeposit         | 10 DOT                           | 0.20064 DOT             |
+| itemDeposit               | 0.01 DOT                         | 0.20081 DOT             |
+| metadataDepositBase       | 0.20129 DOT                      | 0.20076 DOT             |
+| attributeDepositBase      | 0.2 DOT                          | 0.2 DOT                 |
+
+Similarly the prices for Kusama ecosystem were calculated as:
+**Kusama:**
+| **Name**                  | **Current price implementation** | **Proposed Price in KSM** |
+|---------------------------|----------------------------------|---------------------------|
+| collectionDeposit         | 0.1 KSM                          | 0.006688 KSM              |
+| itemDeposit               | 0.001 KSM                        | 0.000167 KSM              |
+| metadataDepositBase       | 0.006709666617 KSM               | 0.0006709666617 KSM       |
+| attributeDepositBase      | 0.00666666666 KSM                | 0.000666666666 KSM        |
+
+
+### Additional modifications to further reduce the barrier to entry
+We propose reducing the prices further by reducing them by an arbitrary number. This number was chosen to have a reasonable amount to encourage participation even when the prices of Polkadot and Kusama rise. 
 
 ```rust
 parameter_types! {
@@ -67,71 +112,71 @@ parameter_types! {
 }
 ```
 
-
 **Prices and Proposed Prices on Polkadot Asset Hub:**
-_Scroll right_
-```
-| **Name**                  | **Current price implementation** | **Price if DOT = 5$**  | **Price if DOT goes to 50$**  | **Proposed Price in DOT** | **Proposed Price if DOT = 5$**   | **Proposed Price if DOT goes to 50$**|
-|---------------------------|----------------------------------|------------------------|-------------------------------|---------------------------|----------------------------------|--------------------------------------|
-| collectionDeposit         | 10 DOT                           | 50 $                   | 500 $                         | 0.20064 DOT                   | ~1 $                            | 10.32$                                   |
-| itemDeposit               | 0.01 DOT                         | 0.05 $                 | 0.5 $                         | 0.005 DOT                 | 0.025 $                          | 0.251$                                |
-| metadataDepositBase       | 0.20129 DOT                      | 1.00645 $              | 10.0645 $                     | 0.0020129 DOT             | 0.0100645 $                      | 0.100645$                            |
-| attributeDepositBase      | 0.2 DOT                          | 1 $                    | 10 $                          | 0.002 DOT                 | 0.01 $                           | 0.1$                                 |
-```
 
-**Prices and Proposed Prices on Kusama Asset Hub:**
-_Scroll right_
-```
-| **Name**                  | **Current price implementation** | **Price if KSM = 23$** | **Price if KSM goes to 500$** | **Proposed Price in KSM** | **Proposed Price if KSM = 23$**  | **Proposed Price if KSM goes to 500$** |
-|---------------------------|----------------------------------|------------------------|-------------------------------|---------------------------|----------------------------------|----------------------------------------|
-| collectionDeposit         | 0.1 KSM                          | 2.3 $                  | 50 $                          | 0.006688 KSM                  | 0.154 $                           | 3.34 $                                    |
-| itemDeposit               | 0.001 KSM                        | 0.023 $                | 0.5 $                         | 0.000167 KSM                | 0.00385 $                         | 0.0835 $                                 |
-| metadataDepositBase       | 0.006709666617 KSM               | 0.15432183319 $        | 3.3548333085 $                | 0.0006709666617 KSM       | 0.015432183319 $                 | 0.33548333085 $                        |
-| attributeDepositBase      | 0.00666666666 KSM                | 0.15333333318 $        | 3.333333333 $                 | 0.000666666666 KSM        | 0.015333333318 $                 | 0.3333333333 $                         |
+**Polkadot**
+| **Name**                  | **Current price implementation** | **Proposed Prices** |
+|---------------------------|----------------------------------|---------------------|
+| collectionDeposit         | 10 DOT                           | 0.20064 DOT         |
+| itemDeposit               | 0.01 DOT                         | 0.005 DOT           |
+| metadataDepositBase       | 0.20129 DOT                      | 0.002 DOT           |
+| attributeDepositBase      | 0.2 DOT                          | 0.002 DOT           |
 
-```
-> Note: This is only a proposal for change and can be modified upon additional conversation.
+**Kusama**
+| **Name**                  | **Current price implementation** | **Proposed Price in KSM** |
+|---------------------------|----------------------------------|---------------------------|
+| collectionDeposit         | 0.1 KSM                          | 0.006688 KSM              |
+| itemDeposit               | 0.001 KSM                        | 0.000167 KSM              |
+| metadataDepositBase       | 0.006709666617 KSM               | 0.0006709666617 KSM       |
+| attributeDepositBase      | 0.00666666666 KSM                | 0.000666666666 KSM        |
+
+
+## Other proposals
+There were some proposals how to augment the network's adaptability:
+
+### Weak governance origin
+
+One of the options how to mitigate a bloated state is to introduce a weak governance origin that is controlled by some consortium (ie. System Collective). This origin could then update the NFT deposits any time the market conditions warrant it - obviously while honoring the storage deposit requirements.
+
+This dynamic governance approach would facilitate a responsive and agile economic model for deposit management, ensuring that the network remains accessible and robust in the face of market volatility.
+
+Even with such a proposal in place the network could be too slow to act.
 
 ## Drawbacks
 Modifying deposit requirements necessitates a balanced assessment of the potential drawbacks. Highlighted below are cogent points extracted from the discourse on the [Polkadot Forum conversation](https://forum.polkadot.network/t/polkadot-assethub-high-nft-collection-deposit/4262), which provide critical perspectives on the implications of such changes:
 
-> But NFT deposits were chosen somewhat arbitrarily at genesis and it’s a good exercise to re-evaluate them and adapt if they are causing pain and if lowering them has little or no negative side effect (or if the trade-off is worth it).
->  -> joepetrowski
+The discourse around modifying deposit requirements includes various perspectives:
 
-> Underestimates mean that state grows faster, although not unbounded - effectively an economic subsidy on activity. Overestimates mean that the state grows slower - effectively an economic depressant on activity.
->  -> rphmeier
+Adjusting NFT deposit requirements on Polkadot and Kusama Asset Hubs involves key challenges:
 
-> Technical: We want to prevent state bloat, therefore using state should have a cost associated with it.
->  -> joepetrowski
+1. **State Growth and Technical Concerns**: Lowering deposit requirements can lead to increased blockchain state size, potentially causing state bloat. This growth needs to be managed to prevent strain on the network's resources and maintain operational efficiency. 
 
+2. **Network Security and Market Response**: Reduced deposits might increase transaction volume, potentially bloating the state, thereby impacting network security. Additionally, adapting to the cryptocurrency market's volatility is crucial. The mechanism for setting deposit amounts must be responsive yet stable, avoiding undue complexity for users.
+
+3. **Economic Impact on Stakeholders**: The change could have varied economic effects on creators, platform operators, and investors. Balancing these interests is essential to ensure the adjustment benefits the ecosystem without negatively impacting its value dynamics. However in the particular case of Polkadot and Kusama Asset Hub this does not pose a concern since there are very few collections currently. As of date 9th January 2024 there are 42 collections on Polkadot Asset Hub and 191 on Kusama Asset Hub with a relatively low volume.
 
 ## Testing, Security, and Privacy
 
-The change is backwards compatible. The prevention of "spam" could be prevented by OpenGov proposal to `forceDestoy` list of collections that are not suitable.
+
+### Security concerns
+
+The prevention of "spam" could be prevented by OpenGov proposal to `forceDestoy` list of collections that are not suitable.
 
 ## Performance, Ergonomics, and Compatibility
 
 ### Performance
-This change is not expected to have a significant impact on the overall performance of the Polkadot Asset Hub. However, monitoring the network closely, especially in the initial stages after implementation, is crucial to identify and mitigate any potential issues.
- 
-Additionally, a supplementary proposal aims to augment the network's adaptability:
-
-> Just from a technical perspective; I think the best we can do is to use a weak governance origin that is controlled by some consortium (ie. System Collective).
-> This origin could then update the NFT deposits any time the market conditions warrant it - obviously while honoring the storage deposit requirements.
-> To implement this, we need RFC#12 and the Parameters pallet from @xlc.
->  -> OliverTY
-
-This dynamic governance approach would facilitate a responsive and agile economic model for deposit management, ensuring that the network remains accessible and robust in the face of market volatility.
+The only forseeable impact on performance araise from the state being too bloated from the potential and impacting performance of the chain.
 
 ### Ergonomics
-The proposed change aims to enhance the user experience for artists, making Polkadot more accessible and user-friendly.
+The proposed change aims to enhance the user experience for artists, traders and utilizers of Kusama and Polkadot asset hub. Making Polkadot and Kusama more accessible and user-friendly.
 
 ### Compatibility
 The change does not impact compatibility as `redeposit` function is already implemented.
+### Compatibility
+The change is backwards compatible.
 
 ## Unresolved Questions
--
+/
 
 ## Future Directions and Related Material
--
-If accepted, this RFC could pave the way for further discussions and proposals aimed at enhancing the inclusivity and accessibility of the Polkadot ecosystem. Future work could also explore having a weak governance origin for deposits as proposed by Oliver.
+If accepted, this RFC could pave the way for further discussions and proposals aimed at enhancing the inclusivity and accessibility of the Polkadot ecosystem. 
