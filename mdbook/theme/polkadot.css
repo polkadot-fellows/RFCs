@@ -1,0 +1,70 @@
+html.polkadot {
+    font-family: "Open Sans", sans-serif;
+}
+
+.polkadot {
+    --pink500: #E6007A;
+    --purple600: #442299;
+    --purple500: #552BBF;
+    --purple400: #6D3AEE;
+    --cyan700: #0094D4;
+    --cyan600: #00A6ED;
+    --cyan500: #00B2FF;
+    --green700: #48CC81;
+    --green600: #51E591;
+    --green500: #56F39A;
+    --lime700: #A9CC29;
+    --lime600: #BEE52E;
+    --lime500: #D3FF33;
+
+    --purple700: #321D47;
+    --purple800: #28123E;
+    --purple900: #1C0533;
+
+    --purple300: #DAE0F2;
+    --purple200: #E6EAF6;
+    --purple100: #F3F5FB;
+
+
+    --bg: var(--purple100);
+    --fg: #262625;
+
+    --sidebar-bg: var(--purple800);
+    --sidebar-fg: #c8c9db;
+    --sidebar-non-existant: #505254;
+    --sidebar-active: var(--pink500);
+    --sidebar-spacer: var(--purple700);
+
+    --scrollbar: var(--sidebar-fg);
+
+    --icons: #737480;
+    --icons-hover: #262625;
+
+    --links: #2b79a2;
+
+    --inline-code-color: #6e6b5e;
+
+    --theme-popup-bg: var(--purple200);
+    --theme-popup-border: var(--purple300);
+    --theme-hover: var(--purple200);
+
+    --quote-bg: var(--purple200);
+    --quote-border: var(--purple300);
+
+    --warning-border: #ff8e00;
+
+    --table-border-color: var(--purple200);
+    --table-header-bg: var(--purple300);
+    --table-alternate-bg: var(--purple200);
+
+    --searchbar-border-color: #aaa;
+    --searchbar-bg: #fafafa;
+    --searchbar-fg: #000;
+    --searchbar-shadow-color: #aaa;
+    --searchresults-header-fg: #666;
+    --searchresults-border-color: #888;
+    --searchresults-li-bg: #dec2a2;
+    --search-mark-bg: var(--cyan500);
+
+    --color-scheme: light;
+}

@@ -1,0 +1,23 @@
+[book]
+title = "Polkadot Fellowship RFCs"
+description = "An online book of RFCs approved or proposed within the Polkadot Fellowship."
+src = "src"
+
+[build]
+create-missing = false
+
+[output.html]
+additional-css = ["theme/polkadot.css"]
+default-theme = "polkadot"
+preferred-dark-theme = "polkadot"
+copy-fonts = true
+no-section-label = true
+
+[output.html.font]
+enable = true
+woff = true
+
+[preprocessor.toc]
+command = "mdbook-toc"
+renderer = ["html"]
+max-level = 3
