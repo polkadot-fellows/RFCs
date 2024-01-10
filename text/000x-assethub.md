@@ -8,11 +8,11 @@
 
 ## Summary
 
-This RFC proposes changing the current deposit requirements on the Polkadot and Kusama Asset Hub for creating NFT collections. The objective is to lower the barrier to entry for artists, fostering a more inclusive and vibrant ecosystem while maintaining network integrity and preventing spam.
+This RFC proposes changing the current deposit requirements on the Polkadot and Kusama Asset Hub for creating NFT collection, minting an individual NFT, and lowering it's coresponding metadata and attribute deposit. The objective is to lower the barrier to entry for NFT creators, fostering a more inclusive and vibrant ecosystem while maintaining network integrity and preventing spam.
 
 ## Motivation
 
-The current deposit of 10 DOT for collection creation on the Polkadot Asset Hub presents a significant financial barrier for many artists. By lowering the deposit requirements, we aim to encourage more artists to participate in the Polkadot NFT ecosystem, thereby enriching the diversity and vibrancy of the community and its offerings.
+The current deposit of 10 DOT for collection creation (along with 0.01 DOT for item deposit and 0.2 DOT for metadata and attribute deposit) on the Polkadot Asset Hub and 0.1 KSM on Kusama Asset Hub presents a significant financial barrier for many NFT creators. By lowering the deposit requirements, we aim to encourage more NFT creators to participate in the Polkadot NFT ecosystem, thereby enriching the diversity and vibrancy of the community and its offerings.
 
 The actual implementation of the deposit is an arbitrary number coming from [Uniques pallet](https://github.com/paritytech/polkadot-sdk/blob/master/cumulus/parachains/runtimes/assets/asset-hub-rococo/src/lib.rs#L757). It is not a result of any economic analysis. This proposal aims to adjust the deposit from constant to dynamic pricing based on the `deposit` function with respect to stakeholders.
 
