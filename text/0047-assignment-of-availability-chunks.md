@@ -109,7 +109,6 @@ Pseudocode:
 pub fn get_chunk_index(
   n_validators: u32,
   validator_index: ValidatorIndex,
-  block_number: BlockNumber,
   core_index: CoreIndex
 ) -> ChunkIndex {
   let threshold = systematic_threshold(n_validators); // Roughly n_validators/3
