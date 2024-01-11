@@ -34,8 +34,6 @@ This RFC proposes a revision of the deposit constants in the nfts pallet on the 
 
 This RFC suggests modifying deposit constants defined in the `nfts` pallet on the Polkadot Asset Hub to require a lower deposit. The reduced deposit amount should be determined by the `deposit` adjusted by the pricing mechanism (arbitrary number/another pricing function). 
 
-
-
 ### Current code structure
 
 [Current deposit requirements are as follows](https://github.com/paritytech/polkadot-sdk/blob/master/cumulus/parachains/runtimes/assets/asset-hub-rococo/src/lib.rs#L757)
@@ -53,7 +51,8 @@ parameter_types! {
 }
 ```
 
-And looking back on the code we can find that the Uniques are defined in such a way:
+In the existing setup, the Uniques are defined with specific deposit values for different elements:
+
 ```rust
 parameter_types! {
 	pub const UniquesCollectionDeposit: Balance = UNITS / 10; // 1 / 10 UNIT deposit to create a collection
@@ -65,10 +64,9 @@ parameter_types! {
 ```
 As we can see in the code definition above the current code does not use the `deposit` funtion when the collection in the following instances: `UniquesCollectionDeposit` and  `UniquesItemDeposit`.
 
-### Modifying the code to by Using the Deposit Function
+### Proposed Modification Using the Deposit Function
 
-As
-The proposed change would modify the deposit constants to require a lower deposit. The reduced deposit amount should be determined by `deposit` adjusted by an arbitrary number.
+This proposed modification adjusts the deposits to use the `deposit` function instead of using an arbitrary number.
 
 ```rust
 parameter_types! {
@@ -99,9 +97,10 @@ Similarly the prices for Kusama ecosystem were calculated as:
 | attributeDepositBase      | 0.00666666666 KSM                | 0.000666666666 KSM        |
 
 
-### Additional modifications to further reduce the barrier to entry
-We propose reducing the prices further by reducing them by an arbitrary number. This number was chosen to have a reasonable amount to encourage participation even when the prices of Polkadot and Kusama rise. 
+### Enhanced Approach to Further Lower Barriers for Entry
+In an effort to further lower barriers to entry and foster greater inclusivity, we propose additional modifications to the pricing structure. These proposed reductions are based on a collaborative and calculated approach, involving the consensus of leading NFT creators within the Polkadot and Kusama Asset Hub communities. The adjustments to deposit amounts are not made arbitrarily. Instead, they are the result of detailed discussions and analyses conducted with prominent NFT creators. 
 
+**Proposed Code Adjustments**
 ```rust
 parameter_types! {
 	pub const NftsCollectionDeposit: Balance = deposit(1, 130);
