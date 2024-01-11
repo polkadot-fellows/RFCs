@@ -135,12 +135,26 @@ parameter_types! {
 There were some proposals how to augment the network's adaptability:
 
 ### Weak governance origin
-
 One of the options how to mitigate a bloated state is to introduce a weak governance origin that is controlled by some consortium (ie. System Collective). This origin could then update the NFT deposits any time the market conditions warrant it - obviously while honoring the storage deposit requirements.
 
 This dynamic governance approach would facilitate a responsive and agile economic model for deposit management, ensuring that the network remains accessible and robust in the face of market volatility.
 
-Even with such a proposal in place the network could be too slow to act.
+However after discussions, we found that such a proposal lacks in certain areas:
+ 1. Actors could be too slow to act, having a delayed response and thus endagering the networks security
+ 2. In attempting to provide stability it actually removes it because the DOT-based deposit can change so often that NFT issuers don't even know how much DOT they should acquire in order to plan a few weeks in advance.
+ 3. It does not scale. There are deposits all over the system. These actors could find themselves perpetually changing multiple deposits.
+
+### Having the price of the deposit imitate a function
+A clever idea on how to encourage initial participation and then let slowly rise the prices to prevent bloating the network is to introduce a function that will slowly raise the prices. Initially an exponential was proposed, however upon further consideration a logarithmic or a sigmoid function would be more appropriate, since the nature of such functions are that they would never be so high to completely obliterate participation.
+
+Considering such a function the question araises on how to adjust the constants properly to have an appropriate rising of the prices too avoid having the state too big and simultaneously not to have the prices too high. A good rule of thumb is to have one of the constants be correlated with the number of all NFTS on AssetHub.
+
+### Linking deposit to USD(x) value
+There arises also a possibility to have the deposit be a value that is based in USD. Since the nature of having the prices in a native currency doesn't represent predictability for the network users. It would make sense to stabilize the price with a stable coin like based on a currency like USD.
+
+There are two trains of thoughts one that with the fluctuatining currency there will be naturally more people and the prices will rise accordingly thus, disincentivising people to spam the network and only incouraging more pricier collections. Another train of thought is if the DOT/KSM will raise and people like to participate and engage with the network we should just let them.
+
+Having prices based in USD might introduce a level of complexity and unintended consequences if porly implemented.
 
 ## Drawbacks
 Modifying deposit requirements necessitates a balanced assessment of the potential drawbacks. Highlighted below are cogent points extracted from the discourse on the [Polkadot Forum conversation](https://forum.polkadot.network/t/polkadot-assethub-high-nft-collection-deposit/4262), which provide critical perspectives on the implications of such changes:
@@ -156,7 +170,6 @@ Adjusting NFT deposit requirements on Polkadot and Kusama Asset Hubs involves ke
 3. **Economic Impact on Stakeholders**: The change could have varied economic effects on creators, platform operators, and investors. Balancing these interests is essential to ensure the adjustment benefits the ecosystem without negatively impacting its value dynamics. However in the particular case of Polkadot and Kusama Asset Hub this does not pose a concern since there are very few collections currently. As of date 9th January 2024 there are 42 collections on Polkadot Asset Hub and 191 on Kusama Asset Hub with a relatively low volume.
 
 ## Testing, Security, and Privacy
-
 
 ### Security concerns
 
@@ -176,7 +189,9 @@ The change does not impact compatibility as `redeposit` function is already impl
 The change is backwards compatible.
 
 ## Unresolved Questions
-/
+The unresolved questions are related to having the price of the deposit imitate a function and linking deposit to USD(x) value.
 
 ## Future Directions and Related Material
+We suggest lowering the deposit as to the recommended levels and then if seen it's needed continuing the discussion if having the price of the deposit imitate a function or linking deposit to USD(x) value are needed.
+
 If accepted, this RFC could pave the way for further discussions and proposals aimed at enhancing the inclusivity and accessibility of the Polkadot ecosystem. 
