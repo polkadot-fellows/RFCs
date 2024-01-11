@@ -131,30 +131,32 @@ parameter_types! {
 | attributeDepositBase      | 0.00666666666 KSM                | 0.000666666666 KSM        |
 
 
-## Other proposals
-There were some proposals how to augment the network's adaptability:
+## Discussion of Other Proposals
+Several innovative proposals have been considered to enhance the network's adaptability and manage deposit requirements more effectively:
 
-### Weak governance origin
-One of the options how to mitigate a bloated state is to introduce a weak governance origin that is controlled by some consortium (ie. System Collective). This origin could then update the NFT deposits any time the market conditions warrant it - obviously while honoring the storage deposit requirements.
+### Enhanced Weak Governance Origin Model
+The concept of a weak governance origin, controlled by a consortium like the System Collective, has been proposed. This model would allow for dynamic adjustments of NFT deposit requirements in response to market conditions, adhering to storage deposit norms. 
 
-This dynamic governance approach would facilitate a responsive and agile economic model for deposit management, ensuring that the network remains accessible and robust in the face of market volatility.
+**Enhancements and Concerns:**
+- **Responsiveness**: To address concerns about delayed responses, the model could incorporate automated triggers based on predefined market indicators, ensuring timely adjustments.
+- **Stability vs. Flexibility**: Balancing stability with the need for flexibility is challenging. To mitigate the issue of frequent changes in DOT-based deposits, a mechanism for gradual and predictable adjustments could be introduced.
+- **Scalability**: The model's scalability is a concern, given the numerous deposits across the system. A more centralized approach to deposit management might be needed to avoid constant, decentralized adjustments.
 
-However after discussions, we found that such a proposal lacks in certain areas:
- 1. Actors could be too slow to act, having a delayed response and thus endagering the networks security
- 2. In attempting to provide stability it actually removes it because the DOT-based deposit can change so often that NFT issuers don't even know how much DOT they should acquire in order to plan a few weeks in advance.
- 3. It does not scale. There are deposits all over the system. These actors could find themselves perpetually changing multiple deposits.
+### Function-Based Pricing Model
+Another proposal is to use a mathematical function to regulate deposit prices, initially allowing low prices to encourage participation, followed by a gradual increase to prevent network bloat.
 
-### Having the price of the deposit imitate a function
-A clever idea on how to encourage initial participation and then let slowly rise the prices to prevent bloating the network is to introduce a function that will slowly raise the prices. Initially an exponential was proposed, however upon further consideration a logarithmic or a sigmoid function would be more appropriate, since the nature of such functions are that they would never be so high to completely obliterate participation.
+**Refinements:**
+- **Choice of Function**: A logarithmic or sigmoid function is favored over an exponential one, as these functions increase prices at a rate that encourages participation while preventing prohibitive costs.
+- **Adjustment of Constants**: To finely tune the pricing rise, one of the function's constants could correlate with the total number of NFTs on AssetHub. This would align the deposit requirements with the actual usage and growth of the network.
 
-Considering such a function the question araises on how to adjust the constants properly to have an appropriate rising of the prices too avoid having the state too big and simultaneously not to have the prices too high. A good rule of thumb is to have one of the constants be correlated with the number of all NFTS on AssetHub.
+### Linking Deposit to USD(x) Value
+This approach suggests pegging the deposit value to a stable currency like the USD, introducing predictability and stability for network users.
 
-### Linking deposit to USD(x) value
-There arises also a possibility to have the deposit be a value that is based in USD. Since the nature of having the prices in a native currency doesn't represent predictability for the network users. It would make sense to stabilize the price with a stable coin like based on a currency like USD.
+**Considerations and Challenges:**
+- **Market Dynamics**: One perspective is that fluctuations in native currency value naturally balance user participation and pricing, deterring network spam while encouraging higher-value collections. Conversely, there's an argument for allowing broader participation if the DOT/KSM value increases.
+- **Complexity and Risks**: Implementing a USD-based pricing system could add complexity and potential risks. The implementation needs to be carefully designed to avoid unintended consequences, such as excessive reliance on external financial systems or currencies.
 
-There are two trains of thoughts one that with the fluctuatining currency there will be naturally more people and the prices will rise accordingly thus, disincentivising people to spam the network and only incouraging more pricier collections. Another train of thought is if the DOT/KSM will raise and people like to participate and engage with the network we should just let them.
-
-Having prices based in USD might introduce a level of complexity and unintended consequences if porly implemented.
+Each of these proposals offers unique advantages and challenges. The optimal approach may involve a combination of these ideas, carefully adjusted to address the specific needs and dynamics of the Polkadot and Kusama networks.
 
 ## Drawbacks
 Modifying deposit requirements necessitates a balanced assessment of the potential drawbacks. Highlighted below are cogent points extracted from the discourse on the [Polkadot Forum conversation](https://forum.polkadot.network/t/polkadot-assethub-high-nft-collection-deposit/4262), which provide critical perspectives on the implications of such changes:
