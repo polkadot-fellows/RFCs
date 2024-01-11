@@ -169,7 +169,7 @@ Adjusting NFT deposit requirements on Polkadot and Kusama Asset Hubs involves ke
 
 2. **Network Security and Market Response**: Reduced deposits might increase transaction volume, potentially bloating the state, thereby impacting network security. Additionally, adapting to the cryptocurrency market's volatility is crucial. The mechanism for setting deposit amounts must be responsive yet stable, avoiding undue complexity for users.
 
-3. **Economic Impact on Stakeholders**: The change could have varied economic effects on creators, platform operators, and investors. Balancing these interests is essential to ensure the adjustment benefits the ecosystem without negatively impacting its value dynamics. However in the particular case of Polkadot and Kusama Asset Hub this does not pose a concern since there are very few collections currently. As of date 9th January 2024 there are 42 collections on Polkadot Asset Hub and 191 on Kusama Asset Hub with a relatively low volume.
+3. **Economic Impact on Previous Stakeholders**: The change could have varied economic effects on previous (before the change) creators, platform operators, and investors. Balancing these interests is essential to ensure the adjustment benefits the ecosystem without negatively impacting its value dynamics. However in the particular case of Polkadot and Kusama Asset Hub this does not pose a concern since there are very few collections currently and thus previous stakeholders wouldn't be much affected. As of date 9th January 2024 there are 42 collections on Polkadot Asset Hub and 191 on Kusama Asset Hub with a relatively low volume.
 
 ## Testing, Security, and Privacy
 
