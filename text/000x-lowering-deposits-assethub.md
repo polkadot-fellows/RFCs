@@ -179,20 +179,19 @@ The prevention of "spam" could be prevented by OpenGov proposal to `forceDestoy`
 ## Performance, Ergonomics, and Compatibility
 
 ### Performance
-The only forseeable impact on performance araise from the state being too bloated from the potential and impacting performance of the chain.
+The primary performance consideration stems from the potential for state bloat due to increased activity from lower deposit requirements. It's vital to monitor and manage this to avoid any negative impact on the chain's performance. Strategies for mitigating state bloat, including efficient data management and periodic reviews of storage requirements, will be essential.
 
 ### Ergonomics
 The proposed change aims to enhance the user experience for artists, traders and utilizers of Kusama and Polkadot asset hub. Making Polkadot and Kusama more accessible and user-friendly.
 
 ### Compatibility
 The change does not impact compatibility as `redeposit` function is already implemented.
-### Compatibility
-The change is backwards compatible.
 
 ## Unresolved Questions
-The unresolved questions are related to having the price of the deposit imitate a function and linking deposit to USD(x) value.
+There remain unresolved questions regarding the implementation of a function-based pricing model for deposits and the feasibility of linking deposits to a USD(x) value. These aspects require further exploration and discussion to ascertain their viability and potential impact on the ecosystem.
 
 ## Future Directions and Related Material
-We suggest lowering the deposit as to the recommended levels and then if seen it's needed continuing the discussion if having the price of the deposit imitate a function or linking deposit to USD(x) value are needed.
+We recommend initially lowering the deposit to the suggested levels. Subsequently, based on the outcomes and feedback, we can continue discussions on more complex models such as function-based pricing or currency-linked deposits.
+
 
 If accepted, this RFC could pave the way for further discussions and proposals aimed at enhancing the inclusivity and accessibility of the Polkadot ecosystem. 
