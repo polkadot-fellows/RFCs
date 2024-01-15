@@ -1,0 +1,426 @@
+
+<!DOCTYPE HTML>
+<html lang="en" class="polkadot" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>RFC-0066: Add EVM+ink! Contracts Pallets to Asset Hub for Polkadot - Polkadot Fellowship RFCs</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="An online book of RFCs approved or proposed within the Polkadot Fellowship.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/polkadot.css">
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "polkadot" : "polkadot";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('polkadot')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../introduction.html">Introduction</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Approved</li><li class="chapter-item expanded "><a href="../approved/0001-agile-coretime.html">RFC-1: Agile Coretime</a></li><li class="chapter-item expanded "><a href="../approved/0005-coretime-interface.html">RFC-5: Coretime Interface</a></li><li class="chapter-item expanded "><a href="../approved/0007-system-collator-selection.html">RFC-0007: System Collator Selection</a></li><li class="chapter-item expanded "><a href="../approved/0008-parachain-bootnodes-dht.html">RFC-0008: Store parachain bootnodes in relay chain DHT</a></li><li class="chapter-item expanded "><a href="../approved/0012-process-for-adding-new-collectives.html">RFC-0012: Process for Adding New System Collectives</a></li><li class="chapter-item expanded "><a href="../approved/0014-improve-locking-mechanism-for-parachains.html">RFC-0014: Improve locking mechanism for parachains</a></li><li class="chapter-item expanded "><a href="../approved/0022-adopt-encointer-runtime.html">RFC-0022: Adopt Encointer Runtime</a></li><li class="chapter-item expanded "><a href="../approved/0032-minimal-relay.html">RFC-0032: Minimal Relay</a></li><li class="chapter-item expanded "><a href="../approved/0050-fellowship-salaries.html">RFC-0050: Fellowship Salaries</a></li><li class="chapter-item expanded "><a href="../approved/0056-one-transaction-per-notification.html">RFC-0056: Enforce only one transaction per notification</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Newly Proposed</li><li class="chapter-item expanded "><a href="../new/0066-add-smartcontracts-to-assethub.html" class="active">RFC-0066: Add EVM+ink! Contracts Pallets to Asset Hub for Polkadot</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Proposed</li><li class="chapter-item expanded "><a href="../proposed/000x-lowering-deposits-assethub.html">RFC-0000: Lowering NFT Deposits on Polkadot and Kusama Asset Hubs</a></li><li class="chapter-item expanded "><a href="../proposed/0026-sassafras-consensus.html">RFC-0026: Sassafras Consensus Protocol</a></li><li class="chapter-item expanded "><a href="../proposed/0034-xcm-absolute-location-account-derivation.html">RFC-34: XCM Absolute Location Account Derivation</a></li><li class="chapter-item expanded "><a href="../proposed/0044-rent-based-registration.html">RFC-0044: Rent based registration model</a></li><li class="chapter-item expanded "><a href="../proposed/0046-metadata-for-offline-signers.html">RFC-0000: Metadata for offline signers</a></li><li class="chapter-item expanded "><a href="../proposed/0047-assignment-of-availability-chunks.html">RFC-0047: Assignment of availability chunks to validators</a></li><li class="chapter-item expanded "><a href="../proposed/0059-nodes-capabilities-discovery.html">RFC-0059: Add a discovery mechanism for nodes based on their capabilities</a></li><li class="chapter-item expanded "><a href="../proposed/0061-allocator-inside-of-runtime.html">RFC-0061: Support allocator inside of runtime</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Stale</li><li class="chapter-item expanded "><a href="../stale/0004-remove-unnecessary-allocator-usage.html">RFC-0004: Remove the host-side runtime memory allocator</a></li><li class="chapter-item expanded "><a href="../stale/0006-dynamic-pricing-for-bulk-coretime-sales.html">RFC-0006: Dynamic Pricing for Bulk Coretime Sales</a></li><li class="chapter-item expanded "><a href="../stale/0009-improved-net-light-client-requests.html">RFC-0009: Improved light client requests networking protocol</a></li><li class="chapter-item expanded "><a href="../stale/0010-burn-coretime-revenue.html">RFC-0010: Burn Coretime Revenue</a></li><li class="chapter-item expanded "><a href="../stale/0011-add-new-path-to-account-creation-on-asset-hubs.html">RFC-0011: Add New Path to Account Creation on Asset Hubs</a></li><li class="chapter-item expanded "><a href="../stale/0013-prepare-blockbuilder-and-core-runtime-apis-for-mbms.html">RFC-0013: Prepare BlockBuilder and Core runtime APIs for MBMs</a></li><li class="chapter-item expanded "><a href="../stale/0015-market-design-revisit.html">RFC-0015: Market Design Revisit</a></li><li class="chapter-item expanded "><a href="../stale/0020-treasurer-track-confirmation-period-duration-modification.html">RFC-0020: Treasurer Track Confirmation Period Duration Modification</a></li><li class="chapter-item expanded "><a href="../stale/0035-conviction-voting-delegation-modifications.html"> RFC-0035: Conviction Voting Delegation Modifications</a></li><li class="chapter-item expanded "><a href="../stale/0042-extrinsics-state-version.html">RFC-0042: Add System version that replaces StateVersion on RuntimeVersion</a></li><li class="chapter-item expanded "><a href="../stale/0043-storage-proof-size-hostfunction.html">RFC-0043: Introduce storage_proof_size Host Function for Improved Parachain Block Utilization</a></li><li class="chapter-item expanded "><a href="../stale/0048-session-keys-runtime-api.html">RFC-0048: Generate ownership proof for SessionKeys</a></li><li class="chapter-item expanded "><a href="../stale/0054-remove-heap-pages.html">RFC-0054: Remove the concept of "heap pages" from the client</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="polkadot">Polkadot</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Polkadot Fellowship RFCs</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <p><a href="https://github.com/polkadot-fellows/RFCs/pull/66">(source)</a></p>
+<p><strong>Table of Contents</strong></p>
+<ul>
+<li><a href="#rfc-0066-add-evmink-contracts-pallets-to-asset-hub-for-polkadot">RFC-0066: Add EVM+ink! Contracts Pallets to Asset Hub for Polkadot</a>
+<ul>
+<li><a href="#summary">Summary</a></li>
+<li><a href="#motivation">Motivation</a>
+<ul>
+<li><a href="#definft-applications-need-smart-contracts-on-assethub">Defi+NFT Applications need Smart Contracts on AssetHub</a></li>
+<li><a href="#rollups-need-smart-contracts-on-assethub">Rollups need Smart Contracts on AssetHub</a></li>
+<li><a href="#ink-on-assethub-will-lead-to-coreplay-developers--on-assethub">ink! on AssetHub will lead to CorePlay Developers  on AssetHub</a></li>
+</ul>
+</li>
+<li><a href="#stakeholders">Stakeholders</a></li>
+<li><a href="#explanation">Explanation</a>
+<ul>
+<li><a href="#limit-smart-contract-weight-allocation">Limit Smart Contract Weight allocation</a></li>
+<li><a href="#model-assethub-assets-inside-evm-smart-contracts-based-on-astar">Model AssetHub Assets inside EVM Smart Contracts based on Astar</a></li>
+</ul>
+</li>
+<li><a href="#new-dot-revenue-sources">New DOT Revenue Sources</a>
+<ul>
+<li><a href="#new-revenue-from-assethub-evm-contracts">New Revenue from AssetHub EVM Contracts</a></li>
+<li><a href="#new-revenue-for-inkcoreplay-contracts">New Revenue for ink!/Coreplay Contracts</a></li>
+</ul>
+</li>
+<li><a href="#drawbacks-and-tradeoffs">Drawbacks and Tradeoffs</a></li>
+<li><a href="#testing-security-and-privacy">Testing, Security, and Privacy</a></li>
+<li><a href="#performance-ergonomics-and-compatibility">Performance, Ergonomics, and Compatibility</a>
+<ul>
+<li><a href="#performance">Performance</a></li>
+<li><a href="#ergonomics">Ergonomics</a></li>
+<li><a href="#compatibility">Compatibility</a></li>
+</ul>
+</li>
+<li><a href="#unresolved-questions">Unresolved Questions</a></li>
+<li><a href="#future-directions-and-related-material">Future Directions and Related Material</a></li>
+</ul>
+</li>
+</ul>
+<h1 id="rfc-0066-add-evmink-contracts-pallets-to-asset-hub-for-polkadot"><a class="header" href="#rfc-0066-add-evmink-contracts-pallets-to-asset-hub-for-polkadot">RFC-0066: Add EVM+ink! Contracts Pallets to Asset Hub for Polkadot</a></h1>
+<div class="table-wrapper"><table><thead><tr><th></th><th></th></tr></thead><tbody>
+<tr><td><strong>Start Date</strong></td><td>14 January 2024</td></tr>
+<tr><td><strong>Description</strong></td><td>A proposal to add <em>EVM</em>+<em>ink!</em> Contracts to Asset Hub for Polkadot to support <strong>Polkadot Rollups</strong> and larger numbers of <em>EVM/Coreplay</em> smart contract developers and their users on <strong>Polkadot Rollups</strong> <em>and</em> <strong>AssetHub for Polkadot</strong>.</td></tr>
+<tr><td><strong>Authors</strong></td><td><a href="https://github.com/sourabhniyogi">Sourabh Niyogi</a></td></tr>
+</tbody></table>
+</div>
+<h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
+<p>This RFC proposes to add the two dominant smart contract programming languages in the Polkadot ecosystem to AssetHub:
+EVM + ink!/Coreplay.  The objective is to increase DOT Revenue by making AssetHub accessible to
+(1) Polkadot Rollups;
+(2) EVM smart contract programmers;
+(3) Coreplay programmers who will benefit from easier-to-use smart contract environments.<br />
+These changes in AssetHub are enabled by key Polkadot 2.0 technologies:
+PolkaVM supporting Coreplay, and
+hyper data availability in Blobs Chain.</p>
+<h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
+<p>EVM Contracts are pervasive in the Web3 blockchain ecosystem,
+while Polkadot 2.0's Coreplay aims to surpass EVM Contracts in ease-of-use using PolkaVM's RISC architecture.</p>
+<p>Asset Hub for Polkadot does <em>not</em> have smart contract capabilities,
+even though dominant stablecoin assets such as USDC and USDT are originated there.<br />
+In addition, in the <a href="https://github.com/polkadot-fellows/RFCs/blob/main/text/0032-minimal-relay.md">RFC #32 - Minimal Relay Chain architecture</a>,
+DOT balances are planned to be shifted to Asset Hub, to support Polkadot 2.0's
+<a href="https://github.com/polkadot-fellows/RFCs/blob/gav-coreplay/text/coreplay.md">CoreJam map-reduce architecture</a>.<br />
+In this 2.0 architecture, there is no room for synchronous contracts on the Polkadot relay chain --
+doing so would waste precious resources that should be dedicated to sync+async composability.<br />
+However, while Polkadot fellows have concluded the Polkadot relay chain should <em>not</em> support
+synchronous smart contracts, this is <em>not</em> applicable to AssetHub for Polkadot.</p>
+<p>The following sections argue for the need for Smart Contracts on AssetHub.</p>
+<h3 id="definft-applications-need-smart-contracts-on-assethub"><a class="header" href="#definft-applications-need-smart-contracts-on-assethub">Defi+NFT Applications need Smart Contracts on AssetHub</a></h3>
+<p>EVM Smart Contract chains within Polkadot and outside are dominated by defi + NFT applications.  While the assetConversion pallet (implementing Uniswap v1) is a <em>start</em> to having some basic defi on AssetHub,
+many programmers may be surprised to find that synchronous EVM smart contract capabilities (e.g. uniswap v2+v3) on other chains are not possible on AssetHub.</p>
+<p>Indeed, this is true for <em>many</em> Polkadot parachains, with the exception of the top 2 Polkadot parachains (by marketcap circa early 2024: Moonbeam + Astar) who <em>do</em> include the EVM pallets.<br />
+This leads to a cumbersome Polkadot EVM smart contract programming experience between AssetHub and these 2 Polkadot parachains, making the Polkadot ecosystem hard to work with for asset-related applications from defi to NFTs.</p>
+<p>The ink! defi ecosystem remains nascent, having only Astar as a potential home, and empirically has almost no defi/NFT activity.  Although e.g. uniswap translations have been written,</p>
+<p>An AssetHub for Polkadot deployment of EVM and ink! contracts, it is hoped, would likely support new applications for top assets (USDC and USDT) and spur many smart contract developers to develop end user applications with familiar synchronous programming constructs.</p>
+<h3 id="rollups-need-smart-contracts-on-assethub"><a class="header" href="#rollups-need-smart-contracts-on-assethub">Rollups need Smart Contracts on AssetHub</a></h3>
+<p>Polkadot Data Availability technology is extremely promising but underutilized.<br />
+We envision a new class of customer, &quot;Polkadot Rollups&quot; that can utilize Polkadot DA far better than Ethereum and other technology platforms.<br />
+Unlike Ethereum's DA which is capped at a fixed throughput now extending to EIP-4844, Polkadot data availability is <a href="https://forum.polkadot.network/t/polkadot-da-vs-competition/3403">linear in the number of cores</a>.<br />
+This means Polkadot can support a much larger number of rollups than Ethereum <em>now</em>, and even more as the number of cores in Polkadot grows.
+This performance difference has not been widely appreciated in the blockchain community.</p>
+<p>Recently, a &quot;Blobs&quot; chain has been developed to expose Polkadot DA to rollups by senior Polkadot Fellows:</p>
+<ul>
+<li><a href="https://github.com/thrumdev/blobs">ThrumDev</a></li>
+<li><a href="https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fblobs.colorfulnotion.com#/chainstate">Blobs on Kusama - ParaID 3338</a> )</li>
+<li><a href="https://github.com/thrumdev/blobs/blob/e4c88182442c33f5d81dcfc9cc460dd81eab34a2/docs-site/docs/intro.md#integrations">Rollkit</a></li>
+</ul>
+<p>A rollup kit is mappable to widely used rollup platforms, such as OP Stack, Arbitrum Orbit or StarkNet Madara.<br />
+A Blobs chain, currently deployed on Kusama (paraID 3338), enables rollups to utilize functionality  <em>outside</em> the Polkadot 1.0 parachain architecture by having rollups submit transactions via a rollup kit abstraction.    The Blobs chain write interface is simple <code>blobs.submitBlob(namespaceId, blob)</code> with a matching read interface.</p>
+<p>However, simply sending blobs is not enough to power a rollup.  End users need to interact with a &quot;settlement layer&quot;, while rollups require proof systems for security.</p>
+<p>Key functionality for <em>optimistic</em> rollups (e.g. OP Stack, Arbitrum Orbit) are:</p>
+<ul>
+<li>enabling the users of the rollup to <em>deposit</em> and <em>withdraw</em> the L1 native token (DOT) into the rollup and from the rollup.  In an AssetHub context:
+<ul>
+<li>Deposits:  send DOT to the rollup from AssetHub, by calling an EVM Contract function on AssetHub;</li>
+<li>Withdrawal:  withdraw DOT from the rollup by submitting a EVM transaction on the rollup.   After some of days (e.g. 7 days on OP Stack), the user submits a transaction on AssetHub to claim their DOT, using a Merkle proof.</li>
+</ul>
+</li>
+<li>enabling interactive fraud proofs. While this has rarely happened in practice, it is critical to rollup security. In an AssetHub context:
+<ul>
+<li>Anyone monitoring a rollup, using the Blobs chain can access the recent history.</li>
+<li>When detecting invalid state transitions, anyone can interact with rollup and AssetHub's EVM to generate a fraud proof.</li>
+</ul>
+</li>
+</ul>
+<p>Analogous functionality exist for ZK-rollup platforms (e.g. Polygon zkEVM, StarkNet Madara), with high potential for using the same Blobs+AssetHub chains.</p>
+<p>While it is possible to have the operations in EVM Contracts translated in FRAME pallets (e.g. an &quot;opstack&quot; pallet), we do not believe a pallet translation confers significant benefits.<br />
+Instead, we believe the translation would require regular updates from the rollup platform, which have proven difficult to implement in practice.</p>
+<h3 id="ink-on-assethub-will-lead-to-coreplay-developers--on-assethub"><a class="header" href="#ink-on-assethub-will-lead-to-coreplay-developers--on-assethub">ink! on AssetHub will lead to CorePlay Developers  on AssetHub</a></h3>
+<p>While ink! WASM Smart Contracts have been promising technology, the adoption of ink! WASM Contracts amongst Polkadot parachains has been low, in practice just Astar to date, with nowhere near as many developers.<br />
+This may be due to missing tooling, slow compile times, and/or simply because ink!/Rust is just harder to learn than Solidity, the dominant programming language of EVM Chains.</p>
+<p>Fortunately, ink! can compile to <a href="https://forum.polkadot.network/t/announcing-polkavm-a-new-risc-v-based-vm-for-smart-contracts-and-possibly-more/3811">PolkaVM</a>, a new RISC based VM that has the special capability of suspending and resuming the registers, supporting long-running computations.<br />
+This has the key new promise of making smart contract languages easier to use -- instead of smart contract developers worrying about what can be done within the gas limits of a specific block or a specific transaction, Coreplay smart contracts can be much easier to program on (see <a href="https://github.com/bkchr/coreplay-poc">here</a>).</p>
+<p>We believe AssetHub should support ink! as a precursor to support CorePlay's capabilities as soon as possible.<br />
+To the best of our knowledge, release times of this are <a href="https://forum.polkadot.network/t/announcing-polkavm-a-new-risc-v-based-vm-for-smart-contracts-and-possibly-more/3811/68">unknown</a> but having ink! inside AssetHub would be natural for Polkadot 2.0.</p>
+<h2 id="stakeholders"><a class="header" href="#stakeholders">Stakeholders</a></h2>
+<ul>
+<li><strong>Asset Hub Users</strong>: Those who call any extrinsic on Asset Hub for Polkadot.</li>
+<li><strong>DOT Token Holders</strong>: Those who hold DOT on any chain in the Polkadot ecosystem.</li>
+<li><strong>AssetHub Smart Contract Developers</strong>: Those who utilize EVM Smart Contracts, ink! Contracts or Coreplay Contracts on AssetHub.</li>
+<li><strong>Ethereum Rollups</strong>: Rollups who utilize Ethereum as a settlement layer and interactive fraud proofs or ZK proofs to secure their rollup and utilize Ethereum DA to record transactions, provide security for their rollup, and have rollup users settle on Ethereum.</li>
+<li><strong>Polkadot Rollups</strong>: Rollups who utilize AssetHub as a settlement layer and interactive fraud proofs or ZK proofs on Assethub and Blobs to record rollup transactions, provide security for their rollup, and have rollup users settle on AssetHub for Polkadot.</li>
+</ul>
+<h2 id="explanation"><a class="header" href="#explanation">Explanation</a></h2>
+<h3 id="limit-smart-contract-weight-allocation"><a class="header" href="#limit-smart-contract-weight-allocation">Limit Smart Contract Weight allocation</a></h3>
+<p>AssetHub is a major component of the Polkadot 2.0 Minimal Relay Chain architecture.  It is critical that smart contract developers not be able to clog AssetHub's blockspace for other mission critical applications, such as Staking and Governance.</p>
+<p>As such, it is proposed that <em>at most</em> 50% of the available weight in AssetHub for Polkadot blocks be allocated to smart contracts pallets (EVM, ink! and/or Coreplay).   While to date AssetHub has limited usage, it is believed (see <a href="https://forum.polkadot.network/t/permissioned-pallet-contracts-deployment-to-asset-hub-for-defi-primitives/3908/3">here</a>) that imposing this limit on smart contracts pallet would limit the effect on non-smart contract usage.  A excessively small weight limit like 10% or 20% may limit the attractiveness of Polkadot as a platform for Polkadot rollups and EVM Contracts.  A excessively large weight like 90% or 100% may threaten AssetHub usage.</p>
+<p>In practice, this 50% weight limit would be used for 3 categories of smart contract usage:</p>
+<ul>
+<li>Defi/NFT applications: modern defi EVM Contracts would be expected to go beyond the capabilities of <code>assetConversion</code> pallet to support many common ERC20/ERC721/ERC1155 centric applications.</li>
+<li>Polkadot Rollups users: deposit and withdrawal operations would be expected to dominate here.  Note the operations of recording blocks would be done on the Blobs Chains, while interactive fraud proofs would be extremely rare by comparison.</li>
+<li>Coreplay smart contract usage, at a future time.</li>
+</ul>
+<p>We expect the first category to dominate.  If AssetHub smart contract usage increases so as to approach this 50% limit, the gas price will increase significantly. This likely motivates EVM contract developers to migrate to a EVM contract chain and/or rethink their application to work asynchronously within CoreJam, another major Polkadot 2.0 technology.</p>
+<h3 id="model-assethub-assets-inside-evm-smart-contracts-based-on-astar"><a class="header" href="#model-assethub-assets-inside-evm-smart-contracts-based-on-astar">Model AssetHub Assets inside EVM Smart Contracts based on Astar</a></h3>
+<p>It is essential to make AssetHub assets interface well with EVM Smart Contracts.
+Polkadot parachains Astar and Moonbeam have a mapping between assetIDs and &quot;virtual&quot; EVM Contracts.</p>
+<ul>
+<li><a href="https://docs.astar.network/docs/learn/interoperability/asset-list">Astar XCM Asset List</a></li>
+<li><a href="https://docs.moonbeam.network/builders/interoperability/xcm/xc20/overview/">Moonbeam XC-20</a></li>
+</ul>
+<p>We propose that AssetHub support a systemic mapping following Astar:
+(a) Native Relay DOT + KSM - should be mapped to <code>0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF</code> on AssetHub for Polkadot and AssetHub for Kusama respectively
+(b) Other Assethubs assets should map into an EVM address using a <code>0xffffffff</code> prefix
+https://docs.astar.network/docs/learn/interoperability/xcm/integration/tools#xc20-address</p>
+<p>The usage of the above has been made code-complete by Astar:</p>
+<ul>
+<li><a href="https://github.com/AstarNetwork/Astar/tree/master/pallets/xc-asset-config">xc-asset-config</a></li>
+<li><a href="https://github.com/AstarNetwork/Astar/tree/master/precompiles/assets-erc20">assets-erc20</a></li>
+<li><a href="https://github.com/AstarNetwork/Astar/tree/master/chain-extensions/pallet-assets">pallet-assets extensions</a></li>
+</ul>
+<p>Polkadot parachains Astar and Moonbeam adopted two very different approaches of how end users interact with EVM Contracts.<br />
+We propose that AssetHub for Polkadot adopt the Astar solution, mirroring it as closely as possible.</p>
+<h2 id="new-dot-revenue-sources"><a class="header" href="#new-dot-revenue-sources">New DOT Revenue Sources</a></h2>
+<p>A substantial motivation in this proposal is to increase demand for DOT via two key chains:</p>
+<ul>
+<li>AssetHub - from defi/NFT users, Polkadot Rollup users and AssetHub Smart Contract Developers</li>
+<li>Blobs - for Polkadot Rollups</li>
+</ul>
+<h3 id="new-revenue-from-assethub-evm-contracts"><a class="header" href="#new-revenue-from-assethub-evm-contracts">New Revenue from AssetHub EVM Contracts</a></h3>
+<p>Enabling EVM Contracts on AssetHub will support DOT revenue from:</p>
+<ul>
+<li>defi/NFT users who use AssetHub directly</li>
+<li>rollup operators who utilize Blobs chain</li>
+<li>rollup users who buy DOT to utilize Polkadot Rollups</li>
+</ul>
+<h3 id="new-revenue-for-inkcoreplay-contracts"><a class="header" href="#new-revenue-for-inkcoreplay-contracts">New Revenue for ink!/Coreplay Contracts</a></h3>
+<p>Enabling ink! contracts will pave the way to a new class of AssetHub Smart Contract Developers.<br />
+Given PolkaVM's proven reduced compile time and RISC architecture enabling register snapshots, it is natural to utilize these new technical capabilities on a flagship system chain.<br />
+To the extent these capabilities are attractive to smart contract developers, this has the potential for bringing in new DOT revenue from a system chain.</p>
+<h2 id="drawbacks-and-tradeoffs"><a class="header" href="#drawbacks-and-tradeoffs">Drawbacks and Tradeoffs</a></h2>
+<p>Supporting EVM Contracts in AssetHub is seen by some as undercutting Polkadot's 1.0 parachain architecture, both special purpose appchains and smart contract developer platform parachains.<br />
+We believe the lack of growth of parachains in the last 12-18 months, and the high potential of CorePlay motivates new options be pursued in system chains.</p>
+<p>Maintaining EVM Contracts on AssetHub may be seen as difficult and may require Substrate engineers to maintain EVM Pallets and manage the xcContracts.<br />
+We believe this cost will be relatively small based on the proven deployment of Astar and Moonbeam.<br />
+The cost will be justified compared to the potential upside of new DOT revenue from defi/NFT applications on AssetHub and the potential for utilizing Polkadot DA for Polkadot rollups.</p>
+<h2 id="testing-security-and-privacy"><a class="header" href="#testing-security-and-privacy">Testing, Security, and Privacy</a></h2>
+<p>Testing the mapping between assetIDs and EVM Contracts thoroughly will be critical.</p>
+<p>Having a complete working OP Stack chain using AssetHub for Kusama (1000) and Blobs on Kusama (3338) would be highly desirable, but is unlikely to be required.</p>
+<h2 id="performance-ergonomics-and-compatibility"><a class="header" href="#performance-ergonomics-and-compatibility">Performance, Ergonomics, and Compatibility</a></h2>
+<h3 id="performance"><a class="header" href="#performance">Performance</a></h3>
+<p>The weight limit of 50% is expected to be adequate to limit excess smart contract usage at this time.</p>
+<p>Storage bloat is expected to kept to a minimum with the nominal 0.01 Existential Deposit.</p>
+<h3 id="ergonomics"><a class="header" href="#ergonomics">Ergonomics</a></h3>
+<p>Note that the existential deposit is not 0 DOT but being lowered from 0.1 DOT to 0.01 DOT, which may pose problems for some developers.<br />
+Many developers routinely deploy their EVM contracts on many different EVM Chains in parallel.  This non-zero ED may pose problems for some developers</p>
+<p>The 0.01 DOT (worth $0.075 USD) is unlikely to pose significant issue.</p>
+<h3 id="compatibility"><a class="header" href="#compatibility">Compatibility</a></h3>
+<p>It is believed that EVM pallet (as deployed on Moonbeam + Astar) is sufficiently compatible with Ethereum, and that the ED of 0.01 DOT pose negligible issues.</p>
+<p>The messaging architecture for rollups are not compatible with Polkadot XCM.<br />
+It is not clear if leading rollup platforms (OP Stack, Arbitrum Orbit, Polygon zkEVM)  could be made compatible with XCM.</p>
+<h2 id="unresolved-questions"><a class="header" href="#unresolved-questions">Unresolved Questions</a></h2>
+<p>It is highly desirable to know the throughput of Polkadot DA with popular rollup architectures OP Stack and Arbitrum Orbit.<br />
+This would enable CEXs and EVM L2 builders to choose Polkadot over Ethereum.</p>
+<h2 id="future-directions-and-related-material"><a class="header" href="#future-directions-and-related-material">Future Directions and Related Material</a></h2>
+<p>If accepted, this RFC could pave the way for CorePlay on Asset Hub for Polkadot/Kusama, a major component of Polkadot 2.0's smart contract future.</p>
+<p>The importance of precompiles should</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../approved/0056-one-transaction-per-notification.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../proposed/000x-lowering-deposits-assethub.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../approved/0056-one-transaction-per-notification.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../proposed/000x-lowering-deposits-assethub.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>
