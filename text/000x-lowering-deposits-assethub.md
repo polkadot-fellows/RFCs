@@ -36,7 +36,7 @@ This RFC suggests modifying deposit constants defined in the `nfts` pallet on th
 
 ### Current code structure
 
-[Current deposit requirements are as follows](https://github.com/paritytech/polkadot-sdk/blob/master/cumulus/parachains/runtimes/assets/asset-hub-rococo/src/lib.rs#L757)
+[Current deposit requirements are as follows](https://github.com/polkadot-fellows/runtimes/commit/c2a3c9881c0ee6393d1665fefd9671d040215188#diff-32714ab945a24cbcc5979fd9065e0c13e0beb59f7533b38e2e97a872b23cb125R596-R600)
 
 Looking at the current code structure the currently implemented we can find that the pricing re-uses the logic of how Uniques are defined:
 
