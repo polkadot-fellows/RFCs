@@ -4,7 +4,7 @@
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 2023-10-31                                                                                  |
 | **Description** | Add SignedExtension to check Metadata Root Hash                                             |
-| **Authors**     | Alzymologist Oy, Zondax LLC, Parity GmbH                                                    |
+| **Authors**     | Alzymologist Oy, Zondax LLC, Parity Technologies                                                    |
 
 ## Summary
 
