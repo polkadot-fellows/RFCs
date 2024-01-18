@@ -31,7 +31,7 @@ As of now, there is no working solution for (1), as the whole metadata has to be
 
 #### Include metadata digest into signature
 
-Some cryptographically strong digest of metadata MAY be included into signable blob. There SHALL NOT be storage overhead for this blob, nor computational overhead, on the node side; thus MUST be a constant within given runtime version, deterministically defined by metadata.
+Some cryptographically strong digest of metadata MAY be included into signable blob. There SHALL NOT be storage overhead for this blob, nor computational overhead; thus MUST be a constant within a given runtime, deterministically defined by metadata.
 
  - Metadata information that could be used in signable extrinsic decoding MAY be included in digest, its inclusion MUST be indicated in signed extensions;
  - Digest MUST be deterministic with respect to metadata;
