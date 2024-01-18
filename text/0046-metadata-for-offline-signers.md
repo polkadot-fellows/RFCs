@@ -87,9 +87,13 @@ Values for:
 7. SCALE-encoded `tokenSymbol` `String` defined on chain to identify the name of currency (available for example through `system.properties()` RPC call) or empty string if no base units are defined,
 
 ```
-struct MetadataDescriptor { // really a scale-encoded enum, thus first field is enum value - only 0x01 currently supported.
-  protocol_version: u8,
-  extrinsic_metadata: Vec<u8>, // SCALE from `ExtrinsicMetadata
+enum MetadataDescriptor {
+  V0,
+  V1(MetadataDescriptorV1),
+}
+
+struct MetadataDescriptorV1 {
+  extrinsic_metadata: Vec<u8>, // SCALE from `ExtrinsicMetadata`
   spec_version: Vec<u8>, // SCALE form `String`
   spec_name: Vec<u8>, // SCALE from `String`
   base58_prefix: u16,
