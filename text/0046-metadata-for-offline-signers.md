@@ -145,6 +145,22 @@ Node 0 is root
 
 ### Metadata modularization
 
+Structure of types in shortened metadata exactly matches structure of types in `scale-info`, but `doc` field is always empty
+
+```
+struct Type {
+  path: Path, // vector of strings
+  type_params: Vec<TypeParams>,
+  type_def: TypeDef, // enum of various types
+  doc: Vec<String>,
+}
+
+struct TypeParams {
+  name: String,
+  ty: Option<Type>,
+}
+```
+
 1. Types registry is stripped from `docs` fields.
 2. Types records are separated into chunks, with enum variants being individual chunks differing by variant index; each chunk consisting of `id` (same as in full metadata registry) and SCALE-encoded 'Type' description (reduced to 1-variant enum for enum variants). Enums with 0 variants are treated as regular types.
 3. Chunks are sorted by `id` in ascending order; chunks with same `id` are sorted by enum variant index in ascending order.
