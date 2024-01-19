@@ -21,5 +21,5 @@ jobs:
         - uses: paritytech/rfc-action@v0.0.7
           env:
             GH_TOKEN: ${{ github.token }}
-            PROVIDER_URL: "wss://polkadot-collectives-rpc.polkadot.io" # Optional.
+            PROVIDER_URL: "wss://polkadot-collectives-rpc.polkadot.io"
             START_DATE: ${{ steps.date.outputs.last }}
