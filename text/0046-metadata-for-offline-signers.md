@@ -153,12 +153,12 @@ Node 0 is root
 types_registry = metadataV14.types
 modularized_registry = EmptyVector<id, type>
 for (id, type) in types.registry.iterate_enumerate {
-  type.doc = Null
+  type.doc = empty_vector
   if (type is ReduceableEnum) { // false for 0-variant enums
     for variant in type.variants.iterate {
       variant_type = Type {
         path: type.path
-        type_params: Null
+        type_params: empty_vector
         type_def: TypeDef::Variant(variants: [variant])
       }
       modularized_registry.push(id, variant_type)
