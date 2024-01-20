@@ -332,6 +332,19 @@ Node 0 is root
 <li>Resulting value is a constant to be included in <code>additionalSigned</code> to prove that the metadata seen by cold device is genuine</li>
 </ol>
 <h3 id="metadata-modularization"><a class="header" href="#metadata-modularization">Metadata modularization</a></h3>
+<p>Structure of types in shortened metadata exactly matches structure of types in <code>scale-info</code>, but <code>doc</code> field is always empty</p>
+<pre><code>struct Type {
+  path: Path, // vector of strings
+  type_params: Vec&lt;TypeParams&gt;,
+  type_def: TypeDef, // enum of various types
+  doc: Vec&lt;String&gt;,
+}
+
+struct TypeParams {
+  name: String,
+  ty: Option&lt;Type&gt;,
+}
+</code></pre>
 <ol>
 <li>Types registry is stripped from <code>docs</code> fields.</li>
 <li>Types records are separated into chunks, with enum variants being individual chunks differing by variant index; each chunk consisting of <code>id</code> (same as in full metadata registry) and SCALE-encoded 'Type' description (reduced to 1-variant enum for enum variants). Enums with 0 variants are treated as regular types.</li>
@@ -340,12 +353,12 @@ Node 0 is root
 <pre><code>types_registry = metadataV14.types
 modularized_registry = EmptyVector&lt;id, type&gt;
 for (id, type) in types.registry.iterate_enumerate {
-  type.doc = Null
+  type.doc = empty_vector
   if (type is ReduceableEnum) { // false for 0-variant enums
     for variant in type.variants.iterate {
       variant_type = Type {
         path: type.path
-        type_params: Null
+        type_params: empty_vector
         type_def: TypeDef::Variant(variants: [variant])
       }
       modularized_registry.push(id, variant_type)
