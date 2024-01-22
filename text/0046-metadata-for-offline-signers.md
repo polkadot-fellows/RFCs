@@ -205,6 +205,29 @@ modularized_registry.sort(|a, b| {
 4. Right node and then left node is popped from the front of the nodes queue and merged; the result is sent to the end of the queue.
 5. Step (4) is repeated until only one node remains; this is tree root.
 
+
+```
+queue = empty_queue
+
+while (leaves.length>1) {
+  right = leaves.pop_last
+  left = leaves.pop_last
+  queue.push_back(merge(left, right))
+}
+
+if leaves.length == 1 {
+  queue.push_front(leaves.last)
+}
+
+while queue.len() > 1 {
+  right = queue.pop_front
+  left = queue.pop_front
+  queue.push_back(merge(left, right))
+}
+
+return queue.pop
+```
+
 ```
 Resulting tree for metadata consisting of 5 nodes (numbered from 0 to 4):
 
