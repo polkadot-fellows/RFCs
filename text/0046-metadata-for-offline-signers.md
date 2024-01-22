@@ -145,7 +145,7 @@ Node 0 is root
 
 ### Metadata modularization
 
-Structure of types in shortened metadata exactly matches structure of types in `scale-info`, but `doc` field is always empty
+Structure of types in shortened metadata exactly matches structure of types in `scale-info` at MetadataV14 state, but `doc` field is always empty
 
 ```
 struct Type {
