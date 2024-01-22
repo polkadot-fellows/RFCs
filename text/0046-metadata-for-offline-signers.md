@@ -248,18 +248,6 @@ Resulting tree for metadata consisting of 5 nodes (numbered from 0 to 4):
 
 Version number and corresponding resulting metadata digest MUST be included into Signed Extensions as specified in Chain Verification section below.
 
-### Shortening
-
-For shortening, an attempt to decode transaction completely using provided metadata is performed with the same algorithm that would be used on the cold side. All chunks are associated with their leaf indices. An example of this protocol is proposed in [metadata-shortener](https://github.com/Alzymologist/metadata-shortener) that is based on [substrate-parser](https://github.com/Alzymologist/substrate-parser) decoding protocol; any decoding protocol could be used here as long as cold signer's design finds it appropriate for given security model.
-
-### Transmission
-
-Shortened metadata chunks MAY be trasmitted into cold device together with Merkle proof in its entirety or in parts, depending on memory capabilities of the cold device and it ability to reconstruct larger fraction of tree. This document does not specify the manner of transmission. The order of metadata chunks MAY be arbitrary, the only requirement is that indices of leaf nodes in Merkle tree corresponding to chunks MUST be communicated. Community MAY handle proof format standartization independently.
-
-### Offline verification
-
-The transmitted metadata chunks are hashed together with proof lemmas to obtain root that MAY be transmitted along with the rest of payload. Verification that the root transmitted with message matches with calculated root is optional; the transmitted root SHOULD NOT be used in signature, calculated root MUST be used; however, there is no mechanism to enforce this - it should be done during cold signers code audit.
-
 ### Chain verification
 
 The root of metadata computed by cold device MAY be included into Signed Extensions; if it is included, the transaction will pass as valid iff hash of metadata as seen by cold storage device is identical to consensus hash of metadata, ensuring fair signing protocol.
