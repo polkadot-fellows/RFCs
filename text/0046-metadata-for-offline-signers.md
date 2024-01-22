@@ -140,7 +140,7 @@ Node 0 is root
 
 1. The metadata is converted into lean modular form (vector of chunks)
 2. A Merkle tree is constructed from the metadata chunks
-3. A root of tree (as a left element) is merged with Metadata Descriptor (as a right element)
+3. A root of tree is merged with the hash of the `MetadataDescriptor`
 4. Resulting value is a constant to be included in `additionalSigned` to prove that the metadata seen by cold device is genuine
 
 ### Metadata modularization
