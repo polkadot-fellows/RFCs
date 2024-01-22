@@ -239,7 +239,7 @@ The transmitted metadata chunks are hashed together with proof lemmas to obtain 
 
 ### Chain verification
 
-The root of metadata computed by cold device MAY be included into Signed Extensions; this way the transaction will pass as valid iff hash of metadata as seen by cold storage device is identical to consensus hash of metadata, ensuring fair signing protocol.
+The root of metadata computed by cold device MAY be included into Signed Extensions; if it is included, the transaction will pass as valid iff hash of metadata as seen by cold storage device is identical to consensus hash of metadata, ensuring fair signing protocol.
 
 The Signed Extension representing metadata digest is a single byte representing both digest vaule inclusion and shortening protocol version; this MUST be included in Signed Extensions set. Depending on its value, a digest value is included as `additionalSigned` to signature computation according to following specification:
 
