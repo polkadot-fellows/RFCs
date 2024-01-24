@@ -1,0 +1,25 @@
+name: RFC Cron
+
+on:
+    workflow_dispatch:
+    schedule:
+      - cron: '* 11 * * *'
+  
+jobs:
+  test_run:
+    runs-on: ubuntu-latest
+    steps:
+        - name: Get last run
+          run: |
+            last=$(gh run list -w "$WORKFLOW" --json startedAt,status -q 'map(select(.status == "completed"))[0].startedAt')
+            echo "last=$last" >> "$GITHUB_OUTPUT"
+          id: date
+          env: 
+           GH_TOKEN: ${{ github.token }}
+           WORKFLOW: ${{ github.workflow }}
+           GH_REPO: "${{ github.repository_owner }}/${{ github.event.repository.name }}"
+        - uses: paritytech/rfc-action@v0.0.7
+          env:
+            GH_TOKEN: ${{ github.token }}
+            PROVIDER_URL: "wss://polkadot-collectives-rpc.polkadot.io"
+            START_DATE: ${{ steps.date.outputs.last }}
