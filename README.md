@@ -55,6 +55,8 @@ Problems, requirements, and descriptions in RFC text should be stated using the 
 
 ## Bots
 
+[![RFC Cron](https://github.com/polkadot-fellows/RFCs/actions/workflows/rfc-referenda-notifications.yml/badge.svg)](https://github.com/polkadot-fellows/RFCs/actions/workflows/rfc-referenda-notifications.yml)
+
 The repository provides a bot for:
 
 * Proposing RFCs on chain in a referenda to let the fellowship vote on the RFC. The referenda can only be created by accounts that are part of the fellowship.
