@@ -3,7 +3,7 @@ name: RFC Cron
 on:
     workflow_dispatch:
     schedule:
-      - cron: '* 11 * * *'
+      - cron: '0 12 * * 1,2,3,4,5'
   
 jobs:
   test_run:
