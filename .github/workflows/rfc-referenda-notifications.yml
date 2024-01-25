@@ -6,8 +6,9 @@ on:
       - cron: '0 12 * * 1,2,3,4,5'
   
 jobs:
-  test_run:
+  rfc_notification:
     runs-on: ubuntu-latest
+    name: Notify on referendas
     steps:
         - name: Get last run
           run: |
