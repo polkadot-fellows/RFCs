@@ -16,7 +16,7 @@ The discovery mechanism of RFC #8 is extended to be able to discover nodes of sp
 
 ## Motivation
 
-The Polkadot peer-to-peer network is made of nodes. Not all these nodes are equal. Some nodes store only the headers of recently blocks, some nodes store all the block headers and bodies since the genesis, some nodes store the storage of all blocks since the genesis, and so on.
+The Polkadot peer-to-peer network is made of nodes. Not all these nodes are equal. Some nodes store only the headers of recent blocks, some nodes store all the block headers and bodies since the genesis, some nodes store the storage of all blocks since the genesis, and so on.
 
 It is currently not possible to know ahead of time (without connecting to it and asking) which nodes have which data available, and it is not easily possible to build a list of nodes that have a specific piece of data available.
 
@@ -45,12 +45,14 @@ This RFC defines a list of so-called **capabilities**:
 - **Archive provider**. This capability is a superset of **History provider**. In addition to the requirements of **History provider**, an implementation with this capability must be able to serve call proofs and storage proof requests of any block since the genesis up until and including their currently finalized block.
 - **Parachain bootnode** (only for relay chains). An implementation with this capability must be able to serve the network request described in RFC 8.
 
+More capabilities might be added in the future.
+
 In the context of the *head of chain provider*, the word "recent" means: any not-finalized-yet block that is equal to or an ancestor of a block that it has announced through a block announce, and any finalized block whose height is superior to its current finalized block minus **16**.
 This does *not* include blocks that have been pruned because they're not a descendant of its current finalized block. In other words, blocks that aren't a descendant of the current finalized block can be thrown away.
-A gap of blocks is required due to race conditions: when a node finalizes a block, it takes some time for its peers to be made aware of this, during which they might send requests concerning older blocks. The exact gap is arbitrary.
+A gap of blocks is required due to race conditions: when a node finalizes a block, it takes some time for its peers to be made aware of this, during which they might send requests concerning older blocks. The choice of the number of blocks in this gap is arbitrary.
 
 Substrate is currently by default a **head of chain provider** provider. After it has finished warp syncing, it downloads the list of old blocks, after which it becomes a **history provider**.
-If Substrate is instead configured as an archive node, then it downloads the state of all blocks since the genesis, after which it becomes an **archive provider**, **history provider**, and **head of chain provider**.
+If Substrate is instead configured as an archive node, then it downloads all blocks since the genesis and builds their state, after which it becomes an **archive provider**, **history provider**, and **head of chain provider**.
 If blocks pruning is enabled and the chain is a relay chain, then Substrate unfortunately doesn't implement any of these capabilities, not even **head of chain provider**. This is considered as a bug that should be fixed, see <https://github.com/paritytech/polkadot-sdk/issues/2733>.
 
 ### DHT provider registration
