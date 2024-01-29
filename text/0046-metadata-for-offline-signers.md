@@ -268,7 +268,7 @@ A 1-byte increase in transaction size due to signed extension value. Digest is n
 
 ### Transition overhead
 
-Some slightly out of spec systems might experience breaking changes as new content of signed extensions is added. It is important to note, that there is no real overhead in processing time nor complexity, as the metadata checking mechanism is voluntary. The only drawbacks are expected for tools that do not implement MetadataV14 self-descripting features.
+Some slightly out of spec systems might experience breaking changes as new content of signed extensions is added - tools that delay their transition instead of preparing ahead of time would break for the duration of delay. It is important to note, that there is no real overhead in processing time nor complexity, as the metadata checking mechanism is voluntary.
 
 ## Testing, Security, and Privacy
 
