@@ -200,7 +200,7 @@ modularized_registry.sort(|a, b| {
 ### Complete Binary Merkle Tree construction protocol
 
 1. Leaves are numbered in ascending order. Leaf index is associated with corresponding chunk.
-2. Merge is performed using the leaf with highest index as right and node with second to highest index as left children; result is pushed to the end of nodes queue and leaves are discarded.
+2. Merge is performed using the leaf with highest index as right and leaf with second to highest index as left children; result is pushed to the end of nodes queue and leaves are discarded.
 3. Step (2) is repeated until no leaves or just one leaf remains; in latter case, the last leaf is pushed to the front of the nodes queue.
 4. Right node and then left node is popped from the front of the nodes queue and merged; the result is sent to the end of the queue.
 5. Step (4) is repeated until only one node remains; this is tree root.
