@@ -297,7 +297,6 @@ This project was developed upon a Polkadot Treasury grant; relevant development 
 ## Unresolved Questions
 
 2. How would polkadot-js handle the transition?
-3. Where would non-rust tools like Ledger apps get shortened metadata content?
 
 ## Future Directions and Related Material
 
