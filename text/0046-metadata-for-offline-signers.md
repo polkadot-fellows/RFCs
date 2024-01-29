@@ -8,7 +8,9 @@
 
 ## Summary
 
-Add a metadata digest value (33-byte constant within fixed `spec_version`) to Signed Extensions to supplement signer party with proof of correct extrinsic interpretation. The digest value is generated once before release and is well-known and deterministic. The digest mechanism is designed to be modular and flexible. It also supports partial metadata transfer as needed by the signing party's extrinsic decoding mechanism. This considers signing devices potentially limited communication bandwidth and/or memory capacity.
+Add a metadata digest value to signed data to supplement signer party with proof of correct extrinsic interpretation. This would ensure that hardware wallets always use correct metadata to decode the information for the user.
+
+The digest value is generated once before release and is well-known and deterministic. The digest mechanism is designed to be modular and flexible. It also supports partial metadata transfer as needed by the signing party's extrinsic decoding mechanism. This considers signing devices potentially limited communication bandwidth and/or memory capacity.
 
 ## Motivation
 
