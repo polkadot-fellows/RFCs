@@ -296,7 +296,6 @@ This project was developed upon a Polkadot Treasury grant; relevant development 
 
 ## Unresolved Questions
 
-2. How would polkadot-js handle the transition?
 
 ## Future Directions and Related Material
 
