@@ -35,7 +35,7 @@ Some cryptographically strong digest of metadata MAY be included into signable b
 
  - Metadata information that could be used in signable extrinsic decoding MAY be included in digest, its inclusion MUST be indicated in signed extensions;
  - Digest MUST be deterministic with respect to metadata;
- - Digest MUST be cryptographically strong against pre-image, both first and second;
+ - Digest MUST be cryptographically strong against pre-image, both first (finding an input that results in given digest) and second (finding an input that results in same digest as some other input given);
  - Extra-metadata information necessary for extrinsic decoding and constant within runtime version MUST be included in digest;
  - It SHOULD be possible to quickly withdraw offline signing mechanism without access to cold signing devices;
  - Digest format SHOULD be versioned.
