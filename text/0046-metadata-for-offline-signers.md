@@ -65,16 +65,6 @@ Detailed description of metadata shortening and digest process is provided in [m
 
 ### Definitions
 
-#### Metadata structure
-
-Metadata in general consists of four sections:
-
-1. Types registry
-2. Pallets
-3. Extrinsic metadata
-4. Runtime type
-
-Of these, only sections 1-3 contain information required for extrinsic decoding. The most important section is (1) Types registry, that is mostly used in extrinsic decoding. It is also the largest part, thus it is modularized for fractional transmission. Part (2) contains runtime version and is otherwise useless for transaction decoding; thus its contents are reduced to this parameter and included into Metadata Descriptor. Part (3) is included into Metadata Descriptor verbatim.
 
 #### Metadata descriptor
 
