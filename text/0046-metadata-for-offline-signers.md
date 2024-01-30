@@ -88,7 +88,7 @@ struct MetadataDescriptorV1 {
   extrinsic_metadata: Vec<u8>, // SCALE from `ExtrinsicMetadata`
   spec_version: Vec<u8>, // SCALE form `String`
   spec_name: Vec<u8>, // SCALE from `String`
-  base58_prefix: u16,
+  ss58_prefix: u16,
   decimals: u8,
   token_symbol: Vec<u8>, // SCALE from `String`
 }
