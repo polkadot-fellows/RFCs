@@ -74,7 +74,7 @@ Values for:
 2. SCALE-encoded `ExtrinsicMetadata`,
 3. SCALE-encoded `spec_version` `String`,
 4. SCALE-encoded `spec_name` `String`,
-5. `u16` base58 prefix,
+5. `u16` ss58 prefix,
 6. `u8` decimals value or `0u8` if no units are defined,
 7. SCALE-encoded `tokenSymbol` `String` defined on chain to identify the name of currency (available for example through `system.properties()` RPC call) or empty string if no base units are defined,
 
