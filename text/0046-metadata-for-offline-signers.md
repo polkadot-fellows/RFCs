@@ -71,12 +71,12 @@ Detailed description of metadata shortening and digest process is provided in [m
 Values for:
 
 1. `u8` metadata shortening protocol version, 
-2. SCALE-encoded `ExtrinsicMetadata`,
-3. SCALE-encoded `spec_version` `String`,
-4. SCALE-encoded `spec_name` `String`,
+2. `ExtrinsicMetadata`,
+3. `spec_version` `String`,
+4. `spec_name` `String`,
 5. `u16` ss58 prefix,
 6. `u8` decimals value or `0u8` if no units are defined,
-7. SCALE-encoded `tokenSymbol` `String` defined on chain to identify the name of currency (available for example through `system.properties()` RPC call) or empty string if no base units are defined,
+7. `tokenSymbol` `String` defined on chain to identify the name of currency (available for example through `system.properties()` RPC call) or empty string if no base units are defined,
 
 ```
 enum MetadataDescriptor {
@@ -85,12 +85,12 @@ enum MetadataDescriptor {
 }
 
 struct MetadataDescriptorV1 {
-  extrinsic_metadata: Vec<u8>, // SCALE from `ExtrinsicMetadata`
-  spec_version: Vec<u8>, // SCALE form `String`
-  spec_name: Vec<u8>, // SCALE from `String`
+  extrinsic_metadata: ExtrinsicMetadata
+  spec_version: String
+  spec_name: String
   ss58_prefix: u16,
   decimals: u8,
-  token_symbol: Vec<u8>, // SCALE from `String`
+  token_symbol: String
 }
 ```
 
