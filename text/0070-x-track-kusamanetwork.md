@@ -1,4 +1,4 @@
-# RFC-00xx: X Track for [@kusamanetwork](https://x.com/kusamanetwork)
+# RFC-0070: X Track for [@kusamanetwork](https://x.com/kusamanetwork)
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
