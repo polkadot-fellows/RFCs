@@ -226,7 +226,8 @@
 </tbody></table>
 </div>
 <h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
-<p>Add a metadata digest value (33-byte constant within fixed <code>spec_version</code>) to Signed Extensions to supplement signer party with proof of correct extrinsic interpretation. The digest value is generated once before release and is well-known and deterministic. The digest mechanism is designed to be modular and flexible. It also supports partial metadata transfer as needed by the signing party's extrinsic decoding mechanism. This considers signing devices potentially limited communication bandwidth and/or memory capacity.</p>
+<p>Add a metadata digest value to signed data to supplement signer party with proof of correct extrinsic interpretation. This would ensure that hardware wallets always use correct metadata to decode the information for the user.</p>
+<p>The digest value is generated once before release and is well-known and deterministic. The digest mechanism is designed to be modular and flexible. It also supports partial metadata transfer as needed by the signing party's extrinsic decoding mechanism. This considers signing devices potentially limited communication bandwidth and/or memory capacity.</p>
 <h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
 <h3 id="background"><a class="header" href="#background">Background</a></h3>
 <p>While all blockchain systems support (at least in some sense) offline signing used in air-gapped wallets and lightweight embedded devices, only few allow simultaneously complex upgradeable logic and full message decoding on the cold off-line signer side; Substrate is one of these heartening few, and therefore - we should build on this feature to greatly improve transaction security, and thus in general, network resilience.</p>
@@ -244,7 +245,7 @@
 <ul>
 <li>Metadata information that could be used in signable extrinsic decoding MAY be included in digest, its inclusion MUST be indicated in signed extensions;</li>
 <li>Digest MUST be deterministic with respect to metadata;</li>
-<li>Digest MUST be cryptographically strong against pre-image, both first and second;</li>
+<li>Digest MUST be cryptographically strong against pre-image, both first (finding an input that results in given digest) and second (finding an input that results in same digest as some other input given);</li>
 <li>Extra-metadata information necessary for extrinsic decoding and constant within runtime version MUST be included in digest;</li>
 <li>It SHOULD be possible to quickly withdraw offline signing mechanism without access to cold signing devices;</li>
 <li>Digest format SHOULD be versioned.</li>
@@ -264,15 +265,6 @@
 <h2 id="explanation"><a class="header" href="#explanation">Explanation</a></h2>
 <p>Detailed description of metadata shortening and digest process is provided in <a href="https://github.com/Alzymologist/metadata-shortener">metadata-shortener</a> crate (see <code>cargo doc --open</code> and examples). Below are presented algorithms of the process.</p>
 <h3 id="definitions"><a class="header" href="#definitions">Definitions</a></h3>
-<h4 id="metadata-structure"><a class="header" href="#metadata-structure">Metadata structure</a></h4>
-<p>Metadata in general consists of four sections:</p>
-<ol>
-<li>Types registry</li>
-<li>Pallets</li>
-<li>Extrinsic metadata</li>
-<li>Runtime type</li>
-</ol>
-<p>Of these, only sections 1-3 contain information required for extrinsic decoding. The most important section is (1) Types registry, that is mostly used in extrinsic decoding. It is also the largest part, thus it is modularized for fractional transmission. Part (2) contains runtime version and is otherwise useless for transaction decoding; thus its contents are reduced to this parameter and included into Metadata Descriptor. Part (3) is included into Metadata Descriptor verbatim.</p>
 <h4 id="metadata-descriptor"><a class="header" href="#metadata-descriptor">Metadata descriptor</a></h4>
 <p>Values for:</p>
 <ol>
@@ -378,7 +370,7 @@ modularized_registry.sort(|a, b| {
 <h3 id="complete-binary-merkle-tree-construction-protocol"><a class="header" href="#complete-binary-merkle-tree-construction-protocol">Complete Binary Merkle Tree construction protocol</a></h3>
 <ol>
 <li>Leaves are numbered in ascending order. Leaf index is associated with corresponding chunk.</li>
-<li>Merge is performed using the leaf with highest index as right and node with second to highest index as left children; result is pushed to the end of nodes queue and leaves are discarded.</li>
+<li>Merge is performed using the leaf with highest index as right and leaf with second to highest index as left children; result is pushed to the end of nodes queue and leaves are discarded.</li>
 <li>Step (2) is repeated until no leaves or just one leaf remains; in latter case, the last leaf is pushed to the front of the nodes queue.</li>
 <li>Right node and then left node is popped from the front of the nodes queue and merged; the result is sent to the end of the queue.</li>
 <li>Step (4) is repeated until only one node remains; this is tree root.</li>
@@ -433,7 +425,7 @@ return queue.pop
 <h3 id="increased-transaction-size"><a class="header" href="#increased-transaction-size">Increased transaction size</a></h3>
 <p>A 1-byte increase in transaction size due to signed extension value. Digest is not included in transferred transaction, only in signing process.</p>
 <h3 id="transition-overhead"><a class="header" href="#transition-overhead">Transition overhead</a></h3>
-<p>Some slightly out of spec systems might experience breaking changes as new content of signed extensions is added. It is important to note, that there is no real overhead in processing time nor complexity, as the metadata checking mechanism is voluntary. The only drawbacks are expected for tools that do not implement MetadataV14 self-descripting features.</p>
+<p>Some slightly out of spec systems might experience breaking changes as new content of signed extensions is added - tools that delay their transition instead of preparing ahead of time would break for the duration of delay. It is important to note, that there is no real overhead in processing time nor complexity, as the metadata checking mechanism is voluntary.</p>
 <h2 id="testing-security-and-privacy"><a class="header" href="#testing-security-and-privacy">Testing, Security, and Privacy</a></h2>
 <p>The metadata shortening protocol should be extensively tested on all available examples of metadata before releasing changes to either metadata or shortener. Careful code review should be performed on shortener implementation code to ensure security. The main metadata tree would inevitably be constructed on runtime build which would also ensure correctness.</p>
 <p>To be able to recall shortener protocol in case of vulnerability issues, a version byte is included.</p>
@@ -447,10 +439,6 @@ return queue.pop
 <h2 id="prior-art-and-references"><a class="header" href="#prior-art-and-references">Prior Art and References</a></h2>
 <p>This project was developed upon a Polkadot Treasury grant; relevant development links are located in <a href="https://github.com/Alzymologist/metadata-offline-project">metadata-offline-project</a> repository.</p>
 <h2 id="unresolved-questions"><a class="header" href="#unresolved-questions">Unresolved Questions</a></h2>
-<ol start="2">
-<li>How would polkadot-js handle the transition?</li>
-<li>Where would non-rust tools like Ledger apps get shortened metadata content?</li>
-</ol>
 <h2 id="future-directions-and-related-material"><a class="header" href="#future-directions-and-related-material">Future Directions and Related Material</a></h2>
 <p>Changes to code of all cold signers to implement this mechanism SHOULD be done when this is enabled; non-cold signers may perform extra metadata check for better security. Ultimately, signing anything without decoding it with verifiable metadata should become discouraged in all situations where a decision-making mechanism is involved (that is, outside of fully automated blind signers like trade bots or staking rewards payout tools).</p>
 
