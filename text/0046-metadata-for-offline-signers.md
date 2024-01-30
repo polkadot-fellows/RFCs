@@ -201,7 +201,7 @@ modularized_registry.sort(|a, b| {
 ```
 queue = empty_queue
 
-while (leaves.length>1) {
+while leaves.length > 1 {
   right = leaves.pop_last
   left = leaves.pop_last
   queue.push_back(merge(left, right))
