@@ -15,9 +15,15 @@ module.exports = async ({github, context}) => {
       if (!filename.endsWith(".md")) continue;
       const filePath = dirPath + filename
       const text = fs.readFileSync(filePath)
-      const title = text.toString().split(/\n/)
+      let title = text.toString().split(/\n/)
         .find(line => line.startsWith("# ") || line.startsWith(" # "))
         .replace("# ", "")
+      for (const markdownLink of title.matchAll(/\[(.*?)\]\((.*?)\)/g)) {
+        // Replace any [label](destination) markdown links in the title with just the label.
+        // This is because the titles are turned into links themselves,
+        // and we cannot have a link inside of a link - it breaks markdown and mdBook is not able to build.
+        title = title.replace(markdownLink[0], markdownLink[1])
+      }
       // Relative path, without the src prefix (format required by mdbook)
       const relativePath = filePath.replace("mdbook/src/", "")
       fs.appendFileSync(summaryPath, `- [${title}](${relativePath})\n`)
