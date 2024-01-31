@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - rzadp/strip-links
   schedule:
     - cron: "0 0 * * *" # Once a day
 
