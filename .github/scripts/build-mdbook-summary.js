@@ -24,14 +24,14 @@ module.exports = async ({github, context}) => {
     }
   }
 
-  fs.appendFileSync(summaryPath, "\n---\n\n# Approved\n\n")
-  appendRfcsToSummary("mdbook/src/approved/")
-
   fs.appendFileSync(summaryPath, "\n---\n\n# Newly Proposed\n\n")
   appendRfcsToSummary("mdbook/src/new/")
 
   fs.appendFileSync(summaryPath, "\n---\n\n# Proposed\n\n")
   appendRfcsToSummary("mdbook/src/proposed/")
+
+  fs.appendFileSync(summaryPath, "\n---\n\n# Approved\n\n")
+  appendRfcsToSummary("mdbook/src/approved/")
 
   fs.appendFileSync(summaryPath, "\n---\n\n# Stale\n\n")
   appendRfcsToSummary("mdbook/src/stale/")
