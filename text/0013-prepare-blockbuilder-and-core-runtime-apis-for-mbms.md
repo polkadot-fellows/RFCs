@@ -30,6 +30,14 @@ In a similar fashion, it should not hinder the future addition of a `System::Pos
 ### `Core::initialize_block`
 
 This runtime API function is changed from returning `()` to `ExtrinsicInclusionMode`:
+
+```patch
+fn initialize_block(header: &<Block as BlockT>::Header)
++  -> ExtrinsicInclusionMode;
+```
+
+With `ExtrinsicInclusionMode` is defined as:
+
 ```rust
 enum ExtrinsicInclusionMode {
   /// All extrinsics are allowed in this block.
@@ -39,23 +47,23 @@ enum ExtrinsicInclusionMode {
 }
 ```
 
-A block author MUST respect the `ExtrinsicInclusionMode` that is returned by `initialize_block`. The runtime MUST reject blocks that have extrinsics in them when `OnlyInherents` was returned.
+A block author MUST respect the `ExtrinsicInclusionMode` that is returned by `initialize_block`. The runtime MUST reject blocks that have extrinsics in them while `OnlyInherents` was returned.
 
 Coming back to the motivations and how they can be implemented with this runtime API change:  
 
 **1. Multi-Block-Migrations**: The runtime is being put into lock-down mode for the duration of the migration process by returning `OnlyInherents` from `initialize_block`. This ensures that no user provided transaction can interfere with the migration process. It is absolutely necessary to ensure this, otherwise a transaction could call into un-migrated storage and violate storage invariants.
 
-**2. `poll`** is possible by using `apply_extrinsic` as entry-point and not hindered by this approach. It would not be possible to use a pallet inherent like `System::last_inherent` to achieve this for two reasons. First is that pallets do not have access to `AllPalletsWithSystem` that is required to invoke the `poll` hook on all pallets. Second is that the runtime does currently not enforce an order of inherents. 
+**2. `poll`** is possible by using `apply_extrinsic` as entry-point and not hindered by this approach. It would not be possible to use a pallet inherent like `System::last_inherent` to achieve this for two reasons: First is that pallets do not have access to `AllPalletsWithSystem` which is required to invoke the `poll` hook on all pallets. Second is that the runtime does currently not enforce an order of inherents. 
 
 **3. `System::PostInherents`** can be done in the same manner as `poll`.
 
 ## Drawbacks
 
-The previous drawback of cementing the order of inherents has been addressed and removed by redesigning the approach. No further drawbacks have been identified.
+The previous drawback of cementing the order of inherents has been addressed and removed by redesigning the approach. No further drawbacks have been identified thus far.
 
 ## Testing, Security, and Privacy
 
-The new logic of `initialize_block` can be tested by checking that the block-builder will skip transactions when `OnlyInherents` is returned. The runtime should also not call any optional hooks like `on_idle`.
+The new logic of `initialize_block` can be tested by checking that the block-builder will skip transactions when `OnlyInherents` is returned.
 
 Security: n/a
 
