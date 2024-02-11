@@ -26,7 +26,7 @@ the actual storage footprint of an NFT collection. This proposal aims to adjust 
 a value based on the `deposit` function, which calculates a deposit based on the number of keys
 introduced to storage and the size of corresponding values stored.
 
-Further, it suggests some directions for a future of calculating deposits variably based on adoption
+Further, it suggests a direction for a future of calculating deposits variably based on adoption
 and/or market conditions. There is a discussion on tradeoffs of setting deposits too high or too
 low.
 
@@ -116,6 +116,28 @@ This adjustment would result in the following DOT and KSM deposit values:
 | `metadataDepositBase`     | 0.002 DOT                  | 0.0006709666617 KSM      |
 | `attributeDepositBase`    | 0.002 DOT                  | 0.000666666666 KSM       |
 
+### Short- and Long-Term Plans
+
+The plan presented above is recommended as an immediate step to make Polkadot a more attractive
+place to launch NFTs, although one would note that a forty fold reduction in the Item Deposit is
+just as arbitrary as the value it was replacing. As explained earlier, this is meant as a subsidy to
+gain more momentum for NFTs on Polkadot.
+
+In the long term, an implementation should account for what should happen to the deposit rates
+assuming that the subsidy is successful and attracts a lot of deployments. Many options are
+discussed in the [Addendum](#addendum).
+
+The deposit should be calculated as a function of the number of existing collections with maximum
+DOT and stablecoin values limiting the amount. With asset rates available via the Asset Conversion
+pallet, the system could take the lower value required. A sigmoid curve would make sense for this
+application to avoid sudden rate changes, as in:
+
+$$ \frac{\mathrm{min(DOT deposit, stable deposit)} }{\mathrm{1 + e^{a - b * x}} }$$
+
+where the constant `a` moves the inflection to lower or higher `x` values, the constant `b` adjusts
+the rate of the deposit increase, and the independent variable `x` is the number of collections or
+items, depending on application.
+
 ## Drawbacks
 
 Modifying deposit requirements necessitates a balanced assessment of the potential drawbacks.
@@ -170,17 +192,14 @@ The change does not impact compatibility as a `redeposit` function is already im
 
 ## Unresolved Questions
 
-There remain unresolved questions regarding the implementation of a function-based pricing model for
-deposits and the feasibility of linking deposits to a USD(x) value. These aspects require further
-exploration and discussion to ascertain their viability and potential impact on the ecosystem. See
-below.
+If this RFC is accepted, there should not be any unresolved questions regarding how to adapt the
+implementation of deposits for NFT collections.
 
-## Future Directions and Related Material
-
-## Discussion of Other Proposals
+## Addendum
 
 Several innovative proposals have been considered to enhance the network's adaptability and manage
-deposit requirements more effectively:
+deposit requirements more effectively. The RFC recommends a mixture of the function-based model and
+the stablecoin model, but some tradeoffs of each are maintained here for those interested.
 
 ### Enhanced Weak Governance Origin Model
 
