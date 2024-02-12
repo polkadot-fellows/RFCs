@@ -69,7 +69,7 @@ repository](https://github.com/vikiival/rfc-pricing)):
 
 **Polkadot**
 
-| **Name**                  | **Current Rate (DOT)** | **Proposed Rate (DOT)** |
+| **Name**                  | **Current Rate (DOT)** | **Calculated with Function (DOT)** |
 |---------------------------|:----------------------:|:-----------------------:|
 | `collectionDeposit`       | 10                     | 0.20064                 |
 | `itemDeposit`             | 0.01                   | 0.20081                 |
@@ -80,7 +80,7 @@ Similarly, the prices for Kusama were calculated as:
 
 **Kusama:**
 
-| **Name**                  | **Current Rate (KSM)** | **Proposed Rate (KSM)** |
+| **Name**                  | **Current Rate (KSM)** | **Calculated with Function (KSM)** |
 |---------------------------|:----------------------:|:-----------------------:|
 | `collectionDeposit`       | 0.1                    | 0.006688                |
 | `itemDeposit`             | 0.001                  | 0.000167                |
