@@ -1,0 +1,377 @@
+
+<!DOCTYPE HTML>
+<html lang="en" class="polkadot" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>RFC-0070: X Track for @kusamanetwork - Polkadot Fellowship RFCs</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="An online book of RFCs approved or proposed within the Polkadot Fellowship.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/polkadot.css">
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "polkadot" : "polkadot";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('polkadot')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../introduction.html">Introduction</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Newly Proposed</li><li class="chapter-item expanded "><a href="../new/0073-referedum-deposit-track.html">RFC-0073: Decision Deposit Referendum Track</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Proposed</li><li class="chapter-item expanded "><a href="../proposed/0010-burn-coretime-revenue.html">RFC-0010: Burn Coretime Revenue</a></li><li class="chapter-item expanded "><a href="../proposed/0013-prepare-blockbuilder-and-core-runtime-apis-for-mbms.html">RFC-0013: Prepare Core runtime API for MBMs</a></li><li class="chapter-item expanded "><a href="../proposed/0034-xcm-absolute-location-account-derivation.html">RFC-34: XCM Absolute Location Account Derivation</a></li><li class="chapter-item expanded "><a href="../proposed/0045-nft-deposits-asset-hub.html">RFC-0045: Lowering NFT Deposits on Asset Hub</a></li><li class="chapter-item expanded "><a href="../proposed/0046-metadata-for-offline-signers.html">RFC-0046: Metadata for Offline Signers</a></li><li class="chapter-item expanded "><a href="../proposed/0059-nodes-capabilities-discovery.html">RFC-0059: Add a discovery mechanism for nodes based on their capabilities</a></li><li class="chapter-item expanded "><a href="../proposed/0061-allocator-inside-of-runtime.html">RFC-0061: Support allocator inside of runtime</a></li><li class="chapter-item expanded "><a href="../proposed/0066-add-smartcontracts-to-assethub.html">RFC-0066: Add EVM+ink! Contracts Pallets to Asset Hub for Polkadot</a></li><li class="chapter-item expanded "><a href="../proposed/0070-x-track-kusamanetwork.html" class="active">RFC-0070: X Track for @kusamanetwork</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Approved</li><li class="chapter-item expanded "><a href="../approved/0001-agile-coretime.html">RFC-1: Agile Coretime</a></li><li class="chapter-item expanded "><a href="../approved/0005-coretime-interface.html">RFC-5: Coretime Interface</a></li><li class="chapter-item expanded "><a href="../approved/0007-system-collator-selection.html">RFC-0007: System Collator Selection</a></li><li class="chapter-item expanded "><a href="../approved/0008-parachain-bootnodes-dht.html">RFC-0008: Store parachain bootnodes in relay chain DHT</a></li><li class="chapter-item expanded "><a href="../approved/0012-process-for-adding-new-collectives.html">RFC-0012: Process for Adding New System Collectives</a></li><li class="chapter-item expanded "><a href="../approved/0014-improve-locking-mechanism-for-parachains.html">RFC-0014: Improve locking mechanism for parachains</a></li><li class="chapter-item expanded "><a href="../approved/0022-adopt-encointer-runtime.html">RFC-0022: Adopt Encointer Runtime</a></li><li class="chapter-item expanded "><a href="../approved/0032-minimal-relay.html">RFC-0032: Minimal Relay</a></li><li class="chapter-item expanded "><a href="../approved/0042-extrinsics-state-version.html">RFC-0042: Add System version that replaces StateVersion on RuntimeVersion</a></li><li class="chapter-item expanded "><a href="../approved/0043-storage-proof-size-hostfunction.html">RFC-0043: Introduce storage_proof_size Host Function for Improved Parachain Block Utilization</a></li><li class="chapter-item expanded "><a href="../approved/0047-assignment-of-availability-chunks.html">RFC-0047: Assignment of availability chunks to validators</a></li><li class="chapter-item expanded "><a href="../approved/0050-fellowship-salaries.html">RFC-0050: Fellowship Salaries</a></li><li class="chapter-item expanded "><a href="../approved/0056-one-transaction-per-notification.html">RFC-0056: Enforce only one transaction per notification</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Stale</li><li class="chapter-item expanded "><a href="../stale/0004-remove-unnecessary-allocator-usage.html">RFC-0004: Remove the host-side runtime memory allocator</a></li><li class="chapter-item expanded "><a href="../stale/0006-dynamic-pricing-for-bulk-coretime-sales.html">RFC-0006: Dynamic Pricing for Bulk Coretime Sales</a></li><li class="chapter-item expanded "><a href="../stale/0009-improved-net-light-client-requests.html">RFC-0009: Improved light client requests networking protocol</a></li><li class="chapter-item expanded "><a href="../stale/0015-market-design-revisit.html">RFC-0015: Market Design Revisit</a></li><li class="chapter-item expanded "><a href="../stale/0020-treasurer-track-confirmation-period-duration-modification.html">RFC-0020: Treasurer Track Confirmation Period Duration Modification</a></li><li class="chapter-item expanded "><a href="../stale/0026-sassafras-consensus.html">RFC-0026: Sassafras Consensus Protocol</a></li><li class="chapter-item expanded "><a href="../stale/0035-conviction-voting-delegation-modifications.html"> RFC-0035: Conviction Voting Delegation Modifications</a></li><li class="chapter-item expanded "><a href="../stale/0044-rent-based-registration.html">RFC-0044: Rent based registration model</a></li><li class="chapter-item expanded "><a href="../stale/0048-session-keys-runtime-api.html">RFC-0048: Generate ownership proof for SessionKeys</a></li><li class="chapter-item expanded "><a href="../stale/0054-remove-heap-pages.html">RFC-0054: Remove the concept of "heap pages" from the client</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="polkadot">Polkadot</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Polkadot Fellowship RFCs</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <p><a href="https://github.com/polkadot-fellows/RFCs/pull/70">(source)</a></p>
+<p><strong>Table of Contents</strong></p>
+<ul>
+<li><a href="#rfc-0070-x-track-for-kusamanetwork">RFC-0070: X Track for @kusamanetwork</a>
+<ul>
+<li><a href="#summary">Summary</a></li>
+<li><a href="#motivation">Motivation</a></li>
+<li><a href="#stakeholders">Stakeholders</a></li>
+<li><a href="#explanation">Explanation</a>
+<ul>
+<li><a href="#phase-1---track-configurations">Phase 1 - Track configurations</a></li>
+<li><a href="#phase-2---establish-specs-for-x-post-track-referenda">Phase 2 - Establish Specs for X Post Track Referenda</a></li>
+<li><a href="#phase-3---release-tooling--documentation">Phase 3 - Release, Tooling, &amp; Documentation</a></li>
+</ul>
+</li>
+<li><a href="#drawbacks">Drawbacks</a></li>
+<li><a href="#testing-security-and-privacy">Testing, Security, and Privacy</a></li>
+<li><a href="#performance-ergonomics-and-compatibility">Performance, Ergonomics, and Compatibility</a>
+<ul>
+<li><a href="#performance">Performance</a></li>
+<li><a href="#ergonomics">Ergonomics</a></li>
+<li><a href="#compatibility">Compatibility</a></li>
+</ul>
+</li>
+<li><a href="#references">References</a></li>
+<li><a href="#unresolved-questions">Unresolved Questions</a></li>
+</ul>
+</li>
+</ul>
+<h1 id="rfc-0070-x-track-for-kusamanetwork"><a class="header" href="#rfc-0070-x-track-for-kusamanetwork">RFC-0070: X Track for <a href="https://x.com/kusamanetwork">@kusamanetwork</a></a></h1>
+<div class="table-wrapper"><table><thead><tr><th></th><th></th></tr></thead><tbody>
+<tr><td><strong>Start Date</strong></td><td>January 29, 2024</td></tr>
+<tr><td><strong>Description</strong></td><td>Add a governance track to facilitate posts on the @kusamanetwork's X account</td></tr>
+<tr><td><strong>Author</strong></td><td>Adam Clay Steeber</td></tr>
+</tbody></table>
+</div>
+<h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
+<p>This RFC proposes adding a trivial governance track on Kusama to facilitate X (formerly known as Twitter) posts on the <a href="https://x.com/kusamanetwork">@kusamanetwork</a> account. The technical aspect
+of implementing this in the runtime is very inconsequential and straight-forward, though it might get more technical if the Fellowship wants to regulate this track
+with a non-existent permission set. If this is implemented it would need to be followed up with:</p>
+<ol>
+<li>the establishment of specifications for proposing X posts via this track, and</li>
+<li>the development of tools/processes to ensure that the content contained in referenda enacted in this track would be automatically posted on X.</li>
+</ol>
+<h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
+<p>The overall motivation for this RFC is to decentralize the management of the Kusama brand/communication channel to KSM holders. This is necessary in my opinion primarily
+because of the inactivity of the account in recent history, with posts spanning weeks or months apart. I am currently unaware of who/what entity manages the Kusama
+X account, but if they are affiliated with Parity or W3F this proposed solution could also offload some of the legal ramifications of making (or not making)
+announcements to the public regarding Kusama. While centralized control of the X account would still be present, it could become totally moot if this RFC is implemented
+and the community becomes totally autonomous in the management of Kusama's X posts.</p>
+<p>This solution does not cover every single communication front for Kusama, but it does cover one of the largest. It also establishes a precedent for other communication channels
+that could be offloaded to openGov, provided this proof-of-concept is successful.</p>
+<p>Finally, this RFC is the epitome of experimentation that Kusama is ideal for. This proposal may spark newfound excitement for Kusama and help us realize Kusama's potential
+for pushing boundaries and trying new unconventional ideas.</p>
+<h2 id="stakeholders"><a class="header" href="#stakeholders">Stakeholders</a></h2>
+<p>This idea has not been formalized by any individual (or group of) KSM holder(s). To my knowledge the socialization of this idea is contained
+entirely in <a href="https://twitter.com/AdamSteeber1/status/1750541362498302230">my recent X post here</a>, but it is possible that an idea like this one has been discussed in
+other places. It appears to me that the ecosystem would welcome a change like this which is why I am taking action to formalize the discussion.</p>
+<h2 id="explanation"><a class="header" href="#explanation">Explanation</a></h2>
+<p>The implementation of this idea can be broken down into 3 primary phases:</p>
+<h3 id="phase-1---track-configurations"><a class="header" href="#phase-1---track-configurations">Phase 1 - Track configurations</a></h3>
+<p>First, we begin with this RFC to ensure all feedback can be discussed and implemented in the proposal. After the Fellowship and the community come to a reasonable
+agreement on the changes necessary to make this happen, the Fellowship can merge changes into Kusama's runtime to include this new track with appropriate track configurations.
+As a starting point, I recommend the following track configurations:</p>
+<pre><code>const APP_X_POST: Curve = Curve::make_linear(7, 28, percent(50), percent(100));
+const SUP_X_POST: Curve = Curve::make_reciprocal(?, ?, percent(?), percent(?), percent(?));
+
+// I don't know how to configure the make_reciprocal variables to get what I imagine for support,
+// but I recommend starting at 50% support and sharply decreasing such that 1% is sufficient quarterway
+// through the decision period and hitting 0% at the end of the decision period, or something like that.
+
+	(
+		69,
+		pallet_referenda::TrackInfo {
+			name: &quot;x_post&quot;,
+			max_deciding: 50,
+			decision_deposit: 1 * UNIT,
+			prepare_period: 10 * MINUTES,
+			decision_period: 4 * DAYS,
+			confirm_period: 10 * MINUTES,
+			min_enactment_period: 1 * MINUTES,
+			min_approval: APP_X_POST,
+			min_support: SUP_X_POST,
+		},
+	),
+</code></pre>
+<p>I also recommend restricting permissions of this track to only submitting remarks or batches of remarks - that's all we'll need for its purpose. I'm not sure how
+easy that is to configure, but it is important since we don't want such an agile track to be able to make highly consequential calls.</p>
+<h3 id="phase-2---establish-specs-for-x-post-track-referenda"><a class="header" href="#phase-2---establish-specs-for-x-post-track-referenda">Phase 2 - Establish Specs for X Post Track Referenda</a></h3>
+<p>It is important that we establish the specifications of referenda that will be submitted in this track to ensure that whatever automation tool is built can easily
+make posts once a referendum is enacted. As stated above, we really only need a system.remark (or batch of remarks) to indicate the contents of a proposed X post.
+The most straight-forward way to do this is to require remarks to adhere to X's requirements for making <a href="https://developer.twitter.com/en/docs/twitter-api/tweets/manage-tweets/api-reference/post-tweets">posts via their API</a>.</p>
+<p>For example, if I wanted to propose a post that contained the text &quot;Hello World!&quot; I would propose a referendum in the X post track that contains the following call data:
+<code>0x0000607b2274657874223a202248656c6c6f20576f726c6421227d</code> (i.e. <code>system.remark('{&quot;text&quot;: &quot;Hello World!&quot;}')</code>).</p>
+<p>At first, we could support text posts only to prove the concept. Later on we could expand this spec to add support for media, likes, retweets, replies, polls, and
+whatever other X features we want.</p>
+<h3 id="phase-3---release-tooling--documentation"><a class="header" href="#phase-3---release-tooling--documentation">Phase 3 - Release, Tooling, &amp; Documentation</a></h3>
+<p>Once we agree on track configurations and specs for referenda in this track, the Fellowship can move forward with merging these changes into Kusama's runtime and
+include them in its next release. We could also move forward with developing the necessary tools that would listen for enacted referenda to post automatically on X.
+This would require coordination with whoever controls the X account; they would either need to run the tools themselves or add a third party as an authorized user to
+run the tools to make posts on the account's behalf. This is a bottleneck for decentralization, but as long as the tools are run by the X account manager or by a trusted third party
+it should be fine. I'm open to more decentralized solutions, but those always come at a cost of complexity.</p>
+<p>For the tools themselves, we could open a bounty on Kusama for developers/teams to bid on. We could also just ask the community to step up with a Treasury proposal
+to have anyone fund the build. Or, the Fellowship could make the release of these changes contingent on their endorsement of developers/teams to build these tools. Lots of options!
+For the record, me and my team could develop all the necessary tools, but all because I'm proposing these changes doesn't entitle me to funds to build the tools needed
+to implement them. Here's what would be needed:</p>
+<ul>
+<li>a listener tool that would listen for enacted referenda in this track, verify the format of the remark(s), and submit to X's API with authenticating credentials</li>
+<li>a UI to allow layman users to propose referenda on this track</li>
+</ul>
+<p>After everything is complete, we can update the Kusama wiki to include documentation on the X post specifications and include links to the tools/UI.</p>
+<h2 id="drawbacks"><a class="header" href="#drawbacks">Drawbacks</a></h2>
+<p>The main drawback to this change is that it requires a lot of off-chain coordination. It's easy enough to include the track on Kusama but it's a totally different
+challenge to make it function as intended. The tools need to be built and the auth tokens need to be managed. It would certainly add an administrative burden to whoever
+manages the X account since they would either need to run the tools themselves or manage auth tokens.</p>
+<p>This change also introduces on-going costs to the Treasury since it would need to compensate people to support the tools necessary to facilitate this idea. The ultimate
+question is whether these on-going costs would be worth the ability for KSM holders to make posts on Kusama's X account.</p>
+<p>There's also the risk of misconfiguring the track to make referenda too easy to pass, potentially allowing a malicious actor to get content posted on X that violates X's ToS.
+If that happens, we risk getting Kusama banned on X!</p>
+<p>This change might also be outside the scope of the Fellowship/openGov. Perhaps the best solution for the X account is to have the Treasury pay for a professional
+agency to manage posts. It wouldn't be decentralized but it would probably be more effective in terms of creating good content.</p>
+<p>Finally, this solution is merely pseudo-decentralization since the X account manager would still have ultimate control of the account. It's decentralized insofar as
+the auth tokens are given to people actually running the tools; a house of cards is required to facilitate X posts via this track. Not ideal.</p>
+<h2 id="testing-security-and-privacy"><a class="header" href="#testing-security-and-privacy">Testing, Security, and Privacy</a></h2>
+<p>There's major precedent for configuring tracks on openGov given the amount of power tracks have, so it shouldn't be hard to come up with a sound configuration.
+That's why I recommend restricting permissions of this track to remarks and batches of remarks, or something equally inconsequential.</p>
+<p>Building the tools for this implementation is really straight-forward and could be audited by Fellowship members, and the community at large, on Github.</p>
+<p>The largest security concern would be the management of Kusama's X account's auth tokens. We would need to ensure that they aren't compromised.</p>
+<h2 id="performance-ergonomics-and-compatibility"><a class="header" href="#performance-ergonomics-and-compatibility">Performance, Ergonomics, and Compatibility</a></h2>
+<h3 id="performance"><a class="header" href="#performance">Performance</a></h3>
+<p>If a track on Kusama promises users that compliant referenda enacted therein would be posted on Kusama's X account, users would expect that track to perform as promised.
+If the house of cards tumbles down and a compliant referendum doesn't actually get anything posted, users might think that Kusama is broken or unreliable. This
+could be damaging to Kusama's image and cause people to question the soundness of other features on Kusama.</p>
+<p>As mentioned in the drawbacks, the performance of this feature would depend on off-chain coordinations. We can reduce the administrative burden of these coordinations
+by funding third parties with the Treasury to deal with it, but then we're relying on trusting these parties.</p>
+<h3 id="ergonomics"><a class="header" href="#ergonomics">Ergonomics</a></h3>
+<p>By adding a new track to Kusama, governance platforms like Polkassembly or Nova Wallet would need to include it on their applications. This shouldn't be too
+much of a burden or overhead since they've already built the infrastructure for other openGov tracks.</p>
+<h3 id="compatibility"><a class="header" href="#compatibility">Compatibility</a></h3>
+<p>This change wouldn't break any compatibility as far as I know.</p>
+<h2 id="references"><a class="header" href="#references">References</a></h2>
+<p>One reference to a similar feature requiring on-chain/off-chain coordination would be the Kappa-Sigma-Mu Society. Nothing on-chain necessarily enforces the rules
+or facilitates bids, challenges, defenses, etc. However, the Society has managed to maintain itself with integrity to its rules. So I don't think this is totally
+out of Kusama's scope. But it will require some off-chain effort to maintain.</p>
+<h2 id="unresolved-questions"><a class="header" href="#unresolved-questions">Unresolved Questions</a></h2>
+<ul>
+<li>Who will develop the tools necessary to implement this feature? How do we select them?</li>
+<li>How can this idea be better implemented with on-chain/substrate features?</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../proposed/0066-add-smartcontracts-to-assethub.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../approved/0001-agile-coretime.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../proposed/0066-add-smartcontracts-to-assethub.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../approved/0001-agile-coretime.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>
