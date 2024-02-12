@@ -70,22 +70,22 @@ repository](https://github.com/vikiival/rfc-pricing)):
 **Polkadot**
 
 | **Name**                  | **Current Rate (DOT)** | **Calculated with Function (DOT)** |
-|---------------------------|:----------------------:|:-----------------------:|
-| `collectionDeposit`       | 10                     | 0.20064                 |
-| `itemDeposit`             | 0.01                   | 0.20081                 |
-| `metadataDepositBase`     | 0.20129                | 0.20076                 |
-| `attributeDepositBase`    | 0.2                    | 0.2                     |
+|---------------------------|:----------------------:|:----------------------------------:|
+| `collectionDeposit`       | 10                     | 0.20064                            |
+| `itemDeposit`             | 0.01                   | 0.20081                            |
+| `metadataDepositBase`     | 0.20129                | 0.20076                            |
+| `attributeDepositBase`    | 0.2                    | 0.2                                |
 
 Similarly, the prices for Kusama were calculated as:
 
 **Kusama:**
 
 | **Name**                  | **Current Rate (KSM)** | **Calculated with Function (KSM)** |
-|---------------------------|:----------------------:|:-----------------------:|
-| `collectionDeposit`       | 0.1                    | 0.006688                |
-| `itemDeposit`             | 0.001                  | 0.000167                |
-| `metadataDepositBase`     | 0.006709666617         | 0.0006709666617         |
-| `attributeDepositBase`    | 0.00666666666          | 0.000666666666          |
+|---------------------------|:----------------------:|:----------------------------------:|
+| `collectionDeposit`       | 0.1                    | 0.006688                           |
+| `itemDeposit`             | 0.001                  | 0.000167                           |
+| `metadataDepositBase`     | 0.006709666617         | 0.0006709666617                    |
+| `attributeDepositBase`    | 0.00666666666          | 0.000666666666                     |
 
 ### Enhanced Approach to Further Lower Barriers for Entry
 
@@ -132,7 +132,7 @@ DOT and stablecoin values limiting the amount. With asset rates available via th
 pallet, the system could take the lower value required. A sigmoid curve would make sense for this
 application to avoid sudden rate changes, as in:
 
-$$ \frac{\mathrm{min(DOT deposit, stable deposit)} }{\mathrm{1 + e^{a - b * x}} }$$
+$$ minDeposit + \frac{\mathrm{min(DotDeposit, StableDeposit) - minDeposit} }{\mathrm{1 + e^{a - b * x}} }$$
 
 where the constant `a` moves the inflection to lower or higher `x` values, the constant `b` adjusts
 the rate of the deposit increase, and the independent variable `x` is the number of collections or
