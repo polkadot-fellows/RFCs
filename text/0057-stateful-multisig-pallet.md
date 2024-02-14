@@ -1,9 +1,9 @@
-# RFC-0000: Enhanced Multisig Pallet
+# RFC-0000: Stateful Multisig Pallet
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
-| **Start Date**  | 13 February 2024                                                                            |
-| **Description** | Add Enhanced Multisig Pallet  to X (system) chain                                           |
+| **Start Date**  | 14 February 2024                                                                            |
+| **Description** | Add Enhanced Multisig Pallet to X (system) chain                                            |
 | **Authors**     | Abdelrahman Soliman                                                                         |
 
 ## Summary
@@ -68,8 +68,8 @@ I've created the stateful multisig pallet during my studies in Polkadot Blockcha
 
 Let's start with a sequence diagram to illustrate the main operations of the Stateful Multisig.
 
-// TODO:
-Put image here.
+![multisig operations](https://github.com/asoliman92/RFCs/assets/2677789/4f2e8972-f3b8-4250-b75f-1e4788b35752)
+
 
 Notes on above diagram:
 
