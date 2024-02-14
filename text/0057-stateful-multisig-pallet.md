@@ -1,0 +1,214 @@
+# RFC-0000: Enhanced Multisig Pallet
+
+|                 |                                                                                             |
+| --------------- | ------------------------------------------------------------------------------------------- |
+| **Start Date**  | 13 February 2024                                                                            |
+| **Description** | Add Enhanced Multisig Pallet  to X (system) chain                                           |
+| **Authors**     | Abdelrahman Soliman                                                                         |
+
+## Summary
+
+A pallet to facilitate enhanced multisig accounts. The main enhancement is that we store a multisig account in the state with related info (owners, threshold,..etc). The module affords enhanced control over administrative operations such as adding/removing owners, changing the threshold, account deletion, canceling an existing proposal. Each owner can approve/revoke a proposal while still exists. The proposal is **not** intended for migrating or getting rid of existing multisig. It's to allow both options to coexist.
+
+For the rest of the RFC We use the following terms:
+
+* `proposal` to refer to an extrinsic that is to be dispatched from a multisig account after getting enough approvals.
+* `Stateful Multisig` to refer to the proposed pallet.
+* `Stateless Multi` to refer to the current multisig pallet in polkadot-sdk.
+
+## Motivation
+
+### Problem
+
+Entities in the Polkadot ecosystem need to have a way to manage their funds and other operations in a secure and efficient way. Multisig accounts are a common way to achieve this. Entities by definition change over time, members of the entity may change, threshold requirements may change, and the multisig account may need to be deleted. For even more enhanced hierarchical control, the multisig account may need to be controlled by other multisig accounts.
+
+Current native solutions for multisig operations are not efficient and lack functionality.
+
+#### Stateless Multisig
+
+We refer to current [multisig pallet in polkadot-sdk](https://github.com/paritytech/polkadot-sdk/tree/master/substrate/frame/multisig) because the multisig account is only created in the state when a proposal is made and is deleted after the proposal is executed or canceled. Although deriving the account is determinsitc it relies on exact users and thershold to derive it. This does not allow for control over the multisig account. It's also tightly coupled to exact users and threshold. This makes it hard for an organization to manage existing accounts and to change the threshold or add/remove owners.
+
+We believe as well that the stateless multisig is not efficient in terms of block footprint as we'll show in the performance section.
+
+#### Pure Proxy
+
+Pure proxy can acheive having the determinstic multisig account from different users but it's unneeded complexity as a way around the limitations of the current multisig pallet.
+
+### Requirements
+
+Basic requirements for the Stateful Multisig are:
+
+* The ability to have concrete and permanent (unless deleted) multisig accounts in the state.
+* The ability to add/remove owners from an existing multisig account by the multisig itself.
+* The ability to change the threshold of an existing multisig account by the multisig itself.
+* The ability to delete an existing multisig account by the multisig itself.
+* The ability to cancel an existing proposal by the multisig itself.
+* Owners of multisig account can start a proposal on behalf of the multisig account which will be dispatched after getting enough approvals.
+* Owners of multisig account can approve/revoke a proposal while still exists.
+
+### Use Cases
+
+* Corporate Governance:
+In a corporate setting, multisig accounts can be employed for decision-making processes. For example, a company may require the approval of multiple executives to initiate significant financial transactions.
+
+* Joint Accounts:
+Multisig accounts can be used for joint accounts where multiple individuals need to authorize transactions. This is particularly useful in family finances or shared business accounts.
+
+* Decentralized Autonomous Organizations (DAOs):
+DAOs can utilize multisig accounts to ensure that decisions are made collectively. Multiple key holders can be required to approve changes to the organization's rules or the allocation of funds.
+
+## Stakeholders
+
+* Polkadot holders
+* Polkadot developers
+
+## Explanation
+
+I've created the stateful multisig pallet during my studies in Polkadot Blockchain Academy under supervision from @shawntabrizi and @ank4n. After that, I've enhanced it to be fully functional and this is a draft [PR#3300](https://github.com/paritytech/polkadot-sdk/pull/3300) in polkadot-sdk. I'll list all the details and design decisions in the following sections.
+
+Let's start with a sequence diagram to illustrate the main operations of the Stateful Multisig.
+
+// TODO:
+Put image here.
+
+Notes on above diagram:
+
+* It's a 3 step process to execute a proposal. (Start Proposal --> Approvals --> Execute Proposal)
+* `Execute` is an explicit extrinsic for a simpler API. It can be optimized to be executed automatically after getting enough approvals.
+* Any user can create a multisig account and they don't need to be part of it. (Alice in the diagram)
+* A proposal is any extrinsic including control extrinsics (e.g. add/remove owner, change threshold,..etc).
+* Any multisig account owner can start a proposal on behalf of the multisig account. (Bob in the diagram)
+* Any multisig account owener can execute proposal if it's approved by enough owners. (Dave in the diagram)
+
+Detail-heavy explanation of the RFC, suitable for explanation to an implementer of the changeset. This should address corner cases in detail and provide justification behind decisions, and provide rationale for how the design meets the solution requirements.
+
+### State Transition Functions
+
+All functions have rustdoc in the code. Here is a brief overview of the functions:
+
+* `create_multisig` - Create a multisig account with a given threshold and initial owners. (Needs Deposit)
+* `start_proposal` - Start a multisig proposal. (Needs Deposit)
+* `approve` - Approve a multisig proposal.
+* `revoke` - Revoke a multisig approval from an existing proposal.
+* `execute_proposal` - Execute a multisig proposal. (Releases Deposit)
+* `cancel_own_proposal` - Cancel a multisig proposal started by the caller in case no other owners approved it yet. (Releases Deposit)
+
+Note: Next functions need to be called from the multisig account itself. Deposits are reserved from the multisig account as well.
+
+* `add_owner` - Add a new owner to a multisig account. (Needs Deposit)
+* `remove_owner` - Remove an owner from a multisig account. (Releases Deposit)
+* `set_threshold` - Change the threshold of a multisig account.
+* `cancel_proposal` - Cancel a multisig proposal. (Releases Deposit)
+* `delete_multisig` - Delete a multisig account. (Releases Deposit)
+
+### Storage/State
+
+* Use 2 main storage maps to store mutlisig accounts and proposals.
+
+```rust
+#[pallet::storage]
+  pub type MultisigAccount<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, MultisigAccountDetails<T>>;
+
+/// The set of open multisig proposals. A proposal is uniquely identified by the multisig account and the call hash.
+/// (maybe a nonce as well in the future)
+#[pallet::storage]
+pub type PendingProposals<T: Config> = StorageDoubleMap<
+    _,
+    Twox64Concat,
+    T::AccountId, // Multisig Account
+    Blake2_128Concat,
+    T::Hash, // Call Hash
+    MultisigProposal<T>,
+>;
+```
+
+As for the values:
+
+```rust
+pub struct MultisigAccountDetails<T: Config> {
+	/// The owners of the multisig account. This is a BoundedBTreeSet to ensure faster operations (add, remove).
+	/// As well as lookups and faster set operations to ensure approvers is always a subset from owners. (e.g. in case of removal of an owner during an active proposal)
+	pub owners: BoundedBTreeSet<T::AccountId, T::MaxSignatories>,
+	/// The threshold of approvers required for the multisig account to be able to execute a call.
+	pub threshold: u32,
+	pub creator: T::AccountId,
+	pub deposit: BalanceOf<T>,
+}
+```
+
+```rust
+pub struct MultisigProposal<T: Config> {
+    /// Proposal creator.
+    pub creator: T::AccountId,
+    pub creation_deposit: BalanceOf<T>,
+    /// The extrinsic when the multisig operation was opened.
+    pub when: Timepoint<BlockNumberFor<T>>,
+    /// The approvers achieved so far, including the depositor.
+    /// The approvers are stored in a BoundedBTreeSet to ensure faster lookup and operations (approve, revoke).
+    /// It's also bounded to ensure that the size don't go over the required limit by the Runtime.
+    pub approvers: BoundedBTreeSet<T::AccountId, T::MaxSignatories>,
+    /// The block number until which this multisig operation is valid. None means no expiry.
+    pub expire_after: Option<BlockNumberFor<T>>,
+}
+```
+
+For optimization we're using BoundedBTreeSet to allow for efficient lookups and removals. Especially in the case of approvers, we need to be able to remove an approver from the list when they revoke their approval. (which we do lazily when `execute_proposal` is called)
+
+### Considerations / Edge cases
+
+* Removing an owner during an active proposal.
+    * Suggested approach:  
+ We need to ensure that the approvers are always a subset from owners. This is also partially why we're using BoundedBTreeSet for owners and approvers. Once execute proposal is called we ensure that the proposal is still valid and the approvers are still a subset from current owners.
+
+* Multisig account deletion and cleaning up existing proposals.
+    * Suggested approach:
+Once the last owner of a multisig account is removed or the multisig approved the account deletion we delete the multisig accound from the state and keep the proposals until someone calls `cleanup_proposals` multiple times which iterates over a max limit per extrinsic. This is to ensure we don't have unbounded iteration over the proposals. Users are already incentivized to call `cleanup_proposals` to get their deposits back.
+
+* Multisig account deletion and existing deposits:
+    * Suggested approach:
+    We currently just delete the account without checking for deposits (Would like to hear your thoughts here). We can either
+      * Don't make deposits to begin with and make it a fee.
+      * Transfer to treasury.
+      * Error on deletion. (don't like this)
+
+* Approving a proposal after the threshold is changed.
+    * Suggested approach: 
+We always use latest threshold and don't store each proposal with different threshold. This allows the following:
+        * In case threshold is lower than the number of approvers then the proposal is still valid.  
+        * In case threshold is higher than the number of approvers then we catch it during execute proposal and error.
+
+## Drawbacks
+
+Description of recognized drawbacks to the approach given in the RFC. Non-exhaustively, drawbacks relating to performance, ergonomics, user experience, security, or privacy.
+
+## Testing, Security, and Privacy
+
+Describe the the impact of the proposal on these three high-importance areas - how implementations can be tested for adherence, effects that the proposal has on security and privacy per-se, as well as any possible implementation pitfalls which should be clearly avoided.
+
+## Performance, Ergonomics, and Compatibility
+
+Describe the impact of the proposal on the exposed functionality of Polkadot.
+
+### Performance
+
+Is this an optimization or a necessary pessimization? What steps have been taken to minimize additional overhead?
+
+### Ergonomics
+
+If the proposal alters exposed interfaces to developers or end-users, which types of usage patterns have been optimized for?
+
+### Compatibility
+
+Does this proposal break compatibility with existing interfaces, older versions of implementations? Summarize necessary migrations or upgrade strategies, if any.
+
+## Prior Art and References
+
+Provide references to either prior art or other relevant research for the submitted design.
+
+## Unresolved Questions
+
+Provide specific questions to discuss and address before the RFC is voted on by the Fellowship. This should include, for example, alternatives to aspects of the proposed design where the appropriate trade-off to make is unclear.
+
+## Future Directions and Related Material
+
+Describe future work which could be enabled by this RFC, if it were accepted, as well as related RFCs. This is a place to brain-dump and explore possibilities, which themselves may become their own RFCs.
