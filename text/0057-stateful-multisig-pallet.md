@@ -26,13 +26,13 @@ Current native solutions for multisig operations are not efficient and lack func
 
 #### Stateless Multisig
 
-We refer to current [multisig pallet in polkadot-sdk](https://github.com/paritytech/polkadot-sdk/tree/master/substrate/frame/multisig) because the multisig account is only created in the state when a proposal is made and is deleted after the proposal is executed or canceled. Although deriving the account is determinsitc it relies on exact users and thershold to derive it. This does not allow for control over the multisig account. It's also tightly coupled to exact users and threshold. This makes it hard for an organization to manage existing accounts and to change the threshold or add/remove owners.
+We refer to current [multisig pallet in polkadot-sdk](https://github.com/paritytech/polkadot-sdk/tree/master/substrate/frame/multisig) because the multisig account is only derived and not stored in the state. Although deriving the account is determinsitc as it relies on exact users (sorted) and thershold to derive it. This does not allow for control over the multisig account. It's also tightly coupled to exact users and threshold. This makes it hard for an organization to manage existing accounts and to change the threshold or add/remove owners.
 
 We believe as well that the stateless multisig is not efficient in terms of block footprint as we'll show in the performance section.
 
 #### Pure Proxy
 
-Pure proxy can acheive having the determinstic multisig account from different users but it's unneeded complexity as a way around the limitations of the current multisig pallet.
+Pure proxy can achieve having a stored and determinstic multisig account from different users but it's unneeded complexity as a way around the limitations of the current multisig pallet. It doesn't also have the same fine grained control over the multisig account.
 
 ### Requirements
 
@@ -57,6 +57,8 @@ Multisig accounts can be used for joint accounts where multiple individuals need
 * Decentralized Autonomous Organizations (DAOs):
 DAOs can utilize multisig accounts to ensure that decisions are made collectively. Multiple key holders can be required to approve changes to the organization's rules or the allocation of funds.
 
+and much more...
+
 ## Stakeholders
 
 * Polkadot holders
@@ -70,7 +72,6 @@ Let's start with a sequence diagram to illustrate the main operations of the Sta
 
 ![multisig operations](https://github.com/asoliman92/RFCs/assets/2677789/4f2e8972-f3b8-4250-b75f-1e4788b35752)
 
-
 Notes on above diagram:
 
 * It's a 3 step process to execute a proposal. (Start Proposal --> Approvals --> Execute Proposal)
@@ -80,11 +81,9 @@ Notes on above diagram:
 * Any multisig account owner can start a proposal on behalf of the multisig account. (Bob in the diagram)
 * Any multisig account owener can execute proposal if it's approved by enough owners. (Dave in the diagram)
 
-Detail-heavy explanation of the RFC, suitable for explanation to an implementer of the changeset. This should address corner cases in detail and provide justification behind decisions, and provide rationale for how the design meets the solution requirements.
-
 ### State Transition Functions
 
-All functions have rustdoc in the code. Here is a brief overview of the functions:
+All functions have detailed rustdoc in [PR#3300](https://github.com/paritytech/polkadot-sdk/pull/3300). Here is a brief overview of the functions:
 
 * `create_multisig` - Create a multisig account with a given threshold and initial owners. (Needs Deposit)
 * `start_proposal` - Start a multisig proposal. (Needs Deposit)
@@ -152,30 +151,34 @@ pub struct MultisigProposal<T: Config> {
 }
 ```
 
-For optimization we're using BoundedBTreeSet to allow for efficient lookups and removals. Especially in the case of approvers, we need to be able to remove an approver from the list when they revoke their approval. (which we do lazily when `execute_proposal` is called)
+For optimization we're using BoundedBTreeSet to allow for efficient lookups and removals. Especially in the case of approvers, we need to be able to remove an approver from the list when they revoke their approval. (which we do lazily when `execute_proposal` is called).
 
-### Considerations / Edge cases
+There's an extra storage map for the deposits of the multisig accounts per owner added. This is to ensure that we can release the deposits when the multisig removes them even if the constant deposit per owner changed in the runtime later on.
 
-* Removing an owner during an active proposal.
-    * Suggested approach:  
+### Considerations & Edge cases
+
+#### Removing an owner from the multisig account during an active proposal
+
  We need to ensure that the approvers are always a subset from owners. This is also partially why we're using BoundedBTreeSet for owners and approvers. Once execute proposal is called we ensure that the proposal is still valid and the approvers are still a subset from current owners.
 
-* Multisig account deletion and cleaning up existing proposals.
-    * Suggested approach:
+#### Multisig account deletion and cleaning up existing proposals
+
 Once the last owner of a multisig account is removed or the multisig approved the account deletion we delete the multisig accound from the state and keep the proposals until someone calls `cleanup_proposals` multiple times which iterates over a max limit per extrinsic. This is to ensure we don't have unbounded iteration over the proposals. Users are already incentivized to call `cleanup_proposals` to get their deposits back.
 
-* Multisig account deletion and existing deposits:
-    * Suggested approach:
-    We currently just delete the account without checking for deposits (Would like to hear your thoughts here). We can either
-      * Don't make deposits to begin with and make it a fee.
-      * Transfer to treasury.
-      * Error on deletion. (don't like this)
+#### Multisig account deletion and existing deposits
 
-* Approving a proposal after the threshold is changed.
-    * Suggested approach: 
+We currently just delete the account without checking for deposits (Would like to hear your thoughts here). We can either
+
+* Don't make deposits to begin with and make it a fee.
+* Transfer to treasury.
+* Error on deletion. (don't like this)
+
+#### Approving a proposal after the threshold is changed
+
 We always use latest threshold and don't store each proposal with different threshold. This allows the following:
-        * In case threshold is lower than the number of approvers then the proposal is still valid.  
-        * In case threshold is higher than the number of approvers then we catch it during execute proposal and error.
+
+* In case threshold is lower than the number of approvers then the proposal is still valid.  
+* In case threshold is higher than the number of approvers then we catch it during execute proposal and error.
 
 ## Drawbacks
 
@@ -186,8 +189,6 @@ We always use latest threshold and don't store each proposal with different thre
 Standard audit/review requirements apply.
 
 ## Performance, Ergonomics, and Compatibility
-
-Describe the impact of the proposal on the exposed functionality of Polkadot.
 
 ### Performance
 
@@ -236,15 +237,13 @@ pub fn execute_proposal(
 
 The main takeway is that we don't need to pass the threshold and other signatories in the extrinsics. This is because we already have the threshold and signatories in the state (only once).
 
-So now for the caclulation
-
-Given the following:
+So now for the caclulations, given the following:
 
 * K is the number of multisig accounts.
 * N is number of owners in each multisig account.
 * For each proposal we need to have 2N/3 approvals.
 
-The table calculates if everyday each of the K multisig accounts has one proposal and it gets approved by the 2N/3 and then executed. How much did the total footprint on Blocks and States increased by the end of the day.
+The table calculates if each of the K multisig accounts has one proposal and it gets approved by the 2N/3 and then executed. How much did the total Blocks and States sizes increased by the end of the day.
 
 Note: We're not calculating the cost of proposal as both in statefull and stateless multisig they're almost the same and gets cleaned up from the state once the proposal is executed or canceled.
 
@@ -260,6 +259,14 @@ Stateful effect on statesizes = K*N (as each multisig account (K) will be stored
 |----------------|:-------------:|-----------:|
 | Stateless      |     2/3*K*N^2 |        Nil |
 | Stateful       |          K*N  |       K*N  |
+
+Simplified table removing K from the equation:
+| Pallet         |  Block Size   | State Size |
+|----------------|:-------------:|-----------:|
+| Stateless      |           N^2 |        Nil |
+| Stateful       |           N   |         N  |
+
+So even though the stateful multisig has a larger state size, it's still more efficient in terms of block size and total footprint on the blockchain.
 
 ### Ergonomics
 
