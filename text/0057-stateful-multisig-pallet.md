@@ -179,11 +179,11 @@ We always use latest threshold and don't store each proposal with different thre
 
 ## Drawbacks
 
-Description of recognized drawbacks to the approach given in the RFC. Non-exhaustively, drawbacks relating to performance, ergonomics, user experience, security, or privacy.
+* New pallet to maintain.
 
 ## Testing, Security, and Privacy
 
-Describe the the impact of the proposal on these three high-importance areas - how implementations can be tested for adherence, effects that the proposal has on security and privacy per-se, as well as any possible implementation pitfalls which should be clearly avoided.
+Standard audit/review requirements apply.
 
 ## Performance, Ergonomics, and Compatibility
 
@@ -191,24 +191,96 @@ Describe the impact of the proposal on the exposed functionality of Polkadot.
 
 ### Performance
 
-Is this an optimization or a necessary pessimization? What steps have been taken to minimize additional overhead?
+Doing back of the envelop calculation to proof that the stateful multisig is more efficient than the stateless multisig given it's smaller footprint size on blocks.
+
+Quick review over the extrinsics for both as it affects the block size:
+
+Stateless Multisig:
+Both `as_multi` and `approve_as_multi` has a similar parameters:
+
+```rust
+origin: OriginFor<T>,
+threshold: u16,
+other_signatories: Vec<T::AccountId>,
+maybe_timepoint: Option<Timepoint<BlockNumberFor<T>>>,
+call_hash: [u8; 32],
+max_weight: Weight,
+```
+
+Stateful Multisig:
+We have the following extrinsics:
+
+```rust
+pub fn start_proposal(
+			origin: OriginFor<T>,
+			multisig_account: T::AccountId,
+			call_hash: T::Hash,
+		)
+```
+
+```rust
+pub fn approve(
+			origin: OriginFor<T>,
+			multisig_account: T::AccountId,
+			call_hash: T::Hash,
+		)
+```
+
+```rust
+pub fn execute_proposal(
+			origin: OriginFor<T>,
+			multisig_account: T::AccountId,
+			call: Box<<T as Config>::RuntimeCall>,
+		)
+```
+
+The main takeway is that we don't need to pass the threshold and other signatories in the extrinsics. This is because we already have the threshold and signatories in the state (only once).
+
+So now for the caclulation
+
+Given the following:
+
+* K is the number of multisig accounts.
+* N is number of owners in each multisig account.
+* For each proposal we need to have 2N/3 approvals.
+
+The table calculates if everyday each of the K multisig accounts has one proposal and it gets approved by the 2N/3 and then executed. How much did the total footprint on Blocks and States increased by the end of the day.
+
+Note: We're not calculating the cost of proposal as both in statefull and stateless multisig they're almost the same and gets cleaned up from the state once the proposal is executed or canceled.
+
+Stateless effect on blocksizes = 2/3*K*N^2 (as each user of the 2/3 users will need to call approve_as_multi with all the other signatories(N) in extrinsic body)
+
+Stateful effect on blocksizes = K * N (as each user will need to call approve with the multisig account only in extrinsic body)
+
+Stateless effect on statesizes = Nil (as the multisig account is not stored in the state)
+
+Stateful effect on statesizes = K*N (as each multisig account (K) will be stored with all the owners (K) in the state)
+
+| Pallet         |  Block Size   | State Size |
+|----------------|:-------------:|-----------:|
+| Stateless      |     2/3*K*N^2 |        Nil |
+| Stateful       |          K*N  |       K*N  |
 
 ### Ergonomics
 
-If the proposal alters exposed interfaces to developers or end-users, which types of usage patterns have been optimized for?
+The Stateful Multisig will have better ergonomics for managing multisig accounts for both developers and end-users.
 
 ### Compatibility
 
-Does this proposal break compatibility with existing interfaces, older versions of implementations? Summarize necessary migrations or upgrade strategies, if any.
+This RFC is compatible with the existing implementation and can be handled via upgrades and migration. It's not intended to replace the existing multisig pallet.
 
 ## Prior Art and References
 
-Provide references to either prior art or other relevant research for the submitted design.
+[multisig pallet in polkadot-sdk](https://github.com/paritytech/polkadot-sdk/tree/master/substrate/frame/multisig)
 
 ## Unresolved Questions
 
-Provide specific questions to discuss and address before the RFC is voted on by the Fellowship. This should include, for example, alternatives to aspects of the proposed design where the appropriate trade-off to make is unclear.
+* On account deletion, should we transfer remaining deposits to treasury or remove account creation deposits completely and consider it as fees to start with?
 
 ## Future Directions and Related Material
 
-Describe future work which could be enabled by this RFC, if it were accepted, as well as related RFCs. This is a place to brain-dump and explore possibilities, which themselves may become their own RFCs.
+* [ ] Batch proposals. The ability to batch multiple calls into one proposal.  
+* [ ] Batch addition/removal of owners.
+* [ ] Add expiry to proposals. After a certain time, proposals will not accept any more approvals or executions and will be deleted.  
+* [ ] Add extra identifier other than call_hash to proposals (e.g. nonce). This will allow same call to be proposed multiple times and be in pending state.  
+* [ ] Implement call filters. This will allow multisig accounts to only accept certain calls.
