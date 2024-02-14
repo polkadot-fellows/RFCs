@@ -4,7 +4,7 @@
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 14 February 2024                                                                            |
 | **Description** | Add Enhanced Multisig Pallet to X (system) chain                                            |
-| **Authors**     | Abdelrahman Soliman                                                                         |
+| **Authors**     | Abdelrahman Soliman   (Boda)                                                                |
 
 ## Summary
 
