@@ -3,7 +3,7 @@
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 15 February 2024                                                                            |
-| **Description** | Add Enhanced Multisig Pallet                                                                |
+| **Description** | Add Enhanced Multisig Pallet to Collectives chain                                           |
 | **Authors**     | Abdelrahman Soliman   (Boda)                                                                |
 
 ## Summary
@@ -283,7 +283,6 @@ This RFC is compatible with the existing implementation and can be handled via u
 ## Unresolved Questions
 
 * On account deletion, should we transfer remaining deposits to treasury or remove owners' addition deposits completely and consider it as fees to start with?
-* Which chain should we put this on? I suggest collectives like current multisig
 
 ## Future Directions and Related Material
 
