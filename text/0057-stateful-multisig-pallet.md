@@ -2,8 +2,8 @@
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
-| **Start Date**  | 14 February 2024                                                                            |
-| **Description** | Add Enhanced Multisig Pallet to X (system) chain                                            |
+| **Start Date**  | 15 February 2024                                                                            |
+| **Description** | Add Enhanced Multisig Pallet                                                                |
 | **Authors**     | Abdelrahman Soliman   (Boda)                                                                |
 
 ## Summary
@@ -14,7 +14,7 @@ For the rest of the RFC We use the following terms:
 
 * `proposal` to refer to an extrinsic that is to be dispatched from a multisig account after getting enough approvals.
 * `Stateful Multisig` to refer to the proposed pallet.
-* `Stateless Multi` to refer to the current multisig pallet in polkadot-sdk.
+* `Stateless Multisig` to refer to the current multisig pallet in polkadot-sdk.
 
 ## Motivation
 
@@ -22,7 +22,7 @@ For the rest of the RFC We use the following terms:
 
 Entities in the Polkadot ecosystem need to have a way to manage their funds and other operations in a secure and efficient way. Multisig accounts are a common way to achieve this. Entities by definition change over time, members of the entity may change, threshold requirements may change, and the multisig account may need to be deleted. For even more enhanced hierarchical control, the multisig account may need to be controlled by other multisig accounts.
 
-Current native solutions for multisig operations are not efficient and lack functionality.
+Current native solutions for multisig operations are less optimal, performance-wise (as we'll explain later in the RFC), and lack fine-grained control over the multisig account.
 
 #### Stateless Multisig
 
@@ -283,6 +283,7 @@ This RFC is compatible with the existing implementation and can be handled via u
 ## Unresolved Questions
 
 * On account deletion, should we transfer remaining deposits to treasury or remove account creation deposits completely and consider it as fees to start with?
+* Which chain should we put this on? I suggest collectives like current multisig
 
 ## Future Directions and Related Material
 
