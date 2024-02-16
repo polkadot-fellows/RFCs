@@ -3,7 +3,7 @@
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 15 February 2024                                                                            |
-| **Description** | Add Enhanced Multisig Pallet to Collectives chain                                           |
+| **Description** | Add Enhanced Multisig Pallet to System chains                                               |
 | **Authors**     | Abdelrahman Soliman   (Boda)                                                                |
 
 ## Summary
