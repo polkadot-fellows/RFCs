@@ -213,12 +213,12 @@
 <h1 id="rfc-0074-stateful-multisig-pallet"><a class="header" href="#rfc-0074-stateful-multisig-pallet">RFC-0074: Stateful Multisig Pallet</a></h1>
 <div class="table-wrapper"><table><thead><tr><th></th><th></th></tr></thead><tbody>
 <tr><td><strong>Start Date</strong></td><td>15 February 2024</td></tr>
-<tr><td><strong>Description</strong></td><td>Add Enhanced Multisig Pallet to Collectives chain</td></tr>
+<tr><td><strong>Description</strong></td><td>Add Enhanced Multisig Pallet to System chains</td></tr>
 <tr><td><strong>Authors</strong></td><td>Abdelrahman Soliman   (Boda)</td></tr>
 </tbody></table>
 </div>
 <h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
-<p>A pallet to facilitate enhanced multisig accounts. The main enhancement is that we store a multisig account in the state with related info (owners, threshold,..etc). The module affords enhanced control over administrative operations such as adding/removing owners, changing the threshold, account deletion, canceling an existing proposal. Each owner can approve/revoke a proposal while still exists. The proposal is <strong>not</strong> intended for migrating or getting rid of existing multisig. It's to allow both options to coexist.</p>
+<p>A pallet to facilitate enhanced multisig accounts. The main enhancement is that we store a multisig account in the state with related info (signers, threshold,..etc). The module affords enhanced control over administrative operations such as adding/removing signers, changing the threshold, account deletion, canceling an existing proposal. Each signer can approve/reject a proposal while still exists. The proposal is <strong>not</strong> intended for migrating or getting rid of existing multisig. It's to allow both options to coexist.</p>
 <p>For the rest of the RFC We use the following terms:</p>
 <ul>
 <li><code>proposal</code> to refer to an extrinsic that is to be dispatched from a multisig account after getting enough approvals.</li>
@@ -230,7 +230,7 @@
 <p>Entities in the Polkadot ecosystem need to have a way to manage their funds and other operations in a secure and efficient way. Multisig accounts are a common way to achieve this. Entities by definition change over time, members of the entity may change, threshold requirements may change, and the multisig account may need to be deleted. For even more enhanced hierarchical control, the multisig account may need to be controlled by other multisig accounts.</p>
 <p>Current native solutions for multisig operations are less optimal, performance-wise (as we'll explain later in the RFC), and lack fine-grained control over the multisig account.</p>
 <h4 id="stateless-multisig"><a class="header" href="#stateless-multisig">Stateless Multisig</a></h4>
-<p>We refer to current <a href="https://github.com/paritytech/polkadot-sdk/tree/master/substrate/frame/multisig">multisig pallet in polkadot-sdk</a> because the multisig account is only derived and not stored in the state. Although deriving the account is determinsitc as it relies on exact users (sorted) and thershold to derive it. This does not allow for control over the multisig account. It's also tightly coupled to exact users and threshold. This makes it hard for an organization to manage existing accounts and to change the threshold or add/remove owners.</p>
+<p>We refer to current <a href="https://github.com/paritytech/polkadot-sdk/tree/master/substrate/frame/multisig">multisig pallet in polkadot-sdk</a> because the multisig account is only derived and not stored in the state. Although deriving the account is determinsitc as it relies on exact users (sorted) and thershold to derive it. This does not allow for control over the multisig account. It's also tightly coupled to exact users and threshold. This makes it hard for an organization to manage existing accounts and to change the threshold or add/remove signers.</p>
 <p>We believe as well that the stateless multisig is not efficient in terms of block footprint as we'll show in the performance section.</p>
 <h4 id="pure-proxy"><a class="header" href="#pure-proxy">Pure Proxy</a></h4>
 <p>Pure proxy can achieve having a stored and determinstic multisig account from different users but it's unneeded complexity as a way around the limitations of the current multisig pallet. It doesn't also have the same fine grained control over the multisig account.</p>
@@ -238,12 +238,12 @@
 <p>Basic requirements for the Stateful Multisig are:</p>
 <ul>
 <li>The ability to have concrete and permanent (unless deleted) multisig accounts in the state.</li>
-<li>The ability to add/remove owners from an existing multisig account by the multisig itself.</li>
+<li>The ability to add/remove signers from an existing multisig account by the multisig itself.</li>
 <li>The ability to change the threshold of an existing multisig account by the multisig itself.</li>
 <li>The ability to delete an existing multisig account by the multisig itself.</li>
 <li>The ability to cancel an existing proposal by the multisig itself.</li>
-<li>Owners of multisig account can start a proposal on behalf of the multisig account which will be dispatched after getting enough approvals.</li>
-<li>Owners of multisig account can approve/revoke a proposal while still exists.</li>
+<li>Signers of multisig account can start a proposal on behalf of the multisig account which will be dispatched after getting enough approvals.</li>
+<li>Signers of multisig account can approve/reject a proposal while still exists.</li>
 </ul>
 <h3 id="use-cases"><a class="header" href="#use-cases">Use Cases</a></h3>
 <ul>
@@ -267,7 +267,7 @@ DAOs can utilize multisig accounts to ensure that decisions are made collectivel
 <li>Polkadot developers</li>
 </ul>
 <h2 id="explanation"><a class="header" href="#explanation">Explanation</a></h2>
-<p>I've created the stateful multisig pallet during my studies in Polkadot Blockchain Academy under supervision from @shawntabrizi and @ank4n. After that, I've enhanced it to be fully functional and this is a draft <a href="https://github.com/paritytech/polkadot-sdk/pull/3300">PR#3300</a> in polkadot-sdk. I'll list all the details and design decisions in the following sections.</p>
+<p>I've created the stateful multisig pallet during my studies in Polkadot Blockchain Academy under supervision from @shawntabrizi and @ank4n. After that, I've enhanced it to be fully functional and this is a draft <a href="https://github.com/paritytech/polkadot-sdk/pull/3300">PR#3300</a> in polkadot-sdk. I'll list all the details and design decisions in the following sections. Note that the PR is not 1-1 exactly to the current RFC as the RFC is a more polished version of the PR after updating based on the feedback and discussions.</p>
 <p>Let's start with a sequence diagram to illustrate the main operations of the Stateful Multisig.</p>
 <p><img src="https://github.com/asoliman92/RFCs/assets/2677789/4f2e8972-f3b8-4250-b75f-1e4788b35752" alt="multisig operations" /></p>
 <p>Notes on above diagram:</p>
@@ -275,28 +275,327 @@ DAOs can utilize multisig accounts to ensure that decisions are made collectivel
 <li>It's a 3 step process to execute a proposal. (Start Proposal --&gt; Approvals --&gt; Execute Proposal)</li>
 <li><code>Execute</code> is an explicit extrinsic for a simpler API. It can be optimized to be executed automatically after getting enough approvals.</li>
 <li>Any user can create a multisig account and they don't need to be part of it. (Alice in the diagram)</li>
-<li>A proposal is any extrinsic including control extrinsics (e.g. add/remove owner, change threshold,..etc).</li>
-<li>Any multisig account owner can start a proposal on behalf of the multisig account. (Bob in the diagram)</li>
-<li>Any multisig account owener can execute proposal if it's approved by enough owners. (Dave in the diagram)</li>
+<li>A proposal is any extrinsic including control extrinsics (e.g. add/remove signer, change threshold,..etc).</li>
+<li>Any multisig account signer can start a proposal on behalf of the multisig account. (Bob in the diagram)</li>
+<li>Any multisig account owener can execute proposal if it's approved by enough signers. (Dave in the diagram)</li>
 </ul>
 <h3 id="state-transition-functions"><a class="header" href="#state-transition-functions">State Transition Functions</a></h3>
-<p>All functions have detailed rustdoc in <a href="https://github.com/paritytech/polkadot-sdk/pull/3300">PR#3300</a>. Here is a brief overview of the functions:</p>
 <ul>
-<li><code>create_multisig</code> - Create a multisig account with a given threshold and initial owners. (Needs Deposit)</li>
-<li><code>start_proposal</code> - Start a multisig proposal. (Needs Deposit)</li>
-<li><code>approve</code> - Approve a multisig proposal.</li>
-<li><code>revoke</code> - Revoke a multisig approval from an existing proposal.</li>
-<li><code>execute_proposal</code> - Execute a multisig proposal. (Releases Deposit)</li>
-<li><code>cancel_own_proposal</code> - Cancel a multisig proposal started by the caller in case no other owners approved it yet. (Releases Deposit)</li>
+<li><code>create_multisig</code> - Create a multisig account with a given threshold and initial signers. (Needs Deposit)</li>
 </ul>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>		/// Creates a new multisig account and attach signers with a threshold to it.
+		///
+		/// The dispatch origin for this call must be _Signed_. It is expected to be a nomral AccountId and not a
+		/// Multisig AccountId.
+		///
+		/// T::BaseCreationDeposit + T::PerSignerDeposit * signers.len() will be held from the caller's account.
+		///
+		/// # Arguments
+		///
+		/// - `signers`: Initial set of accounts to add to the multisig. These may be updated later via `add_signer`
+		/// and `remove_signer`.
+		/// - `threshold`: The threshold number of accounts required to approve an action. Must be greater than 0 and
+		/// less than or equal to the total number of signers.
+		///
+		/// # Errors
+		///
+		/// * `TooManySignatories` - The number of signatories exceeds the maximum allowed.
+		/// * `InvalidThreshold` - The threshold is greater than the total number of signers.
+		pub fn create_multisig(
+			origin: OriginFor&lt;T&gt;,
+			signers: BoundedBTreeSet&lt;T::AccountId, T::MaxSignatories&gt;,
+			threshold: u32,
+		) -&gt; DispatchResult 
+<span class="boring">}</span></code></pre></pre>
+<ul>
+<li><code>start_proposal</code> - Start a multisig proposal. (Needs Deposit)</li>
+</ul>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>		/// Starts a new proposal for a dispatchable call for a multisig account.
+		/// The caller must be one of the signers of the multisig account.
+		/// T::ProposalDeposit will be held from the caller's account.
+		///
+		/// # Arguments
+		///
+		/// * `multisig_account` - The multisig account ID.
+		/// * `call` - The dispatchable call to be executed.
+		///
+		/// # Errors
+		///
+		/// * `MultisigNotFound` - The multisig account does not exist.
+		/// * `UnAuthorizedSigner` - The caller is not an signer of the multisig account.
+		/// * `TooManySignatories` - The number of signatories exceeds the maximum allowed. (shouldn't really happen as it's the first approval)
+		pub fn start_proposal(
+			origin: OriginFor&lt;T&gt;,
+			multisig_account: T::AccountId,
+			call_hash: T::Hash,
+		) -&gt; DispatchResult
+<span class="boring">}</span></code></pre></pre>
+<ul>
+<li><code>approve</code> - Approve a multisig proposal.</li>
+</ul>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>		/// Approves a proposal for a dispatchable call for a multisig account.
+		/// The caller must be one of the signers of the multisig account.
+		///
+		/// If a signer did approve -&gt; reject -&gt; approve, the proposal will be approved.
+		/// If a signer did approve -&gt; reject, the proposal will be rejected.
+		///
+		/// # Arguments
+		///
+		/// * `multisig_account` - The multisig account ID.
+		/// * `call_hash` - The hash of the call to be approved. (This will be the hash of the call that was used in `start_proposal`)
+		///
+		/// # Errors
+		///
+		/// * `MultisigNotFound` - The multisig account does not exist.
+		/// * `UnAuthorizedSigner` - The caller is not an signer of the multisig account.
+		/// * `TooManySignatories` - The number of signatories exceeds the maximum allowed.
+		/// This shouldn't really happen as it's an approval, not an addition of a new signer.
+		pub fn approve(
+			origin: OriginFor&lt;T&gt;,
+			multisig_account: T::AccountId,
+			call_hash: T::Hash,
+		) -&gt; DispatchResult
+<span class="boring">}</span></code></pre></pre>
+<ul>
+<li><code>reject</code> - Reject a multisig proposal.</li>
+</ul>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>		/// Rejects a proposal for a multisig account.
+		/// The caller must be one of the signers of the multisig account.
+		///
+		/// Between approving and rejecting, last call wins.
+		/// If a signer did approve -&gt; reject -&gt; approve, the proposal will be approved.
+		/// If a signer did approve -&gt; reject, the proposal will be rejected.
+		///
+		/// # Arguments
+		///
+		/// * `multisig_account` - The multisig account ID.
+		/// * `call_hash` - The hash of the call to be approved. (This will be the hash of the call that was used in `start_proposal`)
+		///
+		/// # Errors
+		///
+		/// * `MultisigNotFound` - The multisig account does not exist.
+		/// * `UnAuthorizedSigner` - The caller is not an signer of the multisig account.
+		/// * `SignerNotFound` - The caller has not approved the proposal.
+		#[pallet::call_index(3)]
+		#[pallet::weight(Weight::default())]
+		pub fn reject(
+			origin: OriginFor&lt;T&gt;,
+			multisig_account: T::AccountId,
+			call_hash: T::Hash,
+		) -&gt; DispatchResult
+<span class="boring">}</span></code></pre></pre>
+<ul>
+<li><code>execute_proposal</code> - Execute a multisig proposal. (Releases Deposit)</li>
+</ul>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>		/// Executes a proposal for a dispatchable call for a multisig account.
+		/// Poropsal needs to be approved by enough signers (exceeds or equal multisig threshold) before it can be executed.
+		/// The caller must be one of the signers of the multisig account.
+		///
+		/// This function does an extra check to make sure that all approvers still exist in the multisig account.
+		/// That is to make sure that the multisig account is not compromised by removing an signer during an active proposal.
+		///
+		/// Once finished, the withheld deposit will be returned to the proposal creator.
+		///
+		/// # Arguments
+		///
+		/// * `multisig_account` - The multisig account ID.
+		/// * `call` - The call to be executed.
+		///
+		/// # Errors
+		///
+		/// * `MultisigNotFound` - The multisig account does not exist.
+		/// * `UnAuthorizedSigner` - The caller is not an signer of the multisig account.
+		/// * `NotEnoughApprovers` - approvers don't exceed the threshold.
+		pub fn execute_proposal(
+			origin: OriginFor&lt;T&gt;,
+			multisig_account: T::AccountId,
+			call: Box&lt;&lt;T as Config&gt;::RuntimeCall&gt;,
+		) -&gt; DispatchResult
+<span class="boring">}</span></code></pre></pre>
+<ul>
+<li><code>cancel_proposal</code> - Cancel a multisig proposal. (Releases Deposit)</li>
+</ul>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>		/// Cancels an existing proposal for a multisig account.
+		/// Poropsal needs to be rejected by enough signers (exceeds or equal multisig threshold) before it can be executed.
+		/// The caller must be one of the signers of the multisig account.
+		///
+		/// This function does an extra check to make sure that all rejectors still exist in the multisig account.
+		/// That is to make sure that the multisig account is not compromised by removing an signer during an active proposal.
+		///
+		/// Once finished, the withheld deposit will be returned to the proposal creator./
+		///
+		/// # Arguments
+		///
+		/// * `origin` - The origin multisig account who wants to cancel the proposal.
+		/// * `call_hash` - The hash of the call to be canceled. (This will be the hash of the call that was used in `start_proposal`)
+		///
+		/// # Errors
+		///
+		/// * `MultisigNotFound` - The multisig account does not exist.
+		/// * `ProposalNotFound` - The proposal does not exist.
+		pub fn cancel_proposal(
+		origin: OriginFor&lt;T&gt;, 
+		multisig_account: T::AccountId, 
+		call_hash: T::Hash) -&gt; DispatchResult
+<span class="boring">}</span></code></pre></pre>
+<ul>
+<li><code>cancel_own_proposal</code> - Cancel a multisig proposal started by the caller in case no other signers approved it yet. (Releases Deposit)</li>
+</ul>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>		/// Cancels an existing proposal for a multisig account Only if the proposal doesn't have approvers other than
+		/// the proposer.
+		///
+		///	This function needs to be called from a the proposer of the proposal as the origin.
+		///
+		/// The withheld deposit will be returned to the proposal creator.
+		///
+		/// # Arguments
+		///
+		/// * `multisig_account` - The multisig account ID.
+		/// * `call_hash` - The hash of the call to be canceled. (This will be the hash of the call that was used in `start_proposal`)
+		///
+		/// # Errors
+		///
+		/// * `MultisigNotFound` - The multisig account does not exist.
+		/// * `ProposalNotFound` - The proposal does not exist.
+		pub fn cancel_own_proposal(
+			origin: OriginFor&lt;T&gt;,
+			multisig_account: T::AccountId,
+			call_hash: T::Hash,
+		) -&gt; DispatchResult
+<span class="boring">}</span></code></pre></pre>
+<ul>
+<li><code>cleanup_proposals</code> - Cleanup proposals of a multisig account. (Releases Deposit)</li>
+</ul>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>		/// Cleanup proposals of a multisig account. This function will iterate over a max limit per extrinsic to ensure
+		/// we don't have unbounded iteration over the proposals.
+		///
+		/// The withheld deposit will be returned to the proposal creator.
+		///
+		/// # Arguments
+		///
+		/// * `multisig_account` - The multisig account ID.
+		///
+		/// # Errors
+		///
+		/// * `MultisigNotFound` - The multisig account does not exist.
+		/// * `ProposalNotFound` - The proposal does not exist.
+		pub fn cleanup_proposals(
+			origin: OriginFor&lt;T&gt;,
+			multisig_account: T::AccountId,
+		) -&gt; DispatchResult
+<span class="boring">}</span></code></pre></pre>
 <p>Note: Next functions need to be called from the multisig account itself. Deposits are reserved from the multisig account as well.</p>
 <ul>
-<li><code>add_owner</code> - Add a new owner to a multisig account. (Needs Deposit)</li>
-<li><code>remove_owner</code> - Remove an owner from a multisig account. (Releases Deposit)</li>
+<li><code>add_signer</code> - Add a new signer to a multisig account. (Needs Deposit)</li>
+</ul>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>		/// Adds a new signer to the multisig account.
+		/// This function needs to be called from a Multisig account as the origin.
+		/// Otherwise it will fail with MultisigNotFound error.
+		///
+		/// T::PerSignerDeposit will be held from the multisig account.
+		///
+		/// # Arguments
+		///
+		/// * `origin` - The origin multisig account who wants to add a new signer to the multisig account.
+		/// * `new_signer` - The AccountId of the new signer to be added.
+		/// * `new_threshold` - The new threshold for the multisig account after adding the new signer.
+		///
+		/// # Errors
+		/// * `MultisigNotFound` - The multisig account does not exist.
+		/// * `InvalidThreshold` - The threshold is greater than the total number of signers or is zero.
+		/// * `TooManySignatories` - The number of signatories exceeds the maximum allowed.
+		pub fn add_signer(
+			origin: OriginFor&lt;T&gt;,
+			new_signer: T::AccountId,
+			new_threshold: u32,
+		) -&gt; DispatchResult
+<span class="boring">}</span></code></pre></pre>
+<ul>
+<li><code>remove_signer</code> - Remove an signer from a multisig account. (Releases Deposit)</li>
+</ul>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>		/// Removes an  signer from the multisig account.
+		/// This function needs to be called from a Multisig account as the origin.
+		/// Otherwise it will fail with MultisigNotFound error.
+		/// If only one signer exists and is removed, the multisig account and any pending proposals for this account will be deleted from the state.
+		///
+		/// # Arguments
+		///
+		/// * `origin` - The origin multisig account who wants to remove an signer from the multisig account.
+		/// * `signer_to_remove` - The AccountId of the signer to be removed.
+		/// * `new_threshold` - The new threshold for the multisig account after removing the signer. Accepts zero if
+		/// the signer is the only one left.kkk
+		///
+		/// # Errors
+		///
+		/// This function can return the following errors:
+		///
+		/// * `MultisigNotFound` - The multisig account does not exist.
+		/// * `InvalidThreshold` - The new threshold is greater than the total number of signers or is zero.
+		/// * `UnAuthorizedSigner` - The caller is not an signer of the multisig account.
+		pub fn remove_signer(
+			origin: OriginFor&lt;T&gt;,
+			signer_to_remove: T::AccountId,
+			new_threshold: u32,
+		) -&gt; DispatchResult
+<span class="boring">}</span></code></pre></pre>
+<ul>
 <li><code>set_threshold</code> - Change the threshold of a multisig account.</li>
-<li><code>cancel_proposal</code> - Cancel a multisig proposal. (Releases Deposit)</li>
+</ul>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>		/// Sets a new threshold for a multisig account.
+		///	This function needs to be called from a Multisig account as the origin.
+		/// Otherwise it will fail with MultisigNotFound error.
+		///
+		/// # Arguments
+		///
+		/// * `origin` - The origin multisig account who wants to set the new threshold.
+		/// * `new_threshold` - The new threshold to be set.
+		/// # Errors
+		///
+		/// * `MultisigNotFound` - The multisig account does not exist.
+		/// * `InvalidThreshold` - The new threshold is greater than the total number of signers or is zero.
+		set_threshold(origin: OriginFor&lt;T&gt;, new_threshold: u32) -&gt; DispatchResult
+<span class="boring">}</span></code></pre></pre>
+<ul>
 <li><code>delete_multisig</code> - Delete a multisig account. (Releases Deposit)</li>
 </ul>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>		/// Deletes a multisig account and all related proposals.
+		///
+		///	This function needs to be called from a Multisig account as the origin.
+		/// Otherwise it will fail with MultisigNotFound error.
+		///
+		/// # Arguments
+		///
+		/// * `origin` - The origin multisig account who wants to cancel the proposal.
+		///
+		/// # Errors
+		///
+		/// * `MultisigNotFound` - The multisig account does not exist.
+		pub fn delete_account(origin: OriginFor&lt;T&gt;) -&gt; DispatchResult
+<span class="boring">}</span></code></pre></pre>
 <h3 id="storagestate"><a class="header" href="#storagestate">Storage/State</a></h3>
 <ul>
 <li>Use 2 main storage maps to store mutlisig accounts and proposals.</li>
@@ -322,9 +621,9 @@ pub type PendingProposals&lt;T: Config&gt; = StorageDoubleMap&lt;
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>pub struct MultisigAccountDetails&lt;T: Config&gt; {
-	/// The owners of the multisig account. This is a BoundedBTreeSet to ensure faster operations (add, remove).
-	/// As well as lookups and faster set operations to ensure approvers is always a subset from owners. (e.g. in case of removal of an owner during an active proposal)
-	pub owners: BoundedBTreeSet&lt;T::AccountId, T::MaxSignatories&gt;,
+	/// The signers of the multisig account. This is a BoundedBTreeSet to ensure faster operations (add, remove).
+	/// As well as lookups and faster set operations to ensure approvers is always a subset from signers. (e.g. in case of removal of an signer during an active proposal)
+	pub signers: BoundedBTreeSet&lt;T::AccountId, T::MaxSignatories&gt;,
 	/// The threshold of approvers required for the multisig account to be able to execute a call.
 	pub threshold: u32,
 	pub creator: T::AccountId,
@@ -340,20 +639,24 @@ pub type PendingProposals&lt;T: Config&gt; = StorageDoubleMap&lt;
     /// The extrinsic when the multisig operation was opened.
     pub when: Timepoint&lt;BlockNumberFor&lt;T&gt;&gt;,
     /// The approvers achieved so far, including the depositor.
-    /// The approvers are stored in a BoundedBTreeSet to ensure faster lookup and operations (approve, revoke).
+    /// The approvers are stored in a BoundedBTreeSet to ensure faster lookup and operations (approve, reject).
     /// It's also bounded to ensure that the size don't go over the required limit by the Runtime.
     pub approvers: BoundedBTreeSet&lt;T::AccountId, T::MaxSignatories&gt;,
+    /// The rejectors for the proposal so far.
+    /// The rejectors are stored in a BoundedBTreeSet to ensure faster lookup and operations (approve, reject).
+    /// It's also bounded to ensure that the size don't go over the required limit by the Runtime.
+    pub rejectors: BoundedBTreeSet&lt;T::AccountId, T::MaxSignatories&gt;,
     /// The block number until which this multisig operation is valid. None means no expiry.
     pub expire_after: Option&lt;BlockNumberFor&lt;T&gt;&gt;,
 }
 <span class="boring">}</span></code></pre></pre>
-<p>For optimization we're using BoundedBTreeSet to allow for efficient lookups and removals. Especially in the case of approvers, we need to be able to remove an approver from the list when they revoke their approval. (which we do lazily when <code>execute_proposal</code> is called).</p>
-<p>There's an extra storage map for the deposits of the multisig accounts per owner added. This is to ensure that we can release the deposits when the multisig removes them even if the constant deposit per owner changed in the runtime later on.</p>
+<p>For optimization we're using BoundedBTreeSet to allow for efficient lookups and removals. Especially in the case of approvers, we need to be able to remove an approver from the list when they reject their approval. (which we do lazily when <code>execute_proposal</code> is called).</p>
+<p>There's an extra storage map for the deposits of the multisig accounts per signer added. This is to ensure that we can release the deposits when the multisig removes them even if the constant deposit per signer changed in the runtime later on.</p>
 <h3 id="considerations--edge-cases"><a class="header" href="#considerations--edge-cases">Considerations &amp; Edge cases</a></h3>
-<h4 id="removing-an-owner-from-the-multisig-account-during-an-active-proposal"><a class="header" href="#removing-an-owner-from-the-multisig-account-during-an-active-proposal">Removing an owner from the multisig account during an active proposal</a></h4>
-<p>We need to ensure that the approvers are always a subset from owners. This is also partially why we're using BoundedBTreeSet for owners and approvers. Once execute proposal is called we ensure that the proposal is still valid and the approvers are still a subset from current owners.</p>
+<h4 id="removing-an-signer-from-the-multisig-account-during-an-active-proposal"><a class="header" href="#removing-an-signer-from-the-multisig-account-during-an-active-proposal">Removing an signer from the multisig account during an active proposal</a></h4>
+<p>We need to ensure that the approvers are always a subset from signers. This is also partially why we're using BoundedBTreeSet for signers and approvers. Once execute proposal is called we ensure that the proposal is still valid and the approvers are still a subset from current signers.</p>
 <h4 id="multisig-account-deletion-and-cleaning-up-existing-proposals"><a class="header" href="#multisig-account-deletion-and-cleaning-up-existing-proposals">Multisig account deletion and cleaning up existing proposals</a></h4>
-<p>Once the last owner of a multisig account is removed or the multisig approved the account deletion we delete the multisig accound from the state and keep the proposals until someone calls <code>cleanup_proposals</code> multiple times which iterates over a max limit per extrinsic. This is to ensure we don't have unbounded iteration over the proposals. Users are already incentivized to call <code>cleanup_proposals</code> to get their deposits back.</p>
+<p>Once the last signer of a multisig account is removed or the multisig approved the account deletion we delete the multisig accound from the state and keep the proposals until someone calls <code>cleanup_proposals</code> multiple times which iterates over a max limit per extrinsic. This is to ensure we don't have unbounded iteration over the proposals. Users are already incentivized to call <code>cleanup_proposals</code> to get their deposits back.</p>
 <h4 id="multisig-account-deletion-and-existing-deposits"><a class="header" href="#multisig-account-deletion-and-existing-deposits">Multisig account deletion and existing deposits</a></h4>
 <p>We currently just delete the account without checking for deposits (Would like to hear your thoughts here). We can either</p>
 <ul>
@@ -418,7 +721,7 @@ We have the following extrinsics:</p>
 <p>So now for the caclulations, given the following:</p>
 <ul>
 <li>K is the number of multisig accounts.</li>
-<li>N is number of owners in each multisig account.</li>
+<li>N is number of signers in each multisig account.</li>
 <li>For each proposal we need to have 2N/3 approvals.</li>
 </ul>
 <p>The table calculates if each of the K multisig accounts has one proposal and it gets approved by the 2N/3 and then executed. How much did the total Blocks and States sizes increased by the end of the day.</p>
@@ -426,7 +729,7 @@ We have the following extrinsics:</p>
 <p>Stateless effect on blocksizes = 2/3<em>K</em>N^2 (as each user of the 2/3 users will need to call approve_as_multi with all the other signatories(N) in extrinsic body)</p>
 <p>Stateful effect on blocksizes = K * N (as each user will need to call approve with the multisig account only in extrinsic body)</p>
 <p>Stateless effect on statesizes = Nil (as the multisig account is not stored in the state)</p>
-<p>Stateful effect on statesizes = K*N (as each multisig account (K) will be stored with all the owners (K) in the state)</p>
+<p>Stateful effect on statesizes = K*N (as each multisig account (K) will be stored with all the signers (K) in the state)</p>
 <div class="table-wrapper"><table><thead><tr><th>Pallet</th><th style="text-align: center">Block Size</th><th style="text-align: right">State Size</th></tr></thead><tbody>
 <tr><td>Stateless</td><td style="text-align: center">2/3<em>K</em>N^2</td><td style="text-align: right">Nil</td></tr>
 <tr><td>Stateful</td><td style="text-align: center">K*N</td><td style="text-align: right">K*N</td></tr>
@@ -446,14 +749,14 @@ We have the following extrinsics:</p>
 <p><a href="https://github.com/paritytech/polkadot-sdk/tree/master/substrate/frame/multisig">multisig pallet in polkadot-sdk</a></p>
 <h2 id="unresolved-questions"><a class="header" href="#unresolved-questions">Unresolved Questions</a></h2>
 <ul>
-<li>On account deletion, should we transfer remaining deposits to treasury or remove owners' addition deposits completely and consider it as fees to start with?</li>
+<li>On account deletion, should we transfer remaining deposits to treasury or remove signers' addition deposits completely and consider it as fees to start with?</li>
 </ul>
 <h2 id="future-directions-and-related-material"><a class="header" href="#future-directions-and-related-material">Future Directions and Related Material</a></h2>
 <ul>
 <li><input disabled="" type="checkbox"/>
 Batch proposals. The ability to batch multiple calls into one proposal.</li>
 <li><input disabled="" type="checkbox"/>
-Batch addition/removal of owners.</li>
+Batch addition/removal of signers.</li>
 <li><input disabled="" type="checkbox"/>
 Add expiry to proposals. After a certain time, proposals will not accept any more approvals or executions and will be deleted.</li>
 <li><input disabled="" type="checkbox"/>
