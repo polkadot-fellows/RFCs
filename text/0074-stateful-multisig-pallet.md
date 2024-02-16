@@ -66,7 +66,7 @@ and much more...
 
 ## Explanation
 
-I've created the stateful multisig pallet during my studies in Polkadot Blockchain Academy under supervision from @shawntabrizi and @ank4n. After that, I've enhanced it to be fully functional and this is a draft [PR#3300](https://github.com/paritytech/polkadot-sdk/pull/3300) in polkadot-sdk. I'll list all the details and design decisions in the following sections.
+I've created the stateful multisig pallet during my studies in Polkadot Blockchain Academy under supervision from @shawntabrizi and @ank4n. After that, I've enhanced it to be fully functional and this is a draft [PR#3300](https://github.com/paritytech/polkadot-sdk/pull/3300) in polkadot-sdk. I'll list all the details and design decisions in the following sections. Note that the PR is not 1-1 exactly to the current RFC as the RFC is a more polished version of the PR after updating based on the feedback and discussions.
 
 Let's start with a sequence diagram to illustrate the main operations of the Stateful Multisig.
 
@@ -82,8 +82,6 @@ Notes on above diagram:
 * Any multisig account owener can execute proposal if it's approved by enough signers. (Dave in the diagram)
 
 ### State Transition Functions
-
-All functions have detailed rustdoc in [PR#3300](https://github.com/paritytech/polkadot-sdk/pull/3300). Here is a brief overview of the functions:
 
 * `create_multisig` - Create a multisig account with a given threshold and initial signers. (Needs Deposit)
 
