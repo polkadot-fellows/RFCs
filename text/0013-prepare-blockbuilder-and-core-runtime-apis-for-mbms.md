@@ -47,7 +47,7 @@ enum ExtrinsicInclusionMode {
 }
 ```
 
-A block author MUST respect the `ExtrinsicInclusionMode` that is returned by `initialize_block`. The runtime MUST reject blocks that have extrinsics in them while `OnlyInherents` was returned.
+A block author MUST respect the `ExtrinsicInclusionMode` that is returned by `initialize_block`. The runtime MUST reject blocks that have non-inherent extrinsics in them while `OnlyInherents` was returned.
 
 Coming back to the motivations and how they can be implemented with this runtime API change:  
 
