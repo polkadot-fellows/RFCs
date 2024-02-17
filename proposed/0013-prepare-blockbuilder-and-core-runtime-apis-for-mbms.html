@@ -239,7 +239,7 @@ multi-block migrations available.</li>
   OnlyInherents,
 }
 <span class="boring">}</span></code></pre></pre>
-<p>A block author MUST respect the <code>ExtrinsicInclusionMode</code> that is returned by <code>initialize_block</code>. The runtime MUST reject blocks that have extrinsics in them while <code>OnlyInherents</code> was returned.</p>
+<p>A block author MUST respect the <code>ExtrinsicInclusionMode</code> that is returned by <code>initialize_block</code>. The runtime MUST reject blocks that have non-inherent extrinsics in them while <code>OnlyInherents</code> was returned.</p>
 <p>Coming back to the motivations and how they can be implemented with this runtime API change:</p>
 <p><strong>1. Multi-Block-Migrations</strong>: The runtime is being put into lock-down mode for the duration of the migration process by returning <code>OnlyInherents</code> from <code>initialize_block</code>. This ensures that no user provided transaction can interfere with the migration process. It is absolutely necessary to ensure this, otherwise a transaction could call into un-migrated storage and violate storage invariants.</p>
 <p><strong>2. <code>poll</code></strong> is possible by using <code>apply_extrinsic</code> as entry-point and not hindered by this approach. It would not be possible to use a pallet inherent like <code>System::last_inherent</code> to achieve this for two reasons: First is that pallets do not have access to <code>AllPalletsWithSystem</code> which is required to invoke the <code>poll</code> hook on all pallets. Second is that the runtime does currently not enforce an order of inherents. </p>
