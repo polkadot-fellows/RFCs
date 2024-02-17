@@ -34,6 +34,12 @@ We believe as well that the stateless multisig is not efficient in terms of bloc
 
 Pure proxy can achieve having a stored and determinstic multisig account from different users but it's unneeded complexity as a way around the limitations of the current multisig pallet. It doesn't also have the same fine grained control over the multisig account.
 
+Other points mentioned by @tbaut
+
+* pure proxies aren't (yet) a thing cross chain
+* the end user complexity is much much higher with pure proxies, also for new users smart contract multisig are widely known while pure proxies are obscure.
+* you can shoot yourself in the foot by deleting the proxy, and effectively loosing access to funds with pure proxies.
+
 ### Requirements
 
 Basic requirements for the Stateful Multisig are:
