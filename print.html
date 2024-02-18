@@ -320,6 +320,12 @@ detailing proposed changes to the technical implementation of the Polkadot netwo
 <p>We believe as well that the stateless multisig is not efficient in terms of block footprint as we'll show in the performance section.</p>
 <h4 id="pure-proxy"><a class="header" href="#pure-proxy">Pure Proxy</a></h4>
 <p>Pure proxy can achieve having a stored and determinstic multisig account from different users but it's unneeded complexity as a way around the limitations of the current multisig pallet. It doesn't also have the same fine grained control over the multisig account.</p>
+<p>Other points mentioned by @tbaut</p>
+<ul>
+<li>pure proxies aren't (yet) a thing cross chain</li>
+<li>the end user complexity is much much higher with pure proxies, also for new users smart contract multisig are widely known while pure proxies are obscure.</li>
+<li>you can shoot yourself in the foot by deleting the proxy, and effectively loosing access to funds with pure proxies.</li>
+</ul>
 <h3 id="requirements"><a class="header" href="#requirements">Requirements</a></h3>
 <p>Basic requirements for the Stateful Multisig are:</p>
 <ul>
