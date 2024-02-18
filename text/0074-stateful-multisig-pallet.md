@@ -89,6 +89,15 @@ Notes on above diagram:
 
 ### State Transition Functions
 
+having the following enum to store the call or the hash:
+
+```rust
+enum CallOrHash<T: Config> {
+	Call(<T as Config>::RuntimeCall),
+	Hash(T::Hash),
+}
+```
+
 * `create_multisig` - Create a multisig account with a given threshold and initial signers. (Needs Deposit)
 
 ```rust
@@ -127,7 +136,7 @@ Notes on above diagram:
 		/// # Arguments
 		///
 		/// * `multisig_account` - The multisig account ID.
-		/// * `call` - The dispatchable call to be executed.
+		/// * `call_or_hash` - The enum having the call or the hash of the call to be approved and executed later.
 		///
 		/// # Errors
 		///
@@ -137,7 +146,7 @@ Notes on above diagram:
 		pub fn start_proposal(
 			origin: OriginFor<T>,
 			multisig_account: T::AccountId,
-			call_hash: T::Hash,
+			call_or_hash: CallOrHash,
 		) -> DispatchResult
 ```
 
@@ -153,7 +162,7 @@ Notes on above diagram:
 		/// # Arguments
 		///
 		/// * `multisig_account` - The multisig account ID.
-		/// * `call_hash` - The hash of the call to be approved. (This will be the hash of the call that was used in `start_proposal`)
+		/// * `call_or_hash` - The enum having the call or the hash of the call to be approved.
 		///
 		/// # Errors
 		///
@@ -164,7 +173,7 @@ Notes on above diagram:
 		pub fn approve(
 			origin: OriginFor<T>,
 			multisig_account: T::AccountId,
-			call_hash: T::Hash,
+			call_or_hash: CallOrHash,
 		) -> DispatchResult
 ```
 
@@ -181,7 +190,7 @@ Notes on above diagram:
 		/// # Arguments
 		///
 		/// * `multisig_account` - The multisig account ID.
-		/// * `call_hash` - The hash of the call to be approved. (This will be the hash of the call that was used in `start_proposal`)
+		/// * `call_or_hash` - The enum having the call or the hash of the call to be rejected.
 		///
 		/// # Errors
 		///
@@ -193,7 +202,7 @@ Notes on above diagram:
 		pub fn reject(
 			origin: OriginFor<T>,
 			multisig_account: T::AccountId,
-			call_hash: T::Hash,
+			call_or_hash: CallOrHash,
 		) -> DispatchResult
 ```
 
@@ -212,17 +221,19 @@ Notes on above diagram:
 		/// # Arguments
 		///
 		/// * `multisig_account` - The multisig account ID.
-		/// * `call` - The call to be executed.
+		/// * `call_or_hash` - We should have gotten the RuntimeCall (preimage) and stored it in the proposal by the time the extrinsic is called.
 		///
 		/// # Errors
 		///
 		/// * `MultisigNotFound` - The multisig account does not exist.
 		/// * `UnAuthorizedSigner` - The caller is not an signer of the multisig account.
 		/// * `NotEnoughApprovers` - approvers don't exceed the threshold.
+		/// * `ProposalNotFound` -  The proposal does not exist.
+		/// * `CallPreImageNotFound` -  The proposal doesn't have the preimage of the call in the state.
 		pub fn execute_proposal(
 			origin: OriginFor<T>,
 			multisig_account: T::AccountId,
-			call: Box<<T as Config>::RuntimeCall>,
+			call_or_hash: CallOrHash,
 		) -> DispatchResult
 ```
 
@@ -241,7 +252,7 @@ Notes on above diagram:
 		/// # Arguments
 		///
 		/// * `origin` - The origin multisig account who wants to cancel the proposal.
-		/// * `call_hash` - The hash of the call to be canceled. (This will be the hash of the call that was used in `start_proposal`)
+		/// * `call_or_hash` - The call or hash of the call to be canceled.
 		///
 		/// # Errors
 		///
@@ -250,7 +261,7 @@ Notes on above diagram:
 		pub fn cancel_proposal(
 		origin: OriginFor<T>, 
 		multisig_account: T::AccountId, 
-		call_hash: T::Hash) -> DispatchResult
+		call_or_hash: CallOrHash) -> DispatchResult
 ```
 
 * `cancel_own_proposal` - Cancel a multisig proposal started by the caller in case no other signers approved it yet. (Releases Deposit)
@@ -266,7 +277,7 @@ Notes on above diagram:
 		/// # Arguments
 		///
 		/// * `multisig_account` - The multisig account ID.
-		/// * `call_hash` - The hash of the call to be canceled. (This will be the hash of the call that was used in `start_proposal`)
+		/// * `call_or_hash` - The hash of the call to be canceled.
 		///
 		/// # Errors
 		///
@@ -275,7 +286,7 @@ Notes on above diagram:
 		pub fn cancel_own_proposal(
 			origin: OriginFor<T>,
 			multisig_account: T::AccountId,
-			call_hash: T::Hash,
+			call_or_hash: CallOrHash,
 		) -> DispatchResult
 ```
 
@@ -424,7 +435,6 @@ pub struct MultisigAccountDetails<T: Config> {
 	pub signers: BoundedBTreeSet<T::AccountId, T::MaxSignatories>,
 	/// The threshold of approvers required for the multisig account to be able to execute a call.
 	pub threshold: u32,
-	pub creator: T::AccountId,
 	pub deposit: BalanceOf<T>,
 }
 ```
@@ -513,7 +523,7 @@ We have the following extrinsics:
 pub fn start_proposal(
 			origin: OriginFor<T>,
 			multisig_account: T::AccountId,
-			call_hash: T::Hash,
+			call_or_hash: CallOrHash,
 		)
 ```
 
@@ -521,7 +531,7 @@ pub fn start_proposal(
 pub fn approve(
 			origin: OriginFor<T>,
 			multisig_account: T::AccountId,
-			call_hash: T::Hash,
+			call_or_hash: CallOrHash,
 		)
 ```
 
@@ -529,7 +539,7 @@ pub fn approve(
 pub fn execute_proposal(
 			origin: OriginFor<T>,
 			multisig_account: T::AccountId,
-			call: Box<<T as Config>::RuntimeCall>,
+			call_or_hash: CallOrHash,
 		)
 ```
 
