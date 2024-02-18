@@ -584,8 +584,6 @@ This RFC is compatible with the existing implementation and can be handled via u
 
 ## Future Directions and Related Material
 
-* [ ] Batch proposals. The ability to batch multiple calls into one proposal.  
 * [ ] Batch addition/removal of signers.
 * [ ] Add expiry to proposals. After a certain time, proposals will not accept any more approvals or executions and will be deleted.  
-* [ ] Add extra identifier other than call_hash to proposals (e.g. nonce). This will allow same call to be proposed multiple times and be in pending state.  
 * [ ] Implement call filters. This will allow multisig accounts to only accept certain calls.
