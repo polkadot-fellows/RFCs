@@ -372,6 +372,14 @@ DAOs can utilize multisig accounts to ensure that decisions are made collectivel
 <li>Any multisig account owener can execute proposal if it's approved by enough signers. (Dave in the diagram)</li>
 </ul>
 <h3 id="state-transition-functions"><a class="header" href="#state-transition-functions">State Transition Functions</a></h3>
+<p>having the following enum to store the call or the hash:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>enum CallOrHash&lt;T: Config&gt; {
+	Call(&lt;T as Config&gt;::RuntimeCall),
+	Hash(T::Hash),
+}
+<span class="boring">}</span></code></pre></pre>
 <ul>
 <li><code>create_multisig</code> - Create a multisig account with a given threshold and initial signers. (Needs Deposit)</li>
 </ul>
@@ -413,7 +421,7 @@ DAOs can utilize multisig accounts to ensure that decisions are made collectivel
 		/// # Arguments
 		///
 		/// * `multisig_account` - The multisig account ID.
-		/// * `call` - The dispatchable call to be executed.
+		/// * `call_or_hash` - The enum having the call or the hash of the call to be approved and executed later.
 		///
 		/// # Errors
 		///
@@ -423,7 +431,7 @@ DAOs can utilize multisig accounts to ensure that decisions are made collectivel
 		pub fn start_proposal(
 			origin: OriginFor&lt;T&gt;,
 			multisig_account: T::AccountId,
-			call_hash: T::Hash,
+			call_or_hash: CallOrHash,
 		) -&gt; DispatchResult
 <span class="boring">}</span></code></pre></pre>
 <ul>
@@ -440,7 +448,7 @@ DAOs can utilize multisig accounts to ensure that decisions are made collectivel
 		/// # Arguments
 		///
 		/// * `multisig_account` - The multisig account ID.
-		/// * `call_hash` - The hash of the call to be approved. (This will be the hash of the call that was used in `start_proposal`)
+		/// * `call_or_hash` - The enum having the call or the hash of the call to be approved.
 		///
 		/// # Errors
 		///
@@ -451,7 +459,7 @@ DAOs can utilize multisig accounts to ensure that decisions are made collectivel
 		pub fn approve(
 			origin: OriginFor&lt;T&gt;,
 			multisig_account: T::AccountId,
-			call_hash: T::Hash,
+			call_or_hash: CallOrHash,
 		) -&gt; DispatchResult
 <span class="boring">}</span></code></pre></pre>
 <ul>
@@ -469,7 +477,7 @@ DAOs can utilize multisig accounts to ensure that decisions are made collectivel
 		/// # Arguments
 		///
 		/// * `multisig_account` - The multisig account ID.
-		/// * `call_hash` - The hash of the call to be approved. (This will be the hash of the call that was used in `start_proposal`)
+		/// * `call_or_hash` - The enum having the call or the hash of the call to be rejected.
 		///
 		/// # Errors
 		///
@@ -481,7 +489,7 @@ DAOs can utilize multisig accounts to ensure that decisions are made collectivel
 		pub fn reject(
 			origin: OriginFor&lt;T&gt;,
 			multisig_account: T::AccountId,
-			call_hash: T::Hash,
+			call_or_hash: CallOrHash,
 		) -&gt; DispatchResult
 <span class="boring">}</span></code></pre></pre>
 <ul>
@@ -501,17 +509,19 @@ DAOs can utilize multisig accounts to ensure that decisions are made collectivel
 		/// # Arguments
 		///
 		/// * `multisig_account` - The multisig account ID.
-		/// * `call` - The call to be executed.
+		/// * `call_or_hash` - We should have gotten the RuntimeCall (preimage) and stored it in the proposal by the time the extrinsic is called.
 		///
 		/// # Errors
 		///
 		/// * `MultisigNotFound` - The multisig account does not exist.
 		/// * `UnAuthorizedSigner` - The caller is not an signer of the multisig account.
 		/// * `NotEnoughApprovers` - approvers don't exceed the threshold.
+		/// * `ProposalNotFound` -  The proposal does not exist.
+		/// * `CallPreImageNotFound` -  The proposal doesn't have the preimage of the call in the state.
 		pub fn execute_proposal(
 			origin: OriginFor&lt;T&gt;,
 			multisig_account: T::AccountId,
-			call: Box&lt;&lt;T as Config&gt;::RuntimeCall&gt;,
+			call_or_hash: CallOrHash,
 		) -&gt; DispatchResult
 <span class="boring">}</span></code></pre></pre>
 <ul>
@@ -531,7 +541,7 @@ DAOs can utilize multisig accounts to ensure that decisions are made collectivel
 		/// # Arguments
 		///
 		/// * `origin` - The origin multisig account who wants to cancel the proposal.
-		/// * `call_hash` - The hash of the call to be canceled. (This will be the hash of the call that was used in `start_proposal`)
+		/// * `call_or_hash` - The call or hash of the call to be canceled.
 		///
 		/// # Errors
 		///
@@ -540,7 +550,7 @@ DAOs can utilize multisig accounts to ensure that decisions are made collectivel
 		pub fn cancel_proposal(
 		origin: OriginFor&lt;T&gt;, 
 		multisig_account: T::AccountId, 
-		call_hash: T::Hash) -&gt; DispatchResult
+		call_or_hash: CallOrHash) -&gt; DispatchResult
 <span class="boring">}</span></code></pre></pre>
 <ul>
 <li><code>cancel_own_proposal</code> - Cancel a multisig proposal started by the caller in case no other signers approved it yet. (Releases Deposit)</li>
@@ -557,7 +567,7 @@ DAOs can utilize multisig accounts to ensure that decisions are made collectivel
 		/// # Arguments
 		///
 		/// * `multisig_account` - The multisig account ID.
-		/// * `call_hash` - The hash of the call to be canceled. (This will be the hash of the call that was used in `start_proposal`)
+		/// * `call_or_hash` - The hash of the call to be canceled.
 		///
 		/// # Errors
 		///
@@ -566,7 +576,7 @@ DAOs can utilize multisig accounts to ensure that decisions are made collectivel
 		pub fn cancel_own_proposal(
 			origin: OriginFor&lt;T&gt;,
 			multisig_account: T::AccountId,
-			call_hash: T::Hash,
+			call_or_hash: CallOrHash,
 		) -&gt; DispatchResult
 <span class="boring">}</span></code></pre></pre>
 <ul>
@@ -718,7 +728,6 @@ pub type PendingProposals&lt;T: Config&gt; = StorageDoubleMap&lt;
 	pub signers: BoundedBTreeSet&lt;T::AccountId, T::MaxSignatories&gt;,
 	/// The threshold of approvers required for the multisig account to be able to execute a call.
 	pub threshold: u32,
-	pub creator: T::AccountId,
 	pub deposit: BalanceOf&lt;T&gt;,
 }
 <span class="boring">}</span></code></pre></pre>
@@ -790,7 +799,7 @@ We have the following extrinsics:</p>
 </span>pub fn start_proposal(
 			origin: OriginFor&lt;T&gt;,
 			multisig_account: T::AccountId,
-			call_hash: T::Hash,
+			call_or_hash: CallOrHash,
 		)
 <span class="boring">}</span></code></pre></pre>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -798,7 +807,7 @@ We have the following extrinsics:</p>
 </span>pub fn approve(
 			origin: OriginFor&lt;T&gt;,
 			multisig_account: T::AccountId,
-			call_hash: T::Hash,
+			call_or_hash: CallOrHash,
 		)
 <span class="boring">}</span></code></pre></pre>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -806,7 +815,7 @@ We have the following extrinsics:</p>
 </span>pub fn execute_proposal(
 			origin: OriginFor&lt;T&gt;,
 			multisig_account: T::AccountId,
-			call: Box&lt;&lt;T as Config&gt;::RuntimeCall&gt;,
+			call_or_hash: CallOrHash,
 		)
 <span class="boring">}</span></code></pre></pre>
 <p>The main takeway is that we don't need to pass the threshold and other signatories in the extrinsics. This is because we already have the threshold and signatories in the state (only once).</p>
@@ -846,13 +855,9 @@ We have the following extrinsics:</p>
 <h2 id="future-directions-and-related-material"><a class="header" href="#future-directions-and-related-material">Future Directions and Related Material</a></h2>
 <ul>
 <li><input disabled="" type="checkbox"/>
-Batch proposals. The ability to batch multiple calls into one proposal.</li>
-<li><input disabled="" type="checkbox"/>
 Batch addition/removal of signers.</li>
 <li><input disabled="" type="checkbox"/>
 Add expiry to proposals. After a certain time, proposals will not accept any more approvals or executions and will be deleted.</li>
-<li><input disabled="" type="checkbox"/>
-Add extra identifier other than call_hash to proposals (e.g. nonce). This will allow same call to be proposed multiple times and be in pending state.</li>
 <li><input disabled="" type="checkbox"/>
 Implement call filters. This will allow multisig accounts to only accept certain calls.</li>
 </ul>
