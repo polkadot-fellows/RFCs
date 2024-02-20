@@ -2,9 +2,9 @@
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
-| **Start Date**  | 20 Feb 2024                                                                    |
-| **Description** | Increase the maximum length of identity raw data values from 32 bytes |
-| **Authors**       | Luke Schoen                                                                                            |
+| **Start Date**  | 20 Feb 2024                                                                                 |
+| **Description** | Increase the maximum length of identity raw data values from 32 bytes                       |
+| **Authors**     | Luke Schoen                                                                                 |
 
 ## Summary
 
