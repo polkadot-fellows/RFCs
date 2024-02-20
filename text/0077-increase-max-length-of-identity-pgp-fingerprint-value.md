@@ -1,4 +1,4 @@
-# RFC-0076: Increase maximum length of identity PGP fingerprint values from 20 bytes
+# RFC-0077: Increase maximum length of identity PGP fingerprint values from 20 bytes
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
