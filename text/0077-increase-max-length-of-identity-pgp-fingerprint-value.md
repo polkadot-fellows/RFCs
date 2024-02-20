@@ -24,16 +24,14 @@ GNU Privacy Guard (GPG) is compliant with PGP and the two acronyms are used inte
 
 ### Problem
 
-If you want to set a Polkadot on-chain identity, users may provide a PGP Fingerprint value in the "pgfingerprint" field, which may be longer than 20 bytes/chars (e.g. PGP Fingerprints are 40 bytes/chars long), however that field can only store a maximum length of 20 bytes/chars of information.
+If you want to set a Polkadot on-chain identity, users may provide a PGP Fingerprint value in the "pgpFingerprint" field, which may be longer than 20 bytes/chars (e.g. PGP Fingerprints are 40 bytes/chars long), however that field can only store a maximum length of 20 bytes/chars of information.
 
 Possible disadvantages of the current 20 bytes/chars limitation:
-* Discourages users from using the "pgfingerprint" field.
-* Discourages users from using Polkadot on-chain identities for Web2 and Web3 dApp software releases where the latest "pgfingerprint" field could be used to verify the correct PGP Fingerprint that has been used to sign the software releases so users that download the software know that it was from a trusted source.
-* Encourages dApps to link to Web2 sources to allow their users verify the correct fingerprint associated with software releases, rather than to use the Web3 Polkadot on-chain identity "pgfingerprint" field of the releaser of the software, since it may be the case that the "pgfingerprint" field of most on-chain identities is not widely used due to the maximum length of 20 bytes/chars restriction.
+* Discourages users from using the "pgpFingerprint" field.
+* Discourages users from using Polkadot on-chain identities for Web2 and Web3 dApp software releases where the latest "pgpFingerprint" field could be used to verify the correct PGP Fingerprint that has been used to sign the software releases so users that download the software know that it was from a trusted source.
+* Encourages dApps to link to Web2 sources to allow their users verify the correct fingerprint associated with software releases, rather than to use the Web3 Polkadot on-chain identity "pgpFingerprint" field of the releaser of the software, since it may be the case that the "pgpFingerprint" field of most on-chain identities is not widely used due to the maximum length of 20 bytes/chars restriction.
 * Discourages users from setting an on-chain identity by creating an extrinsic using Polkadot.js with `identity` > `setIdentity(info)`, since if they try to provide their 40 character long PGP Fingerprint or GPG Fingerprint, which is longer than the maximum length of 20 bytes/chars, they will encounter an error.
-* Discourages users from using on-chain Web3 registrars to judge on-chain identity fields, where the shortest value they are able to generate for a "pgfingerprint" is not less than or equal to the maximum length of 20 bytes.
-
-Note: The "pgfingerprint" field should probably be spelt "pgpfingerprint" in Polkadot.js.
+* Discourages users from using on-chain Web3 registrars to judge on-chain identity fields, where the shortest value they are able to generate for a "pgpFingerprint" is not less than or equal to the maximum length of 20 bytes.
 
 ### Solution Requirements
 
