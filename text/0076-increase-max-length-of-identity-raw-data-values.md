@@ -1,4 +1,4 @@
-# RFC-0075: Increase maximum length of identity raw data values from 32 bytes
+# RFC-0076: Increase maximum length of identity raw data values from 32 bytes
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
