@@ -4,7 +4,7 @@
 | --------------- | -------------------------------------------------------------------------------------------- |
 | **Start Date**  | 2023-10-31                                                                                   |
 | **Description** | Include merkelized metadata hash in extrinsic signature for trust-less metadata verification.|
-| **Authors**     | Alzymologist Oy, Zondax LLC, Parity Technologies                                             |
+| **Authors**     | Alzymologist Oy, Zondax AG, Parity Technologies                                             |
 
 ## Summary
 
