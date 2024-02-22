@@ -2,7 +2,7 @@
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
-| **Start Date**  | Date of initial proposal                                                                    |
+| **Start Date**  | 22 February 2024                                                                    |
 | **Description** | Include merkelized metadata hash in extrinsic signature for trust-less metadata verification.                                                                     |
 | **Authors**     | Zondax AG, Parity Technologies                                                                                                |
 
