@@ -192,7 +192,7 @@ enum TypeRef {
     CompactU32,
     CompactU64,
     CompactU128,
-    CompactVoid,
+    Void,
     PerId(Compact<u32>),
 }
 ```
@@ -202,16 +202,16 @@ The `Type` declares the structure of a type. The `type` has the following fields
 - `path`: A `path` declares the position of a type locally to the place where it is defined. The `path` is not globally unique, this means that there can be multiple types with the same `path`.
 - `type_def`: The high-level type definition, e.g. the type is a composition of fields where each field has a type, the type is a composition of different types as `tuple` etc.
 
-Every `Type` is composed of multiple different types. Each of these "sub types" can reference either a full `Type` again or reference one of the primitive types. This is where `TypeRef` comes into play as the type referencing information. To reference a `Type` in the type information a unique identifier is used. As primitive types can be represented using a single byte, they are not put as separate types into the type information. Instead the primitive types are directly part of `TypeRef` to not require the overhead of referencing them in an extra `Type`. 
+Every `Type` is composed of multiple different types. Each of these "sub types" can reference either a full `Type` again or reference one of the primitive types. This is where `TypeRef` comes into play as the type referencing information. To reference a `Type` in the type information a unique identifier is used. As primitive types can be represented using a single byte, they are not put as separate types into the type information. Instead the primitive types are directly part of `TypeRef` to not require the overhead of referencing them in an extra `Type`. The special primitive type `Void` represents a type that encodes to nothing and can be decoded from nothing. As FRAME doesn't support `Compact` as primitive type it requires a little bit more involved implementation to convert a FRAME type to a `Compact` primitive type. SCALE only supports `u8`, `u16`, `u32`, `u64` and `u128` as `Compact` which maps onto the primtive type declaration in the RFC. One special case is a `Compact` that wraps an empty `Tuple` which is expressed as primitive type `Void`.
 
 The `TypeDef` variants have the following meaning:
 
-- `Composite`: A `struct` like type that is composed of multiple different fields. Each `Field` can have its own type.
-- `Enumeration`: Stores a `EnumerationVariant`. A `EnumerationVariant` is a struct that is described by a name, an index and a vector of `Field`s, each of which can have it's own type. Typically `Enumeration`s have more than just one variant, and in those cases `Enumeration` will appear multiple times, each time with a different variant, in the type information. Given that `Enumeration`s can get quite big, yet usually for decoding a type only one variant is required, therefore this design brings optimizations and helps reduce the size of the proof.
+- `Composite`: A `struct` like type that is composed of multiple different fields. Each `Field` can have its own type. A `Composite` with no fields is expressed as primitive type `Void`.
+- `Enumeration`: Stores a `EnumerationVariant`. A `EnumerationVariant` is a struct that is described by a name, an index and a vector of `Field`s, each of which can have it's own type. Typically `Enumeration`s have more than just one variant, and in those cases `Enumeration` will appear multiple times, each time with a different variant, in the type information. Given that `Enumeration`s can get quite big, yet usually for decoding a type only one variant is required, therefore this design brings optimizations and helps reduce the size of the proof. An `Enumeration` with no variants is expressed as primitive type `Void`.
 - `Sequence`: A `vector` like type wrapping the given type.
 - `BitSequence`: A `vector` storing bits. `num_bytes` represents the size in bytes of the internal storage. If `least_significant_bit_first` is `true` the least significant bit is first, otherwise the most significant bit is first.
 - `Array`: A fixed-length array of a specific type.
-- `Tuple`: A composition of multiple types.
+- `Tuple`: A composition of multiple types. A `Tuple` that is composed of no types is expressed as primitive type `Void`.
 
 Using the type information together with the [SCALE specification](https://spec.polkadot.network/id-cryptography-encoding#sect-scale-codec) provides enough information on how to decode types.
 
