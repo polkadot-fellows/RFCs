@@ -217,7 +217,7 @@ Using the type information together with the [SCALE specification](https://spec.
 
 ### Prune unrelated Types
 
-The FRAME metadata contains not only the type information for decoding extrinsics, but it also contains type information about storage types. The scope of the RFC is only about decoding transactions on offline wallets. Thus, a lot of type information can be pruned. To know which type information are required to decode all possible extrinsics, `ExtrinsicMetadata` has been defined. The extrinsic metadata contains all the types that define the layout of an extrinsic. Therefore, all the types that are accessible from the types declared in the extrinsic metadata can be collected. This results in a list of types that are required to decode each possible extrinsic.
+The FRAME metadata contains not only the type information for decoding extrinsics, but it also contains type information about storage types. The scope of the RFC is only about decoding transactions on offline wallets. Thus, a lot of type information can be pruned. To know which type information are required to decode all possible extrinsics, `ExtrinsicMetadata` has been defined. The extrinsic metadata contains all the types that define the layout of an extrinsic. Therefore, all the types that are accessible from the types declared in the extrinsic metadata can be collected. To collect all accessible types, it requires to recursively iterate over all types starting from the types in `ExtrinsicMetadata`. Note that some types are may accessible, but they don't appear in the final type information and thus, can be pruned as well. These are for example inner types of `Compact` or the types referenced by `BitSequence`. The result of collecting these accessible types is a list of all the types that are required to decode each possible extrinsic.
 
 ### Generating `TypeRef`
 
@@ -232,43 +232,43 @@ In FRAME metadata a primitive type is represented like any other type. So, the f
 let pruned_types = get_pruned_types();
 
 for ty in pruned_types {
-	if ty.is_primitive_type() {
-		pruned_types.remove(ty);
-	}
+    if ty.is_primitive_type() {
+        pruned_types.remove(ty);
+    }
 }
 
-pruned_types.sort(|(left, right)| 
-    if left.frame_metadata_id() == right.frame_metadata_id() { 
-        left.variant_index() < right.variant_index() 
+pruned_types.sort(|(left, right)|
+    if left.frame_metadata_id() == right.frame_metadata_id() {
+        left.variant_index() < right.variant_index()
     } else {
         left.frame_metadata_id() < right.frame_metadata_id()
     }
 );
 
 fn generate_type_ref(ty, ty_list) -> TypeRef {
-	if ty.is_primitive_type() {
-		TypeRef::primtive_from_ty(ty)
-	}
-        
+    if ty.is_primitive_type() {
+        TypeRef::primtive_from_ty(ty)
+    }
+
     TypeRef::from_id(
-        // Determine the id by using the position of the type in the 
+        // Determine the id by using the position of the type in the
         // list of unique frame metadata ids.
         ty_list.position_by_frame_metadata_id(ty.frame_metadata_id())
     )
 }
 
 fn replace_all_sub_types_with_type_refs(ty, ty_list) -> Type {
-	for sub_ty in ty.sub_types() {
-		replace_all_sub_types_with_type_refs(sub_ty, ty_list);
-		sub_ty = generate_type_ref(sub_ty, ty_list)
-	}
+    for sub_ty in ty.sub_types() {
+        replace_all_sub_types_with_type_refs(sub_ty, ty_list);
+        sub_ty = generate_type_ref(sub_ty, ty_list)
+    }
 
-	ty
+    ty
 }
 
 let final_ty_list = Vec::new();
 for ty in pruned_types {
-	final_ty_list.push(replace_all_sub_types_with_type_refs(ty, ty_list))
+    final_ty_list.push(replace_all_sub_types_with_type_refs(ty, ty_list))
 }
 ```
 
