@@ -26,7 +26,7 @@ The two main reasons why this is not possible today are:
 1. **Metadata is too large for offline devices**. Currently Polkadot-SDK metadata is on average 500 KiB, which is more than what the mostly adopted offline devices can hold.
 2. **Metadata is not authenticated**. Even if there was enough space on offline devices to hold the metadata, the user would be trusting the entity providing this metadata to the hardware wallet. In the Polkadot ecosystem, this is how currently Polkadot Vault works.
 
-**This RFC proposes a solution to make FRAME Metadata compatible with offline signers in a secure way.** This does not only ensure that offline devices can always keep up to date with every Polkadot-SDK chain, but at the same time every offline wallet will be compatible with all Polkadot-SDK chains at the same time, as it leverages FRAME metadata instead of relying on a custom per-chain implementation.
+**This RFC proposes a solution to make FRAME Metadata compatible with offline signers in a secure way.** This does not only ensure that offline devices can always keep up to date with every FRAME based chain. It also ensures that every offline wallet will be compatible with all FRAME based chains without the need of per-chain implementations, as it leverages FRAME metadata.
 
 ## Requirements
 
@@ -207,7 +207,7 @@ Every `Type` is composed of multiple different types. Each of these "sub types" 
 The `TypeDef` variants have the following meaning:
 
 - `Composite`: A `struct` like type that is composed of multiple different fields. Each `Field` can have its own type.
-- `Enumeration`: Stores a `EnumerationVariant`. A `EnumerationVariant` is a `struct` that is described by a `name`, an `index` and a `vector` of `Field`s, each of which can have it's own type. `Enumeration`s in most cases have more variants that only one and in this case the `Enumeration` appears multiple times, each time with a different variant, in the type information. As `Enumeration`s can get quite big and for decoding a type most of the time only one variant is required, this optimization is done to reduce the size of the proof.
+- `Enumeration`: Stores a `EnumerationVariant`. A `EnumerationVariant` is a struct that is described by a name, an index and a vector of `Field`s, each of which can have it's own type. Typically `Enumeration`s have more than just one variant, and in those cases `Enumeration` will appear multiple times, each time with a different variant, in the type information. Given that `Enumeration`s can get quite big, yet usually for decoding a type only one variant is required, therefore this design brings optimizations and helps reduce the size of the proof.
 - `Sequence`: A `vector` like type wrapping the given type.
 - `BitSequence`: A `vector` storing bits. `num_bytes` represents the size in bytes of the internal storage. If `least_significant_bit_first` is `true` the least significant bit is first, otherwise the most significant bit is first.
 - `Array`: A fixed-length array of a specific type.
