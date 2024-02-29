@@ -15,11 +15,10 @@ jobs:
     steps:
       - name: Generate a token
         id: generate_token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v1.8.1
         with:
-          app_id: ${{ secrets.RFC_BOT_APP_ID }}
-          private_key: ${{ secrets.RFC_BOT_PRIVATE_KEY }}
-      - uses: paritytech/rfc-action@c673cf6776a2f266c7d8cbb29bc2159bea2cdd78 # v0.0.6
+          app-id: ${{ secrets.RFC_BOT_APP_ID }}
+          private-key: ${{ secrets.RFC_BOT_PRIVATE_KEY }}
       - uses: paritytech/rfc-action@4b7d2a911220b32f2222e083fd32aa62f17739c4 # v0.1.0
         env:
           GH_TOKEN: ${{ steps.generate_token.outputs.token }}
