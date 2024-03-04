@@ -1,9 +1,9 @@
-# RFC-0078: Merkelized Metadata
+# RFC-0078: Merkleized Metadata
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 22 February 2024                                                                    |
-| **Description** | Include merkelized metadata hash in extrinsic signature for trust-less metadata verification.                                                                     |
+| **Description** | Include merkleized metadata hash in extrinsic signature for trust-less metadata verification.                                                                     |
 | **Authors**     | Zondax AG, Parity Technologies                                                                                                |
 
 ## Summary
@@ -14,7 +14,7 @@ It gets even more important when the user signs the transaction in an offline wa
 
 This RFC proposes a way for offline wallets to leverage metadata, within the constraints of these. The design idea is that the metadata is chunked and these chunks are put into a merkle tree. The root hash of this merkle tree represents the metadata. The offline wallets can use the root hash to decode transactions by getting proofs for the individual chunks of the metadata. This root hash is also included in the signed data of the transaction (but not sent as part of the transaction). The runtime is then including its known metadata root hash when verifying the transaction. If the metadata root hash known by the runtime differs from the one that the offline wallet used, it very likely means that the online wallet provided some fake data and the verification of the transaction fails.
 
-The user is depending on the offline wallet showing the correct decoded transaction before signing and with the merkelized metadata they can be sure that it was the correct transaction or the runtime will reject the transaction.
+The user is depending on the offline wallet showing the correct decoded transaction before signing and with the merkleized metadata they can be sure that it was the correct transaction or the runtime will reject the transaction.
 
 ## Motivation
 
@@ -86,7 +86,7 @@ The `Hash` is 32 bytes long and `blake3` is used for calculating it. The hash of
 
 The `MetadataDigest` itself is represented as an `enum`. This is done to make it future proof, because a `SCALE` encoded `enum` is prefixed by the `index` of the variant. This `index` represents the version of the digest. As seen above, there is no `index` zero and it starts directly with one. Version one of the digest contains the following elements:
 
-- `type_information_tree_root`: The root of the [Merkelized type information](#merkelizing-type-information) tree.
+- `type_information_tree_root`: The root of the [Merkleized type information](#merkleizing-type-information) tree.
 - `extrinsic_metadata_hash`: The hash of the [Extrinsic metadata](#extrinsic-metadata).
 - `spec_version`: The `spec_version` of the runtime as found in the `RuntimeVersion` when generating the metadata. While this information can also be found in the metadata, it is hidden in a big blob of data. To avoid transferring this big blob of data, we directly add this information here.
 - `spec_name`: Similar to `spec_version`, but being the `spec_name` found in the `RuntimeVersion`.
@@ -114,7 +114,7 @@ struct SignedExtensionMetadata {
 }
 ```
 
-To begin with, `TypeRef`. This is a unique identifier for a type as found in the type information. Using this `TypeRef`, it is possible to look up the type in the type information tree. More details on this process can be found in the section [Merkelizing type information](#merkelizing-type-information).
+To begin with, `TypeRef`. This is a unique identifier for a type as found in the type information. Using this `TypeRef`, it is possible to look up the type in the type information tree. More details on this process can be found in the section [Merkleizing type information](#merkleizing-type-information).
 
 The actual `ExtrinsicMetadata` contains the following information:
 
@@ -138,6 +138,7 @@ As SCALE is not self descriptive like JSON, a decoder always needs to know the f
 struct Type {
     path: Vec<String>,
     type_def: TypeDef,
+    type_id: Compact<u32>,
 }
 
 enum TypeDef {
@@ -168,7 +169,7 @@ struct BitSequence {
 struct EnumerationVariant {
     name: String,
     fields: Vec<Field>,
-    index: u8,
+    index: Compact<u32>,
 }
 
 enum TypeRef {
@@ -201,8 +202,9 @@ The `Type` declares the structure of a type. The `type` has the following fields
 
 - `path`: A `path` declares the position of a type locally to the place where it is defined. The `path` is not globally unique, this means that there can be multiple types with the same `path`.
 - `type_def`: The high-level type definition, e.g. the type is a composition of fields where each field has a type, the type is a composition of different types as `tuple` etc.
+- `type_id`: The unique identifier of this type.
 
-Every `Type` is composed of multiple different types. Each of these "sub types" can reference either a full `Type` again or reference one of the primitive types. This is where `TypeRef` comes into play as the type referencing information. To reference a `Type` in the type information a unique identifier is used. As primitive types can be represented using a single byte, they are not put as separate types into the type information. Instead the primitive types are directly part of `TypeRef` to not require the overhead of referencing them in an extra `Type`. The special primitive type `Void` represents a type that encodes to nothing and can be decoded from nothing. As FRAME doesn't support `Compact` as primitive type it requires a little bit more involved implementation to convert a FRAME type to a `Compact` primitive type. SCALE only supports `u8`, `u16`, `u32`, `u64` and `u128` as `Compact` which maps onto the primtive type declaration in the RFC. One special case is a `Compact` that wraps an empty `Tuple` which is expressed as primitive type `Void`.
+Every `Type` is composed of multiple different types. Each of these "sub types" can reference either a full `Type` again or reference one of the primitive types. This is where `TypeRef` comes into play as the type referencing information. To reference a `Type` in the type information a unique identifier is used. As primitive types can be represented using a single byte, they are not put as separate types into the type information. Instead the primitive types are directly part of `TypeRef` to not require the overhead of referencing them in an extra `Type`. The special primitive type `Void` represents a type that encodes to nothing and can be decoded from nothing. As FRAME doesn't support `Compact` as primitive type it requires a little bit more involved implementation to convert a FRAME type to a `Compact` primitive type. SCALE only supports `u8`, `u16`, `u32`, `u64` and `u128` as `Compact` which maps onto the primitive type declaration in the RFC. One special case is a `Compact` that wraps an empty `Tuple` which is expressed as primitive type `Void`.
 
 The `TypeDef` variants have the following meaning:
 
