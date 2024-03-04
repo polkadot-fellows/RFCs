@@ -343,4 +343,4 @@ None.
 - Does it work with all kind of offline wallets?
 - Generic types currently appear multiple times in the metadata with each instantiation. It could be may be useful to have generic type only once in the metadata and declare the generic parameters at their instantiation. 
 - The metadata doesn't contain any kind of semantic information. This means that the offline wallet for example doesn't know what is a balance etc. The current solution for this problem is to match on the type name, but this isn't a sustainable solution.
-- `ExtrinsicMetadata` only provides one `token` and `decimal`. However, chains support a lot of chains support multiple tokens for paying fees etc. Probably more a question of having semantic information as mentioned above.
+- `MetadataDigest` only provides one `token` and `decimal`. However, chains support a lot of chains support multiple tokens for paying fees etc. Probably more a question of having semantic information as mentioned above.
