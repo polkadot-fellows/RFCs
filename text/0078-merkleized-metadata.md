@@ -276,23 +276,66 @@ for ty in pruned_types {
 
 ### Building the Merkle Tree Root
 
-A normal binary merkle tree with `blake3` as the hashing function is proposed. For building the merkle tree root, the initial data has to be hashed as a first step. This initial data is referred to as the *leaves* of the merkle tree. The leaves need to be sorted to make the tree root deterministic. The type information is sorted using their unique identifiers and for the `Enumeration`, variants are sort using their `index`. After sorting and hashing all leaves, two leaves have to be combined to one hash. The combination of these of two hashes is referred to as a *node*.
-
-The initial list of `nodes` is the list of `leaves`.
+A complete binary merkle tree with `blake3` as the hashing function is proposed. For building the merkle tree root, the initial data has to be hashed as a first step. This initial data is referred to as the *leaves* of the merkle tree. The leaves need to be sorted to make the tree root deterministic. The type information is sorted using their unique identifiers and for the `Enumeration`, variants are sort using their `index`. After sorting and hashing all leaves, two leaves have to be combined to one hash. The combination of these of two hashes is referred to as a *node*.
 
 ```rust
-let nodes = leaves;
-while nodes.len() > 1 {
-	let left = nodes.pop_front();
-	let right = nodes.pop_front();
+let nodes = [];
 
-	nodes.push_back(blake3::hash(SCALE::encode((left, right))));
+while leaves.len() > 1 {
+    let right = leaves.pop_back();
+    let left = leaves.pop_back();
+
+    nodes.push_back(blake3::hash(scale::encode((left, right))));
+}
+
+if leaves.len() == 1 && nodes.len() > 0 {
+    let right = leaves.pop_back();
+    let left = nodes.pop_front();
+
+    nodes.push_front(blake3::hash(scale::encode((left, right))));
+} else if leaves.len() == 1 {
+    nodes.push_front(leaves.pop_back());
+}
+
+while nodes.len() > 1 {
+    let right = nodes.pop_back();
+    let left = nodes.pop_back();
+
+    nodes.push_front(blake3::hash(SCALE::encode((left, right))));
 }
 
 let merkle_tree_root = if nodes.is_empty() { [0u8; 32] } else { nodes.back() };
 ```
 
-The `merkle_tree_root` in the end is the last node left in the list of nodes. If there are no nodes in the list left, it means that the initial data set was empty. In this case, all zeros hash are used to represent the empty tree. 
+The `merkle_tree_root` in the end is the last node left in the list of nodes. If there are no nodes in the list left, it means that the initial data set was empty. In this case, all zeros hash is used to represent the empty tree. 
+
+Building a tree with 5 leaves (0 to 4):
+```
+leaves: 0 1 2 3 4
+nodes: []
+
+leaves: 0 1 2
+nodes: [[3, 4]]
+
+leaves: 0
+nodes: [[3, 4] [1, 2]]
+
+leaves:
+nodes: [[1, 2] [[3, 4], 0]]
+
+leaves:
+nodes: [[[[3, 4], 0], [1, 2]]]
+```
+
+```
+    [root]
+    /    \
+   *      *
+  / \    / \
+ *   0   1 2
+/ \
+3 4
+```
 
 ### Inclusion in an Extrinsic
 
@@ -308,7 +351,7 @@ The signing side should control whether it wants to add the metadata hash or if 
 
 ## Drawbacks
 
-The chunking may not be the optimal case for every kind of offline wallet. 
+The chunking may not be the optimal case for every kind of offline wallet.
 
 ## Testing, Security, and Privacy
 
