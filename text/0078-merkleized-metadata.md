@@ -292,14 +292,14 @@ if leaves.len() == 1 && nodes.len() > 0 {
     let right = leaves.pop_back();
     let left = nodes.pop_front();
 
-    nodes.push_front(blake3::hash(scale::encode((left, right))));
+    nodes.push_back(blake3::hash(scale::encode((left, right))));
 } else if leaves.len() == 1 {
-    nodes.push_front(leaves.pop_back());
+    nodes.push_back(leaves.pop_back());
 }
 
 while nodes.len() > 1 {
-    let right = nodes.pop_back();
     let left = nodes.pop_back();
+    let right = nodes.pop_back();
 
     nodes.push_front(blake3::hash(SCALE::encode((left, right))));
 }
