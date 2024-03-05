@@ -309,7 +309,7 @@ let merkle_tree_root = if nodes.is_empty() { [0u8; 32] } else { nodes.back() };
 
 The `merkle_tree_root` in the end is the last node left in the list of nodes. If there are no nodes in the list left, it means that the initial data set was empty. In this case, all zeros hash is used to represent the empty tree. 
 
-Building a tree with 5 leaves (0 to 4):
+Building a tree with 5 leaves (numbered 0 to 4):
 ```
 leaves: 0 1 2 3 4
 nodes: []
@@ -327,14 +327,15 @@ leaves:
 nodes: [[[[3, 4], 0], [1, 2]]]
 ```
 
+The resulting tree visualized:
 ```
-    [root]
-    /    \
-   *      *
-  / \    / \
- *   0   1 2
-/ \
-3 4
+     [root]
+     /    \
+    *      *
+   / \    / \
+  *   0  1   2
+ / \
+3   4
 ```
 
 ### Inclusion in an Extrinsic
