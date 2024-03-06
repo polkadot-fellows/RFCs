@@ -63,7 +63,7 @@ First, the `MetadataDigest` is introduced. After that, `ExtrinsicMetadata` is co
 
 ### Metadata digest
 
-The metadata digest is the compact representation of the metadata. The hash of this digest is the *metadata hash*. Below the type declaration of the `Hash` type and the `MetadatDigest` itself can be found:
+The metadata digest is the compact representation of the metadata. The hash of this digest is the *metadata hash*. Below the type declaration of the `Hash` type and the `MetadataDigest` itself can be found:
 
 ```rust
 type Hash = [u8; 32];
@@ -90,7 +90,7 @@ The `MetadataDigest` itself is represented as an `enum`. This is done to make it
 - `extrinsic_metadata_hash`: The hash of the [extrinsic metadata](#extrinsic-metadata).
 - `spec_version`: The `spec_version` of the runtime as found in the `RuntimeVersion` when generating the metadata. While this information can also be found in the metadata, it is hidden in a big blob of data. To avoid transferring this big blob of data, we directly add this information here.
 - `spec_name`: Similar to `spec_version`, but being the `spec_name` found in the `RuntimeVersion`.
-- `base58_prefix`: The `base58` prefix used for addresses.
+- `ss58_prefix`: The `SS58` prefix used for address encoding.
 - `decimals`: The number of decimals for the token.
 - `token_symbol`: The symbol of the token.
 
@@ -377,7 +377,7 @@ The proposal alters the way a transaction is built, signed, and verified. So, th
 
 ## Prior Art and References
 
-[RFC 46](https://github.com/polkadot-fellows/RFCs/pull/46) produce by the Alzymologist team is a previous work reference that goes in this direction as well.
+[RFC 46](https://github.com/polkadot-fellows/RFCs/pull/46) produced by the Alzymologist team is a previous work reference that goes in this direction as well.
 
 On other ecosystems, there are other solutions to the problem of trusted signing. Cosmos for example has a standardized way of transforming a transaction into some textual representation and this textual representation is included in the signed data. Basically achieving the same as what the RFC proposes, but it requires that for every transaction applied in a block, every node in the network always has to generate this textual representation to ensure the transaction signature is valid.
 
