@@ -279,20 +279,13 @@ for ty in pruned_types {
 A complete binary merkle tree with `blake3` as the hashing function is proposed. For building the merkle tree root, the initial data has to be hashed as a first step. This initial data is referred to as the *leaves* of the merkle tree. The leaves need to be sorted to make the tree root deterministic. The type information is sorted using their unique identifiers and for the `Enumeration`, variants are sort using their `index`. After sorting and hashing all leaves, two leaves have to be combined to one hash. The combination of these of two hashes is referred to as a *node*.
 
 ```rust
-let nodes = [];
-while leaves.len() > 1 {
-    let right = leaves.pop_back();
-    let left = leaves.pop_back();
-    nodes.push_back(blake3::hash(scale::encode((left, right))));
-}
-if leaves.len() == 1 {
-    nodes.push_front(leaves.pop_back());
-}
+let nodes = leaves;
 while nodes.len() > 1 {
-    let right = nodes.pop_front();
-    let left = nodes.pop_front();
-    nodes.push_back(blake3::hash(SCALE::encode((left, right))));
+    let right = nodes.pop_back();
+    let left = nodes.pop_back();
+    nodes.push_front(blake3::hash(scale::encode((left, right))));
 }
+
 let merkle_tree_root = if nodes.is_empty() { [0u8; 32] } else { nodes.back() };
 ```
 
@@ -300,21 +293,15 @@ The `merkle_tree_root` in the end is the last node left in the list of nodes. If
 
 Building a tree with 5 leaves (numbered 0 to 4):
 ```
-leaves: 0 1 2 3 4
-nodes: []
+nodes: 0 1 2 3 4
 
-leaves: 0 1 2
-nodes: [[3, 4]]
+nodes: [3, 4] 0 1 2
 
-leaves: 0
-nodes: [[3, 4] [1, 2]]
+nodes: [1, 2] [3, 4] 0
 
-leaves:
-nodes: [[0] [3, 4] [1, 2]]
+nodes: [[3, 4], 0] [1, 2]
 
-nodes: [[1, 2] [[3, 4] [0]]]
-
-nodes: [[[[3, 4] [0]], [1, 2]]]
+nodes: [[[3, 4], 0], [1, 2]]
 ```
 
 The resulting tree visualized:
@@ -330,21 +317,17 @@ The resulting tree visualized:
 
 Building a tree with 6 leaves (numbered 0 to 5):
 ```
-leaves: 0 1 2 3 4 5
-nodes: []
+nodes: 0 1 2 3 4 5
 
-leaves: 0 1 2 3
-nodes: [[4, 5]]
+nodes: [4, 5] 0 1 2 3
 
-leaves: 0 1
-nodes: [[4, 5] [2, 3]]
+nodes: [2, 3] [4, 5] 0 1
 
-leaves:
-nodes: [[4, 5] [2, 3] [0, 1]]
+nodes: [0, 1] [2, 3] [4, 5]
 
-nodes: [[0, 1] [[2, 3], [4, 5]]]
+nodes: [[2, 3], [4, 5]] [0, 1]
 
-nodes: [[[[2, 3], [4, 5]] [0, 1]]]
+nodes: [[[2, 3], [4, 5]], [0, 1]]
 ```
 
 The resulting tree visualized:
