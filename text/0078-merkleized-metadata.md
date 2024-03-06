@@ -86,8 +86,8 @@ The `Hash` is 32 bytes long and `blake3` is used for calculating it. The hash of
 
 The `MetadataDigest` itself is represented as an `enum`. This is done to make it future proof, because a `SCALE` encoded `enum` is prefixed by the `index` of the variant. This `index` represents the version of the digest. As seen above, there is no `index` zero and it starts directly with one. Version one of the digest contains the following elements:
 
-- `type_information_tree_root`: The root of the [Merkleized type information](#merkleizing-type-information) tree.
-- `extrinsic_metadata_hash`: The hash of the [Extrinsic metadata](#extrinsic-metadata).
+- `type_information_tree_root`: The root of the [merkleized type information](#type-information) tree.
+- `extrinsic_metadata_hash`: The hash of the [extrinsic metadata](#extrinsic-metadata).
 - `spec_version`: The `spec_version` of the runtime as found in the `RuntimeVersion` when generating the metadata. While this information can also be found in the metadata, it is hidden in a big blob of data. To avoid transferring this big blob of data, we directly add this information here.
 - `spec_name`: Similar to `spec_version`, but being the `spec_name` found in the `RuntimeVersion`.
 - `base58_prefix`: The `base58` prefix used for addresses.
@@ -114,7 +114,7 @@ struct SignedExtensionMetadata {
 }
 ```
 
-To begin with, `TypeRef`. This is a unique identifier for a type as found in the type information. Using this `TypeRef`, it is possible to look up the type in the type information tree. More details on this process can be found in the section [Merkleizing type information](#merkleizing-type-information).
+To begin with, `TypeRef`. This is a unique identifier for a type as found in the type information. Using this `TypeRef`, it is possible to look up the type in the type information tree. More details on this process can be found in the section [Generating `TypeRef`](#generating-typeref).
 
 The actual `ExtrinsicMetadata` contains the following information:
 
