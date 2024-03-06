@@ -221,18 +221,18 @@
 </div>
 <h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
 <p>To interact with chains in the Polkadot ecosystem it is required to know how transactions are encoded and how to read state. For doing this, Polkadot-SDK, the framework used by most of the chains in the Polkadot ecosystem, exposes metadata about the runtime to the outside. UIs, wallets, and others can use this metadata to interact with these chains. This makes the metadata a crucial piece of the transaction encoding as users are relying on the interacting software to encode the transactions in the correct format.</p>
-<p>It gets even more important when the user signs the transaction in an offline wallet, as the device by its nature cannot get access to the metadata without relying on the online wallet to provide it. This makes it so that the offline wallet either needs to <em>trust</em> an online party, deeming the security assumptions of the offline devices, mute. </p>
+<p>It gets even more important when the user signs the transaction in an offline wallet, as the device by its nature cannot get access to the metadata without relying on the online wallet to provide it. This makes it so that the offline wallet needs to <em>trust</em> an online party, deeming the security assumptions of the offline devices, mute. </p>
 <p>This RFC proposes a way for offline wallets to leverage metadata, within the constraints of these. The design idea is that the metadata is chunked and these chunks are put into a merkle tree. The root hash of this merkle tree represents the metadata. The offline wallets can use the root hash to decode transactions by getting proofs for the individual chunks of the metadata. This root hash is also included in the signed data of the transaction (but not sent as part of the transaction). The runtime is then including its known metadata root hash when verifying the transaction. If the metadata root hash known by the runtime differs from the one that the offline wallet used, it very likely means that the online wallet provided some fake data and the verification of the transaction fails.</p>
-<p>The user is depending on the offline wallet showing the correct decoded transaction before signing and with the merkleized metadata they can be sure that it was the correct transaction or the runtime will reject the transaction.</p>
+<p>Users depend on offline wallets to correctly display decoded transactions before signing. With merkleized metadata, they can be assured of the transaction's legitimacy, as incorrect transactions will be rejected by the runtime.</p>
 <h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
 <p>Polkadot's innovative design (both relay chain and parachains) present the ability to developers to upgrade their network as frequently as they need. These systems manage to have integrations working after the upgrades with the help of FRAME Metadata. This Metadata, which is in the order of half a MiB for most Polkadot-SDK chains, completely describes chain interfaces and properties. Securing this metadata is key for users to be able to interact with the Polkadot-SDK chain in the expected way.</p>
-<p>On the other hand, offline wallets provide a secure way for Blockchain users to hold their own keys (some do a better job than others). These devices seldomly get upgraded, usually account for one particular network and hold very small internal memories. Currently in the Polkadot ecosystem there is no secure way of having these offline devices know the latest Metadata of the Polkadot-SDK chain they are interacting with. This results in a plethora of similar yet slightly different offline wallets for all different Polkadot-SDK chains, as well as the impediment of keeping these regularly updated, leveraging Polkadot-SDKs unique forkless upgrade ability.</p>
+<p>On the other hand, offline wallets provide a secure way for Blockchain users to hold their own keys (some do a better job than others). These devices seldomly get upgraded, usually account for one particular network and hold very small internal memories. Currently in the Polkadot ecosystem there is no secure way of having these offline devices know the latest Metadata of the Polkadot-SDK chain they are interacting with. This results in a plethora of similar yet slightly different offline wallets for all different Polkadot-SDK chains, as well as the impediment of keeping these regularly updated, thus not fully leveraging Polkadot-SDK’s unique forkless upgrade feature.</p>
 <p>The two main reasons why this is not possible today are:</p>
 <ol>
 <li><strong>Metadata is too large for offline devices</strong>. Currently Polkadot-SDK metadata is on average 500 KiB, which is more than what the mostly adopted offline devices can hold.</li>
 <li><strong>Metadata is not authenticated</strong>. Even if there was enough space on offline devices to hold the metadata, the user would be trusting the entity providing this metadata to the hardware wallet. In the Polkadot ecosystem, this is how currently Polkadot Vault works.</li>
 </ol>
-<p><strong>This RFC proposes a solution to make FRAME Metadata compatible with offline signers in a secure way.</strong> This does not only ensure that offline devices can always keep up to date with every FRAME based chain. It also ensures that every offline wallet will be compatible with all FRAME based chains without the need of per-chain implementations, as it leverages FRAME metadata.</p>
+<p><strong>This RFC proposes a solution to make FRAME Metadata compatible with offline signers in a secure way.</strong> As it leverages FRAME Metadata, it does not only ensure that offline devices can always keep up to date with every FRAME based chain, but also that every offline wallet will be compatible with all FRAME based chains, avoiding the need of per-chain implementations.</p>
 <h2 id="requirements"><a class="header" href="#requirements">Requirements</a></h2>
 <ol>
 <li>Metadata's integrity MUST be preserved. If any compromise were to happen, extrinsics sent with compromised metadata SHOULD fail.</li>
@@ -259,7 +259,7 @@
 </ul>
 <p>The idea for this RFC was brought up by runtime implementors and was extensively discussed with offline wallet implementors. It was designed in such a way that it can work easily with the existing offline wallet solutions in the Polkadot ecosystem.</p>
 <h2 id="explanation"><a class="header" href="#explanation">Explanation</a></h2>
-<p>The FRAME metadata provides a wide range of information about a FRAME based runtime. It contains information about the pallets, the calls per pallet, the storage entries per pallet, runtime APIs, and type information about most of the types that are used in the runtime. For decoding extrinsics on an offline wallet, what is mainly required is type information. Most of the other information in the FRAME metadata is actually not required for decoding extrinsics and thus it can be removed. Therefore, the following is a proposal on a custom representation of the metadata and how this custom metadata is chunked, ensuring that only the needed chunks required for decoding a particular extrinsic are sent to the offline wallet. The necessary information to transform the FRAME metadata type information into the type information presented in this RFC will be provided. However, not every single detail on how to convert from FRAME metadata into the RFC type information is provided.</p>
+<p>The FRAME metadata provides a wide range of information about a FRAME based runtime. It contains information about the pallets, the calls per pallet, the storage entries per pallet, runtime APIs, and type information about most of the types that are used in the runtime. For decoding extrinsics on an offline wallet, what is mainly required is type information. Most of the other information in the FRAME metadata is actually not required for decoding extrinsics and thus it can be removed. Therefore, the following is a proposal on a custom representation of the metadata and how this custom metadata is chunked, ensuring that only the needed chunks required for decoding a particular extrinsic are sent to the offline wallet. The necessary information to transform the FRAME metadata type information into the type information presented in this RFC will be provided. However, not every single detail on how to convert from FRAME metadata into the RFC type information is described.</p>
 <p>First, the <code>MetadataDigest</code> is introduced. After that, <code>ExtrinsicMetadata</code> is covered and finally the actual format of the type information. Then pruning of unrelated type information is covered and how to generate the <code>TypeRef</code>s. In the latest step, merkle tree calculation is explained.</p>
 <h3 id="metadata-digest"><a class="header" href="#metadata-digest">Metadata digest</a></h3>
 <p>The metadata digest is the compact representation of the metadata. The hash of this digest is the <em>metadata hash</em>. Below the type declaration of the <code>Hash</code> type and the <code>MetadatDigest</code> itself can be found:</p>
@@ -461,21 +461,67 @@ for ty in pruned_types {
 }
 <span class="boring">}</span></code></pre></pre>
 <h3 id="building-the-merkle-tree-root"><a class="header" href="#building-the-merkle-tree-root">Building the Merkle Tree Root</a></h3>
-<p>A normal binary merkle tree with <code>blake3</code> as the hashing function is proposed. For building the merkle tree root, the initial data has to be hashed as a first step. This initial data is referred to as the <em>leaves</em> of the merkle tree. The leaves need to be sorted to make the tree root deterministic. The type information is sorted using their unique identifiers and for the <code>Enumeration</code>, variants are sort using their <code>index</code>. After sorting and hashing all leaves, two leaves have to be combined to one hash. The combination of these of two hashes is referred to as a <em>node</em>.</p>
-<p>The initial list of <code>nodes</code> is the list of <code>leaves</code>.</p>
+<p>A complete binary merkle tree with <code>blake3</code> as the hashing function is proposed. For building the merkle tree root, the initial data has to be hashed as a first step. This initial data is referred to as the <em>leaves</em> of the merkle tree. The leaves need to be sorted to make the tree root deterministic. The type information is sorted using their unique identifiers and for the <code>Enumeration</code>, variants are sort using their <code>index</code>. After sorting and hashing all leaves, two leaves have to be combined to one hash. The combination of these of two hashes is referred to as a <em>node</em>.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>let nodes = leaves;
-while nodes.len() &gt; 1 {
-	let left = nodes.pop_front();
-	let right = nodes.pop_front();
 
-	nodes.push_back(blake3::hash(SCALE::encode((left, right))));
+while nodes.len() &gt; 1 {
+    let left = leaves.pop_front();
+    let right = leaves.pop_front();
+
+    if nodes.len() == 1 {
+        nodes.push_front(blake3::hash(scale::encode((left, right))));
+    } else {
+        nodes.push_back(blake3::hash(scale::encode((left, right))));
+    }
 }
 
 let merkle_tree_root = if nodes.is_empty() { [0u8; 32] } else { nodes.back() };
 <span class="boring">}</span></code></pre></pre>
-<p>The <code>merkle_tree_root</code> in the end is the last node left in the list of nodes. If there are no nodes in the list left, it means that the initial data set was empty. In this case, all zeros hash are used to represent the empty tree. </p>
+<p>The <code>merkle_tree_root</code> in the end is the last node left in the list of nodes. If there are no nodes in the list left, it means that the initial data set was empty. In this case, all zeros hash is used to represent the empty tree. </p>
+<p>Building a tree with 5 leaves (numbered 0 to 4):</p>
+<pre><code>nodes: [0 1 2 3 4]
+
+nodes: [2 3 4 [0, 1]]
+
+nodes: [4 [0, 1] [2, 3]]
+
+nodes: [[4 [0, 1]] [2, 3]]
+
+nodes: [[[[3, 4], 0], [1, 2]]]
+</code></pre>
+<p>The resulting tree visualized:</p>
+<pre><code>     [root]
+     /    \
+    *      *
+   / \    / \
+  *   0  1   2
+ / \
+3   4
+</code></pre>
+<p>Building a tree with 6 leaves (numbered 0 to 5):</p>
+<pre><code>nodes: [0 1 2 3 4 5]
+
+nodes: [2 3 4 5 [0, 1]]
+
+nodes: [4 5 [0, 1] [2, 3]]
+
+nodes: [[0, 1] [2, 3] [4, 5]]
+
+nodes: [[[0, 1] [2, 3]] [4, 5]]
+
+nodes: [[[[0, 1] [2, 3]] [4, 5]]]
+</code></pre>
+<p>The resulting tree visualized:</p>
+<pre><code>         [root]
+       /       \
+      *         *
+   /    \      / \
+  *      *    4   5
+ / \    / \
+0   1  2   3
+</code></pre>
 <h3 id="inclusion-in-an-extrinsic"><a class="header" href="#inclusion-in-an-extrinsic">Inclusion in an Extrinsic</a></h3>
 <p>To ensure that the offline wallet used the correct metadata to show the extrinsic to the user the metadata hash needs to be included in the extrinsic. The metadata hash is generated by hashing the SCALE encoded <code>MetadataDigest</code>:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -485,7 +531,7 @@ let merkle_tree_root = if nodes.is_empty() { [0u8; 32] } else { nodes.back() };
 <p>For the runtime the metadata hash is generated at compile time. Wallets will have to generate the hash using the FRAME metadata. </p>
 <p>The signing side should control whether it wants to add the metadata hash or if it wants to omit it. To accomplish this it is required to add one extra byte to the extrinsic itself. If this byte is <code>0</code> the metadata hash is not required and if the byte is <code>1</code> the metadata hash is added using <code>V1</code> of the <code>MetadataDigest</code>. This leaves room for future versions of the <code>MetadataDigest</code> format. When the metadata hash should be included, it is only added to the data that is signed. This brings the advantage of not requiring to include 32 bytes into the extrinsic itself, because the runtime knows the metadata hash as well and can add it to the signed data as well if required. This is similar to the genesis hash, while this isn't added conditionally to the signed data.</p>
 <h2 id="drawbacks"><a class="header" href="#drawbacks">Drawbacks</a></h2>
-<p>The chunking may not be the optimal case for every kind of offline wallet. </p>
+<p>The chunking may not be the optimal case for every kind of offline wallet.</p>
 <h2 id="testing-security-and-privacy"><a class="header" href="#testing-security-and-privacy">Testing, Security, and Privacy</a></h2>
 <p>All implementations are required to strictly follow the RFC to generate the metadata hash. This includes which hash function to use and how to construct the metadata types tree. So, all implementations are following the same security criteria. As the chains will calculate the metadata hash at compile time, the build process needs to be trusted. However, this is already a solved problem in the Polkadot ecosystem by using reproducible builds. So, anyone can rebuild a chain runtime to ensure that a proposal is actually containing the changes as advertised.</p>
 <p>Implementations can also be tested easily against each other by taking some metadata and ensuring that they all come to the same metadata hash.</p>
