@@ -63,7 +63,7 @@ First, the `MetadataDigest` is introduced. After that, `ExtrinsicMetadata` is co
 
 ### Metadata digest
 
-The metadata digest is the compact representation of the metadata. The hash of this digest is the *metadata hash*. Below the type declaration of the `Hash` type and the `MetadatDigest` itself can be found:
+The metadata digest is the compact representation of the metadata. The hash of this digest is the *metadata hash*. Below the type declaration of the `Hash` type and the `MetadataDigest` itself can be found:
 
 ```rust
 type Hash = [u8; 32];
@@ -90,7 +90,7 @@ The `MetadataDigest` itself is represented as an `enum`. This is done to make it
 - `extrinsic_metadata_hash`: The hash of the [extrinsic metadata](#extrinsic-metadata).
 - `spec_version`: The `spec_version` of the runtime as found in the `RuntimeVersion` when generating the metadata. While this information can also be found in the metadata, it is hidden in a big blob of data. To avoid transferring this big blob of data, we directly add this information here.
 - `spec_name`: Similar to `spec_version`, but being the `spec_name` found in the `RuntimeVersion`.
-- `base58_prefix`: The `base58` prefix used for addresses.
+- `ss58_prefix`: The `SS58` prefix used for address encoding.
 - `decimals`: The number of decimals for the token.
 - `token_symbol`: The symbol of the token.
 
@@ -280,20 +280,13 @@ for ty in pruned_types {
 A complete binary merkle tree with `blake3` as the hashing function is proposed. For building the merkle tree root, the initial data has to be hashed as a first step. This initial data is referred to as the *leaves* of the merkle tree. The leaves need to be sorted to make the tree root deterministic. The type information is sorted using their unique identifiers and for the `Enumeration`, variants are sort using their `index`. After sorting and hashing all leaves, two leaves have to be combined to one hash. The combination of these of two hashes is referred to as a *node*.
 
 ```rust
-let nodes = [];
-while leaves.len() > 1 {
-    let right = leaves.pop_back();
-    let left = leaves.pop_back();
-    nodes.push_back(blake3::hash(scale::encode((left, right))));
-}
-if leaves.len() == 1 {
-    nodes.push_front(leaves.pop_back());
-}
+let nodes = leaves;
 while nodes.len() > 1 {
-    let right = nodes.pop_front();
-    let left = nodes.pop_front();
-    nodes.push_back(blake3::hash(SCALE::encode((left, right))));
+    let right = nodes.pop_back();
+    let left = nodes.pop_back();
+    nodes.push_front(blake3::hash(scale::encode((left, right))));
 }
+
 let merkle_tree_root = if nodes.is_empty() { [0u8; 32] } else { nodes.back() };
 ```
 
@@ -301,21 +294,15 @@ The `merkle_tree_root` in the end is the last node left in the list of nodes. If
 
 Building a tree with 5 leaves (numbered 0 to 4):
 ```
-leaves: 0 1 2 3 4
-nodes: []
+nodes: 0 1 2 3 4
 
-leaves: 0 1 2
-nodes: [[3, 4]]
+nodes: [3, 4] 0 1 2
 
-leaves: 0
-nodes: [[3, 4] [1, 2]]
+nodes: [1, 2] [3, 4] 0
 
-leaves:
-nodes: [[0] [3, 4] [1, 2]]
+nodes: [[3, 4], 0] [1, 2]
 
-nodes: [[1, 2] [[3, 4] [0]]]
-
-nodes: [[[[3, 4] [0]], [1, 2]]]
+nodes: [[[3, 4], 0], [1, 2]]
 ```
 
 The resulting tree visualized:
@@ -331,21 +318,17 @@ The resulting tree visualized:
 
 Building a tree with 6 leaves (numbered 0 to 5):
 ```
-leaves: 0 1 2 3 4 5
-nodes: []
+nodes: 0 1 2 3 4 5
 
-leaves: 0 1 2 3
-nodes: [[4, 5]]
+nodes: [4, 5] 0 1 2 3
 
-leaves: 0 1
-nodes: [[4, 5] [2, 3]]
+nodes: [2, 3] [4, 5] 0 1
 
-leaves:
-nodes: [[4, 5] [2, 3] [0, 1]]
+nodes: [0, 1] [2, 3] [4, 5]
 
-nodes: [[0, 1] [[2, 3], [4, 5]]]
+nodes: [[2, 3], [4, 5]] [0, 1]
 
-nodes: [[[[2, 3], [4, 5]] [0, 1]]]
+nodes: [[[2, 3], [4, 5]], [0, 1]]
 ```
 
 The resulting tree visualized:
@@ -395,7 +378,7 @@ The proposal alters the way a transaction is built, signed, and verified. So, th
 
 ## Prior Art and References
 
-[RFC 46](https://github.com/polkadot-fellows/RFCs/pull/46) produce by the Alzymologist team is a previous work reference that goes in this direction as well.
+[RFC 46](https://github.com/polkadot-fellows/RFCs/pull/46) produced by the Alzymologist team is a previous work reference that goes in this direction as well.
 
 On other ecosystems, there are other solutions to the problem of trusted signing. Cosmos for example has a standardized way of transforming a transaction into some textual representation and this textual representation is included in the signed data. Basically achieving the same as what the RFC proposes, but it requires that for every transaction applied in a block, every node in the network always has to generate this textual representation to ensure the transaction signature is valid.
 
