@@ -193,6 +193,7 @@ enum TypeRef {
     CompactU32,
     CompactU64,
     CompactU128,
+    CompactU256,
     Void,
     PerId(Compact<u32>),
 }
