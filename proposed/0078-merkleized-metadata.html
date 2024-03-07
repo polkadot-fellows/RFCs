@@ -262,7 +262,7 @@
 <p>The FRAME metadata provides a wide range of information about a FRAME based runtime. It contains information about the pallets, the calls per pallet, the storage entries per pallet, runtime APIs, and type information about most of the types that are used in the runtime. For decoding extrinsics on an offline wallet, what is mainly required is type information. Most of the other information in the FRAME metadata is actually not required for decoding extrinsics and thus it can be removed. Therefore, the following is a proposal on a custom representation of the metadata and how this custom metadata is chunked, ensuring that only the needed chunks required for decoding a particular extrinsic are sent to the offline wallet. The necessary information to transform the FRAME metadata type information into the type information presented in this RFC will be provided. However, not every single detail on how to convert from FRAME metadata into the RFC type information is described.</p>
 <p>First, the <code>MetadataDigest</code> is introduced. After that, <code>ExtrinsicMetadata</code> is covered and finally the actual format of the type information. Then pruning of unrelated type information is covered and how to generate the <code>TypeRef</code>s. In the latest step, merkle tree calculation is explained.</p>
 <h3 id="metadata-digest"><a class="header" href="#metadata-digest">Metadata digest</a></h3>
-<p>The metadata digest is the compact representation of the metadata. The hash of this digest is the <em>metadata hash</em>. Below the type declaration of the <code>Hash</code> type and the <code>MetadatDigest</code> itself can be found:</p>
+<p>The metadata digest is the compact representation of the metadata. The hash of this digest is the <em>metadata hash</em>. Below the type declaration of the <code>Hash</code> type and the <code>MetadataDigest</code> itself can be found:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>type Hash = [u8; 32];
@@ -283,11 +283,11 @@ enum MetadataDigest {
 <p>The <code>Hash</code> is 32 bytes long and <code>blake3</code> is used for calculating it. The hash of the <code>MetadataDigest</code> is calculated by <code>blake3(SCALE(MetadataDigest))</code>. Therefore, <code>MetadataDigest</code> is at first <code>SCALE</code> encoded, and then those bytes are hashed.</p>
 <p>The <code>MetadataDigest</code> itself is represented as an <code>enum</code>. This is done to make it future proof, because a <code>SCALE</code> encoded <code>enum</code> is prefixed by the <code>index</code> of the variant. This <code>index</code> represents the version of the digest. As seen above, there is no <code>index</code> zero and it starts directly with one. Version one of the digest contains the following elements:</p>
 <ul>
-<li><code>type_information_tree_root</code>: The root of the <a href="#merkleizing-type-information">Merkleized type information</a> tree.</li>
-<li><code>extrinsic_metadata_hash</code>: The hash of the <a href="#extrinsic-metadata">Extrinsic metadata</a>.</li>
+<li><code>type_information_tree_root</code>: The root of the <a href="#type-information">merkleized type information</a> tree.</li>
+<li><code>extrinsic_metadata_hash</code>: The hash of the <a href="#extrinsic-metadata">extrinsic metadata</a>.</li>
 <li><code>spec_version</code>: The <code>spec_version</code> of the runtime as found in the <code>RuntimeVersion</code> when generating the metadata. While this information can also be found in the metadata, it is hidden in a big blob of data. To avoid transferring this big blob of data, we directly add this information here.</li>
 <li><code>spec_name</code>: Similar to <code>spec_version</code>, but being the <code>spec_name</code> found in the <code>RuntimeVersion</code>.</li>
-<li><code>base58_prefix</code>: The <code>base58</code> prefix used for addresses.</li>
+<li><code>ss58_prefix</code>: The <code>SS58</code> prefix used for address encoding.</li>
 <li><code>decimals</code>: The number of decimals for the token.</li>
 <li><code>token_symbol</code>: The symbol of the token.</li>
 </ul>
@@ -309,7 +309,7 @@ struct SignedExtensionMetadata {
     included_in_signed_data: TypeRef,
 }
 <span class="boring">}</span></code></pre></pre>
-<p>To begin with, <code>TypeRef</code>. This is a unique identifier for a type as found in the type information. Using this <code>TypeRef</code>, it is possible to look up the type in the type information tree. More details on this process can be found in the section <a href="#merkleizing-type-information">Merkleizing type information</a>.</p>
+<p>To begin with, <code>TypeRef</code>. This is a unique identifier for a type as found in the type information. Using this <code>TypeRef</code>, it is possible to look up the type in the type information tree. More details on this process can be found in the section <a href="#generating-typeref">Generating <code>TypeRef</code></a>.</p>
 <p>The actual <code>ExtrinsicMetadata</code> contains the following information:</p>
 <ul>
 <li><code>version</code>: The version of the extrinsic format. As of writing this, the latest version is <code>4</code>.</li>
@@ -386,6 +386,7 @@ enum TypeRef {
     CompactU32,
     CompactU64,
     CompactU128,
+    CompactU256,
     Void,
     PerId(Compact&lt;u32&gt;),
 }
@@ -396,11 +397,11 @@ enum TypeRef {
 <li><code>type_def</code>: The high-level type definition, e.g. the type is a composition of fields where each field has a type, the type is a composition of different types as <code>tuple</code> etc.</li>
 <li><code>type_id</code>: The unique identifier of this type.</li>
 </ul>
-<p>Every <code>Type</code> is composed of multiple different types. Each of these &quot;sub types&quot; can reference either a full <code>Type</code> again or reference one of the primitive types. This is where <code>TypeRef</code> comes into play as the type referencing information. To reference a <code>Type</code> in the type information a unique identifier is used. As primitive types can be represented using a single byte, they are not put as separate types into the type information. Instead the primitive types are directly part of <code>TypeRef</code> to not require the overhead of referencing them in an extra <code>Type</code>. The special primitive type <code>Void</code> represents a type that encodes to nothing and can be decoded from nothing. As FRAME doesn't support <code>Compact</code> as primitive type it requires a little bit more involved implementation to convert a FRAME type to a <code>Compact</code> primitive type. SCALE only supports <code>u8</code>, <code>u16</code>, <code>u32</code>, <code>u64</code> and <code>u128</code> as <code>Compact</code> which maps onto the primitive type declaration in the RFC. One special case is a <code>Compact</code> that wraps an empty <code>Tuple</code> which is expressed as primitive type <code>Void</code>.</p>
+<p>Every <code>Type</code> is composed of multiple different types. Each of these &quot;sub types&quot; can reference either a full <code>Type</code> again or reference one of the primitive types. This is where <code>TypeRef</code> becomes relevant as the type referencing information. To reference a <code>Type</code> in the type information, a unique identifier is used. As primitive types can be represented using a single byte, they are not put as separate types into the type information. Instead the primitive types are directly part of <code>TypeRef</code> to not require the overhead of referencing them in an extra <code>Type</code>. The special primitive type <code>Void</code> represents a type that encodes to nothing and can be decoded from nothing. As FRAME doesn't support <code>Compact</code> as primitive type it requires a more involved implementation to convert a FRAME type to a <code>Compact</code> primitive type. SCALE only supports <code>u8</code>, <code>u16</code>, <code>u32</code>, <code>u64</code> and <code>u128</code> as <code>Compact</code> which maps onto the primitive type declaration in the RFC. One special case is a <code>Compact</code> that wraps an empty <code>Tuple</code> which is expressed as primitive type <code>Void</code>.</p>
 <p>The <code>TypeDef</code> variants have the following meaning:</p>
 <ul>
 <li><code>Composite</code>: A <code>struct</code> like type that is composed of multiple different fields. Each <code>Field</code> can have its own type. A <code>Composite</code> with no fields is expressed as primitive type <code>Void</code>.</li>
-<li><code>Enumeration</code>: Stores a <code>EnumerationVariant</code>. A <code>EnumerationVariant</code> is a struct that is described by a name, an index and a vector of <code>Field</code>s, each of which can have it's own type. Typically <code>Enumeration</code>s have more than just one variant, and in those cases <code>Enumeration</code> will appear multiple times, each time with a different variant, in the type information. Given that <code>Enumeration</code>s can get quite big, yet usually for decoding a type only one variant is required, therefore this design brings optimizations and helps reduce the size of the proof. An <code>Enumeration</code> with no variants is expressed as primitive type <code>Void</code>.</li>
+<li><code>Enumeration</code>: Stores a <code>EnumerationVariant</code>. A <code>EnumerationVariant</code> is a struct that is described by a name, an index and a vector of <code>Field</code>s, each of which can have it's own type. Typically <code>Enumeration</code>s have more than just one variant, and in those cases <code>Enumeration</code> will appear multiple times, each time with a different variant, in the type information. <code>Enumeration</code>s can become quite large, yet usually for decoding a type only one variant is required, therefore this design brings optimizations and helps reduce the size of the proof. An <code>Enumeration</code> with no variants is expressed as primitive type <code>Void</code>.</li>
 <li><code>Sequence</code>: A <code>vector</code> like type wrapping the given type.</li>
 <li><code>BitSequence</code>: A <code>vector</code> storing bits. <code>num_bytes</code> represents the size in bytes of the internal storage. If <code>least_significant_bit_first</code> is <code>true</code> the least significant bit is first, otherwise the most significant bit is first.</li>
 <li><code>Array</code>: A fixed-length array of a specific type.</li>
@@ -465,31 +466,25 @@ for ty in pruned_types {
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>let nodes = leaves;
-
 while nodes.len() &gt; 1 {
-    let left = leaves.pop_front();
-    let right = leaves.pop_front();
-
-    if nodes.len() == 1 {
-        nodes.push_front(blake3::hash(scale::encode((left, right))));
-    } else {
-        nodes.push_back(blake3::hash(scale::encode((left, right))));
-    }
+    let right = nodes.pop_back();
+    let left = nodes.pop_back();
+    nodes.push_front(blake3::hash(scale::encode((left, right))));
 }
 
 let merkle_tree_root = if nodes.is_empty() { [0u8; 32] } else { nodes.back() };
 <span class="boring">}</span></code></pre></pre>
 <p>The <code>merkle_tree_root</code> in the end is the last node left in the list of nodes. If there are no nodes in the list left, it means that the initial data set was empty. In this case, all zeros hash is used to represent the empty tree. </p>
 <p>Building a tree with 5 leaves (numbered 0 to 4):</p>
-<pre><code>nodes: [0 1 2 3 4]
+<pre><code>nodes: 0 1 2 3 4
 
-nodes: [2 3 4 [0, 1]]
+nodes: [3, 4] 0 1 2
 
-nodes: [4 [0, 1] [2, 3]]
+nodes: [1, 2] [3, 4] 0
 
-nodes: [[4 [0, 1]] [2, 3]]
+nodes: [[3, 4], 0] [1, 2]
 
-nodes: [[[[3, 4], 0], [1, 2]]]
+nodes: [[[3, 4], 0], [1, 2]]
 </code></pre>
 <p>The resulting tree visualized:</p>
 <pre><code>     [root]
@@ -501,26 +496,26 @@ nodes: [[[[3, 4], 0], [1, 2]]]
 3   4
 </code></pre>
 <p>Building a tree with 6 leaves (numbered 0 to 5):</p>
-<pre><code>nodes: [0 1 2 3 4 5]
+<pre><code>nodes: 0 1 2 3 4 5
 
-nodes: [2 3 4 5 [0, 1]]
+nodes: [4, 5] 0 1 2 3
 
-nodes: [4 5 [0, 1] [2, 3]]
+nodes: [2, 3] [4, 5] 0 1
 
-nodes: [[0, 1] [2, 3] [4, 5]]
+nodes: [0, 1] [2, 3] [4, 5]
 
-nodes: [[[0, 1] [2, 3]] [4, 5]]
+nodes: [[2, 3], [4, 5]] [0, 1]
 
-nodes: [[[[0, 1] [2, 3]] [4, 5]]]
+nodes: [[[2, 3], [4, 5]], [0, 1]]
 </code></pre>
 <p>The resulting tree visualized:</p>
-<pre><code>         [root]
-       /       \
-      *         *
-   /    \      / \
-  *      *    4   5
- / \    / \
-0   1  2   3
+<pre><code>       [root]
+      /      \
+     *        *
+   /   \     / \
+  *     *   0   1
+ / \   / \
+2   3 4   5
 </code></pre>
 <h3 id="inclusion-in-an-extrinsic"><a class="header" href="#inclusion-in-an-extrinsic">Inclusion in an Extrinsic</a></h3>
 <p>To ensure that the offline wallet used the correct metadata to show the extrinsic to the user the metadata hash needs to be included in the extrinsic. The metadata hash is generated by hashing the SCALE encoded <code>MetadataDigest</code>:</p>
@@ -542,7 +537,7 @@ nodes: [[[[0, 1] [2, 3]] [4, 5]]]
 <h3 id="ergonomics--compatibility"><a class="header" href="#ergonomics--compatibility">Ergonomics &amp; Compatibility</a></h3>
 <p>The proposal alters the way a transaction is built, signed, and verified. So, this imposes some required changes to any kind of developer who wants to construct transactions for Polkadot or any chain using this feature. As the developer can pass <code>0</code> for disabling the verification of the metadata root hash, it can be easily ignored.</p>
 <h2 id="prior-art-and-references"><a class="header" href="#prior-art-and-references">Prior Art and References</a></h2>
-<p><a href="https://github.com/polkadot-fellows/RFCs/pull/46">RFC 46</a> produce by the Alzymologist team is a previous work reference that goes in this direction as well.</p>
+<p><a href="https://github.com/polkadot-fellows/RFCs/pull/46">RFC 46</a> produced by the Alzymologist team is a previous work reference that goes in this direction as well.</p>
 <p>On other ecosystems, there are other solutions to the problem of trusted signing. Cosmos for example has a standardized way of transforming a transaction into some textual representation and this textual representation is included in the signed data. Basically achieving the same as what the RFC proposes, but it requires that for every transaction applied in a block, every node in the network always has to generate this textual representation to ensure the transaction signature is valid.</p>
 <h2 id="unresolved-questions"><a class="header" href="#unresolved-questions">Unresolved Questions</a></h2>
 <p>None.</p>
