@@ -209,7 +209,7 @@ Every `Type` is composed of multiple different types. Each of these "sub types" 
 
 The `TypeDef` variants have the following meaning:
 
-- `Composite`: A `struct` like type that is composed of multiple different fields. Each `Field` can have its own type. A `Composite` with no fields is expressed as primitive type `Void`.
+- `Composite`: A `struct` like type that is composed of multiple different fields. Each `Field` can have its own type. The order of the fields is significant. A `Composite` with no fields is expressed as primitive type `Void`.
 - `Enumeration`: Stores a `EnumerationVariant`. A `EnumerationVariant` is a struct that is described by a name, an index and a vector of `Field`s, each of which can have it's own type. Typically `Enumeration`s have more than just one variant, and in those cases `Enumeration` will appear multiple times, each time with a different variant, in the type information. `Enumeration`s can become quite large, yet usually for decoding a type only one variant is required, therefore this design brings optimizations and helps reduce the size of the proof. An `Enumeration` with no variants is expressed as primitive type `Void`.
 - `Sequence`: A `vector` like type wrapping the given type.
 - `BitSequence`: A `vector` storing bits. `num_bytes` represents the size in bytes of the internal storage. If `least_significant_bit_first` is `true` the least significant bit is first, otherwise the most significant bit is first.
