@@ -3,7 +3,7 @@ name: RFC Cron
 on:
     workflow_dispatch:
     schedule:
-      - cron: '0 12 * * *'
+      - cron: '0 12,18 * * *'
   
 jobs:
   rfc_notification:
@@ -19,7 +19,7 @@ jobs:
            GH_TOKEN: ${{ github.token }}
            WORKFLOW: ${{ github.workflow }}
            GH_REPO: "${{ github.repository_owner }}/${{ github.event.repository.name }}"
-        - uses: paritytech/rfc-action@v0.0.8
+        - uses: paritytech/rfc-action@v0.1.1
           env:
             GH_TOKEN: ${{ github.token }}
             PROVIDER_URL: "wss://polkadot-collectives-rpc.polkadot.io"
