@@ -1,4 +1,4 @@
-# RFC-0079: General transactions in extrinsic format
+# RFC-0084: General transactions in extrinsic format
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
