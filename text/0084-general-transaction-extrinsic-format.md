@@ -26,7 +26,14 @@ An extrinsic is currently encoded as one byte to identify the extrinsic type and
 
 Currently, the bit allocation within the leading encoded byte is `0bTVVV_VVVV`. In practice in the Polkadot ecosystem, the leading byte would be `0bT000_0100` as the version has been equal to `4` for a long time.
 
-This RFC proposes for the bit allocation to change to `0bTTVV_VVVV`.
+This RFC proposes for the bit allocation to change to `0bTTVV_VVVV`. As a result, the extrinsic type bit representation would change as follows:
+
+| bits  | type      |
+|-------|-----------|
+| 00    | unsigned  |
+| 10    | signed    |
+| 01 	| reserved  |
+| 11 	| reserved  |
 
 ## Drawbacks
 
