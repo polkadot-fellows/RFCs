@@ -3,23 +3,29 @@
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 13 November 2023                                                                    |
-| **Description** | Change `SessionKeys` runtime api to also create a proof of ownership for on chain registration. |
+| **Description** | Change `SessionKeys` runtime api to support generating an ownership proof for the on chain registration. |
 | **Authors**     | Bastian Köcher                                                                    |
 
 ## Summary
 
-When rotating/generating the `SessionKeys` of a node, the node calls into the runtime using the 
-`SessionKeys::generate_session_keys` runtime api. This runtime api function needs to be changed
-to add an extra parameter `owner` and to change the return value to also include the `proof` of 
-ownership. The `owner` should be the account id of the account setting the `SessionKeys` on chain 
-to allow the on chain logic the verification of the proof. The on chain logic is then able to proof 
-the possession of the private keys of the `SessionKeys` using the `proof`.
+This RFC proposes to changes the `SessionKeys::generate_session_keys` runtime api interface. This runtime api is used by validator operators to
+generate new session keys on a node. The public session keys are then registered manually on chain by the validator operator. 
+Before this RFC it was not possible by the on chain logic to ensure that the account setting the public session keys is also in 
+possession of the private session keys. To solve this the RFC proposes to pass the account id of the account doing the 
+registration on chain to `generate_session_keys`. Further this RFC proposes to change the return value of the `generate_session_keys` 
+function also to not only return the public session keys, but also the proof of ownership for the private session keys. The 
+validator operator will then need to send the public session keys and the proof together when registering new session keys on chain.
 
 ## Motivation
 
-When a user sets new `SessionKeys` on chain the chain can currently not ensure that the user 
-actually has control over the private keys of the `SessionKeys`. With the RFC applied the chain is able 
-to ensure that the user actually is in possession of the private keys.
+When submitting the new public session keys to the on chain logic there doesn't exist any verification of possession of the private session keys.
+This means that users can basically register any kind of public session keys on chain. While the on chain logic ensures that there are 
+no duplicate keys, someone could try to prevent others from registering new session keys by setting them first. While this wouldn't bring
+the "attacker" any kind of advantage, more like disadvantages (potential slashes on their account), it could prevent someone from 
+e.g. changing its session key in the event of a private session key leak.
+
+After this RFC this kind of attack would not be possible anymore, because the on chain logic can verify that the sending account 
+is in ownership of the private session keys.
 
 ## Stakeholders
 
@@ -35,9 +41,10 @@ type Proof = (Signature, Signature, ..);
 ```
 
 The `proof` being a SCALE encoded tuple over all signatures of each private session 
-key signing the `owner`. The actual type of each signature depends on the
+key signing the `account_id`. The actual type of each signature depends on the
 corresponding session key cryptographic algorithm. The order of the signatures in 
-the `proof` is the same as the order of the session keys in the `SessionKeys` type.
+the `proof` is the same as the order of the session keys in the `SessionKeys` type 
+declared in the runtime.
 
 The version of the `SessionKeys` needs to be bumped to `1` to reflect the changes to the 
 signature of `SessionKeys_generate_session_keys`:
@@ -47,7 +54,7 @@ pub struct OpaqueGeneratedSessionKeys {
 	pub proof: Vec<u8>,
 }
 
-fn SessionKeys_generate_session_keys(owner: Vec<u8>, seed: Option<Vec<u8>>) -> OpaqueGeneratedSessionKeys;
+fn SessionKeys_generate_session_keys(account_id: Vec<u8>, seed: Option<Vec<u8>>) -> OpaqueGeneratedSessionKeys;
 ```
 
 The default calling convention for runtime apis is applied, meaning the parameters 
@@ -70,24 +77,30 @@ This will require updating some high level docs and making users familiar with t
 
 ## Testing, Security, and Privacy
 
-Testing of the new changes is quite easy as it only requires passing an appropriate `owner` 
-for the current testing context. The changes to the proof generation and verification got 
-audited to ensure they are correct.
+Testing of the new changes only requires passing an appropriate `owner` for the current testing context. 
+The changes to the proof generation and verification got audited to ensure they are correct.
 
 ## Performance, Ergonomics, and Compatibility
 
 ### Performance
 
-Does not have any impact on the overall performance, only setting `SessionKeys` will require more weight.
+The session key generation is an offchain process and thus, doesn't influence the performance of the 
+chain. Verifying the proof is done on chain as part of the transaction logic for setting the session keys. 
+The verification of the proof is a signature verification number of individual session keys times. As setting
+the session keys is happening quite rarely, it should not influence the overall system performance.
 
 ### Ergonomics
 
-If the proposal alters exposed interfaces to developers or end-users, which types of usage patterns have been optimized for?
+The interfaces have been optimized to make it as easy as possible to generate the ownership proof.
 
 ### Compatibility
 
 Introduces a new version of the `SessionKeys` runtime api. Thus, nodes should be updated before 
-a runtime is enacted that contains these changes otherwise they will fail to generate session keys.
+a runtime is enacted that contains these changes otherwise they will fail to generate session keys. 
+The RPC that exists around this runtime api needs to be updated to support passing the account id 
+and for returning the ownership proof alongside the public session keys.
+
+UIs would need to be updated to support the new RPC and the changed on chain logic.
 
 ## Prior Art and References
 
