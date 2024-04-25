@@ -1,4 +1,4 @@
-# RFC-0086: Add slashable locked deposit, purchaser reputation, and reserved cores for on-chain identities to broker pallet
+# RFC-0088: Add slashable locked deposit, purchaser reputation, and reserved cores for on-chain identities to broker pallet
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 25 Apr 2024                                                                                 |
