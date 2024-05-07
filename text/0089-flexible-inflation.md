@@ -43,7 +43,7 @@ We argue that one reason why the inflation rate of Polkadot has not significantl
 has been the complicated process of updating it. We hope that with the tools provided in this RFC,
 stakeholders can experiment with the inflation rate in a more ergonomic way. Finally, this
 experimentation can be considered useful as a final step toward fixing the economics of DOT in JAM,
-as proposed in the JAM grayparper.
+as proposed in the JAM graypaper.
 
 Within the scope of this RFC, we suggest deploying the new inflation pallet in a backwards
 compatible way, such that the inflation model does not change in practice, and leave the actual
@@ -75,7 +75,7 @@ into two parts:
 
 * an amount allocated to staking. This amount is not minted right away, and is instead minted when
   the staking rewards are paid out.
-* an mount allocated to `pallet_staking::Config::RewardRemainder`, which is configured to forward
+* an amount allocated to `pallet_staking::Config::RewardRemainder`, which is configured to forward
   the amount to the treasury.
 
 As it stands now the implementation of `EraPayout` which specifies the two amounts above lives in
@@ -95,7 +95,7 @@ the full year to determine how much should be inflated.
 The new order splits the process for inflation into two steps:
 
 1. **Sourcing** the inflation amount: This step merely specifies by how much the chain intends to
-   inflation its token. This amount is not minted right away, and is instead passed over to the next
+   inflate its token. This amount is not minted right away, and is instead passed over to the next
    step for *distribution*.
 2. **Distributing** the aforementioned amount: A sequence of functions that decide what needs to be
    done with the sourced inflation amount. This process is expected to _transfer_ the inflation
@@ -128,7 +128,7 @@ a function of the staking rate, it can reliably use the staking rate of the last
 
 Finally, as noted above, this RFC implies a new accounting system for staking to keep track of its
 staking reward. In short, the new process is as follows: `pallet_inflation` will mint the staking
-portion of inflation directly into a key-less account controlled by `pallet_staking`. At the end
+portion of inflation directly into a key-less account controlled by `pallet_staking`. At the end of
 each era, `pallet_staking` will inspect this account, and move whatever amount is paid out into it
 to another key-less account associated withe era number. The actual payouts, initiated by stakers,
 will transfer from this era account into the corresponding stakers' account.
@@ -215,7 +215,7 @@ The following drawbacks are noted:
 2. Some of the interfaces proposed in the draft implementation still leak the implementation detail
    of the inflation amount being reliant on eg. the staking-rate. We acknowledge this as a drawback,
    but given that many PoS inflationary systems rely on the staking rate, we believe it is a
-   reasonable compromise. Such parameters can be ignored if the implementation does need them.
+   reasonable compromise. Such parameters can be ignored if the implementation does not need them.
 
 ## Testing, Security, and Privacy
 
