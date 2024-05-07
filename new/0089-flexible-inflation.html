@@ -1,0 +1,484 @@
+
+<!DOCTYPE HTML>
+<html lang="en" class="polkadot" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>RFC-0089: Flexible Inflation - Polkadot Fellowship RFCs</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="An online book of RFCs approved or proposed within the Polkadot Fellowship.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/polkadot.css">
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "polkadot" : "polkadot";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('polkadot')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../introduction.html">Introduction</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Newly Proposed</li><li class="chapter-item expanded "><a href="../new/0089-flexible-inflation.html" class="active">RFC-0089: Flexible Inflation</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Proposed</li><li class="chapter-item expanded "><a href="../proposed/0026-sassafras-consensus.html">RFC-0026: Sassafras Consensus Protocol</a></li><li class="chapter-item expanded "><a href="../proposed/0048-session-keys-runtime-api.html">RFC-0048: Generate ownership proof for SessionKeys</a></li><li class="chapter-item expanded "><a href="../proposed/0088-broker-pallet-slashable-deposit-purchaser-reputation-reserved-cores.html">RFC-0088: Add slashable locked deposit, purchaser reputation, and reserved cores for on-chain identities to broker pallet</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Approved</li><li class="chapter-item expanded "><a href="../approved/0001-agile-coretime.html">RFC-1: Agile Coretime</a></li><li class="chapter-item expanded "><a href="../approved/0005-coretime-interface.html">RFC-5: Coretime Interface</a></li><li class="chapter-item expanded "><a href="../approved/0007-system-collator-selection.html">RFC-0007: System Collator Selection</a></li><li class="chapter-item expanded "><a href="../approved/0008-parachain-bootnodes-dht.html">RFC-0008: Store parachain bootnodes in relay chain DHT</a></li><li class="chapter-item expanded "><a href="../approved/0010-burn-coretime-revenue.html">RFC-0010: Burn Coretime Revenue</a></li><li class="chapter-item expanded "><a href="../approved/0012-process-for-adding-new-collectives.html">RFC-0012: Process for Adding New System Collectives</a></li><li class="chapter-item expanded "><a href="../approved/0013-prepare-blockbuilder-and-core-runtime-apis-for-mbms.html">RFC-0013: Prepare Core runtime API for MBMs</a></li><li class="chapter-item expanded "><a href="../approved/0014-improve-locking-mechanism-for-parachains.html">RFC-0014: Improve locking mechanism for parachains</a></li><li class="chapter-item expanded "><a href="../approved/0022-adopt-encointer-runtime.html">RFC-0022: Adopt Encointer Runtime</a></li><li class="chapter-item expanded "><a href="../approved/0032-minimal-relay.html">RFC-0032: Minimal Relay</a></li><li class="chapter-item expanded "><a href="../approved/0042-extrinsics-state-version.html">RFC-0042: Add System version that replaces StateVersion on RuntimeVersion</a></li><li class="chapter-item expanded "><a href="../approved/0043-storage-proof-size-hostfunction.html">RFC-0043: Introduce storage_proof_size Host Function for Improved Parachain Block Utilization</a></li><li class="chapter-item expanded "><a href="../approved/0045-nft-deposits-asset-hub.html">RFC-0045: Lowering NFT Deposits on Asset Hub</a></li><li class="chapter-item expanded "><a href="../approved/0047-assignment-of-availability-chunks.html">RFC-0047: Assignment of availability chunks to validators</a></li><li class="chapter-item expanded "><a href="../approved/0050-fellowship-salaries.html">RFC-0050: Fellowship Salaries</a></li><li class="chapter-item expanded "><a href="../approved/0056-one-transaction-per-notification.html">RFC-0056: Enforce only one transaction per notification</a></li><li class="chapter-item expanded "><a href="../approved/0059-nodes-capabilities-discovery.html">RFC-0059: Add a discovery mechanism for nodes based on their capabilities</a></li><li class="chapter-item expanded "><a href="../approved/0078-merkleized-metadata.html">RFC-0078: Merkleized Metadata</a></li><li class="chapter-item expanded "><a href="../approved/0084-general-transaction-extrinsic-format.html">RFC-0084: General transactions in extrinsic format</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Stale</li><li class="chapter-item expanded "><a href="../stale/0004-remove-unnecessary-allocator-usage.html">RFC-0004: Remove the host-side runtime memory allocator</a></li><li class="chapter-item expanded "><a href="../stale/0006-dynamic-pricing-for-bulk-coretime-sales.html">RFC-0006: Dynamic Pricing for Bulk Coretime Sales</a></li><li class="chapter-item expanded "><a href="../stale/0009-improved-net-light-client-requests.html">RFC-0009: Improved light client requests networking protocol</a></li><li class="chapter-item expanded "><a href="../stale/0015-market-design-revisit.html">RFC-0015: Market Design Revisit</a></li><li class="chapter-item expanded "><a href="../stale/0020-treasurer-track-confirmation-period-duration-modification.html">RFC-0020: Treasurer Track Confirmation Period Duration Modification</a></li><li class="chapter-item expanded "><a href="../stale/0034-xcm-absolute-location-account-derivation.html">RFC-34: XCM Absolute Location Account Derivation</a></li><li class="chapter-item expanded "><a href="../stale/0035-conviction-voting-delegation-modifications.html"> RFC-0035: Conviction Voting Delegation Modifications</a></li><li class="chapter-item expanded "><a href="../stale/0044-rent-based-registration.html">RFC-0044: Rent based registration model</a></li><li class="chapter-item expanded "><a href="../stale/0054-remove-heap-pages.html">RFC-0054: Remove the concept of "heap pages" from the client</a></li><li class="chapter-item expanded "><a href="../stale/0070-x-track-kusamanetwork.html">RFC-0070: X Track for @kusamanetwork</a></li><li class="chapter-item expanded "><a href="../stale/0073-referedum-deposit-track.html">RFC-0073: Decision Deposit Referendum Track</a></li><li class="chapter-item expanded "><a href="../stale/0074-stateful-multisig-pallet.html">RFC-0074: Stateful Multisig Pallet</a></li><li class="chapter-item expanded "><a href="../stale/0077-increase-max-length-of-identity-pgp-fingerprint-value.html">RFC-0077: Increase maximum length of identity PGP fingerprint values from 20 bytes</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="polkadot">Polkadot</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Polkadot Fellowship RFCs</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <p><a href="https://github.com/polkadot-fellows/RFCs/pull/89">(source)</a></p>
+<p><strong>Table of Contents</strong></p>
+<ul>
+<li><a href="#rfc-0089-flexible-inflation">RFC-0089: Flexible Inflation</a>
+<ul>
+<li><a href="#summary">Summary</a></li>
+<li><a href="#motivation">Motivation</a></li>
+<li><a href="#stakeholders">Stakeholders</a></li>
+<li><a href="#explanation">Explanation</a>
+<ul>
+<li><a href="#existing-order">Existing Order</a></li>
+<li><a href="#new-order">New Order</a></li>
+<li><a href="#proposed-implementation">Proposed Implementation</a></li>
+</ul>
+</li>
+<li><a href="#drawbacks">Drawbacks</a></li>
+<li><a href="#testing-security-and-privacy">Testing, Security, and Privacy</a></li>
+<li><a href="#performance-ergonomics-and-compatibility">Performance, Ergonomics, and Compatibility</a></li>
+<li><a href="#prior-art-and-references">Prior Art and References</a></li>
+<li><a href="#unresolved-questions">Unresolved Questions</a></li>
+<li><a href="#future-directions-and-related-material">Future Directions and Related Material</a></li>
+</ul>
+</li>
+</ul>
+<h1 id="rfc-0089-flexible-inflation"><a class="header" href="#rfc-0089-flexible-inflation">RFC-0089: Flexible Inflation</a></h1>
+<div class="table-wrapper"><table><thead><tr><th></th><th></th></tr></thead><tbody>
+<tr><td><strong>Start Date</strong></td><td>May 6 2024</td></tr>
+<tr><td><strong>Description</strong></td><td>Revise the inflation logic in the runtime such that it can be parameterized and tweaked in an easier and more transparent way.</td></tr>
+<tr><td><strong>Authors</strong></td><td>Kian Paimani</td></tr>
+</tbody></table>
+</div>
+<h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
+<p>This RFC proposes a new <code>pallet_inflation</code> to be added to the Polkadot runtime, which improves
+inflation machinery of the Polkadot relay chain in a number of ways:</p>
+<ol>
+<li>More transparent and easier to understand inflation logic</li>
+<li>Easier parameterization through governance</li>
+<li>Decoupled from the staking logic, should inflation and staking happen in two disjoint consensus
+systems, as proposed
+<a href="https://polkadot-fellows.github.io/RFCs/approved/0032-minimal-relay.html">RFC32</a>.</li>
+</ol>
+<h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
+<p>The existing inflation logic in the relay chain is suffers from a number of drawbacks:</p>
+<ul>
+<li>It is dated, as the number of parachain slots (and consequently auctions) will soon no longer be a
+factor in determining the inflation rate.</li>
+<li>Is hard to parameterize through on-chain governance, as the only way to tweak the inflation amount
+is through changing a particular function directly in the source code (<a href="https://github.com/polkadot-fellows/runtimes/blob/cc3beb8b2337a65e879e1d739c33e30230888267/relay/polkadot/src/lib.rs#L743-L769">example in Polkadot
+runtime</a>).</li>
+<li>Is deeply intertwined with the staking system, which is not an ideal design. For example, if one
+wishes to know the inflation amount, an <a href="https://polkadot.subscan.io/event?page=1&amp;time_dimension=date&amp;module=staking&amp;event_id=erapaid"><code>Event</code> from the staking
+system</a>
+has to be interpreted, which is counter-intuitive.</li>
+<li>Given all of this complexity, implementing an alteration which suggested a fixed percentage of the
+inflation to go to the treasury was also <a href="https://github.com/paritytech/polkadot-sdk/pull/1660">not possible in an ergonomic
+way</a>.</li>
+</ul>
+<p>This RFC, as iterated above, proposes a new <code>pallet_inflation</code> that addresses all of the named
+problems. However, <strong>this RFC does not propose any changes to the actual inflation rate</strong>, but
+rather provide a new technical substrate (pun intended), upon which token holders can decide on the
+future of the DOT token's inflation in a more clear and transparent way.</p>
+<p>We argue that one reason why the inflation rate of Polkadot has not significantly change in ~4 years
+has been the complicated process of updating it. We hope that with the tools provided in this RFC,
+stakeholders can experiment with the inflation rate in a more ergonomic way. Finally, this
+experimentation can be considered useful as a final step toward fixing the economics of DOT in JAM,
+as proposed in the JAM grayparper.</p>
+<p>Within the scope of this RFC, we suggest deploying the new inflation pallet in a backwards
+compatible way, such that the inflation model does not change in practice, and leave the actual
+changes to the token holders and researchers and further governance proposals.</p>
+<blockquote>
+<p>While mainly intended for Polkadot, the system proposed in this RFC is general enough such that it
+can be interpreted as a &quot;general inflation system pallet&quot;, and can be used in newly onboarding
+parachain.</p>
+</blockquote>
+<h2 id="stakeholders"><a class="header" href="#stakeholders">Stakeholders</a></h2>
+<p>This RFCs is relevant to the following stakeholders, listed form high to low impact:</p>
+<ul>
+<li>All token holders who participate in governance, as they can possibly now propose (some degree of)
+changes to the inflation model without any coding required. Depending on the parameters, these
+changes may or may not require a particular governance track.</li>
+<li>Validators and all other stakers, as the staking rate of the chain might possibly change through
+the means that this pallet provides.</li>
+<li>All other token holders.</li>
+</ul>
+<h2 id="explanation"><a class="header" href="#explanation">Explanation</a></h2>
+<h3 id="existing-order"><a class="header" href="#existing-order">Existing Order</a></h3>
+<p>First, let's further elaborate on the existing order. The current inflation logic is deeply nested
+in <code>pallet_staking</code>, and <code>pallet_staking::Config::EraPayout</code> interface. Through this trait, the
+staking pallet is informed how many new tokens should possibly be minted. This amount is divided
+into two parts:</p>
+<ul>
+<li>an amount allocated to staking. This amount is not minted right away, and is instead minted when
+the staking rewards are paid out.</li>
+<li>an mount allocated to <code>pallet_staking::Config::RewardRemainder</code>, which is configured to forward
+the amount to the treasury.</li>
+</ul>
+<p>As it stands now the implementation of <code>EraPayout</code> which specifies the two amounts above lives in
+the respective runtime, and uses the original proposed inflation rate proposed by W3F for Polkadot.
+Read more about this model <a href="https://wiki.polkadot.network/docs/learn-inflation">here</a>.</p>
+<p>At present, the inflation always happens at the end of an <em>era</em>, which is a concept know by the
+staking system. The duration of an era is recorded in <code>pallet_staking</code> as milliseconds (as recorded
+by the standard <code>pallet_timestamp</code>), is passed to <code>EraPayout</code> as an input, as is measured against
+the full year to determine how much should be inflated.</p>
+<h3 id="new-order"><a class="header" href="#new-order">New Order</a></h3>
+<blockquote>
+<p>The naming used in this section is tentative, based on a WIP implementation, and subject to change
+before finalization of this RFC.</p>
+</blockquote>
+<p>The new order splits the process for inflation into two steps:</p>
+<ol>
+<li><strong>Sourcing</strong> the inflation amount: This step merely specifies by how much the chain intends to
+inflation its token. This amount is not minted right away, and is instead passed over to the next
+step for <em>distribution</em>.</li>
+<li><strong>Distributing</strong> the aforementioned amount: A sequence of functions that decide what needs to be
+done with the sourced inflation amount. This process is expected to <em>transfer</em> the inflation
+amount to any account that should receive it. This implies that the staking system should,
+similar to treasury, have a key-less account that will act as a temporary pot for the inflation
+amount.</li>
+</ol>
+<p>In very abstract terms, an example of the above process can be:</p>
+<ul>
+<li>The chain inflates its token by a fixed 10% per year, an amount called <code>i</code>.</li>
+<li>Payout 20% of <code>i</code> to the treasury account.</li>
+<li>Payout 10% of what is left of <code>i</code> to the fellowship account.</li>
+<li>Payout up to 70% of what is left of <code>i</code> to staking, depending on the staking rate.</li>
+<li>Burn anything that is left.</li>
+</ul>
+<p>A proper configuration of this pallet should use <code>pallet_parameters</code> where possible to allow for any
+of the actual values used to specify <code>Sourcing</code> and <code>Distribution</code> to be changed via on-chain
+governance. Please see the <a href="#example-configurations">example configurations</a> section for more
+details.</p>
+<p>In the new model, inflation can happen at any point in time. Since now a new pallet is dedicated to
+inflation, and it can internally store the timestamp of the last inflation point, and always inflate
+the correct amount. This means that while the duration of a staking era can is 1 day, the inflation
+process can happen eg. every hour. The opposite is also possible, although more complicated: The
+staking/treasury system can possibly receive their corresponding income on a weekly basis, while the
+era duration is still 1 day. That being said, we don't recommend using this flexibility as it brings
+no clear advantage, and is only extra complexity. We recommend the inflation to still happen shortly
+before the end of the staking era. This means that if the inflation <code>sourcing</code> or <code>distribution</code> is
+a function of the staking rate, it can reliably use the staking rate of the last era.</p>
+<p>Finally, as noted above, this RFC implies a new accounting system for staking to keep track of its
+staking reward. In short, the new process is as follows: <code>pallet_inflation</code> will mint the staking
+portion of inflation directly into a key-less account controlled by <code>pallet_staking</code>. At the end
+each era, <code>pallet_staking</code> will inspect this account, and move whatever amount is paid out into it
+to another key-less account associated withe era number. The actual payouts, initiated by stakers,
+will transfer from this era account into the corresponding stakers' account.</p>
+<blockquote>
+<p>Interestingly, this means that any account can possibly contribute to staking rewards by
+transferring DOTs to the key-less parent account controlled by the staking system.</p>
+</blockquote>
+<h3 id="proposed-implementation"><a class="header" href="#proposed-implementation">Proposed Implementation</a></h3>
+<p>A candidate implementation of this RFC can be found in
+<a href="https://github.com/paritytech/polkadot-sdk/compare/kiz-new-staking-inflation-system?expand=1">this</a>
+branch of the <code>polkadot-sdk</code> repository. Please note the changes to:</p>
+<ol>
+<li><code>substrate/frame/inflation</code> to see the new pallet.</li>
+<li><code>substrate/frame/staking</code> to see the integration with the staking pallet.</li>
+<li><code>substrate/bin/runtime</code> to see how the pallet can be configured into a runtime.</li>
+</ol>
+<h4 id="example-configurations"><a class="header" href="#example-configurations">Example Configurations</a></h4>
+<p>The following are working examples from the above implementation candidate, highlighting some of the
+outcomes that can be achieved.</p>
+<p>First, to parameterize the existing proposed implementation to replicate what Polkadot does today,
+assuming we incorporate the fixed 2% treasury income, the outcome would be:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>parameter_types! {
+	pub Distribution: Vec&lt;pallet_inflation::DistributionStep&lt;Runtime&gt;&gt; = vec![
+		// 2% goes to treasury, no questions asked.
+		Box::new(pay::&lt;Runtime, TreasuryAccount, dynamic_params::staking::FixedTreasuryIncome&gt;),
+		// from whatever is left, staking gets all the rest, based on the staking rate.
+		Box::new(polkadot_staking_income::&lt;
+			Runtime,
+			dynamic_params::staking::IdealStakingRate,
+			dynamic_params::staking::Falloff,
+			StakingIncomeAccount
+		&gt;),
+		// Burn anything that is left.
+		Box::new(burn::&lt;Runtime, All&gt;),
+	];
+}
+
+impl pallet_inflation::Config for Runtime {
+	/// Fixed 10% annual inflation.
+	type InflationSource =
+		pallet_inflation::FixedRatioAnnualInflation&lt;Runtime, dynamic_params::staking::MaxInflation&gt;;
+	type Distribution = Distribution;
+}
+<span class="boring">}</span></code></pre></pre>
+<p>In this snippet, we use a number of components provided by <code>pallet_inflation</code>, namely <code>pay</code>,
+<code>polkadot_staking_income</code>, <code>burn</code> and <code>FixedRatioAnnualInflation</code>. Yet, crucially, these components
+are fed parameters that are all backed by an instance of the <code>pallet_parameters</code>, namely everything
+prefixed by <code>dynamic_params</code>.</p>
+<p>The above is a purely inflationary system. If one wants to change the inflation to
+<em>dis-inflationary</em>, another pre-made component of <code>pallet_inflation</code> can be used:</p>
+<pre><code class="language-diff">impl pallet_inflation::Config for Runtime {
+-	/// Fixed 10% annual inflation.
+-	type InflationSource =
+-		pallet_inflation::FixedRatioAnnualInflation&lt;Runtime, dynamic_params::staking::MaxInflation&gt;;
++	type InflationSource = pallet_inflation::FixedAnnualInflation&lt;
++		Runtime,
++		dynamic_params::staking::FixedAnnualInflationAmount,
++	&gt;;
+}
+</code></pre>
+<p>Whereby <code>FixedAnnualInflationAmount</code> is the <em>fixed</em> absolute <em>value</em> (as opposed to <em>ratio</em>) by
+which the chain inflates annually, for example 100m DOTs.</p>
+<h2 id="drawbacks"><a class="header" href="#drawbacks">Drawbacks</a></h2>
+<p>The following drawbacks are noted:</p>
+<ol>
+<li>The solution provided here is possibly an over-engineering, if we want to achieve the goal of
+making the existing formula parameterize-able. In that case, we can merely add an instance of the
+<code>pallet_parameters</code> to the runtime and make the existing formula's ratios be provided by
+governance-controlled parameters. Although, this shortsighted but simpler solution fails to
+decouple the staking and inflation logic. This will be an issue depending on whether staking
+lives in AssetHub, or its independent parachain.</li>
+<li>Some of the interfaces proposed in the draft implementation still leak the implementation detail
+of the inflation amount being reliant on eg. the staking-rate. We acknowledge this as a drawback,
+but given that many PoS inflationary systems rely on the staking rate, we believe it is a
+reasonable compromise. Such parameters can be ignored if the implementation does need them.</li>
+</ol>
+<h2 id="testing-security-and-privacy"><a class="header" href="#testing-security-and-privacy">Testing, Security, and Privacy</a></h2>
+<p>The new <code>pallet_inflation</code>, among its integration into <code>pallet_staking</code> must be thoroughly audited
+and reviewed by fellows. We also emphasize on simulating the actual inflation logic using the real
+polkadot state with Chopsticks and try-runtime.</p>
+<h2 id="performance-ergonomics-and-compatibility"><a class="header" href="#performance-ergonomics-and-compatibility">Performance, Ergonomics, and Compatibility</a></h2>
+<p>The proposed system in this RFC implies a handful of extra storage reads and writes &quot;per inflation
+cycle&quot;, but given that a reasonable instance of this pallet would probably decide to inflation eg.
+once per day, the performance impact is negligible.</p>
+<p>The <a href="#drawbacks">drawback</a> section above noted some ergonomic concerns.</p>
+<p>The <a href="#new-order">&quot;New Order&quot;</a> section above notes the compatibility notes with the existing staking
+and inflation system.</p>
+<h2 id="prior-art-and-references"><a class="header" href="#prior-art-and-references">Prior Art and References</a></h2>
+<ul>
+<li>Previous updates to the inflation system:</li>
+<li><a href="https://paritytech.github.io/polkadot-sdk/master/pallet_parameters/index.html"><code>pallet_parameters</code></a></li>
+<li>https://forum.polkadot.network/t/adjusting-the-current-inflation-model-to-sustain-treasury-inflow/3301</li>
+</ul>
+<h2 id="unresolved-questions"><a class="header" href="#unresolved-questions">Unresolved Questions</a></h2>
+<ul>
+<li>Whether the design proposed in this RFC is worthy of the complexity implementing and integrating
+it? Note that a draft implementation already exists, yet the amount of further work needed to
+integrate it is non-negligible.</li>
+<li>Given that this pallet is general enough to also be used by parachain, the usage of timestamp
+poses risks with regard to agile-coretime, and parachains that only use on-demand cores. Accurate
+timestamps must be provided to the pallet in order to function, possibly being sourced from the
+relay-chain. @ggwpez has explored issues related to on-demand core-time and time-based systems
+<a href="https://github.com/paritytech/polkadot-sdk/issues/3268">here</a>.</li>
+</ul>
+<h2 id="future-directions-and-related-material"><a class="header" href="#future-directions-and-related-material">Future Directions and Related Material</a></h2>
+<ul>
+<li>If initial reaction is positive researchers and economic experts should formulate their desired
+inflation parameters and systems, such that we can be sure the pallet is flexible enough in
+possibly fulfilling them without an extensive amount of work needed. Given the high flexibility of
+the pallet design as it stands, this is very unlikely.</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../introduction.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../proposed/0026-sassafras-consensus.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../introduction.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../proposed/0026-sassafras-consensus.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>
