@@ -19,7 +19,7 @@ inflation machinery of the Polkadot relay chain in a number of ways:
 
 ## Motivation
 
-The existing inflation logic in the relay chain is suffers from a number of drawbacks:
+The existing inflation logic in the relay chain suffers from a number of drawbacks:
 
 * It is dated, as the number of parachain slots (and consequently auctions) will soon no longer be a
   factor in determining the inflation rate.
@@ -118,7 +118,7 @@ details.
 
 In the new model, inflation can happen at any point in time. Since now a new pallet is dedicated to
 inflation, and it can internally store the timestamp of the last inflation point, and always inflate
-the correct amount. This means that while the duration of a staking era can is 1 day, the inflation
+the correct amount. This means that while the duration of a staking era is 1 day, the inflation
 process can happen eg. every hour. The opposite is also possible, although more complicated: The
 staking/treasury system can possibly receive their corresponding income on a weekly basis, while the
 era duration is still 1 day. That being said, we don't recommend using this flexibility as it brings
@@ -130,7 +130,7 @@ Finally, as noted above, this RFC implies a new accounting system for staking to
 staking reward. In short, the new process is as follows: `pallet_inflation` will mint the staking
 portion of inflation directly into a key-less account controlled by `pallet_staking`. At the end of
 each era, `pallet_staking` will inspect this account, and move whatever amount is paid out into it
-to another key-less account associated withe era number. The actual payouts, initiated by stakers,
+to another key-less account associated with the era number. The actual payouts, initiated by stakers,
 will transfer from this era account into the corresponding stakers' account.
 
 > Interestingly, this means that any account can possibly contribute to staking rewards by
