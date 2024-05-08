@@ -106,9 +106,9 @@ The new order splits the process for inflation into two steps:
 In very abstract terms, an example of the above process can be:
 
 * The chain inflates its token by a fixed 10% per year, an amount called `i`.
-* Payout 20% of `i` to the treasury account.
-* Payout 10% of what is left of `i` to the fellowship account.
-* Payout up to 70% of what is left of `i` to staking, depending on the staking rate.
+* Pay out 20% of `i` to the treasury account.
+* Pay out 10% of what is left of `i` to the fellowship account.
+* Pay out up to 70% of what is left of `i` to staking, depending on the staking rate.
 * Burn anything that is left.
 
 A proper configuration of this pallet should use `pallet_parameters` where possible to allow for any
