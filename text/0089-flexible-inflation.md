@@ -55,7 +55,7 @@ changes to the token holders and researchers and further governance proposals.
 
 ## Stakeholders
 
-This RFCs is relevant to the following stakeholders, listed form high to low impact:
+This RFC is relevant to the following stakeholders, listed from high to low impact:
 
 * All token holders who participate in governance, as they can possibly now propose (some degree of)
   changes to the inflation model without any coding required. Depending on the parameters, these
