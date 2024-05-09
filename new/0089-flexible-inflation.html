@@ -249,7 +249,7 @@ can be interpreted as a &quot;general inflation system pallet&quot;, and can be 
 parachain.</p>
 </blockquote>
 <h2 id="stakeholders"><a class="header" href="#stakeholders">Stakeholders</a></h2>
-<p>This RFCs is relevant to the following stakeholders, listed form high to low impact:</p>
+<p>This RFC is relevant to the following stakeholders, listed from high to low impact:</p>
 <ul>
 <li>All token holders who participate in governance, as they can possibly now propose (some degree of)
 changes to the inflation model without any coding required. Depending on the parameters, these
@@ -296,9 +296,9 @@ amount.</li>
 <p>In very abstract terms, an example of the above process can be:</p>
 <ul>
 <li>The chain inflates its token by a fixed 10% per year, an amount called <code>i</code>.</li>
-<li>Payout 20% of <code>i</code> to the treasury account.</li>
-<li>Payout 10% of what is left of <code>i</code> to the fellowship account.</li>
-<li>Payout up to 70% of what is left of <code>i</code> to staking, depending on the staking rate.</li>
+<li>Pay out 20% of <code>i</code> to the treasury account.</li>
+<li>Pay out 10% of what is left of <code>i</code> to the fellowship account.</li>
+<li>Pay out up to 70% of what is left of <code>i</code> to staking, depending on the staking rate.</li>
 <li>Burn anything that is left.</li>
 </ul>
 <p>A proper configuration of this pallet should use <code>pallet_parameters</code> where possible to allow for any
