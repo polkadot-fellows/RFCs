@@ -3,7 +3,7 @@
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 2024-05-20                                                                                  |
-| **Description** | Add creation time for DHT authority discovery records                                        |
+| **Description** | Add creation time for DHT authority discovery records                                       |
 | **Authors**     | Alex Gheorghe (alexggh)                                                                     |
 
 ## Summary
