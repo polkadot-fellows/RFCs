@@ -1,4 +1,4 @@
-# RFC-0000: DHT Authority discovery record creation time
+# RFC-0091: DHT Authority discovery record creation time
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
