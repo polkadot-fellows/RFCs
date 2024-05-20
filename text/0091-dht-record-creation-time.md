@@ -14,7 +14,7 @@ Extend the DHT authority discovery records with a signed creation time, so that 
 
 Currently, we use the Kademlia DHT for storing records regarding the p2p address of an authority discovery key, the problem is that if the nodes decide to change its PeerId/Network key it will publish a new record, however because of the distributed and replicated nature of the DHT there is no way to tell which record is newer so both old PeerId and the new PeerId will live in the network until the old one expires(36h), that creates all sort of problem and leads to the node changing its address not being properly connected for up to 36h. 
 
-After this RFC, nodes are extended to decide to keep the new record and propagate the new record to nodes that have the old record stored, so in the end all the nodes will converge faster to the new record(in the order of minutes not 36h)
+After this RFC, nodes are extended to decide to keep the new record and propagate the new record to nodes that have the old record stored, so in the end all the nodes will converge faster to the new record(in the order of minutes, not 36h)
 
 Implementation of the rfc: https://github.com/paritytech/polkadot-sdk/pull/3786.
 
@@ -29,7 +29,7 @@ Polkadot node developers.
 This RFC heavily relies on the functionalities of the Kademlia DHT already in use by Polkadot.
 You can find a link to the specification [here](https://github.com/libp2p/specs/tree/master/kad-dht).
 
-In a nutshell, on a specific node the current authority-discovery protocol publishes Kademila DHT records at startup and periodically. The records contain the full address of the node for each authorithy key it owns. The node, tries also to find the full address of all authorities in the network by querying the DHT and picking up the first record it finds for each of the authority id it found on chain.
+In a nutshell, on a specific node the current authority-discovery protocol publishes Kademila DHT records at startup and periodically. The records contain the full address of the node for each authorithy key it owns. The node tries also to find the full address of all authorities in the network by querying the DHT and picking up the first record it finds for each of the authority id it found on chain.
 
 The authority discovery DHT records use the protobuf protocol and the current format is specified [here](https://github.com/paritytech/polkadot-sdk/blob/313fe0f9a277f27a4228634f0fb15a1c3fa21271/substrate/client/authority-discovery/src/worker/schema/dht-v2.proto#L4). This RFC proposese extending the schema in a backwards compatible manner by adding a new optional `creation_time` field to `SignedAuthorityRecord` which nodes can use to determine which of the record is newer.
 
