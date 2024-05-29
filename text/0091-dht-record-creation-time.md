@@ -31,7 +31,7 @@ You can find a link to the specification [here](https://github.com/libp2p/specs/
 
 In a nutshell, on a specific node the current authority-discovery protocol publishes Kademila DHT records at startup and periodically. The records contain the full address of the node for each authorithy key it owns. The node tries also to find the full address of all authorities in the network by querying the DHT and picking up the first record it finds for each of the authority id it found on chain.
 
-The authority discovery DHT records use the protobuf protocol and the current format is specified [here](https://github.com/paritytech/polkadot-sdk/blob/313fe0f9a277f27a4228634f0fb15a1c3fa21271/substrate/client/authority-discovery/src/worker/schema/dht-v2.proto#L4). This RFC proposese extending the schema in a backwards compatible manner by adding a new optional `creation_time` field to `SignedAuthorityRecord` which nodes can use to determine which of the record is newer.
+The authority discovery DHT records use the protobuf protocol and the current format is specified [here](https://github.com/paritytech/polkadot-sdk/blob/313fe0f9a277f27a4228634f0fb15a1c3fa21271/substrate/client/authority-discovery/src/worker/schema/dht-v2.proto#L4). This RFC proposese extending the schema in a backwards compatible manner by adding a new optional `creation_time` field to `AuthorityRecord` and nodes can use this information to determine which of the record is newer.
 
 Diff of `dht-v3.proto` vs `dht-v2.proto`
 
@@ -42,27 +42,24 @@ Diff of `dht-v3.proto` vs `dht-v2.proto`
 -package authority_discovery_v2;
 +package authority_discovery_v3;
 
-@@ -13,11 +13,21 @@
+ // First we need to serialize the addresses in order to be able to sign them.
+ message AuthorityRecord {
+ 	repeated bytes addresses = 1;
++	// Time since UNIX_EPOCH in nanoseconds, scale encoded
++	TimestampInfo creation_time = 2;
+ }
+
+ message PeerSignature {
+@@ -13,11 +15,17 @@
  	bytes public_key = 2;
  }
 
 +// Information regarding the creation data of the record
 +message TimestampInfo {
-+	// Time since UNIX_EPOCH in nanoseconds, scale encoded
-+	bytes timestamp = 1;
-+	// A signature of the creation time.
-+	bytes signature = 2;
++       // Time since UNIX_EPOCH in nanoseconds, scale encoded
++       bytes timestamp = 1;
 +}
 +
- // Then we need to serialize the authority record and signature to send them over the wire.
- message SignedAuthorityRecord {
- 	bytes record = 1;
- 	bytes auth_signature = 2;
- 	// Even if there are multiple `record.addresses`, all of them have the same peer id.
- 	PeerSignature peer_signature = 3;
-+	// Information regarding the creation data of this record.
-+	TimestampInfo creation_time = 4;
- }
 ```
 
 Each time a node wants to resolve an authorithy ID it will issue a query with a certain redundancy factor, and from all the results it receives it will decide to pick only the newest record. Additionally, the nodes that answer with old records will be updated with the newer record.
@@ -77,7 +74,7 @@ In theory the new protocol creates a bit more traffic on the DHT network, becaus
 
 This RFC's implementation https://github.com/paritytech/polkadot-sdk/pull/3786 had been tested on various local test networks and versi.
 
-With regard to security the creation time will be signed with the authority id key, so there is no way for other malicious nodes to manipulate this field without the received node observing.
+With regard to security the creation time is wrapped inside SignedAuthorityRecord wo it will be signed with the authority id key, so there is no way for other malicious nodes to manipulate this field without the received node observing.
 
 ## Performance, Ergonomics, and Compatibility
 
