@@ -4,21 +4,25 @@
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 2024-06-09                                                                                  |
 | **Description** | Implement a secondary market for region listings and sales                                  |
-| **Authors**     | [Aurora Poppyseed](https://github.com/poppyseedDev/), [Phil Plucksok](https://github.com/phillux)  |
+| **Authors**     | [Aurora Poppyseed](https://github.com/poppyseedDev/), [Philip Lucsok](https://github.com/phillux)  |
 
 ## Summary
 
-This RFC proposes the addition of a secondary market feature to the broker pallet, enabling users to list and purchase regions. This includes creating, purchasing, and removing listings, as well as emitting relevant events and handling associated errors.
+This RFC proposes the addition of a secondary market feature to either the broker pallet or as a separate pallet maintained by Lastic, enabling users to list and purchase regions. This includes creating, purchasing, and removing listings, as well as emitting relevant events and handling associated errors.
 
 ## Motivation
 
-Currently, the broker pallet lacks functionality for a secondary market, which limits users' ability to freely trade regions. This RFC aims to introduce a secure and straightforward mechanism for users to list regions they own for sale and allow other users to purchase these regions. This functionality can enhance the flexibility and utility of the broker pallet, making it more user-friendly and valuable.
+Currently, the broker pallet lacks functionality for a secondary market, which limits users' ability to freely trade regions. This RFC aims to introduce a secure and straightforward mechanism for users to list regions they own for sale and allow other users to purchase these regions.
+
+While integrating this functionality directly into the broker pallet is one option, another viable approach is to implement it as a separate pallet maintained by Lastic. This separate pallet would have access to the broker pallet and add minimal functionality necessary to support the secondary market.
+
+Adding smart contracts to the Coretime chain could also address this need; however, this process is expected to be lengthy and complex. We cannot afford to wait for this extended timeline to enable basic secondary market functionality. By proposing either integration into the broker pallet or the creation of a dedicated pallet, we can quickly enhance the flexibility and utility of the broker pallet, making it more user-friendly and valuable.
 
 ## Stakeholders
 
 Primary stakeholders include:
 - Developers working on the broker pallet.
-- Secondary Coretime marketplaces
+- Secondary Coretime marketplaces.
 - Users who own regions and wish to trade them.
 - Community members interested in enhancing the broker pallet’s capabilities.
 
@@ -50,7 +54,9 @@ This RFC introduces the following key features:
 
 ## Drawbacks
 
-The main drawback is the additional complexity introduced to the broker pallet, which may increase maintenance overhead. Moreover, there is a potential risk of security vulnerabilities in the new market functionalities, such as unauthorized region transfers or incorrect balance adjustments.
+The main drawback of adding the additional complexity directly to the broker pallet is the potential increase in maintenance overhead. Therefore, we propose adding additional functionality as a separate pallet on the Coretime chain. To take the pressure off from implementing these features, implementation along with unit tests would be taken care of by Lastic (Aurora Makovac, Philip Lucsok).
+
+There are potential risks of security vulnerabilities in the new market functionalities, such as unauthorized region transfers or incorrect balance adjustments. Therefore, extensive security measures would have to be implemented.
 
 ## Testing, Security, and Privacy
 
@@ -70,7 +76,7 @@ The main drawback is the additional complexity introduced to the broker pallet, 
 
 ### Performance
 - This feature is expected to introduce minimal overhead since it primarily involves read and write operations to storage maps.
-- Efforts have been made to optimize the code to prevent unnecessary computational costs.
+- Efforts will be made to optimize the code to prevent unnecessary computational costs.
 
 ### Ergonomics
 - The new functions are designed to be intuitive and easy to use, providing clear feedback through events and errors.
@@ -81,16 +87,14 @@ The main drawback is the additional complexity introduced to the broker pallet, 
 - No migrations are necessary as it introduces new functionality without altering existing features.
 
 ## Prior Art and References
-
-- Discussions with community members and developers highlighted the need for a built-in secondary market.
+- All related discussions are going to be under this PR.
 
 ## Unresolved Questions
 
-- Should there be a limit on the number of regions a user can list at one time?
 - Are there additional security measures needed to prevent potential abuses of the new functionalities?
 
 ## Future Directions and Related Material
 
-- Further enhancements could include advanced filtering and search capabilities for listings.
 - Integration with external NFT marketplaces for more robust trading options.
 - Development of user interfaces to interact with the new marketplace features seamlessly.
+- Exploration of adding smart contracts to the Coretime chain, which would provide greater flexibility and functionality for the secondary market and other decentralized applications. This would require a longer time for implementation, so this proposes an intermediary solution.
