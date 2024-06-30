@@ -352,7 +352,10 @@ blake3::hash(SCALE::encode(MetadataDigest::V1 { .. }))
 
 For the runtime the metadata hash is generated at compile time. Wallets will have to generate the hash using the FRAME metadata. 
 
-The signing side should control whether it wants to add the metadata hash or if it wants to omit it. To accomplish this it is required to add one extra byte to the extrinsic itself. If this byte is `0` the metadata hash is not required and if the byte is `1` the metadata hash is added using `V1` of the `MetadataDigest`. This leaves room for future versions of the `MetadataDigest` format. When the metadata hash should be included, it is only added to the data that is signed. This brings the advantage of not requiring to include 32 bytes into the extrinsic itself, because the runtime knows the metadata hash as well and can add it to the signed data as well if required. This is similar to the genesis hash, while this isn't added conditionally to the signed data.
+The signing side should control whether it wants to add the metadata hash or if it wants to omit it. To accomplish this it is required to add one extra byte to the extrinsic itself. If this byte is `0` the metadata hash is not required and if the byte is `1` the metadata hash is added using `V1` of the `MetadataDigest`. This leaves room for future versions of the `MetadataDigest` format. When the metadata hash should be included, it is only added to the data that is signed. This brings the advantage of not requiring to include 32 bytes into the extrinsic itself, because the runtime knows the metadata hash as well and can add it to the signed data as well if required. This is similar to the genesis hash, while this isn't added conditionally to the signed data. So, to recap:
+
+- Included in the extrinsic is `u8`, the "mode". The mode is either `0` which means to not include the metadata hash in the signed data or the mode is `1` to include the metadata hash in `V1`.
+- Included in the signed data is an `Option<[u8; 32]>`. Depending on the mode the value is either `None` or `Some(metadata_hash)`.
 
 ## Drawbacks
 
