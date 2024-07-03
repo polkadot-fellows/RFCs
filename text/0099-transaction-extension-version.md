@@ -35,10 +35,10 @@ The extrinsic format supports the following types of transactions:
 
 The `Signed` and `General` transaction would change to:
 
-- `Signed`: `(Address, Signature, Compact, Extensions)`
-- `General`: `(Compact, Extensions)`
+- `Signed`: `(Address, Signature, Version, Extensions)`
+- `General`: `(Version, Extensions)`
 
-The `Compact` being a SCALE encoded compact representing the version of the transaction extensions.
+The `Version` being a SCALE encoded compact `u32` representing the version of the transaction extensions.
 
 In the chain runtime the version can be used to determine which set of transaction extensions should be used to decode and to validate the transaction.
 
