@@ -40,6 +40,8 @@ The `Signed` and `General` transaction would change to:
 
 The `Compact` being a SCALE encoded compact representing the version of the transaction extensions.
 
+In the chain runtime the version can be used to determine which set of transaction extensions should be used to decode and to validate the transaction.
+
 ## Drawbacks
 
 This adds a least one byte more to each signed transaction. 
