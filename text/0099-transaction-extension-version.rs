@@ -1,4 +1,4 @@
-# RFC-0098: Introduce a transaction extension version
+# RFC-0099: Introduce a transaction extension version
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
