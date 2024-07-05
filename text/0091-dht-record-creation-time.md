@@ -62,7 +62,8 @@ Diff of `dht-v3.proto` vs `dht-v2.proto`
 +
 ```
 
-Each time a node wants to resolve an authorithy ID it will issue a query with a certain redundancy factor, and from all the results it receives it will decide to pick only the newest record. Additionally, the nodes that answer with old records will be updated with the newer record.
+Each time a node wants to resolve an authorithy ID it will issue a query with a certain redundancy factor, and from all the results it receives it will decide to pick only the newest record. Additionally,
+in order to speed up the time until all nodes have the newest record, nodes can optionaly implement a logic where they send the new record to nodes that answered with the older record.
 
 
 ## Drawbacks
