@@ -245,7 +245,8 @@ You can find a link to the specification <a href="https://github.com/libp2p/spec
 +}
 +
 </code></pre>
-<p>Each time a node wants to resolve an authorithy ID it will issue a query with a certain redundancy factor, and from all the results it receives it will decide to pick only the newest record. Additionally, the nodes that answer with old records will be updated with the newer record.</p>
+<p>Each time a node wants to resolve an authorithy ID it will issue a query with a certain redundancy factor, and from all the results it receives it will decide to pick only the newest record. Additionally,
+in order to speed up the time until all nodes have the newest record, nodes can optionaly implement a logic where they send the new record to nodes that answered with the older record.</p>
 <h2 id="drawbacks"><a class="header" href="#drawbacks">Drawbacks</a></h2>
 <p>In theory the new protocol creates a bit more traffic on the DHT network, because it waits for DHT records to be received from more than one node, while in the current implementation we just take the first record that we receive and cancel all in-flight requests to other peers. However, because the redundancy factor will be relatively small and this operation happens rarerly, every 10min, this cost is negligible.</p>
 <h2 id="testing-security-and-privacy"><a class="header" href="#testing-security-and-privacy">Testing, Security, and Privacy</a></h2>
