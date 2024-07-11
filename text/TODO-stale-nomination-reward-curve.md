@@ -18,7 +18,10 @@ One of Polkadot's primary utilities is providing a high quality security layer f
 
 ## Stakeholders
 
-A brief catalogue of the primary stakeholder sets of this RFC, with some description of previous socialization of the proposal.
+Primary stakeholders are:
+
+- Nominators
+- Validators
 
 ## Explanation
 
