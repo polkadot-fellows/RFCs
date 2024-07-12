@@ -1,0 +1,491 @@
+
+<!DOCTYPE HTML>
+<html lang="en" class="polkadot" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>RFC-0100: New XCM instruction: InitiateAssetsTransfer - Polkadot Fellowship RFCs</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="An online book of RFCs approved or proposed within the Polkadot Fellowship.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/polkadot.css">
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "polkadot" : "polkadot";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('polkadot')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../introduction.html">Introduction</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Newly Proposed</li><li class="chapter-item expanded "><a href="../new/0100-xcm-multi-type-asset-transfer.html" class="active">RFC-0100: New XCM instruction: InitiateAssetsTransfer</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Proposed</li><li class="chapter-item expanded "><a href="../proposed/0091-dht-record-creation-time.html">RFC-0091: DHT Authority discovery record creation time</a></li><li class="chapter-item expanded "><a href="../proposed/0092-unbonding_queue.html">RFC-0092: Unbonding Queue</a></li><li class="chapter-item expanded "><a href="../proposed/0099-transaction-extension-version.html">RFC-0099: Introduce a transaction extension version</a></li><li class="chapter-item expanded "><a href="../proposed/00xx-secondary-marketplace-for-regions.html">RFC-0001: Secondary Market for Regions</a></li><li class="chapter-item expanded "><a href="../proposed/00xx-smart-contracts-coretime-chain.html">RFC-0002: Smart Contracts on the Coretime Chain</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Approved</li><li class="chapter-item expanded "><a href="../approved/0001-agile-coretime.html">RFC-1: Agile Coretime</a></li><li class="chapter-item expanded "><a href="../approved/0005-coretime-interface.html">RFC-5: Coretime Interface</a></li><li class="chapter-item expanded "><a href="../approved/0007-system-collator-selection.html">RFC-0007: System Collator Selection</a></li><li class="chapter-item expanded "><a href="../approved/0008-parachain-bootnodes-dht.html">RFC-0008: Store parachain bootnodes in relay chain DHT</a></li><li class="chapter-item expanded "><a href="../approved/0010-burn-coretime-revenue.html">RFC-0010: Burn Coretime Revenue</a></li><li class="chapter-item expanded "><a href="../approved/0012-process-for-adding-new-collectives.html">RFC-0012: Process for Adding New System Collectives</a></li><li class="chapter-item expanded "><a href="../approved/0013-prepare-blockbuilder-and-core-runtime-apis-for-mbms.html">RFC-0013: Prepare Core runtime API for MBMs</a></li><li class="chapter-item expanded "><a href="../approved/0014-improve-locking-mechanism-for-parachains.html">RFC-0014: Improve locking mechanism for parachains</a></li><li class="chapter-item expanded "><a href="../approved/0022-adopt-encointer-runtime.html">RFC-0022: Adopt Encointer Runtime</a></li><li class="chapter-item expanded "><a href="../approved/0026-sassafras-consensus.html">RFC-0026: Sassafras Consensus Protocol</a></li><li class="chapter-item expanded "><a href="../approved/0032-minimal-relay.html">RFC-0032: Minimal Relay</a></li><li class="chapter-item expanded "><a href="../approved/0042-extrinsics-state-version.html">RFC-0042: Add System version that replaces StateVersion on RuntimeVersion</a></li><li class="chapter-item expanded "><a href="../approved/0043-storage-proof-size-hostfunction.html">RFC-0043: Introduce storage_proof_size Host Function for Improved Parachain Block Utilization</a></li><li class="chapter-item expanded "><a href="../approved/0045-nft-deposits-asset-hub.html">RFC-0045: Lowering NFT Deposits on Asset Hub</a></li><li class="chapter-item expanded "><a href="../approved/0047-assignment-of-availability-chunks.html">RFC-0047: Assignment of availability chunks to validators</a></li><li class="chapter-item expanded "><a href="../approved/0048-session-keys-runtime-api.html">RFC-0048: Generate ownership proof for SessionKeys</a></li><li class="chapter-item expanded "><a href="../approved/0050-fellowship-salaries.html">RFC-0050: Fellowship Salaries</a></li><li class="chapter-item expanded "><a href="../approved/0056-one-transaction-per-notification.html">RFC-0056: Enforce only one transaction per notification</a></li><li class="chapter-item expanded "><a href="../approved/0059-nodes-capabilities-discovery.html">RFC-0059: Add a discovery mechanism for nodes based on their capabilities</a></li><li class="chapter-item expanded "><a href="../approved/0078-merkleized-metadata.html">RFC-0078: Merkleized Metadata</a></li><li class="chapter-item expanded "><a href="../approved/0084-general-transaction-extrinsic-format.html">RFC-0084: General transactions in extrinsic format</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Stale</li><li class="chapter-item expanded "><a href="../stale/0004-remove-unnecessary-allocator-usage.html">RFC-0004: Remove the host-side runtime memory allocator</a></li><li class="chapter-item expanded "><a href="../stale/0006-dynamic-pricing-for-bulk-coretime-sales.html">RFC-0006: Dynamic Pricing for Bulk Coretime Sales</a></li><li class="chapter-item expanded "><a href="../stale/0009-improved-net-light-client-requests.html">RFC-0009: Improved light client requests networking protocol</a></li><li class="chapter-item expanded "><a href="../stale/0015-market-design-revisit.html">RFC-0015: Market Design Revisit</a></li><li class="chapter-item expanded "><a href="../stale/0020-treasurer-track-confirmation-period-duration-modification.html">RFC-0020: Treasurer Track Confirmation Period Duration Modification</a></li><li class="chapter-item expanded "><a href="../stale/0034-xcm-absolute-location-account-derivation.html">RFC-34: XCM Absolute Location Account Derivation</a></li><li class="chapter-item expanded "><a href="../stale/0035-conviction-voting-delegation-modifications.html"> RFC-0035: Conviction Voting Delegation Modifications</a></li><li class="chapter-item expanded "><a href="../stale/0044-rent-based-registration.html">RFC-0044: Rent based registration model</a></li><li class="chapter-item expanded "><a href="../stale/0054-remove-heap-pages.html">RFC-0054: Remove the concept of "heap pages" from the client</a></li><li class="chapter-item expanded "><a href="../stale/0070-x-track-kusamanetwork.html">RFC-0070: X Track for @kusamanetwork</a></li><li class="chapter-item expanded "><a href="../stale/0073-referedum-deposit-track.html">RFC-0073: Decision Deposit Referendum Track</a></li><li class="chapter-item expanded "><a href="../stale/0074-stateful-multisig-pallet.html">RFC-0074: Stateful Multisig Pallet</a></li><li class="chapter-item expanded "><a href="../stale/0077-increase-max-length-of-identity-pgp-fingerprint-value.html">RFC-0077: Increase maximum length of identity PGP fingerprint values from 20 bytes</a></li><li class="chapter-item expanded "><a href="../stale/0088-broker-pallet-slashable-deposit-purchaser-reputation-reserved-cores.html">RFC-0088: Add slashable locked deposit, purchaser reputation, and reserved cores for on-chain identities to broker pallet</a></li><li class="chapter-item expanded "><a href="../stale/0089-flexible-inflation.html">RFC-0089: Flexible Inflation</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="polkadot">Polkadot</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Polkadot Fellowship RFCs</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <p><a href="https://github.com/polkadot-fellows/RFCs/pull/100">(source)</a></p>
+<p><strong>Table of Contents</strong></p>
+<ul>
+<li><a href="#rfc-0100-new-xcm-instruction-initiateassetstransfer">RFC-0100: New XCM instruction: <code>InitiateAssetsTransfer</code></a>
+<ul>
+<li><a href="#summary">Summary</a></li>
+<li><a href="#motivation">Motivation</a></li>
+<li><a href="#stakeholders">Stakeholders</a></li>
+<li><a href="#explanation">Explanation</a>
+<ul>
+<li><a href="#example-usage-transferring-2-different-asset-types-across-3-chains">Example usage: transferring 2 different asset types across 3 chains</a></li>
+</ul>
+</li>
+<li><a href="#drawbacks">Drawbacks</a></li>
+<li><a href="#testing-security-and-privacy">Testing, Security, and Privacy</a></li>
+<li><a href="#performance-ergonomics-and-compatibility">Performance, Ergonomics, and Compatibility</a>
+<ul>
+<li><a href="#performance">Performance</a></li>
+<li><a href="#ergonomics">Ergonomics</a></li>
+<li><a href="#compatibility">Compatibility</a></li>
+</ul>
+</li>
+<li><a href="#prior-art-and-references">Prior Art and References</a></li>
+<li><a href="#unresolved-questions">Unresolved Questions</a></li>
+<li><a href="#future-directions-and-related-material">Future Directions and Related Material</a></li>
+</ul>
+</li>
+</ul>
+<h1 id="rfc-0100-new-xcm-instruction-initiateassetstransfer"><a class="header" href="#rfc-0100-new-xcm-instruction-initiateassetstransfer">RFC-0100: New XCM instruction: <code>InitiateAssetsTransfer</code></a></h1>
+<div class="table-wrapper"><table><thead><tr><th></th><th></th></tr></thead><tbody>
+<tr><td><strong>Start Date</strong></td><td>11 July 2024</td></tr>
+<tr><td><strong>Description</strong></td><td>Add new XCM instruction: <code>InitiateAssetsTransfer</code> for mixing asset transfer types in same XCM</td></tr>
+<tr><td><strong>Authors</strong></td><td>Adrian Catangiu</td></tr>
+</tbody></table>
+</div>
+<h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
+<p>This RFC proposes a new instruction that provides a way to initiate on remote chains, asset transfers which
+transfer multiple types (teleports, local-reserve, destination-reserve) of assets, using XCM alone.</p>
+<p>The currently existing instructions are too opinionated and force each XCM asset transfer to a single
+transfer type (teleport, local-reserve, destination-reserve). This results in inability to combine different
+types of transfers in single transfer which results in overall poor UX when trying to move assets across
+chains.</p>
+<h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
+<p>XCM is the de-facto cross-chain messaging protocol within the Polkadot ecosystem, and cross-chain
+assets transfers is one of its main use-cases. Unfortunately, in its current spec, it does not support
+initiating on a remote chain, one or more transfers that combine assets with different transfer types.<br />
+For example, <code>ParachainA</code> cannot instruct <code>AssetHub</code> to teleport <code>ForeignAssetX</code> to <code>ParachainX</code> alongside
+<code>USDT</code> (which has to be reserve transferred) using current XCM specification.</p>
+<p>There currently exist <code>DepositReserveAsset</code>, <code>InitiateReserveWithdraw</code> and <code>InitiateTeleport</code> instructions
+that initiate asset transfers on execution, but they are opinionated in the type of transfer to use.
+Combining them is also not possible, because as a result of their individual execution, a message containing
+a <code>ClearOrigin</code> instruction is sent to the destination chain, making subsequent transfers impossible after
+the first instruction is executed.</p>
+<p>The new instruction proposed by this RFC allows an XCM program to describe multiple asset transfer types,
+then execute them in one shot with a single <code>remote_xcm</code> program sent to the target chain to effect
+the transfer and subsequently clear origin.</p>
+<p>Multi-hop asset transfers will benefit from this change by allowing single XCM program to handle multiple
+types of transfers and reduce complexity.</p>
+<p>Bridge asset transfers greatly benefit from this change by allowing building XCM programs to transfer multiple
+assets across multiple hops in a single pseudo-atomic action.<br />
+For example, allows single XCM program execution to transfer multiple assets from <code>ParaK</code> on Kusama, through Kusama
+Asset Hub, over the bridge through Polkadot Asset Hub with final destination <code>ParaP</code> on Polkadot.</p>
+<p>With current XCM, we are limited to doing multiple independent transfers for each individual hop in order to
+move both &quot;interesting&quot; assets, but also &quot;supporting&quot; assets (used to pay fees).</p>
+<h2 id="stakeholders"><a class="header" href="#stakeholders">Stakeholders</a></h2>
+<ul>
+<li>Runtime users</li>
+<li>Runtime devs</li>
+<li>Wallet devs</li>
+<li>dApps devs</li>
+</ul>
+<h2 id="explanation"><a class="header" href="#explanation">Explanation</a></h2>
+<p>Detail-heavy explanation of the RFC, suitable for explanation to an implementer of the changeset. This should address corner cases in detail and provide justification behind decisions, and provide rationale for how the design meets the solution requirements.</p>
+<p>We can specify the desired transfer type for some asset(s) using:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>/// Specify which type of asset transfer is required for a particular `(asset, dest)` combination.
+pub enum AssetTransferFilter {
+	/// teleport assets matching `AssetFilter` to `dest`
+	Teleport(AssetFilter),
+	/// reserve-transfer assets matching `AssetFilter` to `dest`, using the local chain as reserve
+	ReserveDeposit(AssetFilter),
+	/// reserve-transfer assets matching `AssetFilter` to `dest`, using `dest` as reserve
+	ReserveWithdraw(AssetFilter),
+}
+<span class="boring">}</span></code></pre></pre>
+<p>This RFC proposes 1 new XCM instruction:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>/// Cross-chain transfer matching `assets` in the holding register as follows:
+///
+/// Assets in the holding register are matched using the given list of `AssetTransferFilter`s,
+/// they are then transferred based on their specified transfer type:
+///
+/// - teleport: burn local assets and append a `ReceiveTeleportedAsset` XCM instruction to
+///   the XCM program to be sent onward to the `dest` location,
+///
+/// - reserve deposit: place assets under the ownership of `dest` within this consensus system
+///   (i.e. its sovereign account), and append a `ReserveAssetDeposited` XCM instruction
+///   to the XCM program to be sent onward to the `dest` location,
+///
+/// - reserve withdraw: burn local assets and append a `WithdrawAsset` XCM instruction
+///   to the XCM program to be sent onward to the `dest` location,
+///
+/// The onward XCM is then appended a `ClearOrigin` to allow safe execution of any following
+/// custom XCM instructions provided in `remote_xcm`.
+///
+/// The onward XCM also potentially contains a `BuyExecution` instruction based on the presence
+/// of the `remote_fees` parameter (see below).
+///
+/// Parameters:
+/// - `dest`: The location of the transfer destination.
+/// - `remote_fees`: If set to `Some(asset_xfer_filter)`, the single asset matching
+///   `asset_xfer_filter` in the holding register will be transferred first in the remote XCM
+///   program, followed by a `BuyExecution(fee)`, then rest of transfers follow.
+///   This guarantees `remote_xcm` will successfully pass a `AllowTopLevelPaidExecutionFrom` barrier.
+/// - `remote_xcm`: Custom instructions that will be executed on the `dest` chain. Note that
+///   these instructions will be executed after a `ClearOrigin` so their origin will be `None`.
+///
+/// Safety: No concerns.
+///
+/// Kind: *Command*.
+///
+/// Errors:
+InitiateAssetsTransfer {
+	destination: Location,
+	assets: Vec&lt;AssetTransferFilter&gt;,
+	remote_fees: Option&lt;AssetTransferFilter&gt;,
+	remote_xcm: Xcm&lt;()&gt;,
+}
+<span class="boring">}</span></code></pre></pre>
+<p>An <code>InitiateAssetsTransfer { .. }</code> instruction shall transfer to <code>dest</code>, all assets in the <code>holding</code> register
+that match the provided <code>assets</code> and <code>remote_fees</code> filters.
+These filters identify the assets to be transferred as well as the transfer type to be used for transferring
+them.
+It shall handle the local side of the transfer, then forward an onward XCM to <code>dest</code> for handling
+the remote side of the transfer.</p>
+<p>It should do so using same mechanisms as existing <code>DepositReserveAsset</code>, <code>InitiateReserveWithdraw</code>, <code>InitiateTeleport</code>
+instructions but practically combining all required XCM instructions to be remotely executed into a <em>single</em>
+remote XCM program to be sent over to <code>dest</code>.</p>
+<p>Furthermore, through <code>remote_fees: Option&lt;AssetTransferFilter&gt;</code>, it shall allow specifying a single asset to be used
+for fees on <code>dest</code> chain. This single asset shall be remotely handled/received by the <strong>first instruction</strong> in the
+onward XCM and shall be followed by a <code>BuyExecution</code> instruction using it.
+The rest of the assets shall be handled by subsequent instructions, thus also finally allowing
+<a href="https://github.com/paritytech/polkadot-sdk/issues/2423">single asset buy execution</a> barrier security recommendation.</p>
+<p>The onward XCM, following the assets transfers instructions, <code>ClearOrigin</code> or <code>DescendOrigin</code> instructions shall be
+appended to stop acting on behalf of the source chain, then the caller-provided <code>remote_xcm</code> shall also be appended,
+allowing the caller to control what to do with the transferred assets.</p>
+<h3 id="example-usage-transferring-2-different-asset-types-across-3-chains"><a class="header" href="#example-usage-transferring-2-different-asset-types-across-3-chains">Example usage: transferring 2 different asset types across 3 chains</a></h3>
+<ul>
+<li>Transferring ROCs as the native asset of <code>RococoAssetHub</code> and PENs as the native asset of <code>Penpal</code>,</li>
+<li>Transfer origin is <code>Penpal</code> (on Rococo) and the destination is <code>WestendAssetHub</code> (across the bridge),</li>
+<li>ROCs are native to <code>RococoAssetHub</code> and are registered as trust-backed assets on <code>Penpal</code> and <code>WestendAssetHub</code>,</li>
+<li>PENs are native to <code>Penpal</code> and are registered as teleportable assets on <code>RococoAssetHub</code> and as
+foreign assets on <code>WestendAssetHub</code>,</li>
+<li>Fees on <code>RococoAssetHub</code> and <code>WestendAssetHub</code> are paid using ROCs.</li>
+</ul>
+<p>We can transfer them from <code>Penpal</code> (Rococo), through <code>RococoAssetHub</code>, over the bridge to <code>WestendAssetHub</code>
+by executing a <em>single</em> XCM message, even though we'll be mixing and matching all types of transfers along the path:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>Penpal::execute_with(|| {
+    let rocs: Asset = (rocs_id.clone(), rocs_amount).into();
+    let pens: Asset = (pens_id, pens_amount).into();
+    let assets: Assets = vec![rocs.clone(), pens.clone()].into();
+
+    // XCM to be executed at dest (Westend Asset Hub)
+    let xcm_on_dest =
+        Xcm(vec![DepositAsset { assets: Wild(All), beneficiary: beneficiary.clone() }]);
+
+    // XCM to be executed at Rococo Asset Hub
+    let context = PenpalUniversalLocation::get();
+    let reanchored_assets = assets.clone().reanchored(&amp;local_asset_hub, &amp;context).unwrap();
+    let reanchored_dest = destination.clone().reanchored(&amp;local_asset_hub, &amp;context).unwrap();
+    let reanchored_rocs_id = rocs_id.clone().reanchored(&amp;local_asset_hub, &amp;context).unwrap();
+
+    // from AHR, both ROCs and PENs are local-reserve transferred to Westend Asset Hub
+    let assets_filter = vec![
+        AssetTransferFilter::ReserveDeposit(reanchored_assets.clone().into())
+    ];
+    // we want to pay with ROCs on WAH
+    let remote_fees = Some(AssetTransferFilter::ReserveDeposit(
+        AssetFilter::Wild(AllOf { id: reanchored_rocs_id.into(), fun: WildFungibility::Fungible }))
+    );
+    let xcm_on_ahr = Xcm(vec![
+        InitiateAssetsTransfer {
+            dest: reanchored_dest,
+            assets: assets_filter,
+            remote_fees: Some(),
+            remote_xcm: xcm_on_dest,
+        },
+    ]);
+
+    // pay remote fees with ROCs
+    let remote_fees = Some(
+        AssetTransferFilter::ReserveWithdraw(
+            AssetFilter::Wild(AllOf { id: rocs_id.into(), fun: WildFungibility::Fungible })
+        )
+    );
+    // XCM to be executed locally
+    let xcm = Xcm::&lt;penpal_runtime::RuntimeCall&gt;(vec![
+        // Withdraw both ROCs and PENs from origin account
+        WithdrawAsset(assets.clone().into()),
+        // Execute the transfers while paying remote fees with ROCs
+        InitiateAssetsTransfer {
+            dest: local_asset_hub,
+            assets: vec![
+                // ROCs are reserve-withdrawn on AHR
+                ReserveWithdraw(rocs.into()),
+                // PENs are teleported to AHR
+                Teleport(pens.into()),
+            ],
+            remote_fees,
+            remote_xcm: xcm_on_ahr,
+        },
+    ]);
+
+    &lt;Penpal as PenpalPallet&gt;::PolkadotXcm::execute(
+        signed_origin,
+        bx!(xcm::VersionedXcm::V4(xcm.into())),
+        Weight::MAX,
+    ).unwrap();
+})
+<span class="boring">}</span></code></pre></pre>
+<h2 id="drawbacks"><a class="header" href="#drawbacks">Drawbacks</a></h2>
+<p>No drawbacks identified.</p>
+<h2 id="testing-security-and-privacy"><a class="header" href="#testing-security-and-privacy">Testing, Security, and Privacy</a></h2>
+<p>There should be no security risks related to the new instruction from the XCVM perspective. It follows the same
+pattern as with single-type asset transfers, only now it allows combining multiple types at once.</p>
+<p><em>Improves</em> security by enabling
+<a href="https://github.com/paritytech/polkadot-sdk/issues/2423">enforcement of single asset for buying execution</a>,
+which minimizes the potential free/unpaid work that a receiving chain has to do. It does so, by making the
+required execution fee payment, part of the instruction logic through the <code>remote_fees: Option&lt;AssetTransferFilter&gt;</code>
+parameter, which will make sure the remote XCM starts with a single-asset-holding-loading-instruction,
+immediately followed by a <code>BuyExecution</code> using said asset.</p>
+<h2 id="performance-ergonomics-and-compatibility"><a class="header" href="#performance-ergonomics-and-compatibility">Performance, Ergonomics, and Compatibility</a></h2>
+<p>This brings no impact to the rest of the XCM spec. It is a new, independent instruction, no changes to existing instructions.</p>
+<p>Enhances the exposed functionality of Polkadot. Will allow multi-chain transfers that are currently forced to happen in
+multiple programs per asset per &quot;hop&quot;, to be possible in a single XCM program.</p>
+<h3 id="performance"><a class="header" href="#performance">Performance</a></h3>
+<p>No performance changes/implications.</p>
+<h3 id="ergonomics"><a class="header" href="#ergonomics">Ergonomics</a></h3>
+<p>The proposal enhances developers' and users' cross-chain asset transfer capabilities. This enhancement is optimized for XCM
+programs transferring multiple assets, needing to run their logic across multiple chains.</p>
+<h3 id="compatibility"><a class="header" href="#compatibility">Compatibility</a></h3>
+<p>Does this proposal break compatibility with existing interfaces, older versions of implementations? Summarize necessary
+migrations or upgrade strategies, if any.</p>
+<p>This enhancement is compatible with all <strong>existing</strong> XCM programs and versions.</p>
+<p>New (XCMv5) programs using this instruction shall be best-effort downgraded to an older XCM version, but cannot guarantee
+success.
+A program where the new instruction is used to initiate multiple types of asset transfers, cannot be downgraded to older
+XCM versions, because there is no equivalent capability there.
+Such conversion attempts will explicitly fail.</p>
+<h2 id="prior-art-and-references"><a class="header" href="#prior-art-and-references">Prior Art and References</a></h2>
+<p>None.</p>
+<h2 id="unresolved-questions"><a class="header" href="#unresolved-questions">Unresolved Questions</a></h2>
+<ul>
+<li>Inner <code>BuyExecution</code> specifies <code>WeightLimit::Unlimited</code>, thus being limited only by the asset &quot;amount&quot;. This was a
+deliberate decision for enhancing UX - in practice, people/dApps care abount limiting fee asset amount not the used weight.</li>
+<li>When setting <code>remote_fees == None</code>, should we append <code>UnpaidExecution</code> or do nothing?</li>
+</ul>
+<h2 id="future-directions-and-related-material"><a class="header" href="#future-directions-and-related-material">Future Directions and Related Material</a></h2>
+<p>None.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../introduction.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../proposed/0091-dht-record-creation-time.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../introduction.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../proposed/0091-dht-record-creation-time.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>
