@@ -14,7 +14,21 @@ This is a proposal to reduce the impact of stale nominations in the Polkadot sta
 
 Longer motivation behind the content of the RFC, presented as a combination of both problems and requirements for the solution.
 
-One of Polkadot's primary utilities is providing a high quality security layer for applications built on top of it.
+One of Polkadot's primary utilities is providing a high quality security layer for applications built on top of it. To achieve this, Polkadot runs a Nominated Proof-of-Stake system, allowing nominators to vote on who they think are the best validators for Polkadot.
+
+This system functions best when nominators and validators are active participants in the network. Nominators should consistently evaluate the quality and preferences of validators, and adjust their nominations accordingly.
+
+Unfortunately, many Polkadot nominators do not play an active role in the NPoS system. For many, they set their nominations, and then seldomly look back at the.
+
+This can lead to many negative behaviors:
+
+- Incumbents who received early nominations basically achieve tenure.
+- Validator quality and performance can decrease without recourse.
+- The validator set are not the optimal for Polkadot.
+- New validators have a harder time entering the active set.
+- Validators are able to "sneakily" increase their commission.
+
+
 
 ## Stakeholders
 
