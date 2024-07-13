@@ -276,9 +276,15 @@ https://github.com/paritytech/polkadot-sdk/issues/971
 
 ## Unresolved Questions
 
-None at this time.
+1. What about the initial runtime, shall we make that off-chain as well?
+2. Good news, at least after the first upgrade, no code will be stored on chain
+   any more, this means that we also have to redefine the storage deposit now.
+   We no longer charge for chain storage, but validator disk storage -> Should
+   be cheaper.
 
 ## Future Directions and Related Material
+
+### Further Hardening
 
 By no longer having code upgrade go through the relay chain, occupying a full relay
 chain block, the impact on other parachains is already greatly reduced, if we
@@ -295,3 +301,12 @@ act on the request and no relay chain resources are wasted either.
 We could for example introduce another UMP Signalling message
 `RequestCodeUpgradeWithPriority` which not just requests a code upgrade, but
 also offers some DOT to get ranked up in a queue.
+
+### Generalize this off-chain storage mechanism?
+
+Making this storage mechanism more general purpose is worth thinking about. E.g.
+by resolving above "fee" question, we might also be able to resolve the pruning
+question in a more generic way and thus could indeed open this storage facility
+for other purposes as well. E.g. smart contracts, so the PoV would only need to
+reference contracts by hash and the actual PoV is stored on validators and
+collators and thus no longer needs to be part of the PoV.
