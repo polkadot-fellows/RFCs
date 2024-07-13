@@ -85,12 +85,11 @@ We will introduce a new request/response protocol for both collators and
 validators, with the following request/response:
 
 ```rust
-struct RequestCode {
-  para_id: ParaId,
-  code_hash: Hash,
+struct RequestBlob {
+  blob_hash: Hash,
 }
 
-struct CodeResponse(Vec<u8>)
+struct BlobResponse(Vec<u8>)
 ```
 
 This protocol will be used by backers to request the PVF from collators in the
