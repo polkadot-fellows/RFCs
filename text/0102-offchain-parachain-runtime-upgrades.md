@@ -90,7 +90,9 @@ struct RequestBlob {
   blob_hash: Hash,
 }
 
-struct BlobResponse(Vec<u8>)
+struct BlobResponse {
+  blob: Vec<u8>
+}
 ```
 
 This protocol will be used by backers to request the PVF from collators in the
@@ -280,7 +282,14 @@ https://github.com/paritytech/polkadot-sdk/issues/971
 2. Good news, at least after the first upgrade, no code will be stored on chain
    any more, this means that we also have to redefine the storage deposit now.
    We no longer charge for chain storage, but validator disk storage -> Should
-   be cheaper.
+   be cheaper. Solution to this: Not only store the hash on chain, but also the
+   size of the data. Then define a price per byte and charge that, but:
+   - how do we charge - I guess deposit has to be provided via other means,
+     runtime upgrade fails if not provided.
+   - how do we signal to the chain that the code is too large for it to reject
+     the upgrade? Easy: Make available and vote nay in pre-checking.
+
+TODO: Fully resolve these questions and incorporate in RFC text.
 
 ## Future Directions and Related Material
 
@@ -310,3 +319,29 @@ question in a more generic way and thus could indeed open this storage facility
 for other purposes as well. E.g. smart contracts, so the PoV would only need to
 reference contracts by hash and the actual PoV is stored on validators and
 collators and thus no longer needs to be part of the PoV.
+
+A possible avenue would be to change the response to:
+
+```rust
+enum BlobResponse {
+  Blob(Vec<u8>),
+  Blobs(MerkleTree),
+}
+```
+
+With this the hash specified in the request can also be a merkle root and the
+responder will respond with the entire merkle tree (only hashes, no payload).
+Then the requester can traverse the leaf hashes and use the same request
+response protocol to request any locally missing blobs in that tree.
+
+One leaf would for example be the PVF others could be smart contracts. With a
+properly specified format (e.g. which leaf is the PVF?), what we got here is
+that a parachain can not only update its PVF, but additional data,
+incrementally. E.g. adding another smart contract, does not require resubmitting
+the entire PVF to validators, only the root hash on the relay chain gets
+updated, then validators fetch the merkle tree and only fetch any missing
+leaves. That additional data could be made available to the PVF via a to be
+added host function. The nice thing about this approach is, that while we can
+upgrade incrementally, lifetime is still tied to the PVF and we get all the same
+guarantees. Assuming the validators store blobs by hash, we even get disk
+sharing if multiple parachains use the same data (e.g. same smart contracts).
