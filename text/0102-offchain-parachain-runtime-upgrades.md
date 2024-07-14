@@ -57,7 +57,8 @@ The issues with on-chain runtime upgrades are:
 
 We discussed introducing a separate signalling before submitting the actual
 runtime, but I think we should just go one step further and make upgrades fully
-off-chain.
+off-chain. Which also helps bringing down deposit costs in a secure way, as we
+are also actually reducing costs for the network.
 
 ### Introduce a new UMP message type `RequestCodeUpgrade`
 
