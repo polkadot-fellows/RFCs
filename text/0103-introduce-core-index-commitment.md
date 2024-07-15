@@ -1,4 +1,4 @@
-# RFC-0102:  Introduce a `CoreIndex` commitment in candidate receipts
+# RFC-0103:  Introduce a `CoreIndex` commitment in candidate receipts
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
