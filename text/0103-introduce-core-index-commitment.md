@@ -3,7 +3,7 @@
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 15 July 2024                                                                    |
-| **Description** | Constrain parachain block validity on a single core                                                                   |
+| **Description** | Constrain parachain block validity on a specific core                                                                   |
 | **Authors**     | Andrei Sandu                                                                                            |
 
 ## Summary
