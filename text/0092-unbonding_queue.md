@@ -22,7 +22,7 @@ As an initial step to gauge its effectiveness and stability, it is recommended t
 
 ## Motivation
 
-Polkadot has one of the longest unbonding periods among all Proof-of-Stake protocols, because security was the most important goal. Staking on Polkadot is still attractive compared to other protocols because of its above-average staking APY. However the long unbonding period harms usability and deters potential participants that want to contribute to the security of the network. 
+Polkadot has one of the longest unbonding periods among all Proof-of-Stake protocols, because security is the most important goal. Staking on Polkadot is still attractive compared to other protocols because of its above-average staking APY. However the long unbonding period harms usability and deters potential participants that want to contribute to the security of the network. 
 
 The current length of the unbonding period imposes significant costs for any entity that even wants to perform basic tasks such as a reorganization / consolidation of their stashes, or updating their private key infrastructure. It also limits participation of users that have a large preference for liquidity.
 
