@@ -242,6 +242,13 @@ Parachains will need to implement the introduced request/response protocol and
 adapt to the new signalling mechanism via an `UMP` message, instead of sending
 the code upgrade directly.
 
+For parachain operators we should emit events on initiated runtime upgrade and
+each block reporting the current counter and how many blocks to go until the
+upgrade gets passed to pre-checking. This is especially important for on-demand
+chains or bulk users not occupying a full core. Further more that behaviour of
+requiring multiple blocks to fully initiate a runtime upgrade needs to be well
+documented.
+
 ### Compatibility
 
 We will continue to support the old mechanism for code upgrades for a while, but
