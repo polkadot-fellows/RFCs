@@ -265,7 +265,8 @@ blocks.</li>
 </ol>
 <p>We discussed introducing a separate signalling before submitting the actual
 runtime, but I think we should just go one step further and make upgrades fully
-off-chain.</p>
+off-chain. Which also helps bringing down deposit costs in a secure way, as we
+are also actually reducing costs for the network.</p>
 <h3 id="introduce-a-new-ump-message-type-requestcodeupgrade"><a class="header" href="#introduce-a-new-ump-message-type-requestcodeupgrade">Introduce a new UMP message type <code>RequestCodeUpgrade</code></a></h3>
 <p>As part of elastic scaling we are already planning to increase flexibility of <a href="https://github.com/polkadot-fellows/RFCs/issues/92#issuecomment-2144538974">UMP
 messages</a>, we can now use this to our advantage and introduce another UMP message:</p>
@@ -291,7 +292,9 @@ validators, with the following request/response:</p>
   blob_hash: Hash,
 }
 
-struct BlobResponse(Vec&lt;u8&gt;)
+struct BlobResponse {
+  blob: Vec&lt;u8&gt;
+}
 <span class="boring">}</span></code></pre></pre>
 <p>This protocol will be used by backers to request the PVF from collators in the
 following conditions:</p>
@@ -448,8 +451,17 @@ namely:</p>
 <li>Good news, at least after the first upgrade, no code will be stored on chain
 any more, this means that we also have to redefine the storage deposit now.
 We no longer charge for chain storage, but validator disk storage -&gt; Should
-be cheaper.</li>
+be cheaper. Solution to this: Not only store the hash on chain, but also the
+size of the data. Then define a price per byte and charge that, but:
+<ul>
+<li>how do we charge - I guess deposit has to be provided via other means,
+runtime upgrade fails if not provided.</li>
+<li>how do we signal to the chain that the code is too large for it to reject
+the upgrade? Easy: Make available and vote nay in pre-checking.</li>
+</ul>
+</li>
 </ol>
+<p>TODO: Fully resolve these questions and incorporate in RFC text.</p>
 <h2 id="future-directions-and-related-material"><a class="header" href="#future-directions-and-related-material">Future Directions and Related Material</a></h2>
 <h3 id="further-hardening"><a class="header" href="#further-hardening">Further Hardening</a></h3>
 <p>By no longer having code upgrade go through the relay chain, occupying a full relay
@@ -472,6 +484,29 @@ question in a more generic way and thus could indeed open this storage facility
 for other purposes as well. E.g. smart contracts, so the PoV would only need to
 reference contracts by hash and the actual PoV is stored on validators and
 collators and thus no longer needs to be part of the PoV.</p>
+<p>A possible avenue would be to change the response to:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>enum BlobResponse {
+  Blob(Vec&lt;u8&gt;),
+  Blobs(MerkleTree),
+}
+<span class="boring">}</span></code></pre></pre>
+<p>With this the hash specified in the request can also be a merkle root and the
+responder will respond with the entire merkle tree (only hashes, no payload).
+Then the requester can traverse the leaf hashes and use the same request
+response protocol to request any locally missing blobs in that tree.</p>
+<p>One leaf would for example be the PVF others could be smart contracts. With a
+properly specified format (e.g. which leaf is the PVF?), what we got here is
+that a parachain can not only update its PVF, but additional data,
+incrementally. E.g. adding another smart contract, does not require resubmitting
+the entire PVF to validators, only the root hash on the relay chain gets
+updated, then validators fetch the merkle tree and only fetch any missing
+leaves. That additional data could be made available to the PVF via a to be
+added host function. The nice thing about this approach is, that while we can
+upgrade incrementally, lifetime is still tied to the PVF and we get all the same
+guarantees. Assuming the validators store blobs by hash, we even get disk
+sharing if multiple parachains use the same data (e.g. same smart contracts).</p>
 
                     </main>
 
