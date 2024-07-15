@@ -80,7 +80,7 @@ Ultimately, the user's token are unbonded at `unbonding_block_number`.
 
 ### Proposed Parameters
 There are a few constants to be exogenously set. They are up for discussion, but we make the following recommendation:
-- `MIN_SLASHABLE_SHARE`: `1/2` - This is the share of stake backing the lowest 1/3 of validators that is slashable at any point in time. It offers a trade-off between security and unbonding time. Half is a sensable choice. Here, we have sufficient stake to slash while allowing for a short average unbonding time.
+- `MIN_SLASHABLE_SHARE`: `1/2` - This is the share of stake backing the lowest 1/3 of validators that is slashable at any point in time. It offers a trade-off between security and unbonding time. Half is a sensible choice. Here, we have sufficient stake to slash while allowing for a short average unbonding time.
 - `LOWER_BOUND`: 28800 blocks (or 2 eras): This value resembles a minimum unbonding time for any stake of 2 days. 
 - `UPPER_BOUND`: 403200 blocks (or 28 eras): This value resembles the maximum time a user faces in their unbonding time. It equals to the current unbonding time and should be familiar to users.
 
