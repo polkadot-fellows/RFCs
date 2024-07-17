@@ -168,12 +168,13 @@ Parachain that use elastic scaling must send the separator empty message followe
 
 ## Compatibility
 
-To ensure a smooth transition the first step is to remove collator signature checking logic on the node side and upgrade validators. Any tooling that uses these fields will require similar changes as described above to support both formats.
+To ensure a smooth transition the first step is to remove collator signature checking logic in the runtime and the node side, then upgrade validators. Any tooling that decodes UMP XCM messages needs an update to support the new UMP messages.
 
-The runtime does not check the collator signature so there are no other specific concers for compatibility except adding the support for the new primitives.
+`CoreIndex` commitments are needed only by parachains using elastic scaling. Just upgrading the collator node and runtime should be sufficient and possible with no manual changes.
 
+No new implementation of networking protocol versions for collation and validation are required.
 
-`CoreIndex` commitments are mandatory only for parachains using elastic scaling. No new implementation of networking protocol versions for collation and validation are required.
+The runtime does check the collator signature in inclusion, so that should be removed as first step, before the new receipts are introduced. 
 
 
 ## Prior Art and References
