@@ -44,7 +44,7 @@ In the chain runtime the version can be used to determine which set of transacti
 
 ## Drawbacks
 
-This adds a least one byte more to each signed transaction. 
+This adds one byte more to each signed transaction. 
 
 ## Testing, Security, and Privacy
 
