@@ -38,7 +38,7 @@ The `Signed` and `General` transaction would change to:
 - `Signed`: `(Address, Signature, Version, Extensions)`
 - `General`: `(Version, Extensions)`
 
-The `Version` being a SCALE encoded compact `u32` representing the version of the transaction extensions.
+The `Version` being a SCALE encoded `u8` representing the version of the transaction extensions.
 
 In the chain runtime the version can be used to determine which set of transaction extensions should be used to decode and to validate the transaction.
 
