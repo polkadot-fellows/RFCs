@@ -29,7 +29,7 @@ Primary stakeholders include:
 This RFC introduces the following key components:
 
 1. **Smart Contract Support**:
-    - Implement support for deploying and executing smart contracts on the Coretime chain.
+    - Integrate support for deploying and executing smart contracts on the Coretime chain.
     - Use a well-established smart contract platform, such as Ethereum’s Solidity or Polkadot's Ink!, to ensure compatibility and ease of use.
 
 2. **Storage and Execution**:
