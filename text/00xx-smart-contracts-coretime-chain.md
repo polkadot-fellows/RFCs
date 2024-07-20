@@ -8,7 +8,7 @@
 
 ## Summary
 
-This RFC proposes the implementation of smart contracts on the Coretime chain to enhance flexibility and enable complex decentralized applications, including secondary market functionalities.
+This RFC proposes the integration of smart contracts on the Coretime chain to enhance flexibility and enable complex decentralized applications, including secondary market functionalities.
 
 ## Motivation
 
