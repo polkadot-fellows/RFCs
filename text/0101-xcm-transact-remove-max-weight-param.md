@@ -1,16 +1,15 @@
-# RFC-0101: XCM Transact shall also allow Unlimited weight
-
+# RFC-0101: XCM Transact remove `require_weight_at_most` parameter
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 12 July 2024                                                                                |
-| **Description** | Enchance XCM Transact to allow `Unlimited` weight inner call                                |
+| **Description** | Remove `require_weight_at_most` parameter from XCM Transact                                 |
 | **Authors**     | Adrian Catangiu                                                                             |
 
 ## Summary
 
 The `Transact` XCM instruction currently forces the user to set a specific maximum weight allowed to the inner call and then also pay for that much weight regardless of how much the call actually needs in practice.
 
-This RFC proposes improving the usability of `Transact` by having the remote chain (which executes the `Transact`), get and charge the actual weight of the inner call from its dispatch info.
+This RFC proposes improving the usability of `Transact` by removing that parameter and instead get and charge the actual weight of the inner call from its dispatch info on the remote chain.
 
 ## Motivation
 
@@ -37,19 +36,14 @@ instruction is hard to use.
 
 ## Explanation
 
-The proposed enhancement is simple: change `Transact` instruction:
+The proposed enhancement is simple: remove `require_weight_at_most` parameter from the instruction:
 
 ```diff
 - Transact { origin_kind: OriginKind, require_weight_at_most: Weight, call: DoubleEncoded<Call> },
-+ Transact { origin_kind: OriginKind, weight_limit: WeightLimit, call: DoubleEncoded<Call> },
++ Transact { origin_kind: OriginKind, call: DoubleEncoded<Call> },
 ```
 
-With the new API, users who do not need to artificially limit the maximum weight used by the inner `call`,
-can pass `weight_limit: Unlimited`; while those who need to do it, still can.
-
-The XCVM implementation shall not use the `weight_limit` for weighing. Instead, it shall weigh the Transact instruction by also decoding and weighing the inner `call`.
-
-The `weight_limit` shall be used to bail early if the actual weight is more than the specified limit.
+The XCVM implementation shall no longer use `require_weight_at_most` for weighing. Instead, it shall weigh the Transact instruction by decoding and weighing the inner `call`.
 
 ## Drawbacks
 
@@ -61,12 +55,12 @@ Currently, an XCVM implementation can weigh a message just by looking at the dec
 
 But this does not actually change the security considerations, as can be seen below.
 
-When using `weight_limit = Unlimited`, the weighing happens after decoding the inner `call`. The entirety of the XCM program containing this `Transact` needs to be either covered by enough bought weight using a `BuyExecution`, or the origin has to be allowed to do free execution.
+With the new `Transact` the weighing happens after decoding the inner `call`. The entirety of the XCM program containing this `Transact` needs to be either covered by enough bought weight using a `BuyExecution`, or the origin has to be allowed to do free execution.
 
 The security considerations around how much can someone execute for free are the same for
 both this new version and the old. In both cases, an "attacker" can do the XCM decoding (including Transact inner `call`s) for free by adding a large enough `BuyExecution` without actually having the funds available.
 
-In both cases, decoding is done for free, but execution fails early on `BuyExecution`.
+In both cases, decoding is done for free, but in both cases execution fails early on `BuyExecution`.
 
 ## Performance, Ergonomics, and Compatibility
 
@@ -76,7 +70,7 @@ No performance change.
 
 ### Ergonomics
 
-Ergonomics are slightly improved by allowing `Unlimited` max weight for most scenarios.
+Ergonomics are slightly improved by simplifying `Transact` API.
 
 ### Compatibility
 
@@ -92,4 +86,4 @@ None.
 
 ## Future Directions and Related Material
 
-If we see that nobody uses actual limits (all on-chain calls use `weight_limit = Unlimited`), we should remove it completely.
+None.
