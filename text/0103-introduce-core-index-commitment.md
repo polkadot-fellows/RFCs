@@ -3,11 +3,11 @@
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 15 July 2024                                                                    |
-| **Description** | Constrain parachain block validity on a specific core                                                                   |
+| **Description** | Constrain parachain block validity to a specific core and session                                                                 |
 | **Authors**     | Andrei Sandu                                                                                            |
 
 ## Summary
-The only requirement for collator nodes is to provide valid parachain blocks to the validators of a backing group and by definition the collator set is trustless. However, in the case of elastic scaling, for security reason, collators must be trusted - non-malicious. `CoreIndex` commitments are required to remove this limitation.
+The only requirement for collator nodes is to provide valid parachain blocks to the validators of a backing group and by definition the collator set is trustless. However, in the case of elastic scaling, for security reason, collators must be trusted - non-malicious. `CoreIndex` commitments are required to remove this limitation. Additionally we are introducing a `SessionIndex` field in the `CandidateReceipt` to make dispute resolution more secure and robust. 
 
 ## Motivation
 
@@ -28,14 +28,14 @@ This approach and alternatives have been considered and discussed in [this issue
 
 ## Explanation
 
-The approach proposed below was chosen primarly because it minimizes the number of breaking changes, the complexity and takes far less implementation and testing time. The proposal is to free up space and introduce a new core index field in the `CandidateDescriptor` primitive and use the UMP queue as output for `CoreIndex` commitment. 
+The approach proposed below was chosen primarly because it minimizes the number of breaking changes, the complexity and takes far less implementation and testing time. The proposal is to free up space and introduce a core index and a session index field in the `CandidateDescriptor` primitive and use the UMP queue as output for `CoreIndex` commitment. 
 
 ### Reclaiming unused space in the descriptor
 The `CandidateDescriptor` currently includes `collator` and `signature` fields. The collator includes a signature on the following descriptor fields: parachain id, relay parent, validation data hash, validation code hash and the PoV hash.
 
 However, in practice, having a collator signature in the receipt on the relay chain does not provide any benefits as there is no mechanism to punish or reward collators that have provided bad parachain blocks.
 
-This proposal aims to remove the two fields and all the logic that checks the collator signatures. We reclaim the unused space as `reserved` fields and fill it with zeroes, so there is no change in the layout and lenght of the receipt. The new primitive binary compatible with the old one.
+This proposal aims to remove the collator signature and all the logic that checks the collator signatures of candidate receupts. We use the first 6 bytes to represent the core and session index, and fill the rest with zeroes. So, there is no change in the layout and length of the receipt. The new primitive is binary compatible with the old one.
 
 
 ### Backwards compatibility
@@ -44,60 +44,88 @@ There are two flavors of candidate receipts which are used in network protocols,
 - `CommittedCandidateReceipt` which includes the `CanidateDescriptor` and the `CandidateCommitments` 
 - `CandidateReceipt` which includes the `CanidateDescriptor` and just a hash of the commitments
 
-We want to support both the old and new versions in the runtime and node . The implementation must be able to detect the version of a given candidate receipt.
+We want to support both the old and new versions in the runtime and node. The implementation must be able to detect the version of a given candidate receipt.
 
 This is easy to do in both cases:
 - the reserved fields are zeroed
-- the UMP queue contains the core index commitment that matches the core index in the descriptor.
-
+- the UMP queue contains the core and session index commitments and the commitments value matching the ones in the descriptor.
 
 ### Polkadot Primitive changes
 
 #### New [CandidateDescriptor](https://github.com/paritytech/polkadot-sdk/blob/master/polkadot/primitives/src/v7/mod.rs#L482)
 
-- reclaim 32 bytes from `collator: CollatorId` and 64 bytes from `signature: CollatorSignature` as `reserved` 
-- use 4 bytes for a new `core_index: CoreIndex` field.
+- reclaim 32 bytes from `collator: CollatorId` and 64 bytes from `signature: CollatorSignature` and rename to `reserved1`  and `reserved2` fields.
+- take 2 bytes from `reserved1` for a new `core_index: u16` field.  
+- take 4 bytes from `reserved` for a new `session_index: u32` field.
 - the unused reclaimed space will be filled with zeroes
 
 Thew new primitive will look like this:
 ```
-pub struct CandidateDescriptor<H = Hash> {
+pub struct CandidateDescriptorV2<H = Hash> {
 	/// The ID of the para this is a candidate for.
-	pub para_id: Id,
+	para_id: Id,
 	/// The hash of the relay-chain block this is executed in the context of.
-	pub relay_parent: H,
+	relay_parent: H,
 	/// The core index where the candidate is backed.
-	pub core_index: CoreIndex,
+	core_index: CoreIndex,
+	/// The session index in which the candidate is backed.
+	session_index: SessionIndex,
 	/// Reserved bytes.
-	pub reserved1: [u8; 28],
+	reserved1: [u8; 26],
 	/// The blake2-256 hash of the persisted validation data. This is extra data derived from
 	/// relay-chain state which may vary based on bitfields included before the candidate.
 	/// Thus it cannot be derived entirely from the relay-parent.
-	pub persisted_validation_data_hash: Hash,
+	persisted_validation_data_hash: Hash,
 	/// The blake2-256 hash of the PoV.
-	pub pov_hash: Hash,
+	pov_hash: Hash,
 	/// The root of a block's erasure encoding Merkle tree.
-	pub erasure_root: Hash,
+	erasure_root: Hash,
 	/// Reserved bytes.
-	pub reserved2: [u8; 64],
+	reserved2: [u8; 64],
 	/// Hash of the para header that is being generated by this candidate.
-	pub para_head: Hash,
+	para_head: Hash,
 	/// The blake2-256 hash of the validation code bytes.
-	pub validation_code_hash: ValidationCodeHash,
+	validation_code_hash: ValidationCodeHash,
+}
+```
+
+In future format versions, parts of the `reserved1` and `reserved2` bytes can be used to include additional information in the descriptor.
+
+
+#### Versioned `CandidateReceipt` and `CommittedCandidateReceipt` primitives:
+
+We want to decouple the actual representation of the `CandidateReceipt` from the higher level code. This should make it easier to implement future format versions of this primitive. To hide the logic of versioning the descriptor fields will be private and accessor methods are provided.
+
+``` 
+pub enum VersionedCandidateReceipt {
+	V1(CandidateReceipt),
+	V2(CandidateReceiptV2),
+}
+
+impl VersionedCandidateReceipt {
+	/// Returns the core index the candidate has commited to. 
+	/// Returns `None` if the candidate receipt is the old version (v1).
+	fn core_index() -> Option<CoreIndex>;
+
+	/// Returns the session index of the candidate relay parent.
+	fn session_index() -> Option<CoreIndex>;
+
+	/// ...
 }
 
 ```
 
-In the future, parts of the `reserved1` and `reserved2` bytes can be used to include additional information in the descriptor.
+A manual decode `Decode`  implementation is required to account for version detection and constructing the appropriate variant.
 
-**Introduce new primitive for representing the `CoreIndex` commitment as an enum to allow future additions.**
 
+#### New primitive for representing the `CoreIndex` commitments.**
 
 ```
 pub enum UMPSignal {
 	OnCore(CoreIndex),
 }
 ```
+
 ### Cumulus primitives
 
 Add a new version of the `ParachainInherentData` structure which includes an additional `core_index` field.
@@ -120,8 +148,8 @@ pub struct ParachainInherentData {
 	/// were sent. In combination with the rule of no more than one message in a channel per block,
 	/// this means `sent_at` is **strictly** greater than the previous one (if any).
 	pub horizontal_messages: BTreeMap<ParaId, Vec<InboundHrmpMessage>>,
-        /// The core index on which the parachain block must be backed
-        pub core_index: CoreIndex,
+	/// The core index on which the parachain block must be backed
+	pub core_index: CoreIndex,
 }
 ```
 
@@ -139,16 +167,17 @@ Example:
 ```
 
 ### Parachain block validation
+
 Backers will make use of the core index information to validate the blocks during backing and reject blocks if:
 - the `core_index` in descriptor does not match the one in the `UMPSignal`.
 - the `core_index` in the descriptor does not match the core the backing group is assigned to
+- the `session_index` is equal to the session of the `relay_parent` in the descriptor
 
-If core index information is not available (backers got an old candidate receipt), there will be no changes compared to current behaviour.
+If core index (and session index) information is not available (backers got an old candidate receipt), there will be no changes compared to current behaviour.
 
 ## Drawbacks
 
 The only drawback is that further additions to the descriptor are limited to the amount of remaining unused space.
-
 
 ## Testing, Security, and Privacy
 
@@ -168,14 +197,29 @@ Parachain that use elastic scaling must send the separator empty message followe
 
 ## Compatibility
 
-To ensure a smooth transition the first step is to remove collator signature checking logic in the runtime and the node side, then upgrade validators. Any tooling that decodes UMP XCM messages needs an update to support the new UMP messages.
+### Runtime
+The first step is to remove collator signature checking logic in the runtime, but keep the node side collator signature 
+checks. 
 
-`CoreIndex` commitments are needed only by parachains using elastic scaling. Just upgrading the collator node and runtime should be sufficient and possible with no manual changes.
+The runtime must be upgraded to the new primitives before any collator or node are allowed to use the new candidate receipts format. 
+
+### Validators
+
+To ensure a smooth launch, a new node feature is required. 
+The feature acts as a signal for supporting the new candidate receipts on the node side and can only be safely enabled if at least 2/3 of the validators are upgraded.
+
+Once enabled, the validators will skip checking the collator signature when processing the new candidate receipts.
 
 No new implementation of networking protocol versions for collation and validation are required.
 
-The runtime does check the collator signature in inclusion, so that should be removed as first step, before the new receipts are introduced. 
 
+### Parachains
+
+`CoreIndex` commitments are needed only by parachains using elastic scaling. Just upgrading the collator node and runtime should be sufficient and possible without manual changes.
+
+### Tooling
+
+Any tooling that decodes UMP XCM messages needs an update to support or ignore the new UMP messages, but they should be fine to decode the regular XCM messages that come before the separator.
 
 ## Prior Art and References
 
