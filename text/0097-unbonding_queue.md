@@ -64,7 +64,7 @@ Let's assume a user wants to unbond some of their stake, i.e., `new_unbonding_st
 unbonding_time_delta = new_unbonding_stake / max_unstake * UPPER_BOUND
 ```
 
-This number needs to be added to the `back_of_unbonding_queue_block_number` under the conditions that it does not undercut`current_block + LOWER_BOUND` or exceed `current_block + UPPER_BOUND`. 
+This number needs to be added to the `back_of_unbonding_queue_block_number` under the conditions that it does not undercut `current_block + LOWER_BOUND` or exceed `current_block + UPPER_BOUND`. 
 
 ```
 back_of_unbonding_queue_block_number = max(current_block_number, back_of_unbonding_queue_block_number) + unbonding_time_delta
