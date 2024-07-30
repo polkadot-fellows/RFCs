@@ -21,7 +21,7 @@ Execution fees are handled correctly by XCM right now.
 However, the addition of extra fees, like for message delivery, result in awkward ways of integrating them into the XCVM implementation.
 This is because these types of fees are not included in the language.
 The standard should have a way to correctly deal with these implementation specific fees, that might not exist in every system that uses XCM.
-The new instruction only takes the amount of fees that the XCVM can use from the holding register.
+The new instruction moves the specified amount of fees from the holding register to a dedicated fees register that the XCVM can use in flexible ways depending on its implementation.
 The XCVM implementation is free to use these fees to pay for execution fees, transport fees, or any other type of fee that might be necessary.
 This moves the specifics of fees further away from the XCM standard, and more into the actual underlying XCVM implementation, which is a good thing.
 
