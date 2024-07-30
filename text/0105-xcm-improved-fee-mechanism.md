@@ -91,7 +91,7 @@ That asset will allow users to limit the amount of fees they are willing to pay.
 
 This RFC can't just change the semantics of the `BuyExecution` instruction since that instruction accepts any funds, uses what it needs and returns the rest immediately.
 The new proposed instruction, `PayFees`, doesn't return the leftover immediately, it keeps it in the `fees` register.
-In order for the proposal to be backwards compatible, `BuyExecution` needs to be slowly rolled out in favour of `PayFees`.
+In practice, the deprecated `BuyExecution` needs to be slowly rolled out in favour of `PayFees`.
 
 ## Prior Art and References
 
