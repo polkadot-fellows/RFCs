@@ -34,12 +34,15 @@ The `Fees Mode` register will be removed.
 
 ## Drawbacks
 
-Users will have to make sure to put enough assets in `WithdrawAsset` when previously some things might have been charged directly from their accounts.
-This leads to a more predictable behaviour though so it will only be a drawback for the minority of users.
+Users will have to make sure to put enough assets in `WithdrawAsset` when
+previously some things might have been charged directly from their accounts.
+This leads to a more predictable behaviour though so it will only be
+a drawback for the minority of users.
 
 ## Testing, Security, and Privacy
 
-Describe the the impact of the proposal on these three high-importance areas - how implementations can be tested for adherence, effects that the proposal has on security and privacy per-se, as well as any possible implementation pitfalls which should be clearly avoided.
+Implementations and benchmarking must change for most existing pallet calls
+that send XCMs to other locations.
 
 ## Performance, Ergonomics, and Compatibility
 
@@ -49,12 +52,18 @@ Performance will be improved since unnecessary checks will be avoided.
 
 ### Ergonomics
 
-The removal of JIT withdrawal simplifies code for developers and results in a more predictable behaviour for users.
+JIT withdrawal was a way of side-stepping the regular flow of XCM programs.
+By removing it, the spec is simplified but now old use-cases have to work with
+the original intended behaviour, which may result in more implementation work.
+
+Ergonomics for users will undoubtedly improve since the system is more predictable.
 
 ### Compatibility
 
-For backwards-compatibility, there should be a version of XCM in between the approval of this RFC and the actual removal of the instruction, to give time to the
-ecosystem to adapt.
+Existing programs in the ecosystem will break.
+The instruction should be deprecated as soon as this RFC is approved
+(but still fully supported), then removed in a subsequent XCM version
+(probably deprecate in v5, remove in v6).
 
 ## Prior Art and References
 
