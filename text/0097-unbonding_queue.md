@@ -110,6 +110,17 @@ The analysis can be reproduced or changed to other parameters using [this reposi
 
 ## Additional Considerations
 
+### Deferred slashing
+
+Currently we defer applying many slashes until around 28 days have passed. This was implemented so we can conveniently cancel slashes via governance in the case that the slashing was due to a bug. While rare on Polkadot, such bugs cause a significant fraction of slashes. This includes slashing for attacks other than LRAs for which we've assumed that 2 days is enough to slash. But 2 days in not enough to cancel slashes via OpenGov.
+
+Owing to the way exposures, which nominators back validators with how many tokens, are stored, it is hard to search for whether a nominator has deferred slashes that need to be applied to them on chain as of now. So we cannot simply check when a nominator attempts to withdraw their bond. 
+
+There are several ways to solve this issue going forward:
+
+1) We can have nominators store their pending slash on_idle/task and drop slashed nominators from the unbonding queue. In the few blocks where this on_idle is still in progress, we disallow any fast unbonds. While this is a complete solution, it might require some more complex code, potentially leading to a longer development time.
+2) Another approach would be to freeze the unbonding queue while there are pending slashes in the staking system. In the worst case where the slash is applied, we would forced all members of the queue to unbond with 28 days minus the days since they are in the queue (i.e., nobody ever needs to wait more than 28 days) and pause the unbonding queue until there are no deferred slashes in the system. This solution is potentially easier to implement but could cause disruptions for unbonding stakers that are not slashed, because they do not benefit from the queue. It is crucial to note that unbonding is still always possible for all stakers in the usual 28 days. Since slashes should occur rarely, this should not cause distruptions in reality too often. In addition, we could further complement the solution by adding a new extrinsic where any account is allowed to point out the unbonding accounts with the deferred slashes. Then, the chain would set the `unbonding_block_number` of the affected accounts to after the time when the slash would be applied, which will be no more than 28 days from the time the staker unbonded. After removing the offenders from the queue, we could unfreeze the unbonding queue and restore operation for unslashed accounts immediately. To find nominators with deferred slashes it is required, however, to iterate through all nominators, which is only feasible to do off chain. There should be plenty of incentive to do so by the non-slashed unbonding accounts that seek to reduce the opportunity costs of being forced wait potentially much longer than necessary. In the worst case, where nobody submits this extrinsic, we'd still resolve the situation securely by pushing everyone to 28 days and apply all slashes as intended.
+
 ### UX/UI
 As per the nature of the unbonding queue, the more a user slices up their stake to be unbonded, the quicker they find their expected unbonding time. This, however, comes at the cost of creating more and/or larger transactions, i.e., incurring higher transactions costs. We leave it to UI implementations to provide a good UX to inform users about this trade-off and help them find their individual willingness to pay to unbond even faster. For most users, splitting up their stake will not lead to any meaningful advantage because their effect on the queue is neglible.
 
@@ -154,12 +165,3 @@ The authors cannot see any potential impact on compatibility. This should be ass
 - Ethereum proposed a [similar solution](https://blog.stake.fish/ethereum-staking-all-you-need-to-know-about-the-validator-queue/)
 - Alistair did some initial [write-up](https://hackmd.io/SpzFSNeXQM6YScW1iODC_A)
 - There are [other solutions](https://arxiv.org/pdf/2208.05408.pdf) that further mitigate the risk of LRAs.
-
-### The Unresolved Question: Deferred slashing
-
-Currently we defer applying many slashes until 28 days have passed. This was implemented so we can conveniently cancel slashes via governance in the case that the slashing was due to a bug. While rare on Polkadot, such bugs cause a significant fraction of slashes. This includes slashing for attacks other than LRAs for which we've assumed that 2 days is enough to slash. But 2 days in not enough to cancel slashes via OpenGov.
-
-Owing to the way exposures, which nominators back validators with how many tokens, are stored, it is hard to search for whether a nominator has deferred slashes that need to be applied to them on chain. So we cannot simply check when a nominator attempts to withdraw their bond.
-
-One option would be to allow any account to point out that an unbonding account had a deferred slash and then the chain would  set the `unbonding_block_number` to after the time when the slash would be applied, which will be no more than 28 days from the time the staker unbonded. It is not obvious how to incentivise this, especially in the case that the slash is never applied. Then we would be assuming that in the minimum 2 days unbonding period, not only would any slashable event be caught, but also that someone would post such a transaction cancelling or delaying the unbond until after the slash is applied.
-
