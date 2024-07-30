@@ -99,7 +99,7 @@ The closed RFC PR on the xcm-format repository, before XCM RFCs got moved to fel
 
 ## Unresolved Questions
 
-How to improve the asset trapping mechanism?
+None
 
 ## Future Directions and Related Material
 
