@@ -66,4 +66,4 @@ None.
 
 ## Future Directions and Related Material
 
-None.
+The [new generic fees mechanism](https://github.com/polkadot-fellows/RFCs/pull/105) is related to this proposal and further stimulates it as the JIT withdraw fees mechanism will become useless anyway.
