@@ -104,3 +104,9 @@ None
 ## Future Directions and Related Material
 
 This proposal would greatly benefit from an improved asset trapping system.
+
+[CustomAssetClaimer](https://github.com/polkadot-fellows/xcm-format/blob/master/proposals/0037-custom-asset-claimer.md) is also related, as it directly improves the ergonomics of this proposal.
+
+[LeftoverAssetsDestination](https://github.com/polkadot-fellows/RFCs/pull/107) execution hint would also similarly improve the ergonomics.
+
+[Removal of JIT fees](https://github.com/polkadot-fellows/RFCs/pull/106/files) is also related, they are useless with this proposal.
