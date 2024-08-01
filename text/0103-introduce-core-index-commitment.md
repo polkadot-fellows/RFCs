@@ -11,8 +11,7 @@ The only requirement for collator nodes is to provide valid parachain blocks to 
 
 ## Motivation
 
-At present time misbehaving collator nodes can prevent their parachain from effecitvely using elastic scaling by providing the same valid block to all backing groups assigned to the parachain. This happens before the next parachain block is authored and will prevent the chain of candidates to be formed, reducing the throughput of the parachain to a single core.
-There are no special requirements from collators to do it, just being a full node is sufficient and there are no methods of punishing or rewarding good behaviour.
+At present time misbehaving collator nodes, or anyone who has acquired a valid collation can prevent a parachain from effecitvely using elastic scaling by providing the same valid block to all backing groups assigned to the parachain. This happens before the next parachain block is authored and will prevent the chain of candidates to be formed, reducing the throughput of the parachain to a single core.
 
 This RFC solves the problem by enabling a parachain to provide the core index information as part of it's PVF execution output and in the associated candidate receipt data structure. 
 
@@ -35,7 +34,7 @@ The `CandidateDescriptor` currently includes `collator` and `signature` fields. 
 
 However, in practice, having a collator signature in the receipt on the relay chain does not provide any benefits as there is no mechanism to punish or reward collators that have provided bad parachain blocks.
 
-This proposal aims to remove the collator signature and all the logic that checks the collator signatures of candidate receupts. We use the first 6 bytes to represent the core and session index, and fill the rest with zeroes. So, there is no change in the layout and length of the receipt. The new primitive is binary compatible with the old one.
+This proposal aims to remove the collator signature and all the logic that checks the collator signatures of candidate receipts. We use the first 6 bytes to represent the core and session index, and fill the rest with zeroes. So, there is no change in the layout and length of the receipt. The new primitive is binary compatible with the old one.
 
 
 ### Backwards compatibility
@@ -56,8 +55,8 @@ This is easy to do in both cases:
 
 - reclaim 32 bytes from `collator: CollatorId` and 64 bytes from `signature: CollatorSignature` and rename to `reserved1`  and `reserved2` fields.
 - take 2 bytes from `reserved1` for a new `core_index: u16` field.  
-- take 4 bytes from `reserved` for a new `session_index: u32` field.
-- the unused reclaimed space will be filled with zeroes
+- take 4 bytes from `reserved2` for a new `session_index: u32` field.
+- the `reserved1` and `reserved2` fields are zeroed
 
 Thew new primitive will look like this:
 ```
@@ -208,7 +207,7 @@ The runtime must be upgraded to the new primitives before any collator or node a
 To ensure a smooth launch, a new node feature is required. 
 The feature acts as a signal for supporting the new candidate receipts on the node side and can only be safely enabled if at least 2/3 of the validators are upgraded.
 
-Once enabled, the validators will skip checking the collator signature when processing the new candidate receipts.
+Once enabled, the validators will skip checking the collator signature when processing the candidate receipts and verify the `CoreIndex` and `SessionIndex` fields if present in the receipit.
 
 No new implementation of networking protocol versions for collation and validation are required.
 
