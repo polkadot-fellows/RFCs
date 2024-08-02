@@ -220,8 +220,7 @@
 <h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
 <p>The only requirement for collator nodes is to provide valid parachain blocks to the validators of a backing group and by definition the collator set is trustless. However, in the case of elastic scaling, for security reason, collators must be trusted - non-malicious. <code>CoreIndex</code> commitments are required to remove this limitation. Additionally we are introducing a <code>SessionIndex</code> field in the <code>CandidateReceipt</code> to make dispute resolution more secure and robust. </p>
 <h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
-<p>At present time misbehaving collator nodes can prevent their parachain from effecitvely using elastic scaling by providing the same valid block to all backing groups assigned to the parachain. This happens before the next parachain block is authored and will prevent the chain of candidates to be formed, reducing the throughput of the parachain to a single core.
-There are no special requirements from collators to do it, just being a full node is sufficient and there are no methods of punishing or rewarding good behaviour.</p>
+<p>At present time misbehaving collator nodes, or anyone who has acquired a valid collation can prevent a parachain from effecitvely using elastic scaling by providing the same valid block to all backing groups assigned to the parachain. This happens before the next parachain block is authored and will prevent the chain of candidates to be formed, reducing the throughput of the parachain to a single core.</p>
 <p>This RFC solves the problem by enabling a parachain to provide the core index information as part of it's PVF execution output and in the associated candidate receipt data structure. </p>
 <p>Once this RFC is implemented the validity of a parachain block depends on the core it is being executed on.</p>
 <h2 id="stakeholders"><a class="header" href="#stakeholders">Stakeholders</a></h2>
@@ -236,7 +235,7 @@ There are no special requirements from collators to do it, just being a full nod
 <h3 id="reclaiming-unused-space-in-the-descriptor"><a class="header" href="#reclaiming-unused-space-in-the-descriptor">Reclaiming unused space in the descriptor</a></h3>
 <p>The <code>CandidateDescriptor</code> currently includes <code>collator</code> and <code>signature</code> fields. The collator includes a signature on the following descriptor fields: parachain id, relay parent, validation data hash, validation code hash and the PoV hash.</p>
 <p>However, in practice, having a collator signature in the receipt on the relay chain does not provide any benefits as there is no mechanism to punish or reward collators that have provided bad parachain blocks.</p>
-<p>This proposal aims to remove the collator signature and all the logic that checks the collator signatures of candidate receupts. We use the first 6 bytes to represent the core and session index, and fill the rest with zeroes. So, there is no change in the layout and length of the receipt. The new primitive is binary compatible with the old one.</p>
+<p>This proposal aims to remove the collator signature and all the logic that checks the collator signatures of candidate receipts. We use the first 6 bytes to represent the core and session index, and fill the rest with zeroes. So, there is no change in the layout and length of the receipt. The new primitive is binary compatible with the old one.</p>
 <h3 id="backwards-compatibility"><a class="header" href="#backwards-compatibility">Backwards compatibility</a></h3>
 <p>There are two flavors of candidate receipts which are used in network protocols, runtime and node implementation:</p>
 <ul>
@@ -254,8 +253,8 @@ There are no special requirements from collators to do it, just being a full nod
 <ul>
 <li>reclaim 32 bytes from <code>collator: CollatorId</code> and 64 bytes from <code>signature: CollatorSignature</code> and rename to <code>reserved1</code>  and <code>reserved2</code> fields.</li>
 <li>take 2 bytes from <code>reserved1</code> for a new <code>core_index: u16</code> field.</li>
-<li>take 4 bytes from <code>reserved</code> for a new <code>session_index: u32</code> field.</li>
-<li>the unused reclaimed space will be filled with zeroes</li>
+<li>take 4 bytes from <code>reserved2</code> for a new <code>session_index: u32</code> field.</li>
+<li>the <code>reserved1</code> and <code>reserved2</code> fields are zeroed</li>
 </ul>
 <p>Thew new primitive will look like this:</p>
 <pre><code>pub struct CandidateDescriptorV2&lt;H = Hash&gt; {
@@ -368,7 +367,7 @@ checks. </p>
 <h3 id="validators"><a class="header" href="#validators">Validators</a></h3>
 <p>To ensure a smooth launch, a new node feature is required. 
 The feature acts as a signal for supporting the new candidate receipts on the node side and can only be safely enabled if at least 2/3 of the validators are upgraded.</p>
-<p>Once enabled, the validators will skip checking the collator signature when processing the new candidate receipts.</p>
+<p>Once enabled, the validators will skip checking the collator signature when processing the candidate receipts and verify the <code>CoreIndex</code> and <code>SessionIndex</code> fields if present in the receipit.</p>
 <p>No new implementation of networking protocol versions for collation and validation are required.</p>
 <h3 id="parachains"><a class="header" href="#parachains">Parachains</a></h3>
 <p><code>CoreIndex</code> commitments are needed only by parachains using elastic scaling. Just upgrading the collator node and runtime should be sufficient and possible without manual changes.</p>
