@@ -189,9 +189,14 @@ The expectation is that performance impact is negligible for sending and process
 
 ## Ergonomics
 
-Parachain that use elastic scaling must send the separator empty message followed by the `UMPSignal::OnCore` only after sending all of the UMP XCM messages.
+Parachain that use elastic scaling must send the separator empty message followed by the `UMPSignal::SelectCore` only after sending all of the UMP XCM messages.
 
 ## Compatibility
+
+### Versioning
+
+At this point there is a simple way to determine the version of the receipt, by testing for zeroed reserved bytes in the
+descriptor. Supporting future changes will require a `u8` version field to be introduced in the reserved space. We consider the current version to be 0 and the version check implicitly done when checking for reserved space to be zeroed.
 
 ### Runtime
 The first step is to remove collator signature checking logic in the runtime, but keep the node side collator signature 
@@ -207,7 +212,6 @@ The feature acts as a signal for supporting the new candidate receipts on the no
 Once enabled, the validators will skip checking the collator signature when processing the candidate receipts and verify the `CoreIndex` and `SessionIndex` fields if present in the receipit.
 
 No new implementation of networking protocol versions for collation and validation are required.
-
 
 ### Parachains
 
