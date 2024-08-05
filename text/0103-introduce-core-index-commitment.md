@@ -233,4 +233,4 @@ N/A
 
 The implementation is extensible and future proof to some extent. With minimal or no breaking changes, additional fields can be added in the candidate descriptor until the reserved space is exhausted
 
-Once the reserved space is exhausted, versioning will be implemented. The candidate receipt format will be versioned. This will exteend to pvf execution which requires versioning for the validation function, inputs and outputs (`CandidateCommitments`).
+Once the reserved space is exhausted, versioning will be implemented. The candidate receipt format will be versioned. Versioning should also be implemented for the validation function, inputs and outputs (`CandidateCommitments`).
