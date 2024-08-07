@@ -45,6 +45,8 @@ Asset Hub, over the bridge through Polkadot Asset Hub with final destination `Pa
 With current XCM, we are limited to doing multiple independent transfers for each individual hop in order to
 move both "interesting" assets, but also "supporting" assets (used to pay fees).
 
+**Note:** Transferring assets that require different paths (chains along the way) is _not supported within same XCM_ because of the async nature of cross chain messages. This new instruction, however, enables initiating transfers for multiple assets that take the same path even if they require different transfer types along that path.
+
 ## Stakeholders
 
 - Runtime users
@@ -104,7 +106,6 @@ This RFC proposes 1 new XCM instruction:
 ///
 /// Kind: *Command*.
 ///
-/// Errors:
 InitiateAssetsTransfer {
 	destination: Location,
 	assets: Vec<AssetTransferFilter>,
@@ -158,6 +159,8 @@ by executing a _single_ XCM message, even though we'll be mixing multiple types 
 
 ```rust
 Penpal::execute_with(|| {
+    let destination = Location::new(2, (GlobalConsensus(Westend), Parachain(1000)).into());
+    let rocs_id: AssetId = Parent.into();
     let rocs: Asset = (rocs_id.clone(), rocs_amount).into();
     let pens: Asset = (pens_id, pens_amount).into();
     let assets: Assets = vec![rocs.clone(), pens.clone()].into();
