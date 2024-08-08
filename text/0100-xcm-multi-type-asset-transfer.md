@@ -39,13 +39,11 @@ types of transfers and reduce complexity.
 
 Bridge asset transfers greatly benefit from this change by allowing building XCM programs to transfer multiple
 assets across multiple hops in a single pseudo-atomic action.  
-For example, allows single XCM program execution to transfer multiple assets from `ParaK` on Kusama, through Kusama
-Asset Hub, over the bridge through Polkadot Asset Hub with final destination `ParaP` on Polkadot.
+For example, allows single XCM program execution to transfer multiple assets from `ParaK` on Kusama, through
+Kusama Asset Hub, over the bridge through Polkadot Asset Hub with final destination `ParaP` on Polkadot.
 
 With current XCM, we are limited to doing multiple independent transfers for each individual hop in order to
 move both "interesting" assets, but also "supporting" assets (used to pay fees).
-
-**Note:** Transferring assets that require different paths (chains along the way) is _not supported within same XCM_ because of the async nature of cross chain messages. This new instruction, however, enables initiating transfers for multiple assets that take the same path even if they require different transfer types along that path.
 
 ## Stakeholders
 
@@ -55,6 +53,24 @@ move both "interesting" assets, but also "supporting" assets (used to pay fees).
 - dApps devs
 
 ## Explanation
+
+A new instruction `InitiateAssetsTransfer` is introduced that initiates an assets transfer from the
+chain it is executed on, to another chain. The executed transfer is point-to-point (chain-to-chain)
+with all of the transfer properties specified in the instruction parameters. The instruction also
+allows specifying another XCM program to be executed on the remote chain.
+If a transfer requires going through multiple hops, an XCM program can compose this instruction
+to be used at every chain along the path, on each hop describing that specific leg of the transfer.
+
+**Note:** Transferring assets that require different paths (chains along the way) is _not supported
+within same XCM_ because of the async nature of cross chain messages. This new instruction, however,
+enables initiating transfers for multiple assets that take the same path even if they require
+different transfer types along that path.
+
+The usage and composition model of `InitiateAssetsTransfer` is the same as with existing
+`DepositReserveAsset`, `InitiateReserveWithdraw` and `InitiateTeleport` instructions. The main
+difference comes from the ability to handle assets that have different point-to-point transfer type
+between A and B. The other benefit is that it also allows specifying remote fee payment and
+transparently appends the required remote fees logic to the remote XCM.
 
 We can specify the desired transfer type for some asset(s) using:
 
@@ -93,8 +109,11 @@ This RFC proposes 1 new XCM instruction:
 /// The onward XCM also potentially contains a `BuyExecution` instruction based on the presence
 /// of the `remote_fees` parameter (see below).
 ///
+/// If a transfer requires going through multiple hops, an XCM program can compose this instruction
+/// to be used at every chain along the path, describing that specific leg of the transfer.
+///
 /// Parameters:
-/// - `dest`: The location of the transfer destination.
+/// - `dest`: The location of the transfer next hop.
 /// - `remote_fees`: If set to `Some(asset_xfer_filter)`, the single asset matching
 ///   `asset_xfer_filter` in the holding register will be transferred first in the remote XCM
 ///   program, followed by a `BuyExecution(fee)`, then rest of transfers follow.
