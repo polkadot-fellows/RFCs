@@ -238,6 +238,7 @@ For example, allows single XCM program execution to transfer multiple assets fro
 Asset Hub, over the bridge through Polkadot Asset Hub with final destination <code>ParaP</code> on Polkadot.</p>
 <p>With current XCM, we are limited to doing multiple independent transfers for each individual hop in order to
 move both &quot;interesting&quot; assets, but also &quot;supporting&quot; assets (used to pay fees).</p>
+<p><strong>Note:</strong> Transferring assets that require different paths (chains along the way) is <em>not supported within same XCM</em> because of the async nature of cross chain messages. This new instruction, however, enables initiating transfers for multiple assets that take the same path even if they require different transfer types along that path.</p>
 <h2 id="stakeholders"><a class="header" href="#stakeholders">Stakeholders</a></h2>
 <ul>
 <li>Runtime users</li>
@@ -296,7 +297,6 @@ pub enum AssetTransferFilter {
 ///
 /// Kind: *Command*.
 ///
-/// Errors:
 InitiateAssetsTransfer {
 	destination: Location,
 	assets: Vec&lt;AssetTransferFilter&gt;,
@@ -352,6 +352,8 @@ by executing a <em>single</em> XCM message, even though we'll be mixing multiple
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>Penpal::execute_with(|| {
+    let destination = Location::new(2, (GlobalConsensus(Westend), Parachain(1000)).into());
+    let rocs_id: AssetId = Parent.into();
     let rocs: Asset = (rocs_id.clone(), rocs_amount).into();
     let pens: Asset = (pens_id, pens_amount).into();
     let assets: Assets = vec![rocs.clone(), pens.clone()].into();
