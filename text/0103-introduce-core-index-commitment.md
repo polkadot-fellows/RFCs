@@ -61,13 +61,13 @@ The UMP queue layout is changed to allow the relay chain to receive both the XCM
 This way of representing the new messages has been chosen over introducing an enum wrapper to minimize breaking changes of XCM message decoding in tools like Subscan for example. 
 
 Example: 
-```
+```rust
 [ XCM message1, XCM message2, ..., EMPTY message, UMPSignal::CoreSelector ]
 ```
 
 #### `UMPSignal` messages
 
-```
+```rust
 /// An `u8` wrap around sequence number. Typically this would be the least significant byte of the parachain block number.
 pub struct CoreSelector(pub u8);
 
@@ -92,7 +92,7 @@ statically to some sane value. Parachains should prefer to have a static value t
 Considering `para_assigned_cores` is a sorted vec of core indices assigned to a parachain at the
 specified claim queue offset, validators will determine the committed core index like this:
 
-```
+```rust
 let assigned_core_index = core_selector % para_assigned_cores.len();
 let committed_core_index = para_assigned_cores[assigned_core_index];
 ```
