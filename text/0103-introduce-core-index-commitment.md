@@ -195,7 +195,6 @@ It is mandatory for elastic parachains to switch to the new receipt format. It i
 switch to the new receipts for providing the session index for disputes.
 
 The implementation of this RFC itself must not introduce any breaking changes for the parachain runtime or collator nodes.
-Collator must compute the core index from the 
 
 ## Compatibility
 
