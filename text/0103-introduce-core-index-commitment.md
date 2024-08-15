@@ -1,4 +1,4 @@
-# RFC-0103:  Introduce a `CoreIndex` commitment in candidate receipts
+# RFC-0103:  Introduce a `CoreIndex` commitment and a `SessionIndex` field in candidate receipts
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
@@ -8,14 +8,15 @@
 
 ## Summary
 
-Elastic scaling is not resiliet against griefing attacks without a way for a PoV (Proof of Validity) to commit to the particular core index it was intedened for. This RFC proposes a way to include core index information in the candidate commitments and the `CandidateDescriptor` data strcuture in a backwards compatible way. Additionally it proposes the addition of a `SessionIndex` field in the `CandidateDescriptor` to make dispute resolution more secure and robust. 
+Elastic scaling is not resilient against griefing attacks without a way for a PoV (Proof of Validity) to commit to the particular core index it was intended for. This RFC proposes a way to include core index information in the candidate commitments and the `CandidateDescriptor` data structure in a backwards compatible way. Additionally it proposes the addition of a `SessionIndex` field in the `CandidateDescriptor` to make dispute resolution more secure and robust. 
 
 
 ## Motivation
 
-At present time misbehaving collator nodes, or anyone who has acquired a valid collation can prevent a parachain from effecitvely using elastic scaling by providing the same collation to all backing groups assigned to the parachain. This happens before the next parachain block is authored and will prevent the chain of candidates to be formed, reducing the throughput of the parachain to a single core.
+This RFC proposes a way to solve two different problems:
 
-The session index of candidates is important for the disputes protocol as it is used to lookup validator keys and check dispute vote signatures. By adding a `SessionIndex` in the `CandidateDescriptor`, validators no longer have to trust the `Sessionindex` provided by the validator raising a dispute. It can happen that the dispute concerns a relay chain block not yet imported by a validator. In this case validators can safely assume the session index refers to the session the candidate has appeared in, otherwise the chain would have rejected candidate.
+1. For Elastic Scaling, it prevents anyone who has acquired a valid collation to DoS the parachain by providing the same collation to all backing groups assigned to the parachain. This can happen before the next valid parachain block is authored and will prevent the chain of candidates to be formed, reducing the throughput of the parachain to a single core.
+2. The dispute protocol relies on validators trusting the session index provided by other valdiators when initiating and participating in disputes. It is used to lookup validator keys and check dispute vote signatures. By adding a `SessionIndex` in the `CandidateDescriptor`, validators no longer have to trust the `Sessionindex` provided by the validator raising a dispute. It can happen that the dispute concerns a relay chain block not yet imported by a validator. In this case validators can safely assume the session index refers to the session the candidate has appeared in, otherwise the chain would have rejected candidate.
 
 ## Stakeholders
 
@@ -27,7 +28,7 @@ This approach and alternatives have been considered and discussed in [this issue
 
 ## Explanation
 
-The approach proposed below was chosen primarly because it minimizes the number of breaking changes, the complexity and takes less implementation and testing time. The proposal is to change the existing primitives while keeping binary compatibility with the older versions. We repurpose unused fields to introduce core index and a session index information in the `CandidateDescriptor` and extend the UMP usage to output core index information. 
+The approach proposed below was chosen primarly because it minimizes the number of breaking changes, the complexity and takes less implementation and testing time. The proposal is to change the existing primitives while keeping binary compatibility with the older versions. We repurpose unused fields to introduce core index and a session index information in the `CandidateDescriptor` and extend the UMP for transporting non-XCM messages. 
 
 ### Reclaiming unused space in the descriptor
 
@@ -37,24 +38,9 @@ However, in practice, having a collator signature in the receipt on the relay ch
 
 This proposal aims to remove the collator signature and all the logic that checks the collator signatures of candidate receipts. We use the first 7 reclaimed bytes to represent version, the core and session index, and fill the rest with zeroes. So, there is no change in the layout and length of the receipt. The new primitive is binary compatible with the old one.
 
-### Backwards compatibility
-
-There are two flavors of candidate receipts which are used in network protocols, runtime and node implementation:
-- `CommittedCandidateReceipt` which includes the `CanidateDescriptor` and the `CandidateCommitments` 
-- `CandidateReceipt` which includes the `CanidateDescriptor` and just a hash of the commitments
-
-We want to support both the old and new versions in the runtime and node. The implementation must be able to detect the version of a given candidate receipt.
-
-`CandidateDescriptor` is a valid version 2 descriptor, if:
-- version field is 0
-- the reserved fields are zeroed
-- the session index matches the session index of the relay parent
-- the UMP queue contains a core index commitment and it matches the one in the descriptor.
-
-
 ### UMP transport
 
-[CandidateCommitments](https://github.com/paritytech/polkadot-sdk/blob/master/polkadot/primitives/src/v7/mod.rs#L652) remains unchanged as we will store scale encoded `UMPSignal` messages directly in the parachain UMP queue by outputing them in the [upward_messages](https://github.com/paritytech/polkadot-sdk/blob/master/polkadot/primitives/src/v7/mod.rs#L682). 
+[CandidateCommitments](https://github.com/paritytech/polkadot-sdk/blob/b5029eb4fd6c7ffd8164b2fe12b71bad0c59c9f2/polkadot/primitives/src/v7/mod.rs#L682) remains unchanged as we will store scale encoded `UMPSignal` messages directly in the parachain UMP queue by outputing them in [upward_messages](https://github.com/paritytech/polkadot-sdk/blob/b5029eb4fd6c7ffd8164b2fe12b71bad0c59c9f2/polkadot/primitives/src/v7/mod.rs#L684). 
 
 The UMP queue layout is changed to allow the relay chain to receive both the XCM messages and `UMPSignal` messages. An empty message (empty `Vec<u8>`) is used to mark the end XCM messages and the start of `UMPSignal` messages.
 
@@ -62,7 +48,7 @@ This way of representing the new messages has been chosen over introducing an en
 
 Example: 
 ```rust
-[ XCM message1, XCM message2, ..., EMPTY message, UMPSignal::CoreSelector ]
+[ XCM message1, XCM message2, ..., EMPTY message, UMPSignal::SelectCore ]
 ```
 
 #### `UMPSignal` messages
@@ -86,21 +72,41 @@ pub enum UMPSignal {
 }
 ```
 
-As we dont want to have a claim queue snapshot in the parachain runtime, we need to set `ClaimQueueOffset` 
-statically to some sane value. Parachains should prefer to have a static value that makes sense for their usecase which can be changed by governance at some future point. Changing the value dynamically can be a friction point. It will work out fine to decrease the value to build more into the present. But if the value is increased to build more into the future, a relay chain block will be skipped.
+The parachain runtime is not concerned with the actual `CoreIndex` the candidate is intended for, 
+but must provide enough information for the validators and collators to compute it. `CoreSelector` 
+and `ClaimQueueOffset` use only 2 bytes and fullfil the requirement.
 
-Considering `para_assigned_cores` is a sorted vec of core indices assigned to a parachain at the
-specified claim queue offset, validators will determine the committed core index like this:
+**Example:**
+
+`cq_offset = 1` and `core_selector = 3`
+
+The table below represents a snapshot of the claim queue:
+
+|  | offset = 0 | offset = 1 | offset = 2 |
+| :--:	 | :--:   | :--:   | :--:   |
+| Core 1    | **Para A**     | **Para A**     | **Para A**     |
+| Core 2   | **Para A**  | Para B  | **Para A**  |
+| Core 3   | Para B  | **Para A**  | **Para A** |
+
+The purpose of `ClaimQueueOffset` is to select the column from the above table. 
+For `cq_offset = 1` we get `[ Para A, Para B, Para A]` and use as input to create 
+a sorted vec with the cores A is assigned to: `[ Core 1, Core 2]` and call it `para_assigned_cores`.
+We use `core_selector` and determine the commited core index is `Core 2` like this:
 
 ```rust
-let assigned_core_index = core_selector % para_assigned_cores.len();
-let committed_core_index = para_assigned_cores[assigned_core_index];
+let committed_core_index = para_assigned_cores[core_selector % para_assigned_cores.len()];
 ```
+
+Parachains should prefer to have a static `ClaimQueueOffset` value that makes sense for their 
+usecase which can be changed by governance at some future point. Changing the value dynamically 
+can be a friction point. It will work out fine to decrease the value to build more into the 
+present. But if the value is increased to build more into the future, a relay chain block will 
+be skipped.
 
 
 ### Polkadot Primitive changes
 
-#### New [CandidateDescriptor](https://github.com/paritytech/polkadot-sdk/blob/master/polkadot/primitives/src/v7/mod.rs#L482)
+#### New [CandidateDescriptor](https://github.com/paritytech/polkadot-sdk/blob/b5029eb4fd6c7ffd8164b2fe12b71bad0c59c9f2/polkadot/primitives/src/v7/mod.rs#L512)
 
 - reclaim 32 bytes from `collator: CollatorId` and 64 bytes from `signature: CollatorSignature` and rename to `reserved1`  and `reserved2` fields.
 - take 1 bytes from `reserved1` for a new `version: u8` field.
@@ -117,14 +123,14 @@ pub struct CandidateDescriptorV2<H = Hash> {
 	/// The hash of the relay-chain block this is executed in the context of.
 	relay_parent: H,
 	/// Version field. The raw value here is not exposed, instead it is used
-	/// to determine the `CandidateDescriptorVersion`, see `fn version()`
+	/// to determine the `CandidateDescriptorVersion`
 	version: InternalVersion,
 	/// The core index where the candidate is backed.
 	core_index: u16,
 	/// The session index of the candidate relay parent.
 	session_index: SessionIndex,
 	/// Reserved bytes.
-	reserved25b: [u8; 25],
+	reserved1: [u8; 25],
 	/// The blake2-256 hash of the persisted validation data. This is extra data derived from
 	/// relay-chain state which may vary based on bitfields included before the candidate.
 	/// Thus it cannot be derived entirely from the relay-parent.
@@ -134,7 +140,7 @@ pub struct CandidateDescriptorV2<H = Hash> {
 	/// The root of a block's erasure encoding Merkle tree.
 	erasure_root: Hash,
 	/// Reserved bytes.
-	reserved64b: [u8; 64],
+	reserved2: [u8; 64],
 	/// Hash of the para header that is being generated by this candidate.
 	para_head: Hash,
 	/// The blake2-256 hash of the validation code bytes.
@@ -144,46 +150,28 @@ pub struct CandidateDescriptorV2<H = Hash> {
 
 In future format versions, parts of the `reserved1` and `reserved2` bytes can be used to include additional information in the descriptor.
 
-#### Candidate descriptor API
-
-We want to decouple the actual representation of the `CandidateDescriptor` from the higher level code. This should make it easier to implement future format versions of this primitive. To hide the logic of versioning the descriptor fields will be private and getter methods are provided for all the fields. 
-
-```rust
-impl<H> CandidateDescriptorV2<H> {
-
-	/// Returns the collator id in the descriptor. Returns `None` if descriptor is at verision 2.
-	pub fn collator(&self) -> Option<CollatorId>;
-
-	/// Returns the collator signature in the descriptor. Returns `None` if descriptor is at verision 2.
-	pub fn signature(&self) -> Option<CollatorSignature>;
-
-	/// Returns the core index of the descriptor. Returns `None` if the descriptor is at version 1.
-	pub fn core_index(&self) -> Option<CoreIndex>;
-
-	/// Returns the session index of the descriptor. Returns `None` if the descriptor is at version 1.
-	pub fn session_index(&self) -> Option<SessionIndex>;
-
-	/// ...
-}
-
-```
-
-A manual decode `Decode`  implementation is required to account for version detection and constructing the appropriate variant.
-
 ### Parachain block validation
 
-#### Node
+If the candidate descriptor is version 1, there are no changes.
 
-Backers will make use of the core index information to validate the blocks during backing and reject blocks if:
-- the `core_index` in descriptor does not match the one determined by the `UMPSignal::SelectCore` message
+For version 2, backers and the runtime must check the validity of `core_index` and `session_index` fields. 
+A candidate must not be backed if any of the following are true:
 - the `core_index` in the descriptor does not match the core the backing group is assigned to
 - the `session_index` is not equal to the session of the `relay_parent` in the descriptor
+- the `core_index` in descriptor does not match the one determined by the `UMPSignal::SelectCore` message
 
-If core index (and session index) information is not available (backers got an old candidate receipt), there will be no changes compared to current behaviour.
 
-#### Runtime
+### Backwards compatibility
 
-The runtime will also perform the above checks and reject invalid candidates.
+There are two flavors of candidate receipts which are used in network protocols, runtime and node implementation:
+- `CommittedCandidateReceipt` which includes the `CanidateDescriptor` and the `CandidateCommitments` 
+- `CandidateReceipt` which includes the `CanidateDescriptor` and just a hash of the commitments
+
+We want to support both the old and new versions in the runtime and node. The implementation must be able to detect the version of a given candidate receipt.
+
+The version of the descriptor is detected by checking if the `version` field is `0` and the 
+reserved fields are zerored. If this is true it means the descriptor is version 2, 
+otherwise we consider it is version 1.
 
 ## Drawbacks
 
@@ -206,13 +194,14 @@ The expectation is that performance impact is negligible for sending and process
 It is mandatory for elastic parachains to switch to the new receipt format. It is optional but desired that all parachains
 switch to the new receipts for providing the session index for disputes.
 
-Once this RFC is implemented the parachain runtime and node must not require any manual changes to use it, except if the parachain wants to change the `ClaimQueueOffset` that is used to determine the core index. 
+The implementation of this RFC itself must not introduce any breaking changes for the parachain runtime or collator nodes.
+Collator must compute the core index from the 
 
 ## Compatibility
 
-The proposed changes are backwards compatible in general, but additional care must be taken by waiting for enough validators to upgrade before the validators and runtime start accepting the new candidate receipts.
+The proposed changes are backwards compatible in general, but additional care must be taken by waiting for at least `2/3 + 1` validators to upgrade. Validators that have not upgraded will not back candidates using the new descriptor format and will also initiate disputes against.
 
-### Runtime
+### Relay chain runtime
 
 The first step is to remove collator signature checking logic in the runtime, but keep the node side collator signature 
 checks. 
@@ -222,7 +211,7 @@ The runtime must be upgraded to the new primitives before any collator or node a
 ### Validators
 
 To ensure a smooth launch, a new node feature is required. 
-The feature acts as a signal for supporting the new candidate receipts on the node side and can only be safely enabled if at least 2/3 of the validators are upgraded.
+The feature acts as a signal for supporting the new candidate receipts on the node side and can only be safely enabled if at least `2/3 + 1` of the validators are upgraded.
 
 Once enabled, the validators will skip checking the collator signature when processing the candidate receipts and verify the `CoreIndex` and `SessionIndex` fields if present in the receipt.
 
