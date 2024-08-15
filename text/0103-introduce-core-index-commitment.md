@@ -90,8 +90,8 @@ The table below represents a snapshot of the claim queue:
 
 The purpose of `ClaimQueueOffset` is to select the column from the above table. 
 For `cq_offset = 1` we get `[ Para A, Para B, Para A]` and use as input to create 
-a sorted vec with the cores A is assigned to: `[ Core 1, Core 2]` and call it `para_assigned_cores`.
-We use `core_selector` and determine the commited core index is `Core 2` like this:
+a sorted vec with the cores A is assigned to: `[ Core 1, Core 3]` and call it `para_assigned_cores`.
+We use `core_selector` and determine the commited core index is `Core 3` like this:
 
 ```rust
 let committed_core_index = para_assigned_cores[core_selector % para_assigned_cores.len()];
