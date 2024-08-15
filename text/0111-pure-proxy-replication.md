@@ -2,9 +2,9 @@
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
-| **Start Date**  | 12 Aug 2024.                                                                            |
-| **Description** | Replication of pure proxy account ownership to a remote chain                                                                   |
-| **Authors**     |  @muharem                                                                                           |
+| **Start Date**  | 12 Aug 2024.                                                                                |
+| **Description** | Replication of pure proxy account ownership to a remote chain                               |
+| **Authors**     | @muharem @xlc                                                                               |
 
 ## Summary
 
