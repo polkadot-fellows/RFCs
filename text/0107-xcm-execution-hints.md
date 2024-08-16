@@ -18,6 +18,7 @@ and makes the `SetAssetClaimer` be just one of many possible execution hints.
 There is a need for specifying how certain implementation-specific things should behave.
 Things like who can claim the assets or what can be done instead of trapping assets.
 Another idea for a hint:
+- `AssetForFees`: to signify to the executor what asset the user prefers to use for fees.
 - `LeftoverAssetsDestination`: for depositing leftover assets to a destination instead of trapping them
 
 ## Stakeholders
@@ -71,7 +72,7 @@ None.
 
 The `SetHints` instruction provides a better integration with barriers.
 If we had to add one barrier for `SetAssetClaimer` and another for each new hint that's added, barriers would need to be changed all the time.
-Also, this instruction would make it easy to write XCM programs.
+Also, this instruction would make it simpler to write XCM programs.
 You only need to specify the hints you want in one single instruction at the top of your program.
 
 ### Compatibility
@@ -84,9 +85,7 @@ The previous RFC PR in the xcm-format repository before XCM RFCs moved to fellow
 
 ## Unresolved Questions
 
-`SetLeftoverAssetsDestination` is an idea of a hint that could be added.
-What more are there?
-This RFC creates a convenience for a pattern that was identified. Should we try to hinder that pattern instead?
+None.
 
 ## Future Directions and Related Material
 
