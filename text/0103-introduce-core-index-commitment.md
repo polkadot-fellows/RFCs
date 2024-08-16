@@ -103,7 +103,6 @@ can be a friction point. It will work out fine to decrease the value to build mo
 present. But if the value is increased to build more into the future, a relay chain block will 
 be skipped.
 
-
 ### Polkadot Primitive changes
 
 #### New [CandidateDescriptor](https://github.com/paritytech/polkadot-sdk/blob/b5029eb4fd6c7ffd8164b2fe12b71bad0c59c9f2/polkadot/primitives/src/v7/mod.rs#L512)
@@ -188,6 +187,11 @@ There is no impact on privacy.
 ## Performance
 
 The expectation is that performance impact is negligible for sending and processing the UMP message has negligible performance impact in the runtime as well as on the node side.
+
+The `ClaimQueueOffset` along with the relay parent choice allows parachains to optimize their block production
+for either throughput or latency. A value of `0` with newest relay parent provides best latency while picking
+older relay parents avoids re-orgs.
+
 
 ## Ergonomics
 
