@@ -10,7 +10,7 @@
 
 A previous XCM RFC (https://github.com/polkadot-fellows/xcm-format/pull/37) introduced a `SetAssetClaimer` instruction.
 This idea of instructing the XCVM to change some implementation-specific behavior is useful.
-In order to generalize this mechanism, this RFC introduces a new instruction `SetExecutionHints`
+In order to generalize this mechanism, this RFC introduces a new instruction `SetHints`
 and makes the `SetAssetClaimer` be just one of many possible execution hints.
 
 ## Motivation
@@ -28,8 +28,8 @@ Another idea for a hint:
 
 ## Explanation
 
-A new instruction, `SetExecutionHints`, will be added.
-This instruction will take a single parameter of type `ExecutionHint`, an enumeration.
+A new instruction, `SetHints`, will be added.
+This instruction will take a single parameter of type `Hint`, an enumeration.
 The first variant for this enum is `AssetClaimer`, which allows to specify a location that should be able to claim trapped assets.
 This means the instruction `SetAssetClaimer` would also be removed, in favor of this.
 
@@ -38,28 +38,28 @@ In Rust, the new definitions would look as follows:
 ```rust
 enum Instruction {
   // ...snip...
-  SetExecutionHints(BoundedVec<ExecutionHint, NumVariants>),
+  SetHints(BoundedVec<Hint, NumVariants>),
   // ...snip...
 }
 
-enum ExecutionHint {
+enum Hint {
   AssetClaimer(Location),
   // more can be added
 }
 
-type NumVariants = /* Number of variants of the `ExecutionHint` enum */;
+type NumVariants = /* Number of variants of the `Hint` enum */;
 ```
 
 ## Drawbacks
 
-The `SetExecutionHints` instruction might be hard to benchmark, since we should look into the actual hints being set to know how much weight to attribute to it.
+The `SetHints` instruction might be hard to benchmark, since we should look into the actual hints being set to know how much weight to attribute to it.
 
 ## Testing, Security, and Privacy
 
-`ExecutionHint`s are specified on a per-message basis, so they have to be specified at the beginning of a message.
+`Hint`s are specified on a per-message basis, so they have to be specified at the beginning of a message.
 If they were to be specified at the end, hints like `AssetClaimer` would be useless if an error occurs beforehand and assets get trapped before ever reaching the hint.
 
-The instruction takes a bounded vector of hints so as to not force barriers to allow an arbitrary number of `SetExecutionHint` instructions.
+The instruction takes a bounded vector of hints so as to not force barriers to allow an arbitrary number of `SetHint` instructions.
 
 ## Performance, Ergonomics, and Compatibility
 
@@ -69,7 +69,7 @@ None.
 
 ### Ergonomics
 
-The `SetExecutionHints` instruction provides a better integration with barriers.
+The `SetHints` instruction provides a better integration with barriers.
 If we had to add one barrier for `SetAssetClaimer` and another for each new hint that's added, barriers would need to be changed all the time.
 Also, this instruction would make it easy to write XCM programs.
 You only need to specify the hints you want in one single instruction at the top of your program.
