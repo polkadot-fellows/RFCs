@@ -18,7 +18,7 @@ Most of the modern devices and applications rely on the “secp256r1” elliptic
 4. **Passkeys:** Passkeys is utilizing FIDO Alliance and W3C standards. It replaces passwords with cryptographic key-pairs which is also can be used for the elliptic curve cryptography.
 
 ## Stakeholders
-- **Parachain Teams:** They MUST include this host function in their runtime and node.
+- **Runtime Authors**
 
 ## Explanation
 This RFC proposes a new host function for runtime authors to leverage a more efficient verification mechanism for "secp256r1" elliptic curve signatures.
