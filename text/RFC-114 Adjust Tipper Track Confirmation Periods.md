@@ -3,8 +3,8 @@
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 17-Aug-24                                                                                   |
-| **Description** | Big and Small Tipper Track Conformation Period Modification                                                                                                    |
-| **Authors**     |           Leemo / ChaosDAO                                                                                                        |
+| **Description** | Big and Small Tipper Track Conformation Period Modification                                 |
+| **Authors**     | Leemo / ChaosDAO                                                                            |
 
 ## Summary
 
