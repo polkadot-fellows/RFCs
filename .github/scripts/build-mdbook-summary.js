@@ -26,7 +26,9 @@ module.exports = async ({github, context}) => {
       }
       // Relative path, without the src prefix (format required by mdbook)
       const relativePath = filePath.replace("mdbook/src/", "")
-      fs.appendFileSync(summaryPath, `- [${title}](${relativePath})\n`)
+      // Wrapping the path allows for whitespaces in the title.
+      const target = `<${relativePath}>`
+      fs.appendFileSync(summaryPath, `- [${title}](${target})\n`)
     }
   }
 
