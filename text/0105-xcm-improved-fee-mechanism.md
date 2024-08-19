@@ -36,17 +36,21 @@ This moves the specifics of fees further away from the XCM standard, and more in
 
 The new instruction that will replace `BuyExecution` is a much simpler and general version: `PayFees`.
 This instruction takes one `Asset`, takes it from the holding register, and puts it into a new `fees` register.
-The XCVM implementation can now use this `Asset` to make sure every necessary fee is paid for, this includes execution fees, delivery fees, or any other fee.
+The XCVM implementation can now use this `Asset` to make sure every necessary fee is paid for, this includes execution fees, delivery fees, and any other type of fee
+necessary for the program to execute successfully.
 
 ```rust
 PayFees { asset: Asset }
 ```
 
-This new instruction will reserve **the entirety** of `asset` for fee payment.
-The asset can't be used for anything else during the entirety of the program.
+This new instruction will reserve **the entirety** of the `asset` operand for fee payment.
+There is not concept of returning the leftover fees to the holding register, to allow for the implementation to charge fees at different points during execution.
+Because of this, the `asset` passed in can't be used for anything else during the entirety of the program.
 This is different from the current semantics of `BuyExecution`.
 
 If not all `Asset` in the `fees` register is used when the execution ends, then we trap them alongside any possible leftover assets from the holding register.
+`RefundSurplus` can be used to move all leftover fees from the `fees` register to the `holding` register.
+Care must be taken that this is used only after all possible instructions which might charge fees, else execution will fail.
 
 ### Examples
 
