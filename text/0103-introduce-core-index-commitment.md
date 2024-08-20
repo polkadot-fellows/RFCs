@@ -183,11 +183,34 @@ additional information in the descriptor.
 
 If the candidate descriptor is version 1, there are no changes.
 
-For version 2, backers and the runtime must check the validity of `core_index` and `session_index` fields. 
+Backers must check the validity of `core_index` and `session_index` fields. 
 A candidate must not be backed if any of the following are true:
-- the `core_index` in the descriptor does not match the core the backing group is assigned to
+- the `core_index` in the descriptor does not match the core the backer is assigned to
 - the `session_index` is not equal to the session of the `relay_parent` in the descriptor
-- the `core_index` in the descriptor does not match the one determined by the `UMPSignal::SelectCore` message
+- the `core_index` in the descriptor does not match the one determined by the 
+  `UMPSignal::SelectCore` message
+
+
+### On-chain backing
+
+If the candidate descriptor is version 1, there are no changes.
+
+For version 2 descriptors the runtime will determine the `core_index` similarly to backers but 
+will always ignore the committed claim queue offset and use `0`, as it only cares 
+about what candidates can be backed at current block. 
+
+As the chain advances the claims also advance to the top of the queue. The runtime will only back  
+a candidate if the claimed core selected by it's claim queue offset has reached the top of the queue 
+at the current relay chain block: `current_block_num - relay_parent_num - 1 == claim_queue_offset`.
+
+The impact of this change is that candidates built into the future (`claim queue offset > 0`) 
+can no longer be backed earlier even if the core is free and the core is assigned to the 
+parachain. 
+
+Introducing this additional check is required to ensure the runtime computes the core index
+determinstically. For example, some collator has missed his slot and the core is now used 
+to back a candidate with a higher claim queue offset. The number of assigned cores can
+be different at these two queue offsets and the committed core indices would be different. 
 
 
 ### Backwards compatibility
@@ -203,6 +226,7 @@ be able to detect the version of a given candidate receipt.
 The version of the descriptor is detected by checking if the `version` field is `0` and the 
 reserved fields are zeroed. If this is true it means the descriptor is version 2, 
 otherwise we consider it is version 1.
+
 
 ## Drawbacks
 
