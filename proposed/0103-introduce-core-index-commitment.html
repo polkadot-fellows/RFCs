@@ -188,6 +188,7 @@
 <li><a href="#ump-transport">UMP transport</a></li>
 <li><a href="#polkadot-primitive-changes">Polkadot Primitive changes</a></li>
 <li><a href="#parachain-block-validation">Parachain block validation</a></li>
+<li><a href="#on-chain-backing">On-chain backing</a></li>
 <li><a href="#backwards-compatibility">Backwards compatibility</a></li>
 </ul>
 </li>
@@ -364,13 +365,29 @@ and rename to <code>reserved1</code>  and <code>reserved2</code> fields.</li>
 additional information in the descriptor.</p>
 <h3 id="parachain-block-validation"><a class="header" href="#parachain-block-validation">Parachain block validation</a></h3>
 <p>If the candidate descriptor is version 1, there are no changes.</p>
-<p>For version 2, backers and the runtime must check the validity of <code>core_index</code> and <code>session_index</code> fields. 
+<p>Backers must check the validity of <code>core_index</code> and <code>session_index</code> fields. 
 A candidate must not be backed if any of the following are true:</p>
 <ul>
-<li>the <code>core_index</code> in the descriptor does not match the core the backing group is assigned to</li>
+<li>the <code>core_index</code> in the descriptor does not match the core the backer is assigned to</li>
 <li>the <code>session_index</code> is not equal to the session of the <code>relay_parent</code> in the descriptor</li>
-<li>the <code>core_index</code> in the descriptor does not match the one determined by the <code>UMPSignal::SelectCore</code> message</li>
+<li>the <code>core_index</code> in the descriptor does not match the one determined by the 
+<code>UMPSignal::SelectCore</code> message</li>
 </ul>
+<h3 id="on-chain-backing"><a class="header" href="#on-chain-backing">On-chain backing</a></h3>
+<p>If the candidate descriptor is version 1, there are no changes.</p>
+<p>For version 2 descriptors the runtime will determine the <code>core_index</code> similarly to backers but 
+will always ignore the committed claim queue offset and use <code>0</code>, as it only cares 
+about what candidates can be backed at current block. </p>
+<p>As the chain advances the claims also advance to the top of the queue. The runtime will only back<br />
+a candidate if the claimed core selected by it's claim queue offset has reached the top of the queue 
+at the current relay chain block: <code>current_block_num - relay_parent_num - 1 == claim_queue_offset</code>.</p>
+<p>The impact of this change is that candidates built into the future (<code>claim queue offset &gt; 0</code>) 
+can no longer be backed earlier even if the core is free and the core is assigned to the 
+parachain. </p>
+<p>Introducing this additional check is required to ensure the runtime computes the core index
+determinstically. For example, some collator has missed his slot and the core is now used 
+to back a candidate with a higher claim queue offset. The number of assigned cores can
+be different at these two queue offsets and the committed core indices would be different. </p>
 <h3 id="backwards-compatibility"><a class="header" href="#backwards-compatibility">Backwards compatibility</a></h3>
 <p>There are two flavors of candidate receipts that are used in network protocols, runtime and node 
 implementation:</p>
