@@ -43,37 +43,83 @@ earlier, on deciding state.
 
 ## Explanation
 
-Currently, the process of a referendum/poll
+Currently, the process of a referendum/poll is defined as an sequence between an ongoing state
+(where accounts can vote), comprised by a with a preparation period, a decision period, and a
+confirm period. If the poll is passing before the decision period ends, it's possible to push
+forward to confirm period, and still, go back in case the poll fails. Once the decision period
+ends, a failure of the poll in the confirm period will lead to the poll to ultimately be rejected.
 
 ```mermaid
-flowchart LR
-  S[Submit] --> P[Preparing]
-  P --> D[Deciding]
-  D --> |Passing| C[Confirmation]
-  C --> |Failing — while on decision period| D
-  D --> |Failing| R[Rejected]
-  C --> |Failing — after decision period| R
-  C --> A[Approved]
+stateDiagram-v2
+    sb: Submission
+    pp: Preparation Period
+    dp: Decision Period
+    cp: Confirmation Period
+    state dpd <<choice>>
+    state ps <<choice>>
+    cf: Approved
+    rj: Rejected
+
+    [*] --> sb
+    sb --> pp
+    pp --> dp: decision period starts
+    dp --> cp: poll is passing
+    dp --> ps: decision period ends
+    ps --> cp: poll is passing
+    cp --> dpd: poll fails
+    dpd --> dp: decision period not deadlined
+    ps --> rj: poll is failing
+    dpd --> rj: decision period deadlined
+    cp --> cf
+    cf --> [*]
+    rj --> [*]
 ```
 
-This specification proposes including a Finalization state for a poll. This state is described as
-the moment after and extends the decision for a couple of blocks, until is safe to consider the VRF
-used to determine the candle block is not known before the ongoing period (decision/confirmation)
-was over.
+This specification proposes two changes to implement this candle mechanism:
+
+1. Storing every change of the poll status (whether it is passing or not) once the decision period
+   is over.
+1. Including a **Finalization** period in the ongoing state. This period begins the moment after
+   confirm period ends, and extends the decision for a couple of blocks, until the [VRF][wiki:vrf]
+   seed used to determine the candle block can be considered _"good enough"_, this is, not known
+   before the ongoing period (decision/confirmation) was over.
+
+   After that happens, a random block within the confirm period is chosen, and the decision of
+   approving or rejecting the poll is based on the status immediately before the block where the
+   candle was _"lit-off"_.
 
 ```mermaid
-flowchart LR
-  S[Submit] --> P[Preparing]
-  P --> D[Deciding]
-  D --> |Passing| C[Confirmation]
-  C --> |Failing — while on decision period| D
-  D --> |Failing| R[Rejected]
-  C --> FF[Finalization]
-  FF --> |Candle on/after passing| A[Approved]
-  FF --> |Candle on/after failing| R
+stateDiagram-v2
+    sb: Submission
+    pp: Preparation Period
+    dp: Decision Period
+    cp: Confirmation Period
+    cds: Finalization
+    state dpd <<choice>>
+    state ps <<choice>>
+    state cd <<choice>>
+    cf: Approved
+    rj: Rejected
 
-  style FF fill: #0a0, color: #fff
+    [*] --> sb
+    sb --> pp
+    pp --> dp: decision period starts
+    dp --> cp: poll is passing
+    ps --> cp: poll is passing
+    dp --> ps: decision period ends
+    ps --> rj: poll is failing
+    cp --> dpd: poll fails
+    dpd --> cp: decision period over
+    dpd --> dp: decision period not over
+    cp --> cds: confirmation period ends
+    cds --> cd: define moment when candle lit-off
+    cd --> cf: poll passed
+    cd --> rj: poll failed
+    cf --> [*]
+    rj --> [*]
 ```
+
+This change implies ensuring the poll cannot be mutated after .
 
 ## Drawbacks
 
@@ -96,3 +142,5 @@ flowchart LR
 ## Future Directions and Related Material
 
 <!-- TODO: Add if any -->
+
+[wiki:vrf]: https://en.wikipedia.org/wiki/Verifiable_random_function
