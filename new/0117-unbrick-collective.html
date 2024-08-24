@@ -1,0 +1,393 @@
+
+<!DOCTYPE HTML>
+<html lang="en" class="polkadot" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>RFC-0117: The Unbrick Collective - Polkadot Fellowship RFCs</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="An online book of RFCs approved or proposed within the Polkadot Fellowship.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/polkadot.css">
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "polkadot" : "polkadot";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('polkadot')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../introduction.html">Introduction</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Newly Proposed</li><li class="chapter-item expanded "><a href="../new/0117-unbrick-collective.html" class="active">RFC-0117: The Unbrick Collective</a></li><li class="chapter-item expanded "><a href="../new/RFC-114 Adjust Tipper Track Confirmation Periods.html">RFC-114: Adjust Tipper Track Confirmation Periods</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Proposed</li><li class="chapter-item expanded "><a href="../proposed/00xx-smart-contracts-coretime-chain.html">RFC-0002: Smart Contracts on the Coretime Chain</a></li><li class="chapter-item expanded "><a href="../proposed/0100-xcm-multi-type-asset-transfer.html">RFC-0100: New XCM instruction: InitiateAssetsTransfer</a></li><li class="chapter-item expanded "><a href="../proposed/0103-introduce-core-index-commitment.html">RFC-0103:  Introduce a CoreIndex commitment and a SessionIndex field in candidate receipts</a></li><li class="chapter-item expanded "><a href="../proposed/0105-xcm-improved-fee-mechanism.html">RFC-0105: XCM improved fee mechanism</a></li><li class="chapter-item expanded "><a href="../proposed/0106-xcm-remove-fees-mode.html">RFC-0106: Remove XCM fees mode</a></li><li class="chapter-item expanded "><a href="../proposed/0107-xcm-execution-hints.html">RFC-0107: XCM Execution hints</a></li><li class="chapter-item expanded "><a href="../proposed/0111-pure-proxy-replication.html">RFC-0111: Pure Proxy Replication</a></li><li class="chapter-item expanded "><a href="../proposed/0112-compress-state-response-message-in-state-sync.html">RFC-0112: Compress the State Response Message in State Sync</a></li><li class="chapter-item expanded "><a href="../proposed/0114-secp256r1-hostfunction.html">RFC-0114: Introduce secp256r1_ecdsa_verify_prehashed Host Function to verify NIST-P256 elliptic curve signatures</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Approved</li><li class="chapter-item expanded "><a href="../approved/0001-agile-coretime.html">RFC-1: Agile Coretime</a></li><li class="chapter-item expanded "><a href="../approved/0005-coretime-interface.html">RFC-5: Coretime Interface</a></li><li class="chapter-item expanded "><a href="../approved/0007-system-collator-selection.html">RFC-0007: System Collator Selection</a></li><li class="chapter-item expanded "><a href="../approved/0008-parachain-bootnodes-dht.html">RFC-0008: Store parachain bootnodes in relay chain DHT</a></li><li class="chapter-item expanded "><a href="../approved/0010-burn-coretime-revenue.html">RFC-0010: Burn Coretime Revenue</a></li><li class="chapter-item expanded "><a href="../approved/0012-process-for-adding-new-collectives.html">RFC-0012: Process for Adding New System Collectives</a></li><li class="chapter-item expanded "><a href="../approved/0013-prepare-blockbuilder-and-core-runtime-apis-for-mbms.html">RFC-0013: Prepare Core runtime API for MBMs</a></li><li class="chapter-item expanded "><a href="../approved/0014-improve-locking-mechanism-for-parachains.html">RFC-0014: Improve locking mechanism for parachains</a></li><li class="chapter-item expanded "><a href="../approved/0022-adopt-encointer-runtime.html">RFC-0022: Adopt Encointer Runtime</a></li><li class="chapter-item expanded "><a href="../approved/0026-sassafras-consensus.html">RFC-0026: Sassafras Consensus Protocol</a></li><li class="chapter-item expanded "><a href="../approved/0032-minimal-relay.html">RFC-0032: Minimal Relay</a></li><li class="chapter-item expanded "><a href="../approved/0042-extrinsics-state-version.html">RFC-0042: Add System version that replaces StateVersion on RuntimeVersion</a></li><li class="chapter-item expanded "><a href="../approved/0043-storage-proof-size-hostfunction.html">RFC-0043: Introduce storage_proof_size Host Function for Improved Parachain Block Utilization</a></li><li class="chapter-item expanded "><a href="../approved/0045-nft-deposits-asset-hub.html">RFC-0045: Lowering NFT Deposits on Asset Hub</a></li><li class="chapter-item expanded "><a href="../approved/0047-assignment-of-availability-chunks.html">RFC-0047: Assignment of availability chunks to validators</a></li><li class="chapter-item expanded "><a href="../approved/0048-session-keys-runtime-api.html">RFC-0048: Generate ownership proof for SessionKeys</a></li><li class="chapter-item expanded "><a href="../approved/0050-fellowship-salaries.html">RFC-0050: Fellowship Salaries</a></li><li class="chapter-item expanded "><a href="../approved/0056-one-transaction-per-notification.html">RFC-0056: Enforce only one transaction per notification</a></li><li class="chapter-item expanded "><a href="../approved/0059-nodes-capabilities-discovery.html">RFC-0059: Add a discovery mechanism for nodes based on their capabilities</a></li><li class="chapter-item expanded "><a href="../approved/0078-merkleized-metadata.html">RFC-0078: Merkleized Metadata</a></li><li class="chapter-item expanded "><a href="../approved/0084-general-transaction-extrinsic-format.html">RFC-0084: General transactions in extrinsic format</a></li><li class="chapter-item expanded "><a href="../approved/0091-dht-record-creation-time.html">RFC-0091: DHT Authority discovery record creation time</a></li><li class="chapter-item expanded "><a href="../approved/0097-unbonding_queue.html">RFC-0097: Unbonding Queue</a></li><li class="chapter-item expanded "><a href="../approved/0099-transaction-extension-version.html">RFC-0099: Introduce a transaction extension version</a></li><li class="chapter-item expanded "><a href="../approved/0101-xcm-transact-remove-max-weight-param.html">RFC-0101: XCM Transact remove require_weight_at_most parameter</a></li><li class="chapter-item expanded "><a href="../approved/0108-xcm-remove-testnet-ids.html">RFC-0108: Remove XCM testnet NetworkIds</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Stale</li><li class="chapter-item expanded "><a href="../stale/0004-remove-unnecessary-allocator-usage.html">RFC-0004: Remove the host-side runtime memory allocator</a></li><li class="chapter-item expanded "><a href="../stale/0006-dynamic-pricing-for-bulk-coretime-sales.html">RFC-0006: Dynamic Pricing for Bulk Coretime Sales</a></li><li class="chapter-item expanded "><a href="../stale/0009-improved-net-light-client-requests.html">RFC-0009: Improved light client requests networking protocol</a></li><li class="chapter-item expanded "><a href="../stale/0015-market-design-revisit.html">RFC-0015: Market Design Revisit</a></li><li class="chapter-item expanded "><a href="../stale/0034-xcm-absolute-location-account-derivation.html">RFC-34: XCM Absolute Location Account Derivation</a></li><li class="chapter-item expanded "><a href="../stale/0035-conviction-voting-delegation-modifications.html"> RFC-0035: Conviction Voting Delegation Modifications</a></li><li class="chapter-item expanded "><a href="../stale/0044-rent-based-registration.html">RFC-0044: Rent based registration model</a></li><li class="chapter-item expanded "><a href="../stale/0054-remove-heap-pages.html">RFC-0054: Remove the concept of "heap pages" from the client</a></li><li class="chapter-item expanded "><a href="../stale/0070-x-track-kusamanetwork.html">RFC-0070: X Track for @kusamanetwork</a></li><li class="chapter-item expanded "><a href="../stale/0073-referedum-deposit-track.html">RFC-0073: Decision Deposit Referendum Track</a></li><li class="chapter-item expanded "><a href="../stale/0074-stateful-multisig-pallet.html">RFC-0074: Stateful Multisig Pallet</a></li><li class="chapter-item expanded "><a href="../stale/0077-increase-max-length-of-identity-pgp-fingerprint-value.html">RFC-0077: Increase maximum length of identity PGP fingerprint values from 20 bytes</a></li><li class="chapter-item expanded "><a href="../stale/0088-broker-pallet-slashable-deposit-purchaser-reputation-reserved-cores.html">RFC-0088: Add slashable locked deposit, purchaser reputation, and reserved cores for on-chain identities to broker pallet</a></li><li class="chapter-item expanded "><a href="../stale/0089-flexible-inflation.html">RFC-0089: Flexible Inflation</a></li><li class="chapter-item expanded "><a href="../stale/00xx-secondary-marketplace-for-regions.html">RFC-0001: Secondary Market for Regions</a></li><li class="chapter-item expanded "><a href="../stale/0102-offchain-parachain-runtime-upgrades.html">RFC-0000: Feature Name Here</a></li><li class="chapter-item expanded "><a href="../stale/0109-xcm-descend-instead-of-clear-origin.html">RFC-0109: Descend XCM origin instead of clearing it where possible</a></li><li class="chapter-item expanded "><a href="../stale/TODO-stale-nomination-reward-curve.html">RFC-TODO: Stale Nomination Reward Curve</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="polkadot">Polkadot</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Polkadot Fellowship RFCs</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <p><a href="https://github.com/polkadot-fellows/RFCs/pull/117">(source)</a></p>
+<p><strong>Table of Contents</strong></p>
+<ul>
+<li><a href="#rfc-0117-the-unbrick-collective">RFC-0117: The Unbrick Collective</a>
+<ul>
+<li><a href="#summary">Summary</a></li>
+<li><a href="#motivation">Motivation</a></li>
+<li><a href="#stakeholders">Stakeholders</a></li>
+<li><a href="#explanation">Explanation</a>
+<ul>
+<li><a href="#the-collective">The Collective</a></li>
+<li><a href="#the-unbrick-process">The Unbrick Process</a></li>
+<li><a href="#belonging-to-the-collective">Belonging to the Collective</a></li>
+</ul>
+</li>
+<li><a href="#drawbacks">Drawbacks</a></li>
+<li><a href="#testing-security-and-privacy">Testing, Security, and Privacy</a></li>
+<li><a href="#performance-ergonomics-and-compatibility">Performance, Ergonomics, and Compatibility</a>
+<ul>
+<li><a href="#performance">Performance</a></li>
+<li><a href="#ergonomics">Ergonomics</a></li>
+<li><a href="#compatibility">Compatibility</a></li>
+</ul>
+</li>
+<li><a href="#prior-art-and-references">Prior Art and References</a></li>
+<li><a href="#unresolved-questions">Unresolved Questions</a></li>
+</ul>
+</li>
+</ul>
+<h1 id="rfc-0117-the-unbrick-collective"><a class="header" href="#rfc-0117-the-unbrick-collective">RFC-0117: The Unbrick Collective</a></h1>
+<div class="table-wrapper"><table><thead><tr><th></th><th></th></tr></thead><tbody>
+<tr><td><strong>Start Date</strong></td><td>22 August 2024</td></tr>
+<tr><td><strong>Description</strong></td><td>The Unbrick Collective aims to help teams rescuing a para once it stops producing blocks</td></tr>
+<tr><td><strong>Authors</strong></td><td>Bryan Chen, Pablo Dorado</td></tr>
+</tbody></table>
+</div>
+<h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
+<p>A followup of the <a href="./0014-improve-locking-mechanism-for-parachains">RFC-0014</a>. This RFC proposes adding a new collective to the Polkadot Collectives
+Chain: The Unbrick Collective, as well as improvements in the mechanisms that will allow teams
+operating paras that had stopped producing blocks to be assisted, in order to restore the production
+of blocks of these paras.</p>
+<h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
+<p>Since the initial launch of Polkadot parachains, there has been many incidients causing parachains
+to stop producing new blocks (therefore, being <em>bricked</em>) and many occurrences that requires
+Polkadot governance to update the parachain head state/wasm. This can be due to many reasons range
+from incorrectly registering the initial head state, inability to use sudo key, bad runtime
+migration, bad weight configuration, and bugs in the development of the Polkadot SDK.</p>
+<p>Currently, when the para is not unlocked in the <em>paras registrar</em><sup class="footnote-reference"><a href="#1">1</a></sup>, the <code>Root</code> origin is required to
+perform such actions, involving the governance process to invoke this origin, which can be very
+resource expensive for the teams. The long voting and enactment times also could result significant
+damage to the parachain and users.</p>
+<p>Finally, other instances of governance that might enact a call using the <code>Root</code> origin (like the
+Polkadot Fellowship), due to the nature of their mission, are not fit to carry these kind of tasks.</p>
+<p>In consequence, the idea of a Unbrick Collective that can provide assistance to para teams when
+they brick and further protection against future halts is reasonable enough.</p>
+<h2 id="stakeholders"><a class="header" href="#stakeholders">Stakeholders</a></h2>
+<ul>
+<li>Parachain teams</li>
+<li>Parachain users</li>
+<li>OpenGov users</li>
+<li>Polkadot Fellowship</li>
+</ul>
+<h2 id="explanation"><a class="header" href="#explanation">Explanation</a></h2>
+<h3 id="the-collective"><a class="header" href="#the-collective">The Collective</a></h3>
+<p>The Unbrick Collective is defined as an unranked collective of members, not paid by the Polkadot
+Treasury. Its main goal is to serve as a point of contact and assistance for enacting the actions
+needed to unbrick a para. Such actions are:</p>
+<ul>
+<li>Updating the Parachain Verification Function (a.k.a. a new WASM) of a para.</li>
+<li>Updating the head state of a para.</li>
+<li>A combination of the above.</li>
+</ul>
+<p>In order to ensure these changes are safe enough for the network, actions enacted by the Unbrick
+Collective must be whitelisted via similar mechanisms followed by collectives like the Polkadot
+Fellowship. This will prevent unintended, not overseen changes on other paras to occur.</p>
+<p>Also, teams might opt-in to delegate handling their para in the registry to the Collective. This
+allows to perform similar actions using the <em>paras registrar</em>, allowing for a shorter path to unbrick a
+para.</p>
+<h3 id="the-unbrick-process"><a class="header" href="#the-unbrick-process">The Unbrick Process</a></h3>
+<pre><code class="language-mermaid">flowchart TD
+    A[Start] 
+    
+    A -- Bricked --&gt; C[Request Unbrick «via governance»]
+    C --&gt; D[unbrick call proposal on WhitelistedUnbrickCaller]
+    C --&gt; E[whitelist call proposal on the Unbrick governance]
+    E -- call whitelisted --&gt; F[unbrick call enacted]
+    D -- unbrick called --&gt; F
+    F --&gt; Y
+
+    A -- Not bricked --&gt; O[Opt-in to the Collective]
+    O -- Bricked --&gt; P[Collective calls registrar]
+    P --&gt; Y
+    
+    Y[update PVF / head state] -- Unbricked --&gt; Z[End]
+</code></pre>
+<p>Initially, a para team has two paths to handle a potential unbrick of their para in the case it
+stops producing blocks.</p>
+<ol>
+<li><strong>Opt-in to the Unbrick Collective</strong>: This is done by delegating the handling of the para
+in the <em>paras registrar</em> to the Collective. This doesn't require unlocking the para. This way,
+the collective is enabled to perform changes in the <em>paras registrar</em> without the need for
+whitelisting.</li>
+<li><strong>Request an Unbrick Process</strong>: In case the para hasn't delegated its handling in the <em>paras
+registrar</em>, it'll be still possible for the para team to submit a proposal to unbrick the para,
+assisted by the Collective. This process is expected to be more expedite (and less expensive)
+for a team to perform than submitting a proposal on the <code>Root</code> governance track.</li>
+</ol>
+<h3 id="belonging-to-the-collective"><a class="header" href="#belonging-to-the-collective">Belonging to the Collective</a></h3>
+<p>The collective will be initially created without members (no seeding). There will be additional
+governance proposals to setup the seed members.</p>
+<p>The origins able to modify the members of the collective are:</p>
+<ul>
+<li>The <code>Fellows</code> track in the Polkadot Fellowship.</li>
+<li><code>Root</code> track in the Relay.</li>
+<li>More than two thrids of the existing Unbrick Collective.</li>
+</ul>
+<p>The members are responsible to verify the technical details of the unbrick requests (i.e. the hash
+of the new PVF being set). Therefore, they must have the technical capacity to perform such tasks.</p>
+<p>Suggested requirements to become a member are the following:</p>
+<ul>
+<li>Rank 3 or above in the Polkadot Fellowship.</li>
+<li>Being a CTO or Technical Lead in a para team that has opted-in to delegate the Unbrick Collective
+to manage the PVF/head state of the para.</li>
+</ul>
+<h2 id="drawbacks"><a class="header" href="#drawbacks">Drawbacks</a></h2>
+<p>The ability to modify the Head State and/or the PVF of a para means a possibility to perform
+arbitrary modifications of it (i.e. take control the native parachain token or any bridged assets
+in the para).</p>
+<p>This could introduce a new attack vectorm, and therefore, such great power needs to be handled
+carefully.</p>
+<h2 id="testing-security-and-privacy"><a class="header" href="#testing-security-and-privacy">Testing, Security, and Privacy</a></h2>
+<p>The implementation of this RFC will be tested on testnets (Rococo and Westend) first.</p>
+<p>An audit will be required to ensure the implementation doesn't introduce unwanted side effects.</p>
+<p>There are no privacy related concerns.</p>
+<h2 id="performance-ergonomics-and-compatibility"><a class="header" href="#performance-ergonomics-and-compatibility">Performance, Ergonomics, and Compatibility</a></h2>
+<h3 id="performance"><a class="header" href="#performance">Performance</a></h3>
+<p>This RFC should not introduce any performance impact.</p>
+<h3 id="ergonomics"><a class="header" href="#ergonomics">Ergonomics</a></h3>
+<p>This RFC should improve the experience for new and existing parachain teams, lowering the barrier
+to unbrick a stalled para.</p>
+<h3 id="compatibility"><a class="header" href="#compatibility">Compatibility</a></h3>
+<p>This RFC is fully compatible with existing interfaces.</p>
+<h2 id="prior-art-and-references"><a class="header" href="#prior-art-and-references">Prior Art and References</a></h2>
+<ul>
+<li><a href="./0014-improve-locking-mechanism-for-parachains">RFC-0014: Improve Locking Mechanisms for Parachains</a></li>
+<li><a href="https://forum.polkadot.network/t/how-to-recover-a-parachain/673">How to Recover a Parachain, Polkadot Forum</a></li>
+<li><a href="https://forum.polkadot.network/t/unbrick-collective/6931">Unbrick Collective, Polkadot Forum</a></li>
+</ul>
+<h2 id="unresolved-questions"><a class="header" href="#unresolved-questions">Unresolved Questions</a></h2>
+<ul>
+<li>What are the parameters for the <code>WhitelistedUnbrickCaller</code> track?</li>
+<li>Any other methods that shall be updated to accept <code>Unbrick</code> origin?</li>
+<li>Any other requirements to become a member?</li>
+<li>We would like to keep this simple, so no funding support from the Polkadot treasury. But do we
+want to compensate the members somehow? i.e. Allow parachain teams to donate to the collective</li>
+<li>Do we want to have this collective offer additional technical support to help bricked parachains?
+i.e. help debug the code, create the rescue plan, create postmortem report, provide resources on
+how to avoid getting bricked</li>
+</ul>
+<!-- Footnotes -->
+<div class="footnote-definition" id="1"><sup class="footnote-definition-label">1</sup>
+<p>The <em>paras registrar</em> refers to a pallet in the Relay, responsible to gather registration info
+of the paras, the locked/unlocked state, and the manager info.</p>
+</div>
+<!-- Links -->
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../introduction.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../new/RFC-114 Adjust Tipper Track Confirmation Periods.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../introduction.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../new/RFC-114 Adjust Tipper Track Confirmation Periods.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>
