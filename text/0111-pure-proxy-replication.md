@@ -103,7 +103,7 @@ A conceptually different solution would be to not implement replication of pure 
 
 ## Testing, Security, and Privacy
 
-Each chain expressly authorize another chain to replicate its pure proxies, accepting the inherent risk of that chain potentially being compromised.
+Each chain expressly authorizes another chain to replicate its pure proxies, accepting the inherent risk of that chain potentially being compromised. This authorization allows a malicious actor from the compromised chain to take control of any pure proxy account on the chain that granted the authorization. However, this is limited to pure proxies that originated from the compromised chain if they have a chain-specific seed within the preimage.
 
 There is a security issue, not introduced by the proposed solution but worth mentioning. The same spawner can create the pure accounts on different chains controlled by the different accounts. This is possible because the current preimage version of the proxy pallet does not include any non-reproducible, chain-specific data, and elements like block numbers and extrinsic indexes can be reproduced with some effort. This issue could be addressed by adding a chain-specific seed into the preimages of pure accounts.
 
