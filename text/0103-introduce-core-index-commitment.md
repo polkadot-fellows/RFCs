@@ -155,7 +155,7 @@ pub struct CandidateDescriptorV2<H = Hash> {
 	version: InternalVersion,
 	/// The core index where the candidate is backed.
 	core_index: u16,
-	/// The session index of the candidate relay parent.
+	/// The session in which the candidate is backed.
 	session_index: SessionIndex,
 	/// Reserved bytes.
 	reserved1: [u8; 25],
@@ -278,9 +278,9 @@ the new candidate receipts format.
 
 ### Validators
 
-To ensure a smooth launch, a new node feature is required. 
+To ensure a smooth launch, a new node feature is required.
 The feature acts as a signal for supporting the new candidate receipts on the node side and can 
-only be safely enabled if at least `2/3 + 1` of the validators are upgraded.
+only be safely enabled if at least `2/3 + 1` of the validators are upgraded. Node implementions need to decode the new candidate descriptor once the feature is enabled otherwise they might raise disputes and get slashed.
 
 Once enabled, the validators will skip checking the collator signature when processing the 
 candidate receipts and verify the `CoreIndex` and `SessionIndex` fields if present in the receipt.
