@@ -126,10 +126,7 @@ let committed_core_index = para_assigned_cores[core_selector % para_assigned_cor
 ```
 
 Parachains should prefer to have a static `ClaimQueueOffset` value that makes sense for their 
-usecase which can be changed by governance at some future point. Changing the value dynamically 
-can be a friction point. It will work out fine to decrease the value to build more into the 
-present. But if the value is increased to build more into the future, a relay chain block will 
-be skipped.
+usecase which can be changed by governance at some future point.
 
 ### Polkadot Primitive changes
 
@@ -186,7 +183,7 @@ If the candidate descriptor is version 1, there are no changes.
 Backers must check the validity of `core_index` and `session_index` fields. 
 A candidate must not be backed if any of the following are true:
 - the `core_index` in the descriptor does not match the core the backer is assigned to
-- the `session_index` is not equal to the session of the `relay_parent` in the descriptor
+- the `session_index` is not equal to the session index the candidate is backed in
 - the `core_index` in the descriptor does not match the one determined by the 
   `UMPSignal::SelectCore` message
 
@@ -195,37 +192,26 @@ A candidate must not be backed if any of the following are true:
 
 If the candidate descriptor is version 1, there are no changes.
 
-For version 2 descriptors the runtime will determine the `core_index` similarly to backers but 
-will always ignore the committed claim queue offset and use `0`, as it only cares 
-about what candidates can be backed at current block. 
-
-As the chain advances the claims also advance to the top of the queue. The runtime will only back  
-a candidate if the claimed core selected by it's claim queue offset has reached the top of the queue 
-at the current relay chain block: `current_block_num - relay_parent_num - 1 == claim_queue_offset`.
-
-The impact of this change is that candidates built into the future (`claim queue offset > 0`) 
-can no longer be backed earlier even if the core is free and the core is assigned to the 
-parachain. 
-
-Introducing this additional check is required to ensure the runtime computes the core index
-determinstically. For example, some collator has missed his slot and the core is now used 
-to back a candidate with a higher claim queue offset. The number of assigned cores can
-be different at these two queue offsets and the committed core indices would be different. 
+For version 2 descriptors the runtime will determine the `core_index` using the same inputs 
+as backers did off-chain. It currently stores the claim queue at the newest allowed 
+relay parent corresponding to claim queue offset `0`. The runtime needs to be changed to store
+a claim queue snapshot at all allowed relay parents.
 
 
 ### Backwards compatibility
 
 There are two flavors of candidate receipts that are used in network protocols, runtime and node 
 implementation:
-- `CommittedCandidateReceipt` which includes the `CanidateDescriptor` and the `CandidateCommitments` 
-- `CandidateReceipt` which includes the `CanidateDescriptor` and just a hash of the commitments
+- `CommittedCandidateReceipt` which includes the `CandidateDescriptor` and the `CandidateCommitments` 
+- `CandidateReceipt` which includes the `CandidateDescriptor` and just a hash of the commitments
 
-We want to support both the old and new versions in the runtime and node. The implementation must 
+We want to support both the old and new versions in the runtime and node, so the implementation must 
 be able to detect the version of a given candidate receipt.
 
-The version of the descriptor is detected by checking if the `version` field is `0` and the 
-reserved fields are zeroed. If this is true it means the descriptor is version 2, 
-otherwise we consider it is version 1.
+The version of the descriptor is detected by checking the reserved fields.
+If they are not zerored, it means it is a version 1 descriptor. Otherwise the `version` field
+is used further to determine the version. It should be `0` for version 2 descriptors. If it is not 
+the descriptor has an unknown version and should be considered invalid.
 
 
 ## Drawbacks
@@ -244,8 +230,8 @@ There is no impact on privacy.
 
 ## Performance
 
-The expected performance impact is negligible for sending and processing the new UMP 
-message in the runtime as well as on the node side.
+Overall performance will be improved by not checking the collator signatures in runtime and nodes.
+The impact on the UMP queue and candidate receipt processing is negligible.
 
 The `ClaimQueueOffset` along with the relay parent choice allows parachains to optimize their 
 block production for either throughput or latency. A value of `0` with newest relay parent 
@@ -265,25 +251,28 @@ runtime or collator nodes.
 
 The proposed changes are backwards compatible in general, but additional care must be taken by 
 waiting for at least `2/3 + 1` validators to upgrade. Validators that have not upgraded will not 
-back candidates using the new descriptor format and will also initiate disputes against.
+back candidates using the new descriptor format and will also initiate disputes against these 
+candidates.
 
 ### Relay chain runtime
 
 The first step is to remove collator signature checking logic in the runtime, but keep the node 
-side collator signature 
-checks. 
+side collator signature checks. 
 
-The runtime must be upgraded to the new primitives before any collator or node is allowed to use 
-the new candidate receipts format. 
+The runtime must be upgraded to support the new primitives before any collator or node is allowed 
+to use the new candidate receipts format. 
 
 ### Validators
 
 To ensure a smooth launch, a new node feature is required.
 The feature acts as a signal for supporting the new candidate receipts on the node side and can 
-only be safely enabled if at least `2/3 + 1` of the validators are upgraded. Node implementions need to decode the new candidate descriptor once the feature is enabled otherwise they might raise disputes and get slashed.
+only be safely enabled if at least `2/3 + 1` of the validators are upgraded. Node implementions 
+need to decode the new candidate descriptor once the feature is enabled otherwise they might 
+raise disputes and get slashed.
 
-Once enabled, the validators will skip checking the collator signature when processing the 
-candidate receipts and verify the `CoreIndex` and `SessionIndex` fields if present in the receipt.
+Once the feature is enabled, the validators will skip checking the collator signature when 
+processing the candidate receipts and verify the `CoreIndex` and `SessionIndex` fields if 
+present in the receipt.
 
 No new implementation of networking protocol versions for collation and validation is required.
 
