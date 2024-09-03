@@ -69,7 +69,8 @@ UMP queue by outputting them in [upward_messages](https://github.com/paritytech/
 
 The UMP queue layout is changed to allow the relay chain to receive both the XCM messages and
 `UMPSignal` messages. An empty message (empty `Vec<u8>`) is used to mark the end of XCM messages and
-the start of `UMPSignal` messages.
+the start of `UMPSignal` messages.The `UMPSignal` is optional and can be omitted by parachains
+not using elastic scaling.
 
 This way of representing the new messages has been chosen over introducing an enum wrapper to
 minimize breaking changes of XCM message decoding in tools like Subscan for example.
@@ -236,9 +237,9 @@ provides the best latency while picking older relay parents avoids re-orgs.
 
 ## Ergonomics
 
-It is mandatory for elastic parachains to switch to the new receipt format. It is optional but
-desired that all parachains switch to the new receipts for providing the session index for
-disputes.
+It is mandatory for elastic parachains to switch to the new receipt format and commit to a
+core by sending the `UMPSignal::SelectCore` message. It is optional but desired that all
+parachains switch to the new receipts for providing the session index for disputes.
 
 The implementation of this RFC itself must not introduce any breaking changes for the parachain
 runtime or collator nodes.
