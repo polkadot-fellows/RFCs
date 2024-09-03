@@ -69,7 +69,7 @@ UMP queue by outputting them in [upward_messages](https://github.com/paritytech/
 
 The UMP queue layout is changed to allow the relay chain to receive both the XCM messages and
 `UMPSignal` messages. An empty message (empty `Vec<u8>`) is used to mark the end of XCM messages and
-the start of `UMPSignal` messages.The `UMPSignal` is optional and can be omitted by parachains
+the start of `UMPSignal` messages. The `UMPSignal` is optional and can be omitted by parachains
 not using elastic scaling.
 
 This way of representing the new messages has been chosen over introducing an enum wrapper to
