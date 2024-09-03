@@ -58,7 +58,7 @@ bad parachain blocks.
 
 This proposal aims to remove the collator signature and all the logic that checks the collator
 signatures of candidate receipts. We use the first 7 reclaimed bytes to represent the version,
-the core,  session index, and fill the rest with zeroes. So, there is no change in the layout
+the core, session index, and fill the rest with zeroes. So, there is no change in the layout
 and length of the receipt. The new primitive is binary-compatible with the old one.
 
 ### UMP transport
@@ -83,11 +83,13 @@ Example:
 #### `UMPSignal` messages
 
 ```rust
-/// An `u8` wrap-around sequence number. Typically this would be the least significant byte of the 
-/// parachain block number.
+/// The selector that determines the core index.
 pub struct CoreSelector(pub u8);
 
-/// An offset in the relay chain claim queue.
+/// The offset in the relay chain claim queue.
+///
+/// The state of the claim queue is given by the relay chain block
+/// that is used as context for the `PoV`. 
 pub struct ClaimQueueOffset(pub u8);
 
 /// Signals sent by a parachain to the relay chain.
@@ -95,14 +97,13 @@ pub enum UMPSignal {
     /// A message sent by a parachain to select the core the candidate is committed to.
     /// Relay chain validators, in particular backers, use the `CoreSelector` and `ClaimQueueOffset`
     /// to compute the index of the core the candidate has committed to.
-    ///
     SelectCore(CoreSelector, ClaimQueueOffset),
 }
 ```
 
-The parachain runtime is not concerned with the actual `CoreIndex` the candidate is intended for,
-but must provide enough information for the validators and collators to compute it. `CoreSelector`
-and `ClaimQueueOffset` use only 2 bytes and fulfills the requirement.
+The `CoreSelector` together with the `ClaimQueueOffset` are used to index the claim queue. This way
+the validators can compute the `CoreIndex` and ensure that the collator put the correct `CoreIndex`
+into the `CandidateDescriptor`.
 
 **Example:**
 
@@ -117,16 +118,13 @@ The table below represents a snapshot of the claim queue:
 | Core 3   | Para B  | **Para A** | **Para A** |
 
 The purpose of `ClaimQueueOffset` is to select the column from the above table.
-For `cq_offset = 1` we get `[ Para A, Para B, Para A]` and use as input to create
-a sorted vec with the cores A is assigned to: `[ Core 1, Core 3]` and call it `para_assigned_cores`.
+For `cq_offset = 1` we get `[Para A, Para B, Para A]` and use as input to create
+a sorted vec with the cores A is assigned to: `[Core 1, Core 3]` and call it `para_assigned_cores`.
 We use `core_selector` and determine the committed core index is `Core 3` like this:
 
 ```rust
 let committed_core_index = para_assigned_cores[core_selector % para_assigned_cores.len()];
 ```
-
-Parachains should prefer to have a static `ClaimQueueOffset` value that makes sense for their
-usecase which can be changed by governance at some future point.
 
 ### Polkadot Primitive changes
 
@@ -176,6 +174,22 @@ pub struct CandidateDescriptorV2<H = Hash> {
 In future format versions, parts of the `reserved1` and `reserved2` bytes can be used to include
 additional information in the descriptor.
 
+### Backwards compatibility
+
+Two flavors of candidate receipts are used in network protocols, runtime and node
+implementation:
+
+- `CommittedCandidateReceipt` which includes the `CandidateDescriptor` and the `CandidateCommitments`
+- `CandidateReceipt` which includes the `CandidateDescriptor` and just a hash of the commitments
+
+We want to support both the old and new versions in the runtime and node, so the implementation must
+be able to detect the version of a given candidate receipt.
+
+The version of the descriptor is detected by checking the reserved fields.
+If they are not zeroed, it means it is a version 1 descriptor. Otherwise the `version` field
+is used further to determine the version. It should be `0` for version 2 descriptors. If it is not
+the descriptor has an unknown version and should be considered invalid.
+
 ### Parachain block validation
 
 If the candidate descriptor is version 1, there are no changes.
@@ -196,22 +210,6 @@ For version 2 descriptors the runtime will determine the `core_index` using the 
 as backers did off-chain. It currently stores the claim queue at the newest allowed
 relay parent corresponding to the claim queue offset `0`. The runtime needs to be changed to store
 a claim queue snapshot at all allowed relay parents.
-
-### Backwards compatibility
-
-Two flavors of candidate receipts are used in network protocols, runtime and node
-implementation:
-
-- `CommittedCandidateReceipt` which includes the `CandidateDescriptor` and the `CandidateCommitments`
-- `CandidateReceipt` which includes the `CandidateDescriptor` and just a hash of the commitments
-
-We want to support both the old and new versions in the runtime and node, so the implementation must
-be able to detect the version of a given candidate receipt.
-
-The version of the descriptor is detected by checking the reserved fields.
-If they are not zeroed, it means it is a version 1 descriptor. Otherwise the `version` field
-is used further to determine the version. It should be `0` for version 2 descriptors. If it is not
-the descriptor has an unknown version and should be considered invalid.
 
 ## Drawbacks
 
@@ -247,10 +245,12 @@ runtime or collator nodes.
 
 ## Compatibility
 
-The proposed changes are backward compatible in general, but additional care must be taken by
-waiting for at least `2/3 + 1` validators to upgrade. Validators that have not upgraded will not
-back candidates using the new descriptor format and will also initiate disputes against these
-candidates.
+The proposed changes are not fully backward compatible, because older validators verify the
+collator signature of candidate descriptors.
+
+Additional care must be taken before enabling the new descriptors by waiting for at least
+`2/3 + 1` validators to upgrade. Validators that have not upgraded will not back candidates
+using the new descriptor format and will also initiate disputes against these candidates.
 
 ### Relay chain runtime
 
