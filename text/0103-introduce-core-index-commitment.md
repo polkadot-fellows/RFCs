@@ -232,8 +232,9 @@ Overall performance will be improved by not checking the collator signatures in 
 The impact on the UMP queue and candidate receipt processing is negligible.
 
 The `ClaimQueueOffset` along with the relay parent choice allows parachains to optimize their
-block production for either throughput or latency. A value of `0` with the newest relay parent
-provides the best latency while picking older relay parents avoids re-orgs.
+block production for either throughput or lower XCM message processing latency. A value of `0`
+with the newest relay parent provides the best latency while picking older relay parents avoids
+re-orgs.
 
 ## Ergonomics
 
