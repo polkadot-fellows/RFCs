@@ -415,7 +415,7 @@ remains unchanged as we will store scale encoded <code>UMPSignal</code> messages
 UMP queue by outputting them in <a href="https://github.com/paritytech/polkadot-sdk/blob/b5029eb4fd6c7ffd8164b2fe12b71bad0c59c9f2/polkadot/primitives/src/v7/mod.rs#L684">upward_messages</a>.</p>
 <p>The UMP queue layout is changed to allow the relay chain to receive both the XCM messages and
 <code>UMPSignal</code> messages. An empty message (empty <code>Vec&lt;u8&gt;</code>) is used to mark the end of XCM messages and
-the start of <code>UMPSignal</code> messages.The <code>UMPSignal</code> is optional and can be omitted by parachains
+the start of <code>UMPSignal</code> messages. The <code>UMPSignal</code> is optional and can be omitted by parachains
 not using elastic scaling.</p>
 <p>This way of representing the new messages has been chosen over introducing an enum wrapper to
 minimize breaking changes of XCM message decoding in tools like Subscan for example.</p>
