@@ -86,8 +86,6 @@ As discussed in https://hackmd.io/@rgbPIkIdTwSICPuAq67Jbw/S1fHcvXSF we could com
 
 We never achieve true consensus on approval checkers and their approval votes.  Yet, our approval assignment loop gives a rough concensus, under our Byzantine assumption and some synchrony assumption.  It then follows that miss-reporting by malicious validators should not appreciably alter the median $\alpha_v$ and hence rewards.  
 
-All validators have their own self count $\alpha_{u,u}$ so we define $v$'s opinion of how much $u$ *stiffed* $v$ by $\zeta_{u,v} := \alpha_{v,u} - \alpha_{u,u}$, which we handle in the next section.
-
 We never tally used approval assignments to candidate equivocations or other forks.  Any validator should always conclude whatever approval checks it begins, even on other forks, but we expect relay chain equivocations should be vanishingly rare, and sassafras should make forks uncommon.
 
 ### Availability
@@ -118,11 +116,9 @@ At this point, we compute $\beta'_w = \sum_v \beta'_{w,v}$ on-chain for each $w$
 
 We now apply a tit-for-tat mechanism to prevent validators lying to reward their friends more than whoever actually gave them data, which our re-weighting turns into them stiffing real availability providers. 
 
-An availability provider $w$ defines $\delta'_{w,v} := \gamma'_{w,v} - \beta'_{w,v}$ to be the re-weighted number of chunks by which $v$ *stiffed* $w$.  Above we defined $\zeta_{w,v}$ to be number of approval checks by which $v$ *stiffed* $w$ too.  So $w$ increments their cumulative stiffing perception $\eta_{w,v}$ from $v$ by the value $\delta'_{w,v}$, so $\eta_{w,v} \mathrel{+}= \delta'_{w,v} + c \zeta_{w,v}$, for some fixed constant $c$. 
+An availability provider $w$ defines $\delta'_{w,v} := \gamma'_{w,v} - \beta'_{w,v}$ to be the re-weighted number of chunks by which $v$ *stiffed* $w$.  Now $w$ increments their cumulative stiffing perception $\eta_{w,v}$ from $v$ by the value $\delta'_{w,v}$, so $\eta_{w,v} \mathrel{+}= \delta'_{w,v}$
 
 In future, anytime $w$ seeks chunks in reconstruction $w$ *skips* $v$ proportional to $\eta_{w,v} / \sum_u \eta_{w,u}$, with each skip reducing $\eta_{w,u}$ by 1.  We expect honest accedental availability stiffs have only small $\delta'_{w,v}$, so they clear out quickly, but intentional skips add up more quickly.  
-
-We expect $c=0$ works under Byzantine assumptions, which makes much code here optional, but in principle $c > 1$ would should harm ...  JUSTIFY??
 
 We keep $\gamma_{w,v}$ and $\alpha_{u,u}$ secret so that approval checkers cannot really know others stiffing perceptions, although $\alpha_{u,v}$ leaks some relevant information.  We expect this secrecy keeps skips secret and thus prevents the tit-for-tat escalating beyond one round, which hopefully creates a desirable Nash equilibrium.  
 
