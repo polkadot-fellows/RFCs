@@ -16,7 +16,9 @@ All validators track which approval votes they actually use, reporting the aggre
 
 We want all polkadot subsystems be profitable for validataors, because otherwise operators might profit from running modified code.  In particular, almost all rewards in Kusama/Polkadot should come from work done securing parachains, primarily approval checking, but also backing, availability, and support of XCMP.
 
-At present though, validators' rewards have relatively little relationship to validators operating costs, in terms of bandwidth and CPU time.  Worse, polkadot's scaling makes us particular vulnerable "no-shows" caused by validators skipping their approval checks.
+Among these task, our highest priorities must be approval checks, which ensure soundness, and sending availability chunks to approval checkers.  We prove backers must be paid strictly less than approval checkers.
+
+At present though, [validators' rewards](https://wiki.polkadot.network/docs/maintain-guides-validator-payout) have relatively little relationship to validators operating costs, in terms of bandwidth and CPU time.  Worse, polkadot's scaling makes us particular vulnerable "no-shows" caused by validators skipping their approval checks.  
 
 We're particularly concernned about hardware specks impact upon the number of parachain cores.  We've requested relatively low spec machines so far, only four physical CPU cores, although some run even lower specs like only two physical CPU cores.  Alone, rewards cannot fix our low speced validator problem, but rewards and outreach together should far more impact than either alone. 
 
@@ -30,38 +32,90 @@ We shall still reward participation in relay chain concensus of course, which de
 
 We've discussed roughly this rewards protocol in https://hackmd.io/@rgbPIkIdTwSICPuAq67Jbw/S1fHcvXSF and https://github.com/paritytech/polkadot-sdk/issues/1811 as well as related topics like https://github.com/paritytech/polkadot-sdk/issues/5122
 
-## Explanation
-
-Rewards messages could be collected by a true system parachain.
+## Logic
 
 ### Categories
 
-We think rewards should break down roughly like
-- 15% - Relay chain block production
-- 5% - Availability redistribution
-- 70% - Approvals and backing checks
-- 5% - Finality???  TODO: Ask Al
+We alter the [current rewards scheme](https://wiki.polkadot.network/docs/maintain-guides-validator-payout) by reducing to roughly these proportions of total rewards:
+- 15-20% - Relay chain block production and uncle logic 
+- 5% - Rnything else related to relay chain finality, primarily beefy proving, but maybe other tasts exist.
+- Any existing rewards for on-chain validity statements would only cover backers, so those rewards must be removed.
 
+We add roughly these proportions of total rewards covering parachain work:
+- 70-75% - approval and backing validity checks, with the backing rewards being required to be less than approval rewards.  
+- 5-10% - Availability redistribution from availability providers to approval checkers.  We do not reward for availability distribution from backers to availability providers.
 
+### Collection
+
+We track this data for each candidate during the approvals process:
+```
+/// Our subjective record of out availability transfers for this candidate.
+CandidateRewards {
+    /// Anyone who backed this parablock
+    backers: [AuthorityId; NumBackers],
+    /// Anyone who sent us chunks for this candidate
+    downloaded_from: HashMap<AuthorityId,u16>,    
+    /// Anyone to whome we sent chunks for this candidate
+    uploaded_to: HashMap<AuthorityId,u16>,
+}
+```
+We no longer require this data during disputes.  
+<!-- You could optionally track a `downloaded_one: Option<AuthorityBitField>` too, for the nodes from whome we douwnloaded only one chunk, but this seems like premature optimization -->
+
+After we approve a relay chain block, then we collect all its `CandidateRewards` into an `ApprovalsTally`, with one `ApprovalTallyRecord` for each validator.  In this, we compute `approval_usages` from the final run of the approvals loop, plus `0.8` for each backer.
+```
+/// Our subjective record of what we used from, and provided to, all other validators on the finalized chain
+pub struct ApprovalsTally(Vec<ApprovalTallyLine>);
+
+/// Our subjective record of what we used from, and provided to, all one other validators on the finalized chain
+pub struct ApprovalTallyLine {
+    /// Approvals by this validator which our approvals gadget used in marking candidates approved.
+    approval_usages: u32,
+    /// Availability chunks we downloaded from this validator for our approval checks we used.
+    used_downloads: u32,
+    /// Availability chunks we uploaded to this validator which whose approval checks we used.
+    used_uploads: u32,
+}
+```
+At finality we sum these `ApprovalsTally` for one for the whole epoch so far, into another `ApprovalsTally`.  We can optionally sum them earlier at chain heads, but this requires mutablity.
 
 ### Messages
 
+After the epoch is finalized, we share the first two lines of its `ApprovalTally`.
 ```
-pub struct ApprovalTallyPerValidator {
-    approval_usages: u16,
+/// Our subjective record of what we used from some other validator on the finalized chain
+pub struct ApprovalTallyMessageLine {
+    /// Approvals by this validator which our approvals gadget used in marking candidates approved.
+    approval_usages: u32,
+    /// Availability chunks we downloaded from this validator for our approval checks we used.
     used_downloads: u32,
 }
 
-pub struct ApprovalsTallyMessage(Vec<ApprovalTallyPerValidator>);
+/// Our subjective record of what we used from all other validators on the finalized chain
+pub struct ApprovalsTallyMessage(Vec<ApprovalTallyMessageLine>);
 ```
+
+### Rewards compoutation
+
+We compute the approvals rewards by taking the median of the `approval_usages` fields for each validator across all validators `ApprovalsTallyMessage`s.
+
+TODO: `used_downloads` from $\beta'$ below.
+
+
+### Strategies
+
+In theory, validators could adopt whatever strategy they like to penalize validators who stiff them on availability redistribution rewards, except they should not stiff back, only choose other availability providers.  We discuss one good strategy below, but initially this could go unimplemented. 
+
+
+## Explanation
 
 ### Backing
 
 Polkadot's efficency creates subtle liveness concerns:  Anytime one node cannot perform one of its approval checks then Polkadot loses in expectation 3.25 approval checks, or 0.10833 parablocks.  This makes back pressure essential.
 
-We cannot throttle approval checks securely either, which leaves only the backing phase where we can apply back pressue reactively.  In other words, if nodes feel overworked themselves, or beleive others to be, then they should drop backing checks, never approval checks.  It follows backing work must be rewarded less well and less reliably than approvals, as otherwise validators could benefit from behavior that harms the network.
+We cannot throttle approval checks securely either, so reactive off-chain back pressure only makes sense during or before the backing phase.  In other words, if nodes feel overworked themselves, or perhaps beleive others to be, then they should drop backing checks, never approval checks.  It follows backing work must be rewarded less well and less reliably than approvals, as otherwise validators could benefit from behavior that harms the network.
 
-We propose that one backing statement be rewarded at 80% of one approval statement, so backers earn only 80% of what approval checkers earn.  We omit rewards for availability distribution, so backers spend more bandwidth.  Approval checkers always fetch chunks first from backers though, so ultimately backing checks earn only 15% less.  We sadly cannot reward backing and approval checks identically because the backer then earns slightly more in availability redistribution.  We must lower this 80% if availability redistribution rewards increase much.
+We propose that one backing statement be rewarded at 80% of one approval statement, so backers earn only 80% of what approval checkers earn.  We omit rewards for availability distribution, so backers spend more on bandwidth too.  Approval checkers always fetch chunks first from backers though, so good backers earn roughly 7% there, meaning backing checks earn roughly 13% less than approval checks.  We should lower this 80% if we ever increase availability redistribution rewards.
 
 Although imperfect, we believe this simplifies implementation, and provides robustness against mistakes elsewhere, including by governance mistakes, but incurs minimal risk.  In principle, backer might not distribute systemic chunks, but approval checkers fetch systemic chunks from backers first anyways, so likely this yields negligable gains.
 
@@ -88,7 +142,7 @@ We never achieve true consensus on approval checkers and their approval votes.  
 
 We never tally used approval assignments to candidate equivocations or other forks.  Any validator should always conclude whatever approval checks it begins, even on other forks, but we expect relay chain equivocations should be vanishingly rare, and sassafras should make forks uncommon.
 
-### Availability
+### Availability redistribution
 
 As approval checkers could easily perform useless checks, we shall reward availability providers for the availability chunks they provide that resulted in useful approval checks.  We enforce honesty using a tit-for-tat mechanism because chunk transfers are inherently subjective.
 
@@ -105,32 +159,29 @@ At this point, $\alpha_v$, $\alpha_{v,v}$, and $\alpha_{u,v}$ all potentially di
 After receiving "all" pairs $(\alpha_{u,v},\beta_{u,v})$, validator $w$ re-weights the $\beta_{u,v}$ and their own $\gamma_{w,v}$.
 $$
 \begin{aligned}
-\beta'_{w,v} &= {(f+1) \alpha_v \over \sum_u \beta_{u,v}} \beta'_{w,v} \\
-\gamma'_{w,v} &= {(f+1) \alpha_w \over \sum_v \gamma_{w,v}} \gamma'_{w,v} \\
+\beta\prime_{w,v} &= {(f+1) \alpha_v \over \sum_u \beta_{u,v}} \beta_{w,v} \\
+\gamma\prime_{w,v} &= {(f+1) \alpha_w \over \sum_v \gamma_{w,v}} \gamma_{w,v} \\
 \end{aligned}
 $$
-At this point, we compute $\beta'_w = \sum_v \beta'_{w,v}$ on-chain for each $w$ and reward $w$ proportionally.
+At this point, we compute $\beta\prime_w = \sum_v \beta\prime_{w,v}$ on-chain for each $w$ and reward $w$ proportionally.
 
 
 ### Tit-for-tat
 
-We now apply a tit-for-tat mechanism to prevent validators lying to reward their friends more than whoever actually gave them data, which our re-weighting turns into them stiffing real availability providers. 
+We employ a tit-for-tat strategy to punish validators who lie about from whome they obtain availability chunks.  We only alter validators future choices in from whom they obtain availability chunks, and never punish by lying ourselves, so nothing here breaks polkadot, but not having roughly this strategy enables cheating.  
 
-An availability provider $w$ defines $\delta'_{w,v} := \gamma'_{w,v} - \beta'_{w,v}$ to be the re-weighted number of chunks by which $v$ *stiffed* $w$.  Now $w$ increments their cumulative stiffing perception $\eta_{w,v}$ from $v$ by the value $\delta'_{w,v}$, so $\eta_{w,v} \mathrel{+}= \delta'_{w,v}$
+An availability provider $w$ defines $\delta\prime_{w,v} := \gamma\prime_{w,v} - \beta\prime_{w,v}$ to be the re-weighted number of chunks by which $v$ *stiffed* $w$.  Now $w$ increments their cumulative stiffing perception $\eta_{w,v}$ from $v$ by the value $\delta\prime_{w,v}$, so $\eta_{w,v} \mathrel{+}= \delta\prime_{w,v}$
 
-In future, anytime $w$ seeks chunks in reconstruction $w$ *skips* $v$ proportional to $\eta_{w,v} / \sum_u \eta_{w,u}$, with each skip reducing $\eta_{w,u}$ by 1.  We expect honest accedental availability stiffs have only small $\delta'_{w,v}$, so they clear out quickly, but intentional skips add up more quickly.  
+In future, anytime $w$ seeks chunks in reconstruction $w$ *skips* $v$ proportional to $\eta_{w,v} / \sum_u \eta_{w,u}$, with each skip reducing $\eta_{w,u}$ by 1.  We expect honest accedental availability stiffs have only small $\delta\prime_{w,v}$, so they clear out quickly, but intentional skips add up more quickly.  
 
 We keep $\gamma_{w,v}$ and $\alpha_{u,u}$ secret so that approval checkers cannot really know others stiffing perceptions, although $\alpha_{u,v}$ leaks some relevant information.  We expect this secrecy keeps skips secret and thus prevents the tit-for-tat escalating beyond one round, which hopefully creates a desirable Nash equilibrium.  
 
 We favor skiping systematic chunks to reduce reconstructon costs, so we face costs when skipping them.  We could however fetch systematic chunks from availability providers as well as backers, or even other approval checkers, so this might not become problematic in practice.
 
 
+## Concerns: Drawbacks, Testing, Security, and Privacy
 
-## Drawbacks
-
-<!-- Description of recognized drawbacks to the approach given in the RFC. Non-exhaustively, drawbacks relating to performance, ergonomics, user experience, security, or privacy. -->
-
-## Testing, Security, and Privacy
+We do not pay backers individually for availability distribution per se.  We could only do so by including this information into the availability bitfields, which complicates on-chain computation.  Also, if one of the two backers does not distribute then the availability core should remain occupied longer, meaning the lazy backer loses some rewards too.  It's likely future protocol improbvements change this, so we should monitor for lazy backers outside the rewards system.  
 
 We discuss approvals being considered by the tit-for-tat in earlier drafts.  An adversary who successfuly manipulates the rewards median votes would've alraedy violated polkadot's security assumptions though, which requires a hard fork and correcting the dot allocation.  Incorrect report wrong `approval_usages` remain interesting statistics though. 
 
@@ -153,7 +204,8 @@ We alraedy teach validators about missed parachain blocks, but we'll teach appro
 
 <!--  ### Compatibility  -->
 
-In future, JAM's block exports could slightly complicate availability rewards, but so far the difference appears unimportant.
+JAM's block exports should not complicate availability rewards, but could impact some alternative schemes. 
+
 
 ## Prior Art and References
 
