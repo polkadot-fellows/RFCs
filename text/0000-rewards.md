@@ -98,8 +98,32 @@ pub struct ApprovalsTallyMessage(Vec<ApprovalTallyMessageLine>);
 ### Rewards compoutation
 
 We compute the approvals rewards by taking the median of the `approval_usages` fields for each validator across all validators `ApprovalsTallyMessage`s.
+```
+let mut approval_usages_medians = Vec::new(); 
+for i in 0..num_validators {
+    let mut v: Vec<u32> = approvals_tally_messages.iter().map(|atm| atm.0[i].approval_usages);
+    v.sort();
+    approval_usages_medians.push(v[num_validators/2]);
+}
+```
+Assuming more than 50% honersty, these median tell us how many approval votes form each validator
 
-TODO: `used_downloads` from $\beta'$ below.
+We re-weight the `used_downloads` from the `i`th validator by their median times their expected `f+1` chunks and divided by how many chunks downloads they claimed, and sum them 
+```
+#[cfg(offchain)]
+let mut my_missing_uploads = my_approvals_tally.iter().map(|l| l.used_uploads).collect();
+let mut reweighted_total_used_downloads = vec[0u64; num_validators];
+for (mmu,atm) in my_missing_uploads.iter_mut().zip(approvals_tally_messages) {
+    let d = atm.0.iter().map(|l| l.used_downloads).sum();
+    for i in 0..num_validators {
+        let atm_from_i = approval_usages_medians[i] * (f+1) / d;
+        #[cfg(offchain)]
+        if i == me { mmu -= atm_from_i };
+        reweighted_total_used_downloads[i] += atm_from_i;
+    }
+}
+```
+We distribute rewards on-chain using `approval_usages_medians` and `reweighted_total_used_downloads`.  Approval checkers could later change from who they download chunks using `my_missing_uploads`.
 
 
 ### Strategies
