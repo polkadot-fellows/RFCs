@@ -1,10 +1,10 @@
-# RFC-00xx: Referenda Confirmation by Candle Auction
+# RFC-00xx: Referenda Confirmation by Candle Mechanism
 
-|                 |                                                                  |
-| --------------- | ---------------------------------------------------------------- |
-| **Start Date**  | 22 March 2024                                                    |
-| **Description** | Proposal to decide polls after confirm period via candle auction |
-| **Authors**     | Pablo Dorado                                                     |
+|                 |                                                                                           |
+| --------------- | ----------------------------------------------------------------------------------------- |
+| **Start Date**  | 22 March 2024                                                                             |
+| **Description** | Proposal to decide polls after confirm period via a mechanism similar to a candle auction |
+| **Authors**     | Pablo Dorado                                                                              |
 
 ## Summary
 
@@ -75,18 +75,25 @@ stateDiagram-v2
     rj --> [*]
 ```
 
-This specification proposes two changes to implement this candle mechanism:
+This specification proposes three changes to implement this candle mechanism:
 
-1. Storing every change of the poll status (whether it is passing or not) once the decision period
-   is over.
-1. Including a **Finalization** period in the ongoing state. This period begins the moment after
-   confirm period ends, and extends the decision for a couple of blocks, until the [VRF][wiki:vrf]
-   seed used to determine the candle block can be considered _"good enough"_, this is, not known
-   before the ongoing period (decision/confirmation) was over.
+1. This mechanism MUST be enabled via a configuration parameter. Once enabled, the referenda system
+   MAY record the next poll ID from which to start enabling this mechanism. This is to preserve
+   backwards compatibility with currently ongoing polls.
+1. A record of the poll status (whether it is passing or not) is stored once the decision period is
+   finished.
+1. Including a **Finalization** period as part of the ongoing state. From this point, the poll MUST
+   be immutable at this point.
 
-   After that happens, a random block within the confirm period is chosen, and the decision of
+   This period begins the moment after confirm period ends, and extends the decision for a couple
+   of blocks, until the [VRF][wiki:vrf] seed used to determine the candle block can be considered
+   _"good enough"_. This is, not known before the ongoing period (decision/confirmation) was over.
+
+   Once that happens, a random block within the confirm period is chosen, and the decision of
    approving or rejecting the poll is based on the status immediately before the block where the
    candle was _"lit-off"_.
+
+When enabled, the state diagram for the referenda system is the following:
 
 ```mermaid
 stateDiagram-v2
@@ -119,28 +126,62 @@ stateDiagram-v2
     rj --> [*]
 ```
 
-This change implies ensuring the poll cannot be mutated after .
-
 ## Drawbacks
 
-<!-- TODO: Add if any -->
+This approach doesn't include a mechanism to determine whether a change of the poll status in the
+confirming period is due to a legitimate change of mind of the voters, or an exploitation of its
+aforementioned vulnerabilities (like a sniping attack), instead treating all of them as potential
+attacks.
 
-## Prior Art and References
-
-> TODO: Mention Prior Art
-
-- `pallet-auction`
+This is an issue that can be addressed by additional mechanisms, and heuristics that can help
+determine the probability of a change of poll status to happen as a result of a legitimate behaviour.
 
 ## Testing, Security, and Privacy
 
-> TODO: Mention which testing is done (and will be added on the `polkadot-sdk` PR.
+The implementation of this RFC will be tested on testnets (Paseo and Westend) first. Furthermore, it
+should be enabled in a canary network (like Kusama) to ensure the behaviours it is trying to address
+is indeed avoided.
+
+An audit will be required to ensure the implementation doesn't introduce unwanted side effects.
+
+There are no privacy related concerns.
+
+## Performance, Ergonomics, and Compatibility
+
+### Performance
+
+The added steps imply pessimization, necessary to meet the expected changes. An implementation MUST
+exit from the **Finalization** period as early as possible to minimize this impact.
+
+### Ergonomics
+
+This proposal does not alter the already exposed interfaces or developers or end users. However, they
+must be aware of the changes in the additional overhead the new period might incur (these depend on the
+implemented VRF).
+
+### Compatibility
+
+This proposal does not break compatibility with existing interfaces, older versions, but it alters the
+previous implementation of the referendum processing algorithm.
+
+An acceptable upgrade strategy that can be applied is defining a point in time (block number, poll index)
+from which to start applying the new mechanism, thus, not affecting the already ongoing referenda.
+
+## Prior Art and References
+
+- [Auctions pallet][docs:polkadot-runtime-common::auctions] in [`polkadot-runtime-commont`][crates:polkadot-runtime-common]: Defines the mechanism of candle auctions.
+- **PBA Book**: A good place to read about [VRFs][pba:exotic-primitives].
 
 ## Unresolved Questions
 
-<!-- TODO: Add if any -->
+- How to determine in a statistically meaningful way that a change in the poll status corresponds to an
+  organic behaviour, and not an unwanted, malicious behaviour?
 
 ## Future Directions and Related Material
 
-<!-- TODO: Add if any -->
+A proposed implementation of this change can be seen on this [Pull Request](https://github.com/virto-network/polkadot-sdk/pull/4).
 
+[crates:polkadot-runtime-common]: https://crates.io/crates/polkadot-runtime-common
+[docs:polkadot-runtime-common::auctions]: https://docs.rs/polkadot-runtime-common/16.0.0/polkadot_runtime_common/auctions/index.html
+[pba:exotic-primitives]: https://polkadot-blockchain-academy.github.io/pba-book/cryptography/exotic-primitives/page.html?highlight=vrf#verifiable-random-functionsvrfs
 [wiki:vrf]: https://en.wikipedia.org/wiki/Verifiable_random_function
