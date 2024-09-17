@@ -4,7 +4,7 @@
 | --------------- | ----------------------------------------------------------------------------------------- |
 | **Start Date**  | 22 March 2024                                                                             |
 | **Description** | Proposal to decide polls after confirm period via a mechanism similar to a candle auction |
-| **Authors**     | Pablo Dorado                                                                              |
+| **Authors**     | Pablo Dorado, Daniel Olano                                                                |
 
 ## Summary
 
