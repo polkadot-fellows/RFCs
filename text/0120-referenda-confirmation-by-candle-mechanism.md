@@ -1,4 +1,4 @@
-# RFC-00xx: Referenda Confirmation by Candle Mechanism
+# RFC-0120: Referenda Confirmation by Candle Mechanism
 
 |                 |                                                                                           |
 | --------------- | ----------------------------------------------------------------------------------------- |
