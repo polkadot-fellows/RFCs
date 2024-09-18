@@ -8,7 +8,7 @@
 
 ## Summary
 
-In an attempt to mitigate risks derived from unwanted behaviours around long ongoing periods on
+In an attempt to mitigate risks derived from unwanted behaviours around long decision periods on
 referenda, this proposal describes how to finalize and decide a result of a poll via a
 mechanism similar to candle auctions.
 
