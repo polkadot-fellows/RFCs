@@ -40,6 +40,7 @@ In the case of XCM programs going from `source-chain` directly to `dest-chain` w
 
 Instead of clearing the `source-chain` origin, the destination chain shall attempt to alias `source-chain` to "original origin" on the source chain.
 Most common such origin aliasing would be `X1(Parachain(source-chain))` -> `X2(Parachain(source-chain), AccountId32(origin-account))` for the case of a single hop transfer where the initiator is a (signed/pure/proxy) account `origin-account` on `source-chain`.
+This is equivalent to using the `DescendOrigin` instruction in this case, but also usable in the multi hop case.
 
 This allows an actor on chain A to `Transact` on chain B without having to prefund its SA account on chain B, instead they can simply transfer the required fees in the same XCM program as the `Transact`.
 
@@ -51,7 +52,7 @@ The model described above makes some aliasing trust assumptions, the most import
 
 The origin aliasing trust relationship is highly customizeable at the runtime level, so that parachains can define coarse filters or granular pairs of (source, target) locations aliasing.
 
-Even so, this RFC aims to also propose a standard set of aliasing rules that all Parachains can integrate for allowing the vast majority of `Transact` usecases in a "one-click" manner (single XCM), without practically lowering their security posture.
+Even so, this RFC aims to also propose a standard set of aliasing rules that all Parachains can integrate for allowing the vast majority of `Transact` usecases in a "one-click" manner (single user signature), without practically lowering their security posture.
 
 #### Standard Aliasing Rules:
 
@@ -97,9 +98,9 @@ Transact over Snowbridge (same for other bridges):
 
 ## Drawbacks
 
-In terms of ergonomics and user experience, this support for combining an asset transfer with a subsequent action (like Transact) is a net possitive.
+In terms of ergonomics and user experience, this support for combining an asset transfer with a subsequent action (like Transact) is a net positive.
 
-In terms off performance, and privacy, this is neutral with no changes.
+In terms of performance, and privacy, this is neutral with no changes.
 
 In terms of security, the feature by itself is also neutral because it allows `preserve_origin: false` usage for operating with no extra trust assumptions. When wanting to support preserving origin, chains need to configure secure origin aliasing filters. The "standard" one provided in this RFC will be the right choice for the majority of chains, but for others it will not be depending on their business model and logic (e.g. chain does not plan to integrate with Asset Hub). It is up to the individual chains to configure accordingly.
 
