@@ -48,21 +48,25 @@ As long as the asset transfer has the same XCM route/hops as the rest of the pro
 
 ### Trust assumptions
 
-The model described above makes some aliasing trust assumptions, the most important being how _the root location of the intermediate hop/chain has to be trusted to alias ("impersonate") other locations from the source chain_.
+The model described above works between chains that configure certain aliasing rules. Origin aliasing is highly customizable at the runtime level, so that chains can define coarse filters or granular pairs of (source, target) locations aliasing.
 
-The origin aliasing trust relationship is highly customizeable at the runtime level, so that parachains can define coarse filters or granular pairs of (source, target) locations aliasing.
+This RFC suggests a coarse set of aliasing rules that chains can use for allowing the vast majority of `Transact` usecases in a "one-click" manner (single user signature), without *practically* lowering their security posture.
 
-Even so, this RFC aims to also propose a standard set of aliasing rules that all Parachains can integrate for allowing the vast majority of `Transact` usecases in a "one-click" manner (single user signature), without practically lowering their security posture.
+#### Suggested Aliasing Rules:
 
-#### Standard Aliasing Rules:
-
-1. Any chain allows aliasing into a child location. Equivalent to DescendOrigin into an interior location.
+1. Any chain allows aliasing origin into a child location. Equivalent to DescendOrigin into an interior location.
 2. Parachains allow Asset Hub root location to alias into any other origin.
 
-Now, the second rule as defined above in its most generic form might seem "dangerous" at first, but in practical terms if Asset Hub Root gets compromised and can access arbitrary sovereign accounts on Asset Hub and/or send arbitrary XCMs, the blast radius and potential damage to other parachains are not relevantly impacted by this aliasing rule.
+The first rule is allowing use of `AliasOrigin` with same effect as doing a `DescendOrigin`, so it is absolutely not controversial.
 
-This second rule can also be tightened by each parachain to their own liking, for example limit Asset Hub aliasing to a stricter range of locations:
-- "allow Asset Hub root to alias Ethereum locations" - which enables support for `Transact` over the Ethereum Snowbridge (but doesn't support sibling parachain to Transact through Asset Hub)
+Now, the second rule as defined above in its most generic form might seem "dangerous" at first, but in practical terms if Asset Hub Root gets compromised and can access arbitrary sovereign accounts on Asset Hub and/or send arbitrary XCMs, the blast radius and potential damage to other chains is already so large that it is not relevantly impacted by this aliasing rule. A compromised system chain root would already be by itself an "apocalypse" scenario for the whole Polkadot Ecosystem.
+
+It's important noting that the aliasing rules above are a suggestion only, ultimately they are chain specific configuration. Therefore, each chain can tighten them to their own liking. For example, use stricter range of locations that Asset Hub can alias like:
+- "allow Asset Hub root to alias Ethereum locations" - which enables support for `Transact` over the Ethereum Snowbridge (but doesn't support sibling parachain to Transact through Asset Hub),
+- "allow Asset Hub root to alias Kusama locations"
+- "allow Asset Hub root to alias specific pallet or smart contract on Chain X"
+
+Please note that Bridge Hub already does something similar today: Bridge Hub root is allowed/trusted to `UniversalOrigin+DescendOrigin` into any external location in order to impersonate/proxy external locations.
 
 ### XCM `InitiateAssetsTransfer` instruction changes
 
@@ -102,11 +106,11 @@ In terms of ergonomics and user experience, this support for combining an asset 
 
 In terms of performance, and privacy, this is neutral with no changes.
 
-In terms of security, the feature by itself is also neutral because it allows `preserve_origin: false` usage for operating with no extra trust assumptions. When wanting to support preserving origin, chains need to configure secure origin aliasing filters. The "standard" one provided in this RFC will be the right choice for the majority of chains, but for others it will not be depending on their business model and logic (e.g. chain does not plan to integrate with Asset Hub). It is up to the individual chains to configure accordingly.
+In terms of security, the feature by itself is also neutral because it allows `preserve_origin: false` usage for operating with no extra trust assumptions. When wanting to support preserving origin, chains need to configure secure origin aliasing filters. The one suggested in this RFC should be the right choice for the majority of chains, but each chain will ultimately choose depending on their business model and logic (e.g. chain does not plan to integrate with Asset Hub). It is up to the individual chains to configure accordingly.
 
 ## Testing, Security, and Privacy
 
-Barriers should now allow `AliasOrigin` or `ClearOrigin`.
+Barriers should now allow `AliasOrigin`, `DescendOrigin` or `ClearOrigin`.
 
 Normally, XCM program builders should audit their programs and eliminate assumptions of "no origin" on remote side of this instruction. In this case, the `InitiateAssetsTransfer` has not been released yet, it will be part of XCMv5, and we can make this change part of the same XCMv5 so that there isn't even the possibility of someone in the wild having built XCM programs using this instruction on those wrong assumptions.
 
