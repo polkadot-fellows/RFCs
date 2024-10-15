@@ -59,23 +59,30 @@ Also, teams might opt-in to delegate handling their para in the registry to the 
 allows to perform similar actions using the _paras registrar_, allowing for a shorter path to unbrick a
 para.
 
+Initially, the unbrick collective has powers similar to a parachains own sudo, but permits more
+decentralized control. In the future, Polkadot shall provide functionality like SPREE or JAM that
+exceeds sudo permissions, so the unbrick collective cannot modify those state roots or code.  
+
 ### The Unbrick Process
 
 ```mermaid
 flowchart TD
     A[Start] 
+
+    A -- Bricked --> C[Request para unlock via Root]
+    C -- Approved --> Y
+    C -- Rejected --> A
     
-    A -- Bricked --> C[Request Unbrick «via governance»]
-    C --> D[unbrick call proposal on WhitelistedUnbrickCaller]
-    C --> E[whitelist call proposal on the Unbrick governance]
+    D[unbrick call proposal on WhitelistedUnbrickCaller]
+    E[whitelist call proposal on the Unbrick governance]
     E -- call whitelisted --> F[unbrick call enacted]
     D -- unbrick called --> F
     F --> Y
 
     A -- Not bricked --> O[Opt-in to the Collective]
-    O -- Bricked --> P[Collective calls registrar]
-    P --> Y
-    
+    O -- Bricked --> D
+    O -- Bricked --> E
+
     Y[update PVF / head state] -- Unbricked --> Z[End]
 ```
 
@@ -83,13 +90,13 @@ Initially, a para team has two paths to handle a potential unbrick of their para
 stops producing blocks.
 
 1. **Opt-in to the Unbrick Collective**: This is done by delegating the handling of the para
-  in the _paras registrar_ to the Collective. This doesn't require unlocking the para. This way,
-  the collective is enabled to perform changes in the _paras registrar_ without the need for
-  whitelisting.
-2. **Request an Unbrick Process**: In case the para hasn't delegated its handling in the _paras
-  registrar_, it'll be still possible for the para team to submit a proposal to unbrick the para,
-  assisted by the Collective. This process is expected to be more expedite (and less expensive)
-  for a team to perform than submitting a proposal on the `Root` governance track.
+  in the _paras registrar_ to an origin related to the Collective. This doesn't require unlocking
+  the para. This way, the collective is enabled to perform changes in the _paras_ module, after
+  the **Unbrick Process** proceeds.
+2. **Request a Para Unlock**: In case the para hasn't delegated its handling in the _paras
+  registrar_, it'll be still possible for the para team to submit a proposal to unlock the para,
+  which can be assisted by the Collective. However, this involves submitting a proposal to the `Root`
+  governance origin.
 
 ### Belonging to the Collective
 
@@ -155,7 +162,12 @@ This RFC is fully compatible with existing interfaces.
 - Any other methods that shall be updated to accept `Unbrick` origin?
 - Any other requirements to become a member?
 - We would like to keep this simple, so no funding support from the Polkadot treasury. But do we
-  want to compensate the members somehow? i.e. Allow parachain teams to donate to the collective
+  want to compensate the members somehow? i.e. Allow parachain teams to donate to the collective.
+- We hope SPREE/JAM would be carefully audited for miss-use risks before being  
+  provided to parachain teams, but could the unbrick collective have an elections  
+  that warranted trust beyond sudo powers?
+- An auditing framework/collective makes sense parachain code upgrades, but  
+   could also strengthen the unbrick collective.  
 - Do we want to have this collective offer additional technical support to help bricked parachains?
   i.e. help debug the code, create the rescue plan, create postmortem report, provide resources on
   how to avoid getting bricked
