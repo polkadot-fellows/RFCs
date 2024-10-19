@@ -1,0 +1,382 @@
+
+<!DOCTYPE HTML>
+<html lang="en" class="polkadot" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>RFC-0124: Extrinsic version 5 - Polkadot Fellowship RFCs</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="An online book of RFCs approved or proposed within the Polkadot Fellowship.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/polkadot.css">
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "polkadot" : "polkadot";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('polkadot')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../introduction.html">Introduction</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Newly Proposed</li><li class="chapter-item expanded "><a href="../new/0123-pending-code-as-storage-location-for-runtime-upgrades.html">RFC-0123: Introduce :pending_code as intermediate storage key for the runtime code</a></li><li class="chapter-item expanded "><a href="../new/0124-extrinsic-version-5.html" class="active">RFC-0124: Extrinsic version 5</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Proposed</li><li class="chapter-item expanded "><a href="../proposed/0000-rewards.html">RFC-0000: Validator Rewards</a></li><li class="chapter-item expanded "><a href="../proposed/0102-offchain-parachain-runtime-upgrades.html">RFC-0000: Feature Name Here</a></li><li class="chapter-item expanded "><a href="../proposed/0111-pure-proxy-replication.html">RFC-0111: Pure Proxy Replication</a></li><li class="chapter-item expanded "><a href="../proposed/0114-secp256r1-hostfunction.html">RFC-0114: Introduce secp256r1_ecdsa_verify_prehashed Host Function to verify NIST-P256 elliptic curve signatures</a></li><li class="chapter-item expanded "><a href="../proposed/0117-unbrick-collective.html">RFC-0117: The Unbrick Collective</a></li><li class="chapter-item expanded "><a href="../proposed/0120-referenda-confirmation-by-candle-mechanism.html">RFC-0120: Referenda Confirmation by Candle Mechanism</a></li><li class="chapter-item expanded "><a href="../proposed/0121-iterable-referenda-tracks.html">RFC-0121: Iterable Referenda Tracks</a></li><li class="chapter-item expanded "><a href="../proposed/RFC-114 Adjust Tipper Track Confirmation Periods.html">RFC-114: Adjust Tipper Track Confirmation Periods</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Approved</li><li class="chapter-item expanded "><a href="../approved/0001-agile-coretime.html">RFC-1: Agile Coretime</a></li><li class="chapter-item expanded "><a href="../approved/0005-coretime-interface.html">RFC-5: Coretime Interface</a></li><li class="chapter-item expanded "><a href="../approved/0007-system-collator-selection.html">RFC-0007: System Collator Selection</a></li><li class="chapter-item expanded "><a href="../approved/0008-parachain-bootnodes-dht.html">RFC-0008: Store parachain bootnodes in relay chain DHT</a></li><li class="chapter-item expanded "><a href="../approved/0010-burn-coretime-revenue.html">RFC-0010: Burn Coretime Revenue</a></li><li class="chapter-item expanded "><a href="../approved/0012-process-for-adding-new-collectives.html">RFC-0012: Process for Adding New System Collectives</a></li><li class="chapter-item expanded "><a href="../approved/0013-prepare-blockbuilder-and-core-runtime-apis-for-mbms.html">RFC-0013: Prepare Core runtime API for MBMs</a></li><li class="chapter-item expanded "><a href="../approved/0014-improve-locking-mechanism-for-parachains.html">RFC-0014: Improve locking mechanism for parachains</a></li><li class="chapter-item expanded "><a href="../approved/0022-adopt-encointer-runtime.html">RFC-0022: Adopt Encointer Runtime</a></li><li class="chapter-item expanded "><a href="../approved/0026-sassafras-consensus.html">RFC-0026: Sassafras Consensus Protocol</a></li><li class="chapter-item expanded "><a href="../approved/0032-minimal-relay.html">RFC-0032: Minimal Relay</a></li><li class="chapter-item expanded "><a href="../approved/0042-extrinsics-state-version.html">RFC-0042: Add System version that replaces StateVersion on RuntimeVersion</a></li><li class="chapter-item expanded "><a href="../approved/0043-storage-proof-size-hostfunction.html">RFC-0043: Introduce storage_proof_size Host Function for Improved Parachain Block Utilization</a></li><li class="chapter-item expanded "><a href="../approved/0045-nft-deposits-asset-hub.html">RFC-0045: Lowering NFT Deposits on Asset Hub</a></li><li class="chapter-item expanded "><a href="../approved/0047-assignment-of-availability-chunks.html">RFC-0047: Assignment of availability chunks to validators</a></li><li class="chapter-item expanded "><a href="../approved/0048-session-keys-runtime-api.html">RFC-0048: Generate ownership proof for SessionKeys</a></li><li class="chapter-item expanded "><a href="../approved/0050-fellowship-salaries.html">RFC-0050: Fellowship Salaries</a></li><li class="chapter-item expanded "><a href="../approved/0056-one-transaction-per-notification.html">RFC-0056: Enforce only one transaction per notification</a></li><li class="chapter-item expanded "><a href="../approved/0059-nodes-capabilities-discovery.html">RFC-0059: Add a discovery mechanism for nodes based on their capabilities</a></li><li class="chapter-item expanded "><a href="../approved/0078-merkleized-metadata.html">RFC-0078: Merkleized Metadata</a></li><li class="chapter-item expanded "><a href="../approved/0084-general-transaction-extrinsic-format.html">RFC-0084: General transactions in extrinsic format</a></li><li class="chapter-item expanded "><a href="../approved/0091-dht-record-creation-time.html">RFC-0091: DHT Authority discovery record creation time</a></li><li class="chapter-item expanded "><a href="../approved/0097-unbonding_queue.html">RFC-0097: Unbonding Queue</a></li><li class="chapter-item expanded "><a href="../approved/0099-transaction-extension-version.html">RFC-0099: Introduce a transaction extension version</a></li><li class="chapter-item expanded "><a href="../approved/0100-xcm-multi-type-asset-transfer.html">RFC-0100: New XCM instruction: InitiateAssetsTransfer</a></li><li class="chapter-item expanded "><a href="../approved/0101-xcm-transact-remove-max-weight-param.html">RFC-0101: XCM Transact remove require_weight_at_most parameter</a></li><li class="chapter-item expanded "><a href="../approved/0103-introduce-core-index-commitment.html">RFC-0103:  Introduce a CoreIndex commitment and a SessionIndex field in candidate receipts</a></li><li class="chapter-item expanded "><a href="../approved/0105-xcm-improved-fee-mechanism.html">RFC-0105: XCM improved fee mechanism</a></li><li class="chapter-item expanded "><a href="../approved/0107-xcm-execution-hints.html">RFC-0107: XCM Execution hints</a></li><li class="chapter-item expanded "><a href="../approved/0108-xcm-remove-testnet-ids.html">RFC-0108: Remove XCM testnet NetworkIds</a></li><li class="chapter-item expanded "><a href="../approved/0122-alias-origin-on-asset-transfers.html">RFC-0122: Asset transfers can alias XCM origin on destination to original origin</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Stale</li><li class="chapter-item expanded "><a href="../stale/0004-remove-unnecessary-allocator-usage.html">RFC-0004: Remove the host-side runtime memory allocator</a></li><li class="chapter-item expanded "><a href="../stale/0006-dynamic-pricing-for-bulk-coretime-sales.html">RFC-0006: Dynamic Pricing for Bulk Coretime Sales</a></li><li class="chapter-item expanded "><a href="../stale/0009-improved-net-light-client-requests.html">RFC-0009: Improved light client requests networking protocol</a></li><li class="chapter-item expanded "><a href="../stale/0015-market-design-revisit.html">RFC-0015: Market Design Revisit</a></li><li class="chapter-item expanded "><a href="../stale/0034-xcm-absolute-location-account-derivation.html">RFC-34: XCM Absolute Location Account Derivation</a></li><li class="chapter-item expanded "><a href="../stale/0035-conviction-voting-delegation-modifications.html"> RFC-0035: Conviction Voting Delegation Modifications</a></li><li class="chapter-item expanded "><a href="../stale/0044-rent-based-registration.html">RFC-0044: Rent based registration model</a></li><li class="chapter-item expanded "><a href="../stale/0054-remove-heap-pages.html">RFC-0054: Remove the concept of "heap pages" from the client</a></li><li class="chapter-item expanded "><a href="../stale/0070-x-track-kusamanetwork.html">RFC-0070: X Track for @kusamanetwork</a></li><li class="chapter-item expanded "><a href="../stale/0073-referedum-deposit-track.html">RFC-0073: Decision Deposit Referendum Track</a></li><li class="chapter-item expanded "><a href="../stale/0074-stateful-multisig-pallet.html">RFC-0074: Stateful Multisig Pallet</a></li><li class="chapter-item expanded "><a href="../stale/0077-increase-max-length-of-identity-pgp-fingerprint-value.html">RFC-0077: Increase maximum length of identity PGP fingerprint values from 20 bytes</a></li><li class="chapter-item expanded "><a href="../stale/0088-broker-pallet-slashable-deposit-purchaser-reputation-reserved-cores.html">RFC-0088: Add slashable locked deposit, purchaser reputation, and reserved cores for on-chain identities to broker pallet</a></li><li class="chapter-item expanded "><a href="../stale/0089-flexible-inflation.html">RFC-0089: Flexible Inflation</a></li><li class="chapter-item expanded "><a href="../stale/00xx-secondary-marketplace-for-regions.html">RFC-0001: Secondary Market for Regions</a></li><li class="chapter-item expanded "><a href="../stale/00xx-smart-contracts-coretime-chain.html">RFC-0002: Smart Contracts on the Coretime Chain</a></li><li class="chapter-item expanded "><a href="../stale/0106-xcm-remove-fees-mode.html">RFC-0106: Remove XCM fees mode</a></li><li class="chapter-item expanded "><a href="../stale/0112-compress-state-response-message-in-state-sync.html">RFC-0112: Compress the State Response Message in State Sync</a></li><li class="chapter-item expanded "><a href="../stale/TODO-stale-nomination-reward-curve.html">RFC-TODO: Stale Nomination Reward Curve</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="polkadot">Polkadot</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Polkadot Fellowship RFCs</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <p><a href="https://github.com/polkadot-fellows/RFCs/pull/124">(source)</a></p>
+<p><strong>Table of Contents</strong></p>
+<ul>
+<li><a href="#rfc-0124-extrinsic-version-5">RFC-0124: Extrinsic version 5</a>
+<ul>
+<li><a href="#summary">Summary</a></li>
+<li><a href="#motivation">Motivation</a></li>
+<li><a href="#stakeholders">Stakeholders</a></li>
+<li><a href="#explanation">Explanation</a>
+<ul>
+<li><a href="#changes-to-extrinsic-authorization">Changes to extrinsic authorization</a></li>
+<li><a href="#encoding-format-for-version-5">Encoding format for version 5</a></li>
+<li><a href="#signatures-on-polkadot-in-general-transactions">Signatures on Polkadot in General transactions</a></li>
+<li><a href="#summary-of-changes-in-version-5">Summary of changes in version 5</a></li>
+</ul>
+</li>
+<li><a href="#drawbacks">Drawbacks</a></li>
+<li><a href="#testing-security-and-privacy">Testing, Security, and Privacy</a></li>
+<li><a href="#performance-ergonomics-and-compatibility">Performance, Ergonomics, and Compatibility</a>
+<ul>
+<li><a href="#performance">Performance</a></li>
+<li><a href="#ergonomics">Ergonomics</a></li>
+<li><a href="#compatibility">Compatibility</a></li>
+</ul>
+</li>
+<li><a href="#prior-art-and-references">Prior Art and References</a></li>
+<li><a href="#unresolved-questions">Unresolved Questions</a></li>
+<li><a href="#future-directions-and-related-material">Future Directions and Related Material</a></li>
+</ul>
+</li>
+</ul>
+<h1 id="rfc-0124-extrinsic-version-5"><a class="header" href="#rfc-0124-extrinsic-version-5">RFC-0124: Extrinsic version 5</a></h1>
+<div class="table-wrapper"><table><thead><tr><th></th><th></th></tr></thead><tbody>
+<tr><td><strong>Start Date</strong></td><td>18 October 2024</td></tr>
+<tr><td><strong>Description</strong></td><td>Definition and specification of version 5 extrinsics</td></tr>
+<tr><td><strong>Authors</strong></td><td>George Pisaltu</td></tr>
+</tbody></table>
+</div>
+<h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
+<p>This RFC proposes the definition of version 5 extrinsics along with changes to the specification and encoding from version 4.</p>
+<h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
+<p><a href="https://github.com/polkadot-fellows/RFCs/blob/main/text/0084-general-transaction-extrinsic-format.md">RFC84</a> introduced the specification of <code>General</code> transactions, a new type of extrinsic besides the <code>Signed</code> and <code>Unsigned</code> variants available previously in version 4. Additionally, <a href="https://github.com/polkadot-fellows/RFCs/blob/main/text/0099-transaction-extension-version.md">RFC99</a> introduced versioning of transaction extensions through an extra byte in the extrinsic encoding. Both of these changes require an extrinsic format version bump as both the semantics around extensions as well as the actual encoding of extrinsics need to change to accommodate these new features.</p>
+<h2 id="stakeholders"><a class="header" href="#stakeholders">Stakeholders</a></h2>
+<ul>
+<li>Runtime users</li>
+<li>Runtime devs</li>
+<li>Wallet devs</li>
+</ul>
+<h2 id="explanation"><a class="header" href="#explanation">Explanation</a></h2>
+<h3 id="changes-to-extrinsic-authorization"><a class="header" href="#changes-to-extrinsic-authorization">Changes to extrinsic authorization</a></h3>
+<p>The introduction of <code>General</code> transactions allows the authorization of any and all origins through
+extensions. This means that, with the appropriate extension, <code>General</code> transactions are capable of
+replicating the same behavior present day v4 <code>Signed</code> transactions. Specifically for Polkadot
+chains, an example implementation for such an extension is
+<a href="https://github.com/paritytech/polkadot-sdk/tree/master/substrate/frame/verify-signature"><code>VerifySignature</code></a>,
+introduced in the Transaction Extension
+<a href="https://github.com/paritytech/polkadot-sdk/pull/3685">PR3685</a>. Other extensions can be inserted
+into the extension pipeline to authorize different custom origins. Therefore, a <code>Signed</code> extrinsic
+variant is redundant to a <code>General</code> one strictly in terms of functionality available to users and
+would eventually need to be deprecated and removed.</p>
+<h3 id="encoding-format-for-version-5"><a class="header" href="#encoding-format-for-version-5">Encoding format for version 5</a></h3>
+<p>As with version 4, the encoded v5 extrinsics will still be an array of SCALE encoded bytes, starting
+with the encoded length of the following bytes. The leading byte will determine the version and type
+of extrinsic, as specified by
+<a href="https://github.com/polkadot-fellows/RFCs/blob/main/text/0084-general-transaction-extrinsic-format.md">RFC84</a>,
+with the addition that the <code>Signed</code> variant will not be supported for v5 extrinsics, for reasons
+mentioned above.</p>
+<p>NOTE: For <code>Bare</code> extrinsics, the following bytes will just be the encoded call and nothing else.</p>
+<p>For <code>General</code> transactions, as stated in
+<a href="https://github.com/polkadot-fellows/RFCs/blob/main/text/0099-transaction-extension-version.md">RFC99</a>,
+an extension version byte must be added in the next extrinsic version. This byte should allow
+runtimes to expose more than one set of extensions which can be used for a transaction. As far as
+the v5 extrinsic encoding is concerned, this extension byte should be encoded immediately after the
+leading encoding byte. The extension version byte should be included in payloads to be signed by all
+extensions configured by runtime devs to ensure a user's extension version choice cannot be altered
+by third parties.</p>
+<p>After the extension version byte, the extensions will be encoded next, followed by the call itself.</p>
+<p>A quick visualization of the encoding:</p>
+<ul>
+<li><code>Bare</code> extrinsics: <code>(extrinsic_encoded_len, 0b0000_0101, call)</code></li>
+<li><code>General</code> transactions: <code>(extrinsic_encoded_len, , 0b0100_0101, extension_version_byte, extension, call)</code></li>
+</ul>
+<h3 id="signatures-on-polkadot-in-general-transactions"><a class="header" href="#signatures-on-polkadot-in-general-transactions">Signatures on Polkadot in General transactions</a></h3>
+<p>As stated before, <a href="https://github.com/paritytech/polkadot-sdk/pull/3685">PR3685</a> comes with a
+Transaction Extension which replicates the current <code>Signed</code> transactions in v5 extrinsics, namely
+<a href="https://github.com/paritytech/polkadot-sdk/tree/master/substrate/frame/verify-signature"><code>VerifySignature</code></a>.
+This extension leverages the new inherited implication functionality introduced in
+<code>TransactionExtension</code> and creates a payload to be signed using the data of all extensions after
+itself in the extension pipeline. In order to run a transaction with a signed origin, a user must
+create the transaction with an instance of the extension which provides a signature. Alternatively,
+if users want to use some other origin, they should create the transaction with this particular
+extension disabled. More on this behavior in the extension documentation. This extension can be
+configured to accept a <code>MultiSignature</code>, which makes it compatible with all signature types
+currently used in Polkadot.</p>
+<p>To generate the payload to be signed:</p>
+<ol>
+<li>The extension version byte, call, extension and extension implicit should be encoded;</li>
+<li>The result of the encoding should then be hashed using the <code>BLAKE2_256</code> hasher;</li>
+<li>The result of the hash should then be signed with the signature type specified in the extension definition.</li>
+</ol>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Step 1: encode the bytes
+let encoded = (extension_version_byte, call, transaction_extension, transaction_extension_implicit).encode();
+// Step 2: hash them
+let payload = blake2_256(&amp;encoded[..]);
+// Step 3: sign the payload
+let signature = keyring.sign(&amp;payload[..]);
+<span class="boring">}</span></code></pre></pre>
+<h3 id="summary-of-changes-in-version-5"><a class="header" href="#summary-of-changes-in-version-5">Summary of changes in version 5</a></h3>
+<p>In order to minimize the number of changes to the extrinsic format version and also to help all
+consumers downstream in the transition period between these extrinsic versions, we should:</p>
+<ul>
+<li>Remove the <code>Signed</code> variant starting with v5 extrinsics</li>
+<li>Add the <code>General</code> variant starting with v5 extrinsics</li>
+<li>Enable runtimes to support both v4 and v5 extrinsics</li>
+</ul>
+<h2 id="drawbacks"><a class="header" href="#drawbacks">Drawbacks</a></h2>
+<p>The metadata will have to accommodate two distinct extrinsic format versions at a given point in
+time in order to provide the new functionality in a non-breaking way for users and tooling.</p>
+<h2 id="testing-security-and-privacy"><a class="header" href="#testing-security-and-privacy">Testing, Security, and Privacy</a></h2>
+<p>There is no impact on testing, security or privacy.</p>
+<h2 id="performance-ergonomics-and-compatibility"><a class="header" href="#performance-ergonomics-and-compatibility">Performance, Ergonomics, and Compatibility</a></h2>
+<p>This change makes the authorization through signatures configurable by runtime devs in version 5
+extrinsics, as opposed to version 4 where the signing payload algorithm and signatures were
+hardcoded. This moves the responsibility of ensuring proper authentication through
+<code>TransactionExtension</code> to the runtime devs, but a sensible default which closely resembles the
+present day behavior will be provided in <code>VerifySignature</code>.</p>
+<h3 id="performance"><a class="header" href="#performance">Performance</a></h3>
+<p>There is no performance impact.</p>
+<h3 id="ergonomics"><a class="header" href="#ergonomics">Ergonomics</a></h3>
+<p>Tooling will have to adapt to be able to tell which authorization scheme is used by a particular
+transaction by decoding the extension and checking which particular <code>TransactionExtension</code> in the pipeline is enabled to do the origin authorization. Previously, this was done by simply checking whether the transaction is signed or unsigned, as there was only one method of authentication.</p>
+<h3 id="compatibility"><a class="header" href="#compatibility">Compatibility</a></h3>
+<p>As long as extrinsic version 4 is still exposed in the metadata when version 5 will be introduced,
+the changes will not break existing infrastructure. This should give enough time for tooling to
+support version 5 and to remove version 4 in the future.</p>
+<h2 id="prior-art-and-references"><a class="header" href="#prior-art-and-references">Prior Art and References</a></h2>
+<p>This is a result of the work in <a href="https://github.com/paritytech/polkadot-sdk/issues/2415">Extrinsic
+Horizon</a> and
+<a href="https://github.com/polkadot-fellows/RFCs/blob/main/text/0099-transaction-extension-version.md">RFC99</a>.</p>
+<h2 id="unresolved-questions"><a class="header" href="#unresolved-questions">Unresolved Questions</a></h2>
+<p>There is no clear way to expose two different extrinsic versions in the current metadata framework.
+A non-exhaustive list of options discussed so far:</p>
+<ol>
+<li>Change the <code>ExtrinsicMetadata</code> trait to specify a list of versions instead of a single version.</li>
+<li>Use the custom fields in the metadata to specify the details of the version 5.</li>
+<li>Create a new trait similar to <code>ExtrinsicMetadata</code>, but for future versions of the extrinsic
+format and add it to the metadata.</li>
+</ol>
+<h2 id="future-directions-and-related-material"><a class="header" href="#future-directions-and-related-material">Future Directions and Related Material</a></h2>
+<p>Following this change, extrinsic version 5 will be introduced as part of the <a href="https://github.com/paritytech/polkadot-sdk/issues/2415">Extrinsic
+Horizon</a> effort, which will shape future
+work.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../new/0123-pending-code-as-storage-location-for-runtime-upgrades.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../proposed/0000-rewards.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../new/0123-pending-code-as-storage-location-for-runtime-upgrades.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../proposed/0000-rewards.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>
