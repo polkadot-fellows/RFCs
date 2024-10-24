@@ -124,7 +124,7 @@ The ability to modify the Head State and/or the PVF of a para means a possibilit
 arbitrary modifications of it (i.e. take control the native parachain token or any bridged assets
 in the para).
 
-This could introduce a new attack vectorm, and therefore, such great power needs to be handled
+This could introduce a new attack vector, and therefore, such great power needs to be handled
 carefully.
 
 ## Testing, Security, and Privacy
