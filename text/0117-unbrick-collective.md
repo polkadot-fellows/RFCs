@@ -107,7 +107,7 @@ The origins able to modify the members of the collective are:
 
 - The `Fellows` track in the Polkadot Fellowship.
 - `Root` track in the Relay.
-- More than two thrids of the existing Unbrick Collective.
+- More than two thirds of the existing Unbrick Collective.
 
 The members are responsible to verify the technical details of the unbrick requests (i.e. the hash
 of the new PVF being set). Therefore, they must have the technical capacity to perform such tasks.
