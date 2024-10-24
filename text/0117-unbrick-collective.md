@@ -16,7 +16,7 @@ of blocks of these paras.
 ## Motivation
 
 Since the initial launch of Polkadot parachains, there has been many incidients causing parachains
-to stop producing new blocks (therefore, being _bricked_) and many occurrences that requires
+to stop producing new blocks (therefore, being _bricked_) and many occurrences that required
 Polkadot governance to update the parachain head state/wasm. This can be due to many reasons range
 from incorrectly registering the initial head state, inability to use sudo key, bad runtime
 migration, bad weight configuration, and bugs in the development of the Polkadot SDK.
