@@ -1,8 +1,8 @@
-# RFC-0000: Introduce XCQ(Cross Consensus Query)
+# RFC-0126: Introduce XCQ(Cross Consensus Query)
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
-| **Start Date**  | Oct 24 2024                                                                    |
+| **Start Date**  | Oct 25 2024                                                                    |
 | **Description** | Introduce XCQ (Cross Consensus Query)                                                          |
 | **Authors**     | Bryan Chen, Jiyuan Zheng |
 
