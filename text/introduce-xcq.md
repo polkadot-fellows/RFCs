@@ -44,7 +44,7 @@ The overall query pattern of the XCQ consists of three components:
 
 - Runtime: View-functions across different pallets are amalgamated through an extension-based system.
 - XCQ query: Custom computations over view-function results are encapsulated via PolkaVM programs.
-- XCQ query arguments: Query arguments like accounts to be queried are also passed.
+- XCQ query arguments: Query arguments like accounts to be queried are also passed together with the query program.
 
 ### XCQ Runtime API
 
@@ -54,7 +54,7 @@ The runtime API for off-chain query usage includes two methods:
 The query is the query program in PolkaVM program binary format.
 The input is the query arguments that is SCALE-encoded.
 The weight limit is the maximum weight allowed for the query execution.
-- `metadata`: Return metadata of supported extensions, serving as a feature discovery functionality
+- `metadata`: Return metadata of supported extensions (introduced in later section) and methods, serving as a feature discovery functionality
 
 **Example XCQ Runtime API**:
 ```rust
@@ -144,14 +144,15 @@ pub fn execute(
 ### XCQ Extension
 
 An extension-based design is essential for several reasons:
-- Diffent chains may have different data types for semantically similar queries, making it challenging to standardize function calls across them.
+- Different chains may have different data types for semantically similar queries, making it challenging to standardize function calls across them.
 An extension-based design with optional associated types allows these diverse data types to be specified and utilized effectively.
 - Function calls distributed across various pallets can be amalgamated into a single extension, simplifying the development process and ensuring a more cohesive and maintainable codebase.
-- Extensions are identified via an extension ID, a hash based on the extension name and method sets. An update to an extension is treated as a new extension.
 - New functionalities can be added without upgrading the core part of the XCQ.
 - Ensure the core part is in a minimal scope.
 
 Essential components of an XCQ extension system include:
+
+- A hash-based extension id generation mechanism for addressing and versioning . The hash value derives from the extension name and its method sets. Any update to an extension is treated as a new extension.
 
 - `decl_extension` macro: Defines an extension as a Rust trait with optional associated types.
 
@@ -164,7 +165,7 @@ pub trait Config {
     type AccountId: Codec;
     type Balance: Codec;
 }
-decl_extensions! {
+decl_extension! {
     pub trait ExtensionFungibles {
         type Config: Config;
         fn total_supply(asset: <Self::Config as Config>::AssetId) -> <Self::Config as Config>::Balance;
@@ -261,7 +262,7 @@ An XCQ program is structured as a PolkaVM program with the following key compone
      Results are SCALE-encoded bytes, with the pointer address and length packed similarly to `host_call`.
 
 - Exported Functions:
-   - `main`: The entry point of the XCQ program. It performs type checking and executes the query.
+   - `main`: The entry point of the XCQ program. It performs type checking, arguments and results passing and executes the query.
 
 ### XCQ Program Execution Flow
 
@@ -274,20 +275,18 @@ The interaction between an XCQ program and the XCQ Extension Executor follows th
 3. Main Function Execution: The Executor calls the program's `main` function, passing serialized query arguments.
 
 4. Program Execution:
-   a. Type Checking: The program uses the `return_ty` function to ensure compatibility with supported chain extensions.
-   b. Query Execution: The program executes the query using `host_call` and performs custom computations.
-   c. Result Serialization: The program serializes the result, writes it to shared memory, and returns the pointer and length to the executor.
+   1. Type Checking: The program uses the `return_ty` function to ensure compatibility with supported chain extensions.
+   2. Query Execution: The program executes the query using `host_call` and performs custom computations.
+   3. Result Serialization: The program serializes the result, writes it to shared memory, and returns the pointer and length to the executor.
 
 5. Result Retrieval: The Executor reads the result from shared memory and returns it to the caller.
-
-This structure allows for flexible, type-safe querying across different blockchain implementations while maintaining a consistent interface for developers.
 
 ## Drawbacks
 
 ### Performance issues
 
 - XCQ Query Program Size: The size of XCQ query programs should be optimized to ensure efficient storage and transmission via XCMP/HRMP.
-The specification should define a target size limit for query programs and outline strategies for reducing program size without compromising functionality. This may include techniques such as:
+Some strategies to address this issue include:
   - Exploring modular program structures that allow for separate storage and transmission of core logic and supporting elements. PolkaVM supports spliting the program into multiple modules.
   - Establishing guidelines for optimizing dynamic memory usage within query programs
 
@@ -308,12 +307,10 @@ The specification should define a target size limit for query programs and outli
       - Invoking queries from unauthorized sources
     - Edge cases:
       - Queries with minimal or maximum allowed input sizes
-      - Queries requesting data at the boundaries of available ranges
-  - Integration tests to ensure proper interaction with off-chain wallets/UI and on-chain XCM, including the aforementioned use cases in Motivation section.
+  - Integration tests to ensure proper interaction with off-chain wallets/UI and on-chain XCM, including the aforementioned use cases in **Motivation** section.
 
 - Security:
   - The XCQ system must enforce a strict read-only policy for all query operations. A mechanism should be implemented to prevent any state-changing operations within XCQ queries.
-  - The security model should include measures to prevent potential attack vectors such as resource exhaustion or malicious query injection.
   - Clear guidelines and best practices should be provided for parachain developers to ensure secure implementation.
 
 ## Performance, Ergonomics, and Compatibility
@@ -334,7 +331,7 @@ The proposal defines new apis, which doesn't break compatibility with existing i
 There are several discussions related to the proposal, including:
 
 - <https://forum.polkadot.network/t/wasm-view-functions/1045> is the original discussion about having a mechanism to avoid code duplications between the runtime and front-ends/wallets. In the original design, the custom computations are compiled as a wasm function.
-- <https://github.com/paritytech/polkadot-sdk/issues/216> is the issue tracking the view functions implementation in runtime implementations
+- <https://github.com/paritytech/polkadot-sdk/issues/216> is the issue tracking the `view functions` implementation in runtime implementations
 - <https://github.com/paritytech/polkadot-sdk/pull/4722> is the on-going `view function` pull request. It works at pallet level. If two chains use two different pallets to provide similar functionalities, like pallet-assets and pallet-erc20, we still need to have different codes to support. Therefore, it doesn't conflict with XCQ, and can be utilized by XCQ.
 
 ## Unresolved Questions
