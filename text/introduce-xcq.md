@@ -8,7 +8,7 @@
 
 ## Summary
 
-This proposal introduces XCQ (Cross Consensus Query), which is a system aims to reduce code duplication between runtime and UI implementations while providing a unified interface for cross-chain queries.
+This proposal introduces XCQ (Cross Consensus Query), which aims to serve as an intermediary layer between different chain runtime implementations and tools/UIs, to provide a unified interface for cross-chain queries.
 `XCQ` abstracts away concrete implementations across chains and supports custom query computations.
 
 Use cases benefiting from `XCQ` include:
@@ -26,12 +26,12 @@ Use cases benefiting from `XCQ` include:
 ## Motivation
 
 In Substrate, runtime APIs facilitate off-chain clients in reading the state of the consensus system.
-However, different chains may expose different APIs or have varying data types, such as differing `AccountId` types.
-This diversity extends to client-side, which may require custom computations over runtime APIs in various use cases.
-Substrate UIs often access storage directly and reimplement additional logic to convert data into user-friendly representations, leading to duplicated code between Rust runtime logic and UI JS/TS logic.
+However, different chains may expose different APIs for a similar query or have varying data types, such as doing custom transformations on direct data, or differing `AccountId` types.
+This diversity also extends to client-side, which may require custom computations over runtime APIs in various use cases.
+Therefore, tools and UI developers often access storage directly and reimplement custom computations to convert data into user-friendly representations, leading to duplicated code between Rust runtime logic and UI JS/TS logic.
 This duplication increases workload and potential for bugs.
 
-Therefore, A system is needed to serve as an intermediary layer between concrete chain runtime implementations and tools/UIs.
+Therefore, A system is needed to serve as an intermediary layer between concrete chain runtime implementations and tools/UIs, to provide a unified interface for cross-chain queries.
 
 ## Stakeholders
 
