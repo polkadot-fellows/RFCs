@@ -1,5 +1,5 @@
 
-# RFC-0033: JAM Service for Validating Ethereum Optimistic Rollups
+# RFC-0127: JAM Service for Validating Ethereum Optimistic Rollups
 
 |                 |                                                                                            |
 | --------------- | ------------------------------------------------------------------------------------------- |
