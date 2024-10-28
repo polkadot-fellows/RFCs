@@ -25,24 +25,23 @@ This RFC proposes the definition of version 5 extrinsics along with changes to t
 ### Changes to extrinsic authorization
 
 The introduction of `General` transactions allows the authorization of any and all origins through
-extensions. This means that, with the appropriate extension, `General` transactions are capable of
-replicating the same behavior present day v4 `Signed` transactions. Specifically for Polkadot
-chains, an example implementation for such an extension is
+extensions. This means that, with the appropriate extension, `General` transactions can replicate
+the same behavior present-day v4 `Signed` transactions. Specifically for Polkadot chains, an example
+implementation for such an extension is
 [`VerifySignature`](https://github.com/paritytech/polkadot-sdk/tree/master/substrate/frame/verify-signature),
 introduced in the Transaction Extension
 [PR3685](https://github.com/paritytech/polkadot-sdk/pull/3685). Other extensions can be inserted
 into the extension pipeline to authorize different custom origins. Therefore, a `Signed` extrinsic
-variant is redundant to a `General` one strictly in terms of functionality available to users and
-would eventually need to be deprecated and removed.
+variant is redundant to a `General` one strictly in terms of user functionality and could eventually
+be deprecated and removed.
 
 ### Encoding format for version 5
 
-As with version 4, the encoded v5 extrinsics will still be an array of SCALE encoded bytes, starting
-with the encoded length of the following bytes. The leading byte will determine the version and type
-of extrinsic, as specified by
-[RFC84](https://github.com/polkadot-fellows/RFCs/blob/main/text/0084-general-transaction-extrinsic-format.md),
-with the addition that the `Signed` variant will not be supported for v5 extrinsics, for reasons
-mentioned above.
+As with version 4, the encoded extrinsic v5 is a SCALE encoded vector of bytes (`u8`), therefore
+starting with the encoded length of the following bytes in compact format. The leading byte after
+the length determines the version and type of extrinsic, as specified by
+[RFC84](https://github.com/polkadot-fellows/RFCs/blob/main/text/0084-general-transaction-extrinsic-format.md).
+For reasons mentioned above, this RFC removes the `Signed` variant for v5 extrinsics.
 
 NOTE: For `Bare` extrinsics, the following bytes will just be the encoded call and nothing else.
 
@@ -64,21 +63,29 @@ A quick visualization of the encoding:
 
 ### Signatures on Polkadot in General transactions
 
+In order to run a transaction with a signed origin in extrinsic version 5, a user must create the
+transaction with an instance of at least one extension responsible for authorizing `Signed` origins
+with a provided signature. Alternatively, if users want to use some other origin, they should create
+the transaction with this particular extension disabled.
+
 As stated before, [PR3685](https://github.com/paritytech/polkadot-sdk/pull/3685) comes with a
 Transaction Extension which replicates the current `Signed` transactions in v5 extrinsics, namely
 [`VerifySignature`](https://github.com/paritytech/polkadot-sdk/tree/master/substrate/frame/verify-signature).
+I will use this extension as an example on how to replicate current `Signed` transaction
+functionality in the new v5 extrinsic format, though the runtime logic is not constrained to this
+particular implementation.
+
 This extension leverages the new inherited implication functionality introduced in
 `TransactionExtension` and creates a payload to be signed using the data of all extensions after
-itself in the extension pipeline. In order to run a transaction with a signed origin, a user must
-create the transaction with an instance of the extension which provides a signature. Alternatively,
-if users want to use some other origin, they should create the transaction with this particular
-extension disabled. More on this behavior in the extension documentation. This extension can be
-configured to accept a `MultiSignature`, which makes it compatible with all signature types
-currently used in Polkadot.
+itself in the extension pipeline. This extension can be configured to accept a `MultiSignature`,
+which makes it compatible with all signature types currently used in Polkadot.
 
-To generate the payload to be signed:
+In the context of using and extension such as `VerifySignature` to replicate current `Signed`
+transaction functionality, the steps to generate the payload to be signed are:
 
-1. The extension version byte, call, extension and extension implicit should be encoded;
+1. The extension version byte, call, extension and extension implicit should be encoded (by
+   "extension" and its implicit we mean only the data associated with extensions that follow this
+   one in the composite extension type);
 2. The result of the encoding should then be hashed using the `BLAKE2_256` hasher;
 3. The result of the hash should then be signed with the signature type specified in the extension definition.
 
@@ -140,13 +147,7 @@ Horizon](https://github.com/paritytech/polkadot-sdk/issues/2415) and
 
 ## Unresolved Questions
 
-There is no clear way to expose two different extrinsic versions in the current metadata framework.
-A non-exhaustive list of options discussed so far:
-
-1. Change the `ExtrinsicMetadata` trait to specify a list of versions instead of a single version.
-2. Use the custom fields in the metadata to specify the details of the version 5.
-3. Create a new trait similar to `ExtrinsicMetadata`, but for future versions of the extrinsic
-   format and add it to the metadata.
+None.
 
 ## Future Directions and Related Material
 
