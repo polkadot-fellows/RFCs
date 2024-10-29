@@ -31,7 +31,7 @@ This diversity also extends to client-side, which may require custom computation
 Therefore, tools and UI developers often access storage directly and reimplement custom computations to convert data into user-friendly representations, leading to duplicated code between Rust runtime logic and UI JS/TS logic.
 This duplication increases workload and potential for bugs.
 
-Therefore, A system is needed to serve as an intermediary layer between concrete chain runtime implementations and tools/UIs, to provide a unified interface for cross-chain queries.
+Therefore, a system is needed to serve as an intermediary layer between concrete chain runtime implementations and tools/UIs, to provide a unified interface for cross-chain queries.
 
 ## Stakeholders
 
@@ -40,7 +40,7 @@ Therefore, A system is needed to serve as an intermediary layer between concrete
 
 ## Explanation
 
-The overall query pattern of the XCQ consists of three components:
+The overall query pattern of XCQ consists of three components:
 
 - Runtime: View-functions across different pallets are amalgamated through an extension-based system.
 - XCQ query: Custom computations over view-function results are encapsulated via PolkaVM programs.
@@ -280,6 +280,50 @@ The interaction between an XCQ program and the XCQ Extension Executor follows th
    3. Result Serialization: The program serializes the result, writes it to shared memory, and returns the pointer and length to the executor.
 
 5. Result Retrieval: The Executor reads the result from shared memory and returns it to the caller.
+
+### XCM integration
+
+XCM usages is considered in XCQ. The integration is acheived by adding a new instruction to XCM, and a new variant is added to the `Response` type in `QueryResponse` message.:
+
+- A new `ReportQuery` instruction
+
+```rust
+ReportQuery {
+  query: SizeLimitedXcq,
+  weight_limit: Option<Weight>,
+  info: QueryResponseInfo,
+}
+```
+
+Report to a given destination the results of an XCQ query. After query, a `QueryResponse` message of type `XcqResult` will be sent to the described destination.
+
+Operands:
+
+- `query: SizeLimitedXcq` has a size limit(2MB)
+  - `program: Vec<u8>`: A pre-built PVM program binary.
+  - `input: Vec<u8>`: The arguments of the program.
+- `weight_limit: WeightLimit`: The maximum weight that the query should take. `WeightLimit` is an enum that can specify either `Limit(Weight)` or `Unlimited`.
+- `info: QueryResponseInfo`: Information for making the response.
+  - `destination: Location`: The destination to which the query response message should be sent.
+  - `query_id: Compact<QueryId>`: The `query_id` field of the `QueryResponse` message
+  - `max_weight: Weight`: The `max_weight` field of the `QueryResponse` message
+
+- Add a new variant to the `Response` type in `QueryResponse`
+
+- `XcqResult = 6 (XcqResult)`
+  `XcqResult` is a enum
+  - `Ok = 0 (Vec<u8>)`: XCQ executes successfully with a SCALE-encoded response.
+  - `Err = 1 (ErrorCode)`: XCQ fails with an error code.
+`ErrorCode` is a enum
+- `ExceedMaxWeight = 0`
+- `MemoryAllocationError = 1`
+- `MemoryAccessError = 2`
+- `CallError = 3`
+- `OtherPVMError = 4`
+
+#### Errors
+- `BadOrigin`
+- `DestinationUnsupported`
 
 ## Drawbacks
 
