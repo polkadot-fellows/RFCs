@@ -224,9 +224,9 @@ linker
                   ...
               });
 ```
-- `PermController`: Filters guest XCQ program calling requests, useful for host chains to disable some queries by filtering invoking sources.
+- `PermissionController`: Filters guest XCQ program calling requests, useful for host chains to disable some queries by filtering invoking sources.
 ```rust
-pub trait PermController {
+pub trait PermissionController {
     fn is_allowed(extension_id: ExtensionIdTy, call: &[u8], source: InvokeSource) -> bool;
 }
 #[derive(Copy, Clone)]
