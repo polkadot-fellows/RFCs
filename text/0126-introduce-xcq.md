@@ -354,7 +354,7 @@ Some strategies to address this issue include:
   - Integration tests to ensure proper interaction with off-chain wallets/UI and on-chain XCM, including the aforementioned use cases in **Motivation** section.
 
 - Security:
-  - The XCQ system must enforce a strict read-only policy for all query operations. A mechanism should be implemented to prevent any state-changing operations within XCQ queries.
+  - The XCQ system must enforce a strict read-only policy for all query operations. A mechanism should be implemented to prevent any state-changing operations within XCQ queries. For example, perform a final rollback in  `frame_support::storage::with_transaction` to ensure the storage won't be changed.
   - Clear guidelines and best practices should be provided for parachain developers to ensure secure implementation.
 
 ## Performance, Ergonomics, and Compatibility
