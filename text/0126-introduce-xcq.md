@@ -283,7 +283,7 @@ The interaction between an XCQ program and the XCQ Extension Executor follows th
 
 ### XCM integration
 
-XCM usages is considered in XCQ. The integration is acheived by adding a new instruction to XCM, and a new variant is added to the `Response` type in `QueryResponse` message.:
+The integration of XCQ into XCM is acheived by adding a new instruction to XCM, as well as a new variant of the `Response` type in `QueryResponse` message.:
 
 - A new `ReportQuery` instruction
 
