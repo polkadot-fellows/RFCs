@@ -176,7 +176,7 @@ ModifyMetadata {
 ### Repurposing `AssetInstance::Undefined`
 
 As the new instructions show, this RFC reframes the purpose of the `Undefined` variant of the `AssetInstance` enum.
-This RFC proposes to use the `Undefined` variant of a collection identified by an `AssetId` as a synonym of the collection itself. I.e., an asset `Asset { id: <AssetId>, fun: Undefined }` is considered an NFT representing the collection itself.
+This RFC proposes to use the `Undefined` variant of a collection identified by an `AssetId` as a synonym of the collection itself. I.e., an asset `Asset { id: <AssetId>, fun: NonFungible(AssetInstance::Undefined) }` is considered an NFT representing the collection itself.
 
 As a singleton non-fungible instance is barely distinguishable from its collection, this convention shouldn't cause any problems. 
 
