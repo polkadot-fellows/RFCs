@@ -1,5 +1,5 @@
 
-# RFC-0127: JAM Validity + DA Services for Ethereum Optimistic Rollups and Ethereum
+# RFC-0130: JAM Validity + DA Services for Ethereum Optimistic Rollups and Ethereum
 
 |                 |                                                                                            |
 | --------------- | ------------------------------------------------------------------------------------------- |
