@@ -382,5 +382,3 @@ There are several discussions related to the proposal, including:
 
 
 ## Future Directions and Related Material
-
-Since XCQ are supported both in off-chain and on-chain, a related XCM-Format RFC should be proposed.
