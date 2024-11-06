@@ -8,11 +8,19 @@
 
 ## Summary
 
-This RFC proposes the definition of version 5 extrinsics along with changes to the specification and encoding from version 4.
+This RFC proposes the definition of version 5 extrinsics along with changes to the specification and
+encoding from version 4.
 
 ## Motivation
 
-[RFC84](https://github.com/polkadot-fellows/RFCs/blob/main/text/0084-general-transaction-extrinsic-format.md) introduced the specification of `General` transactions, a new type of extrinsic besides the `Signed` and `Unsigned` variants available previously in version 4. Additionally, [RFC99](https://github.com/polkadot-fellows/RFCs/blob/main/text/0099-transaction-extension-version.md) introduced versioning of transaction extensions through an extra byte in the extrinsic encoding. Both of these changes require an extrinsic format version bump as both the semantics around extensions as well as the actual encoding of extrinsics need to change to accommodate these new features.
+[RFC84](https://github.com/polkadot-fellows/RFCs/blob/main/text/0084-general-transaction-extrinsic-format.md)
+introduced the specification of `General` transactions, a new type of extrinsic besides the `Signed`
+and `Unsigned` variants available previously in version 4. Additionally,
+[RFC99](https://github.com/polkadot-fellows/RFCs/blob/main/text/0099-transaction-extension-version.md)
+introduced versioning of transaction extensions through an extra byte in the extrinsic encoding.
+Both of these changes require an extrinsic format version bump as both the semantics around
+extensions as well as the actual encoding of extrinsics need to change to accommodate these new
+features.
 
 ## Stakeholders
 
@@ -43,14 +51,14 @@ the length determines the version and type of extrinsic, as specified by
 [RFC84](https://github.com/polkadot-fellows/RFCs/blob/main/text/0084-general-transaction-extrinsic-format.md).
 For reasons mentioned above, this RFC removes the `Signed` variant for v5 extrinsics.
 
-NOTE: For `Bare` extrinsics, the following bytes will just be the encoded call and nothing else.
+For `Bare` extrinsics, the following bytes will just be the encoded call and nothing else.
 
 For `General` transactions, as stated in
 [RFC99](https://github.com/polkadot-fellows/RFCs/blob/main/text/0099-transaction-extension-version.md),
-an extension version byte must be added in the next extrinsic version. This byte should allow
-runtimes to expose more than one set of extensions which can be used for a transaction. As far as
-the v5 extrinsic encoding is concerned, this extension byte should be encoded immediately after the
-leading encoding byte. The extension version byte should be included in payloads to be signed by all
+an extension version byte must be added to the extrinsic format. This byte should allow runtimes to
+expose more than one set of extensions which can be used for a transaction. As far as the v5
+extrinsic encoding is concerned, this extension byte should be encoded immediately after the leading
+encoding byte. The extension version byte should be included in payloads to be signed by all
 extensions configured by runtime devs to ensure a user's extension version choice cannot be altered
 by third parties.
 
@@ -59,14 +67,14 @@ After the extension version byte, the extensions will be encoded next, followed 
 A quick visualization of the encoding:
 
 - `Bare` extrinsics: `(extrinsic_encoded_len, 0b0000_0101, call)`
-- `General` transactions: `(extrinsic_encoded_len, , 0b0100_0101, extension_version_byte, extension, call)`
+- `General` transactions: `(extrinsic_encoded_len, , 0b0100_0101, extension_version_byte,
+  extensions, call)`
 
 ### Signatures on Polkadot in General transactions
 
 In order to run a transaction with a signed origin in extrinsic version 5, a user must create the
 transaction with an instance of at least one extension responsible for authorizing `Signed` origins
-with a provided signature. Alternatively, if users want to use some other origin, they should create
-the transaction with this particular extension disabled.
+with a provided signature.
 
 As stated before, [PR3685](https://github.com/paritytech/polkadot-sdk/pull/3685) comes with a
 Transaction Extension which replicates the current `Signed` transactions in v5 extrinsics, namely
@@ -80,8 +88,8 @@ This extension leverages the new inherited implication functionality introduced 
 itself in the extension pipeline. This extension can be configured to accept a `MultiSignature`,
 which makes it compatible with all signature types currently used in Polkadot.
 
-In the context of using and extension such as `VerifySignature` to replicate current `Signed`
-transaction functionality, the steps to generate the payload to be signed are:
+In the context of using an extension such as `VerifySignature`, for example, to replicate current
+`Signed` transaction functionality, the steps to generate the payload to be signed would be:
 
 1. The extension version byte, call, extension and extension implicit should be encoded (by
    "extension" and its implicit we mean only the data associated with extensions that follow this
@@ -112,6 +120,10 @@ consumers downstream in the transition period between these extrinsic versions, 
 The metadata will have to accommodate two distinct extrinsic format versions at a given point in
 time in order to provide the new functionality in a non-breaking way for users and tooling.
 
+Although having to support multiple extrinsic versions in metadata involves extra work, the change
+is ultimately an improvement to metadata and the extra functionality may be useful in other future
+scenarios.
+
 ## Testing, Security, and Privacy
 
 There is no impact on testing, security or privacy.
@@ -131,7 +143,9 @@ There is no performance impact.
 ### Ergonomics
 
 Tooling will have to adapt to be able to tell which authorization scheme is used by a particular
-transaction by decoding the extension and checking which particular `TransactionExtension` in the pipeline is enabled to do the origin authorization. Previously, this was done by simply checking whether the transaction is signed or unsigned, as there was only one method of authentication.
+transaction by decoding the extension and checking which particular `TransactionExtension` in the
+pipeline is enabled to do the origin authorization. Previously, this was done by simply checking
+whether the transaction is signed or unsigned, as there was only one method of authentication.
 
 ### Compatibility
 
