@@ -1411,9 +1411,17 @@ For Polkadot/Kusama this means that also the parachain nodes need to be running 
 </tbody></table>
 </div>
 <h2 id="summary-7"><a class="header" href="#summary-7">Summary</a></h2>
-<p>This RFC proposes the definition of version 5 extrinsics along with changes to the specification and encoding from version 4.</p>
+<p>This RFC proposes the definition of version 5 extrinsics along with changes to the specification and
+encoding from version 4.</p>
 <h2 id="motivation-8"><a class="header" href="#motivation-8">Motivation</a></h2>
-<p><a href="https://github.com/polkadot-fellows/RFCs/blob/main/text/0084-general-transaction-extrinsic-format.md">RFC84</a> introduced the specification of <code>General</code> transactions, a new type of extrinsic besides the <code>Signed</code> and <code>Unsigned</code> variants available previously in version 4. Additionally, <a href="https://github.com/polkadot-fellows/RFCs/blob/main/text/0099-transaction-extension-version.md">RFC99</a> introduced versioning of transaction extensions through an extra byte in the extrinsic encoding. Both of these changes require an extrinsic format version bump as both the semantics around extensions as well as the actual encoding of extrinsics need to change to accommodate these new features.</p>
+<p><a href="https://github.com/polkadot-fellows/RFCs/blob/main/text/0084-general-transaction-extrinsic-format.md">RFC84</a>
+introduced the specification of <code>General</code> transactions, a new type of extrinsic besides the <code>Signed</code>
+and <code>Unsigned</code> variants available previously in version 4. Additionally,
+<a href="https://github.com/polkadot-fellows/RFCs/blob/main/text/0099-transaction-extension-version.md">RFC99</a>
+introduced versioning of transaction extensions through an extra byte in the extrinsic encoding.
+Both of these changes require an extrinsic format version bump as both the semantics around
+extensions as well as the actual encoding of extrinsics need to change to accommodate these new
+features.</p>
 <h2 id="stakeholders-8"><a class="header" href="#stakeholders-8">Stakeholders</a></h2>
 <ul>
 <li>Runtime users</li>
@@ -1438,26 +1446,25 @@ starting with the encoded length of the following bytes in compact format. The l
 the length determines the version and type of extrinsic, as specified by
 <a href="https://github.com/polkadot-fellows/RFCs/blob/main/text/0084-general-transaction-extrinsic-format.md">RFC84</a>.
 For reasons mentioned above, this RFC removes the <code>Signed</code> variant for v5 extrinsics.</p>
-<p>NOTE: For <code>Bare</code> extrinsics, the following bytes will just be the encoded call and nothing else.</p>
+<p>For <code>Bare</code> extrinsics, the following bytes will just be the encoded call and nothing else.</p>
 <p>For <code>General</code> transactions, as stated in
 <a href="https://github.com/polkadot-fellows/RFCs/blob/main/text/0099-transaction-extension-version.md">RFC99</a>,
-an extension version byte must be added in the next extrinsic version. This byte should allow
-runtimes to expose more than one set of extensions which can be used for a transaction. As far as
-the v5 extrinsic encoding is concerned, this extension byte should be encoded immediately after the
-leading encoding byte. The extension version byte should be included in payloads to be signed by all
+an extension version byte must be added to the extrinsic format. This byte should allow runtimes to
+expose more than one set of extensions which can be used for a transaction. As far as the v5
+extrinsic encoding is concerned, this extension byte should be encoded immediately after the leading
+encoding byte. The extension version byte should be included in payloads to be signed by all
 extensions configured by runtime devs to ensure a user's extension version choice cannot be altered
 by third parties.</p>
 <p>After the extension version byte, the extensions will be encoded next, followed by the call itself.</p>
 <p>A quick visualization of the encoding:</p>
 <ul>
 <li><code>Bare</code> extrinsics: <code>(extrinsic_encoded_len, 0b0000_0101, call)</code></li>
-<li><code>General</code> transactions: <code>(extrinsic_encoded_len, , 0b0100_0101, extension_version_byte, extension, call)</code></li>
+<li><code>General</code> transactions: <code>(extrinsic_encoded_len, , 0b0100_0101, extension_version_byte, extensions, call)</code></li>
 </ul>
 <h3 id="signatures-on-polkadot-in-general-transactions"><a class="header" href="#signatures-on-polkadot-in-general-transactions">Signatures on Polkadot in General transactions</a></h3>
 <p>In order to run a transaction with a signed origin in extrinsic version 5, a user must create the
 transaction with an instance of at least one extension responsible for authorizing <code>Signed</code> origins
-with a provided signature. Alternatively, if users want to use some other origin, they should create
-the transaction with this particular extension disabled.</p>
+with a provided signature.</p>
 <p>As stated before, <a href="https://github.com/paritytech/polkadot-sdk/pull/3685">PR3685</a> comes with a
 Transaction Extension which replicates the current <code>Signed</code> transactions in v5 extrinsics, namely
 <a href="https://github.com/paritytech/polkadot-sdk/tree/master/substrate/frame/verify-signature"><code>VerifySignature</code></a>.
@@ -1468,8 +1475,8 @@ particular implementation.</p>
 <code>TransactionExtension</code> and creates a payload to be signed using the data of all extensions after
 itself in the extension pipeline. This extension can be configured to accept a <code>MultiSignature</code>,
 which makes it compatible with all signature types currently used in Polkadot.</p>
-<p>In the context of using and extension such as <code>VerifySignature</code> to replicate current <code>Signed</code>
-transaction functionality, the steps to generate the payload to be signed are:</p>
+<p>In the context of using an extension such as <code>VerifySignature</code>, for example, to replicate current
+<code>Signed</code> transaction functionality, the steps to generate the payload to be signed would be:</p>
 <ol>
 <li>The extension version byte, call, extension and extension implicit should be encoded (by
 &quot;extension&quot; and its implicit we mean only the data associated with extensions that follow this
@@ -1497,6 +1504,9 @@ consumers downstream in the transition period between these extrinsic versions, 
 <h2 id="drawbacks-7"><a class="header" href="#drawbacks-7">Drawbacks</a></h2>
 <p>The metadata will have to accommodate two distinct extrinsic format versions at a given point in
 time in order to provide the new functionality in a non-breaking way for users and tooling.</p>
+<p>Although having to support multiple extrinsic versions in metadata involves extra work, the change
+is ultimately an improvement to metadata and the extra functionality may be useful in other future
+scenarios.</p>
 <h2 id="testing-security-and-privacy-8"><a class="header" href="#testing-security-and-privacy-8">Testing, Security, and Privacy</a></h2>
 <p>There is no impact on testing, security or privacy.</p>
 <h2 id="performance-ergonomics-and-compatibility-7"><a class="header" href="#performance-ergonomics-and-compatibility-7">Performance, Ergonomics, and Compatibility</a></h2>
@@ -1509,7 +1519,9 @@ present day behavior will be provided in <code>VerifySignature</code>.</p>
 <p>There is no performance impact.</p>
 <h3 id="ergonomics-7"><a class="header" href="#ergonomics-7">Ergonomics</a></h3>
 <p>Tooling will have to adapt to be able to tell which authorization scheme is used by a particular
-transaction by decoding the extension and checking which particular <code>TransactionExtension</code> in the pipeline is enabled to do the origin authorization. Previously, this was done by simply checking whether the transaction is signed or unsigned, as there was only one method of authentication.</p>
+transaction by decoding the extension and checking which particular <code>TransactionExtension</code> in the
+pipeline is enabled to do the origin authorization. Previously, this was done by simply checking
+whether the transaction is signed or unsigned, as there was only one method of authentication.</p>
 <h3 id="compatibility-8"><a class="header" href="#compatibility-8">Compatibility</a></h3>
 <p>As long as extrinsic version 4 is still exposed in the metadata when version 5 will be introduced,
 the changes will not break existing infrastructure. This should give enough time for tooling to
