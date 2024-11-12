@@ -3,7 +3,7 @@
 This repository contains a number of Requests for Comment (RFCs) detailing proposed changes to the technical implementation of the Polkadot network. These RFCs are for the discussion and design of features which have been submitted for consideration to the developer Fellowship of Polkadot, as well as targets for the Fellowship's on-chain bodies to signal approval or disapproval of.
 
 The RFCs can be [viewed here](https://polkadot-fellows.github.io/RFCs/).
-The status of each RFC is tracked on the [RFC dashboard](https://spiced-longship-f1a.notion.site/abbeb769972f4aa0afbfe41cac4544f1?v=b8d75b58aec249ccb545ce68ffb70922).
+The status of each RFC is tracked on the [RFC dashboard](https://polkadottechnicalfellowship.notion.site/RFC-Dashboard-13396f88d0a7805c9827c7f3026fbb5e).
 
 ## Scope
 
