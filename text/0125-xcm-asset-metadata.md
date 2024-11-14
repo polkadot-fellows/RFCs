@@ -112,7 +112,7 @@ enum MetadataQueryKind {
 }
 ```
 
-The `QueryMetadata` works in conjunction with the existing `QueryResponse` instruction. The `Response` type should be modified accordingly: we need to add a new `AssetMetadata` variant to it.
+The `ReportMetadata` works in conjunction with the existing `QueryResponse` instruction. The `Response` type should be modified accordingly: we need to add a new `AssetMetadata` variant to it.
 
 ```rust
 /// The struct used in the existing `QueryResponse` instruction.
