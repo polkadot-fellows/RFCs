@@ -308,7 +308,7 @@ ReportMetadata {
     Values(MetadataKeys),
 }
 <span class="boring">}</span></code></pre></pre>
-<p>The <code>QueryMetadata</code> works in conjunction with the existing <code>QueryResponse</code> instruction. The <code>Response</code> type should be modified accordingly: we need to add a new <code>AssetMetadata</code> variant to it.</p>
+<p>The <code>ReportMetadata</code> works in conjunction with the existing <code>QueryResponse</code> instruction. The <code>Response</code> type should be modified accordingly: we need to add a new <code>AssetMetadata</code> variant to it.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>/// The struct used in the existing `QueryResponse` instruction.
