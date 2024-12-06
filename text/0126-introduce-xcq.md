@@ -12,6 +12,7 @@ This proposal introduces XCQ (Cross Consensus Query), which aims to serve as an 
 `XCQ` abstracts away concrete implementations across chains and supports custom query computations.
 
 Use cases benefiting from `XCQ` include:
+
 - XCM bridge UI:
   - Query asset balances
   - Query XCM weight and fee from hop and dest chains
@@ -54,9 +55,11 @@ The runtime API for off-chain query usage includes two methods:
 The query is the query program in PolkaVM program binary format.
 The input is the query arguments that is SCALE-encoded.
 The weight limit is the maximum weight allowed for the query execution.
-- `metadata`: Return metadata of supported extensions (introduced in later section) and methods, serving as a feature discovery functionality
+- `metadata`: Return metadata of supported extensions (introduced in later section) and methods, serving as a feature discovery functionality.
+The representation and encoding mechanism is similar to the [`frame-metadata`](https://github.com/paritytech/frame-metadata/), using `scale-info`.
 
 **Example XCQ Runtime API**:
+
 ```rust
 decl_runtime_apis! {
     pub trait XcqApi {
@@ -71,59 +74,14 @@ enum XcqError {
 }
 ```
 
-**Example metadata**:
+**Example Metadata (before SCALE-encoded)**
+
 ```rust
-Metadata {
-    extensions: vec![
-        ExtensionMetadata {
-            name: "ExtensionCore",
-            methods: vec![MethodMetadata {
-                name: "has_extension",
-                inputs: vec![MethodParamMetadata {
-                    name: "id",
-                    ty: XcqType::Primitive(PrimitiveType::U64)
-                }],
-                output: XcqType::Primitive(PrimitiveType::Bool)
-            }]
-        },
-        ExtensionMetadata {
-            name: "ExtensionFungibles",
-            methods: vec![
-                MethodMetadata {
-                    name: "total_supply",
-                    inputs: vec![MethodParamMetadata {
-                        name: "asset",
-                        ty: XcqType::Primitive(PrimitiveType::U32)
-                    }],
-                    output: XcqType::Primitive(PrimitiveType::U64)
-                },
-                MethodMetadata {
-                    name: "balance",
-                    inputs: vec![
-                        MethodParamMetadata {
-                            name: "asset",
-                            ty: XcqType::Primitive(PrimitiveType::U32)
-                        },
-                        MethodParamMetadata {
-                            name: "who",
-                            ty: XcqType::Primitive(PrimitiveType::H256)
-                        }
-                    ],
-                    output: XcqType::Primitive(PrimitiveType::U64)
-                }
-            ]
-        }
-    ]
+pub struct Metadata {
+    pub types: PortableRegistry,
+    pub extensions: Vec<ExtensionMetadata<PortableForm>>,
 }
 ```
-
-Note: `ty` is represented by a meta-type system called `xcq-types`
-
-#### xcq-types
-
-`xcq-types` is a meta-type system similar to `scale-info` but simpler.
-It enables different chains with different type definitions to work via a common operation.
-Front-end codes constructs call data to XCQ programs according to metadata provided by different chains.
 
 ### XCQ Executor
 
@@ -144,6 +102,7 @@ pub fn execute(
 ### XCQ Extension
 
 An extension-based design is essential for several reasons:
+
 - Different chains may have different data types for semantically similar queries, making it challenging to standardize function calls across them.
 An extension-based design with optional associated types allows these diverse data types to be specified and utilized effectively.
 - Function calls distributed across various pallets can be amalgamated into a single extension, simplifying the development process and ensuring a more cohesive and maintainable codebase.
@@ -157,6 +116,7 @@ Essential components of an XCQ extension system include:
 - `decl_extension` macro: Defines an extension as a Rust trait with optional associated types.
 
 **Example usage**:
+
 ```rust
 use xcq_extension::decl_extension;
 
@@ -212,6 +172,7 @@ impl_extensions! {
 All methods of all extensions that a chain supports are amalgamated into a single `host_call` entry.
 Then this entry is registered as a typed function entry in PolkaVM Linker within the `xcq-executor`.
 Given the extension ID and call data encoded in SCALE format, call requests from the guest XCQ program are dispatched to corresponding extensions:
+
 ```rust
 linker
     .define_typed(
@@ -224,7 +185,9 @@ linker
                   ...
               });
 ```
+
 - `PermissionController`: Filters guest XCQ program calling requests, useful for host chains to disable some queries by filtering invoking sources.
+
 ```rust
 pub trait PermissionController {
     fn is_allowed(extension_id: ExtensionIdTy, call: &[u8], source: InvokeSource) -> bool;
@@ -243,26 +206,30 @@ pub enum InvokeSource {
 An XCQ program is structured as a PolkaVM program with the following key components:
 
 - Imported Functions:
-   - `host_call`: Dispatches call requests to the XCQ Extension Executor.
+  - `host_call`: Dispatches call requests to the XCQ Extension Executor.
+
      ```rust
      #[polkavm_derive::polkavm_import]
      extern "C" {
          fn host_call(extension_id: u64, call_ptr: u32, call_len: u32) -> u64;
      }
      ```
+
      Results are SCALE-encoded bytes, with the pointer address (lower 32 bits) and length (higher 32 bits) packed into a u64.
 
-   - `return_ty`: Returns the type of the function call result.
+  - `return_ty`: Returns the type of the function call result.
+
      ```rust
      #[polkavm_derive::polkavm_import]
      extern "C" {
          fn return_ty(extension_id: u64, call_index: u32) -> u64;
      }
      ```
+
      Results are SCALE-encoded bytes, with the pointer address and length packed similarly to `host_call`.
 
 - Exported Functions:
-   - `main`: The entry point of the XCQ program. It performs type checking, arguments and results passing and executes the query.
+  - `main`: The entry point of the XCQ program. It performs type checking, arguments and results passing and executes the query.
 
 ### XCQ Program Execution Flow
 
@@ -322,6 +289,7 @@ Operands:
 - `OtherPVMError = 4`
 
 #### Errors
+
 - `BadOrigin`
 - `DestinationUnsupported`
 
@@ -366,6 +334,7 @@ It's a new functionality, which doesn't modify the existing implementations.
 ### Ergonomics
 
 The proposal facilitate the wallets and dApps developers. Developers no longer need to examine every concrete implementation to support conceptually similar operations across different chains. Additionally, they gain a more modular development experience through encapsulating custom computations over the exposed APIs in PolkaVM programs.
+
 ### Compatibility
 
 The proposal defines new apis, which doesn't break compatibility with existing interfaces.
@@ -380,5 +349,6 @@ There are several discussions related to the proposal, including:
 
 ## Unresolved Questions
 
+- The metadata of the XCQ extensions can be integrated into `frame-metadata`'s `CustomMetadata` field, but the trade-offs (i.e. compatibility between versions) need examination.
 
 ## Future Directions and Related Material
