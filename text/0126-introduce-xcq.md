@@ -257,7 +257,7 @@ The integration of XCQ into XCM is acheived by adding a new instruction to XCM, 
 ```rust
 ReportQuery {
   query: SizeLimitedXcq,
-  weight_limit: Option<Weight>,
+  weight_limit: WeightLimit,
   info: QueryResponseInfo,
 }
 ```
