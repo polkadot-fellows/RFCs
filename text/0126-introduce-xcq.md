@@ -58,7 +58,7 @@ The weight limit is the maximum weight allowed for the query execution.
 - `metadata`: Return metadata of supported extensions (introduced in later section) and methods, serving as a feature discovery functionality.
 The representation and encoding mechanism is similar to the [`frame-metadata`](https://github.com/paritytech/frame-metadata/), using `scale-info`.
 
-**Example XCQ Runtime API**:
+#### Example XCQ Runtime API
 
 ```rust
 decl_runtime_apis! {
@@ -74,7 +74,7 @@ enum XcqError {
 }
 ```
 
-**Example Metadata (before SCALE-encoded)**
+#### Example Metadata (before SCALE-encoded)
 
 ```rust
 pub struct Metadata {
@@ -250,7 +250,7 @@ The interaction between an XCQ program and the XCQ Extension Executor follows th
 
 ### XCM integration
 
-The integration of XCQ into XCM is acheived by adding a new instruction to XCM, as well as a new variant of the `Response` type in `QueryResponse` message.:
+The integration of XCQ into XCM is achieved by adding a new instruction to XCM, as well as a new variant of the `Response` type in `QueryResponse` message.:
 
 - A new `ReportQuery` instruction
 
@@ -299,7 +299,7 @@ Operands:
 
 - XCQ Query Program Size: The size of XCQ query programs should be optimized to ensure efficient storage and transmission via XCMP/HRMP.
 Some strategies to address this issue include:
-  - Exploring modular program structures that allow for separate storage and transmission of core logic and supporting elements. PolkaVM supports spliting the program into multiple modules.
+  - Exploring modular program structures that allow for separate storage and transmission of core logic and supporting elements. PolkaVM supports splitting the program into multiple modules.
   - Establishing guidelines for optimizing dynamic memory usage within query programs
 
 ### User experience issues
