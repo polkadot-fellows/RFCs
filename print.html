@@ -686,7 +686,7 @@ The weight limit is the maximum weight allowed for the query execution.</li>
 <li><code>metadata</code>: Return metadata of supported extensions (introduced in later section) and methods, serving as a feature discovery functionality.
 The representation and encoding mechanism is similar to the <a href="https://github.com/paritytech/frame-metadata/"><code>frame-metadata</code></a>, using <code>scale-info</code>.</li>
 </ul>
-<p><strong>Example XCQ Runtime API</strong>:</p>
+<h4 id="example-xcq-runtime-api"><a class="header" href="#example-xcq-runtime-api">Example XCQ Runtime API</a></h4>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>decl_runtime_apis! {
@@ -701,7 +701,7 @@ enum XcqError {
     Custom(String),
 }
 <span class="boring">}</span></code></pre></pre>
-<p><strong>Example Metadata (before SCALE-encoded)</strong></p>
+<h4 id="example-metadata-before-scale-encoded"><a class="header" href="#example-metadata-before-scale-encoded">Example Metadata (before SCALE-encoded)</a></h4>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>pub struct Metadata {
@@ -890,7 +890,7 @@ extern &quot;C&quot; {
 </li>
 </ol>
 <h3 id="xcm-integration"><a class="header" href="#xcm-integration">XCM integration</a></h3>
-<p>The integration of XCQ into XCM is acheived by adding a new instruction to XCM, as well as a new variant of the <code>Response</code> type in <code>QueryResponse</code> message.:</p>
+<p>The integration of XCQ into XCM is achieved by adding a new instruction to XCM, as well as a new variant of the <code>Response</code> type in <code>QueryResponse</code> message.:</p>
 <ul>
 <li>A new <code>ReportQuery</code> instruction</li>
 </ul>
@@ -898,7 +898,7 @@ extern &quot;C&quot; {
 </span><span class="boring">fn main() {
 </span>ReportQuery {
   query: SizeLimitedXcq,
-  weight_limit: Option&lt;Weight&gt;,
+  weight_limit: WeightLimit,
   info: QueryResponseInfo,
 }
 <span class="boring">}</span></code></pre></pre>
@@ -962,7 +962,7 @@ extern &quot;C&quot; {
 <li>XCQ Query Program Size: The size of XCQ query programs should be optimized to ensure efficient storage and transmission via XCMP/HRMP.
 Some strategies to address this issue include:
 <ul>
-<li>Exploring modular program structures that allow for separate storage and transmission of core logic and supporting elements. PolkaVM supports spliting the program into multiple modules.</li>
+<li>Exploring modular program structures that allow for separate storage and transmission of core logic and supporting elements. PolkaVM supports splitting the program into multiple modules.</li>
 <li>Establishing guidelines for optimizing dynamic memory usage within query programs</li>
 </ul>
 </li>
