@@ -46,18 +46,29 @@ We can name this format "XCM Asset Metadata".
 This RFC proposes:
 1. Using key-value pairs as XCM Asset Metadata since it is a general concept useful for both structured and unstructured data. Both key and value can be raw bytes with interpretation up to the communicating entities.
 
-    The XCM Asset Metadata should be represented as a map SCALE-encoded equivalent to the `BTreeMap`.
+    The XCM Asset Metadata should be represented as a map SCALE-encoded equivalent to the `BTreeMap<Vec<u8>, Vec<u8>>`.
 
-    Let's call the type of the XCM Asset Metadata map `MetadataMap`.
+    As such, the XCM Asset Metadata types are defined as follows:
+    ```rust
+    type MetadataKey = Vec<u8>;
+    type MetadataValue = Vec<u8>;
+    type MetadataMap = BTreeMap<MetadataKey, MetadataValue>;
+    ```
 
-2. Communicating only the demanded part of the metadata, not the whole metadata.
+3. Communicating only the demanded part of the metadata, not the whole metadata.
 
     * A consensus entity should be able to query the values of interested keys to read the metadata.
-        To specify the keys to read, we need a set-like type. Let's call that type `MetadataKeys` and make its instance a SCALE-encoded equivalent to the `BTreeSet`.
+        We need a set-like type to specify the keys to read, a SCALE-encoded equivalent to the `BTreeSet<Vec<u8>>`.
+        Let's define that type as follows:
+        ```rust
+        type MetadataKeySet = BTreeSet<MetadataKey>;
+        ```
 
     * A consensus entity should be able to write the values for specified keys.
 
-3. New XCM instructions to communicate the metadata.
+4. New XCM instructions to communicate the metadata.
+
+Note: the maximum lengths of `MetadataKey`, `MetadataValue`, `MetadataMap`, and `MetadataKeySet` are implementation-defined.
 
 ### New instructions
 
@@ -104,11 +115,11 @@ Where the `MetadataQueryKind` is:
 
 ```rust
 enum MetadataQueryKind {
-    /// Query metadata key list.
-    KeyList,
+    /// Query metadata key set.
+    KeySet,
 
     /// Query values of the specified keys.
-    Values(MetadataKeys),
+    Values(MetadataKeySet),
 }
 ```
 
@@ -136,8 +147,8 @@ pub enum Response {
 
 pub enum MetadataResponseData {
     /// The metadata key list to be reported
-    /// in response to the `KeyList` metadata query kind.
-    KeyList(MetadataKeys),
+    /// in response to the `KeySet` metadata query kind.
+    KeySet(MetadataKeySet),
 
     /// The values of the keys that were specified in the
     /// `Values` variant of the metadata query kind.
@@ -213,10 +224,6 @@ This RFC proposes new functionality, so there are no compatibility issues.
 ## Prior Art and References
 
 [RFC: XCM Asset Metadata](https://github.com/polkadot-fellows/xcm-format/pull/50)
-
-## Unresolved Questions
-
-Should the `MetadataMap` and `MetadataKeys` be bounded, or is it enough to rely on the fact that every XCM message is itself bounded?
 
 ## Future Directions and Related Material
 
