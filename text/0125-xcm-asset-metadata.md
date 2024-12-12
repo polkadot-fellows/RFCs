@@ -55,7 +55,7 @@ This RFC proposes:
     type MetadataMap = BTreeMap<MetadataKey, MetadataValue>;
     ```
 
-3. Communicating only the demanded part of the metadata, not the whole metadata.
+2. Communicating only the demanded part of the metadata, not the whole metadata.
 
     * A consensus entity should be able to query the values of interested keys to read the metadata.
         We need a set-like type to specify the keys to read, a SCALE-encoded equivalent to the `BTreeSet<Vec<u8>>`.
@@ -66,7 +66,7 @@ This RFC proposes:
 
     * A consensus entity should be able to write the values for specified keys.
 
-4. New XCM instructions to communicate the metadata.
+3. New XCM instructions to communicate the metadata.
 
 Note: the maximum lengths of `MetadataKey`, `MetadataValue`, `MetadataMap`, and `MetadataKeySet` are implementation-defined.
 
