@@ -397,7 +397,6 @@ For Polkadot/Kusama this means that also the parachain nodes need to be running 
 </ul>
 </li>
 <li><a href="proposed/0125-xcm-asset-metadata.html#prior-art-and-references">Prior Art and References</a></li>
-<li><a href="proposed/0125-xcm-asset-metadata.html#unresolved-questions">Unresolved Questions</a></li>
 <li><a href="proposed/0125-xcm-asset-metadata.html#future-directions-and-related-material">Future Directions and Related Material</a></li>
 </ul>
 </li>
@@ -442,15 +441,26 @@ However, to communicate metadata between consensus entities via XCM, we need a g
 <ol>
 <li>
 <p>Using key-value pairs as XCM Asset Metadata since it is a general concept useful for both structured and unstructured data. Both key and value can be raw bytes with interpretation up to the communicating entities.</p>
-<p>The XCM Asset Metadata should be represented as a map SCALE-encoded equivalent to the <code>BTreeMap</code>.</p>
-<p>Let's call the type of the XCM Asset Metadata map <code>MetadataMap</code>.</p>
+<p>The XCM Asset Metadata should be represented as a map SCALE-encoded equivalent to the <code>BTreeMap&lt;Vec&lt;u8&gt;, Vec&lt;u8&gt;&gt;</code>.</p>
+<p>As such, the XCM Asset Metadata types are defined as follows:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>type MetadataKey = Vec&lt;u8&gt;;
+type MetadataValue = Vec&lt;u8&gt;;
+type MetadataMap = BTreeMap&lt;MetadataKey, MetadataValue&gt;;
+<span class="boring">}</span></code></pre></pre>
 </li>
 <li>
 <p>Communicating only the demanded part of the metadata, not the whole metadata.</p>
 <ul>
 <li>
 <p>A consensus entity should be able to query the values of interested keys to read the metadata.
-To specify the keys to read, we need a set-like type. Let's call that type <code>MetadataKeys</code> and make its instance a SCALE-encoded equivalent to the <code>BTreeSet</code>.</p>
+We need a set-like type to specify the keys to read, a SCALE-encoded equivalent to the <code>BTreeSet&lt;Vec&lt;u8&gt;&gt;</code>.
+Let's define that type as follows:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>type MetadataKeySet = BTreeSet&lt;MetadataKey&gt;;
+<span class="boring">}</span></code></pre></pre>
 </li>
 <li>
 <p>A consensus entity should be able to write the values for specified keys.</p>
@@ -461,6 +471,7 @@ To specify the keys to read, we need a set-like type. Let's call that type <code
 <p>New XCM instructions to communicate the metadata.</p>
 </li>
 </ol>
+<p>Note: the maximum lengths of <code>MetadataKey</code>, <code>MetadataValue</code>, <code>MetadataMap</code>, and <code>MetadataKeySet</code> are implementation-defined.</p>
 <h3 id="new-instructions"><a class="header" href="#new-instructions">New instructions</a></h3>
 <h4 id="reportmetadata"><a class="header" href="#reportmetadata"><code>ReportMetadata</code></a></h4>
 <p>The <code>ReportMetadata</code> is a new instruction to query metadata information.
@@ -500,11 +511,11 @@ ReportMetadata {
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>enum MetadataQueryKind {
-    /// Query metadata key list.
-    KeyList,
+    /// Query metadata key set.
+    KeySet,
 
     /// Query values of the specified keys.
-    Values(MetadataKeys),
+    Values(MetadataKeySet),
 }
 <span class="boring">}</span></code></pre></pre>
 <p>The <code>ReportMetadata</code> works in conjunction with the existing <code>QueryResponse</code> instruction. The <code>Response</code> type should be modified accordingly: we need to add a new <code>AssetMetadata</code> variant to it.</p>
@@ -531,8 +542,8 @@ pub enum Response {
 
 pub enum MetadataResponseData {
     /// The metadata key list to be reported
-    /// in response to the `KeyList` metadata query kind.
-    KeyList(MetadataKeys),
+    /// in response to the `KeySet` metadata query kind.
+    KeySet(MetadataKeySet),
 
     /// The values of the keys that were specified in the
     /// `Values` variant of the metadata query kind.
@@ -582,8 +593,6 @@ This RFC proposes to use the <code>Undefined</code> variant of a collection iden
 <p>This RFC proposes new functionality, so there are no compatibility issues.</p>
 <h2 id="prior-art-and-references-2"><a class="header" href="#prior-art-and-references-2">Prior Art and References</a></h2>
 <p><a href="https://github.com/polkadot-fellows/xcm-format/pull/50">RFC: XCM Asset Metadata</a></p>
-<h2 id="unresolved-questions-2"><a class="header" href="#unresolved-questions-2">Unresolved Questions</a></h2>
-<p>Should the <code>MetadataMap</code> and <code>MetadataKeys</code> be bounded, or is it enough to rely on the fact that every XCM message is itself bounded?</p>
 <h2 id="future-directions-and-related-material-2"><a class="header" href="#future-directions-and-related-material-2">Future Directions and Related Material</a></h2>
 <p>The original RFC draft contained additional metadata instructions. Though they could be useful, they're clearly outside the basic logic. So, this RFC version omits them to make the metadata discussion more focused on the core things. Nonetheless, there is hope that metadata approval instructions might be useful in the future, so they are mentioned here.</p>
 <p>You can read about the details in the <a href="https://github.com/UniqueNetwork/xcm-format/blob/e4c989599fee3e37467ff2b4bb4e6c977c238ad3/proposals/0050-asset-metadata.md">original draft</a>.</p>
@@ -1023,7 +1032,7 @@ Some strategies to address this issue include:
 <li><a href="https://github.com/paritytech/polkadot-sdk/issues/216">https://github.com/paritytech/polkadot-sdk/issues/216</a> is the issue tracking the <code>view functions</code> implementation in runtime implementations</li>
 <li><a href="https://github.com/paritytech/polkadot-sdk/pull/4722">https://github.com/paritytech/polkadot-sdk/pull/4722</a> is the on-going <code>view function</code> pull request. It works at pallet level. If two chains use two different pallets to provide similar functionalities, like pallet-assets and pallet-erc20, we still need to have different codes to support. Therefore, it doesn't conflict with XCQ, and can be utilized by XCQ.</li>
 </ul>
-<h2 id="unresolved-questions-3"><a class="header" href="#unresolved-questions-3">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-2"><a class="header" href="#unresolved-questions-2">Unresolved Questions</a></h2>
 <ul>
 <li>The metadata of the XCQ extensions can be integrated into <code>frame-metadata</code>'s <code>CustomMetadata</code> field, but the trade-offs (i.e. compatibility between versions) need examination.</li>
 </ul>
@@ -1862,7 +1871,7 @@ migration.</p>
 <li>SR Labs Auditors</li>
 <li>Current collators including Paranodes, Stake Plus, Turboflakes, Peter Mensik, SIK, and many more.</li>
 </ul>
-<h2 id="unresolved-questions-4"><a class="header" href="#unresolved-questions-4">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-3"><a class="header" href="#unresolved-questions-3">Unresolved Questions</a></h2>
 <p>None at this time.</p>
 <h2 id="future-directions-and-related-material-6"><a class="header" href="#future-directions-and-related-material-6">Future Directions and Related Material</a></h2>
 <p>There may exist in the future system chains for which this model of collator selection is not
@@ -1979,7 +1988,7 @@ If this every becomes a problem, this value of 20 is an arbitrary constant that 
 <p>Irrelevant.</p>
 <h2 id="prior-art-and-references-7"><a class="header" href="#prior-art-and-references-7">Prior Art and References</a></h2>
 <p>None.</p>
-<h2 id="unresolved-questions-5"><a class="header" href="#unresolved-questions-5">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-4"><a class="header" href="#unresolved-questions-4">Unresolved Questions</a></h2>
 <p>While it fundamentally doesn't change much to this RFC, using <code>BabeApi_currentEpoch</code> and <code>BabeApi_nextEpoch</code> might be inappropriate. I'm not familiar enough with good practices within the runtime to have an opinion here. Should it be an entirely new pallet?</p>
 <h2 id="future-directions-and-related-material-7"><a class="header" href="#future-directions-and-related-material-7">Future Directions and Related Material</a></h2>
 <p>It is possible that in the future a client could connect to a parachain without having to rely on a trusted parachain specification.</p>
@@ -2103,7 +2112,7 @@ Also note that child tries aren't considered as descendants of the main trie whe
 <p>The prior networking protocol is maintained for now. The older version of this protocol could get removed in a long time.</p>
 <h2 id="prior-art-and-references-8"><a class="header" href="#prior-art-and-references-8">Prior Art and References</a></h2>
 <p>None. This RFC is a clean-up of an existing mechanism.</p>
-<h2 id="unresolved-questions-6"><a class="header" href="#unresolved-questions-6">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-5"><a class="header" href="#unresolved-questions-5">Unresolved Questions</a></h2>
 <p>None</p>
 <h2 id="future-directions-and-related-material-8"><a class="header" href="#future-directions-and-related-material-8">Future Directions and Related Material</a></h2>
 <p>The current networking protocol could be deprecated in a long time. Additionally, the current &quot;state requests&quot; protocol (used for warp syncing) could also be deprecated in favor of this one.</p>
@@ -2251,7 +2260,7 @@ ones.</p>
 <h2 id="prior-art-and-references-9"><a class="header" href="#prior-art-and-references-9">Prior Art and References</a></h2>
 <p>The launch of the Technical Fellowship, see the
 <a href="https://forum.polkadot.network/t/calling-polkadot-core-developers/506">initial forum post</a>.</p>
-<h2 id="unresolved-questions-7"><a class="header" href="#unresolved-questions-7">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-6"><a class="header" href="#unresolved-questions-6">Unresolved Questions</a></h2>
 <p>None at this time.</p>
 <div style="break-before: page; page-break-before: always;"></div><p><a href="https://github.com/polkadot-fellows/RFCs/blob/main/text/0013-prepare-blockbuilder-and-core-runtime-apis-for-mbms.md">(source)</a></p>
 <p><strong>Table of Contents</strong></p>
@@ -2349,7 +2358,7 @@ transactions</a></li>
 <li><a href="https://github.com/paritytech/substrate/issues/5757">There is no module hook after inherents and before
 transactions</a></li>
 </ul>
-<h2 id="unresolved-questions-8"><a class="header" href="#unresolved-questions-8">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-7"><a class="header" href="#unresolved-questions-7">Unresolved Questions</a></h2>
 <p><del>Please suggest a better name for <code>BlockExecutiveMode</code>. We already tried: <code>RuntimeExecutiveMode</code>,
 <code>ExtrinsicInclusionMode</code>. The names of the modes <code>Normal</code> and <code>Minimal</code> were also called
 <code>AllExtrinsics</code> and <code>OnlyInherents</code>, so if you have naming preferences; please post them.</del><br />
@@ -2486,7 +2495,7 @@ This can be unified and simplified by moving both parts into the runtime.</p>
 <li>Allow parachain to renew lease without actually run another parachain: https://github.com/paritytech/polkadot/issues/6685</li>
 <li>Always treat parachain that never produced block for a significant amount of time as unlocked: https://github.com/paritytech/polkadot/issues/7539</li>
 </ul>
-<h2 id="unresolved-questions-9"><a class="header" href="#unresolved-questions-9">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-8"><a class="header" href="#unresolved-questions-8">Unresolved Questions</a></h2>
 <p>None at this stage.</p>
 <h2 id="future-directions-and-related-material-10"><a class="header" href="#future-directions-and-related-material-10">Future Directions and Related Material</a></h2>
 <p>This RFC is only intended to be a short term solution. Slots will be removed in future and lock mechanism is likely going to be replaced with a more generalized parachain manage &amp; recovery system in future. Therefore long term impacts of this RFC are not considered.</p>
@@ -2551,7 +2560,7 @@ This can be unified and simplified by moving both parts into the runtime.</p>
 <p>No changes</p>
 <h2 id="prior-art-and-references-12"><a class="header" href="#prior-art-and-references-12">Prior Art and References</a></h2>
 <p><a href="https://github.com/encointer/encointer-parachain/tree/master/polkadot-parachains/encointer-runtime">Existing Encointer runtime repo</a></p>
-<h2 id="unresolved-questions-10"><a class="header" href="#unresolved-questions-10">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-9"><a class="header" href="#unresolved-questions-9">Unresolved Questions</a></h2>
 <p>None identified</p>
 <h2 id="future-directions-and-related-material-11"><a class="header" href="#future-directions-and-related-material-11">Future Directions and Related Material</a></h2>
 <p>More info on Encointer: <a href="https://encointer.org">encointer.org</a></p>
@@ -3666,7 +3675,7 @@ Application developers will need to interact with multiple chains in the network
 <li><a href="https://github.com/paritytech/polkadot/issues/323">Transactionless Relay-chain</a></li>
 <li><a href="https://github.com/paritytech/polkadot-sdk/issues/491">Moving Staking off the Relay Chain</a></li>
 </ul>
-<h2 id="unresolved-questions-11"><a class="header" href="#unresolved-questions-11">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-10"><a class="header" href="#unresolved-questions-10">Unresolved Questions</a></h2>
 <p>There remain some implementation questions, like how to use balances for both Staking and
 Governance. See, for example, <a href="https://github.com/paritytech/polkadot-sdk/issues/491">Moving Staking off the Relay
 Chain</a>.</p>
@@ -3770,7 +3779,7 @@ so that chains know which <code>system_version</code> to use.</p>
 <p>We <a href="https://github.com/paritytech/polkadot-sdk/pull/1691">proposed</a> introducing a similar change by introducing a
 parameter to <code>frame_system::Config</code> but did not feel that
 is the correct way of introducing this change.</p>
-<h2 id="unresolved-questions-12"><a class="header" href="#unresolved-questions-12">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-11"><a class="header" href="#unresolved-questions-11">Unresolved Questions</a></h2>
 <p>I do not have any specific questions about this change at the moment.</p>
 <h2 id="future-directions-and-related-material-13"><a class="header" href="#future-directions-and-related-material-13">Future Directions and Related Material</a></h2>
 <p>IMO, this change is pretty self-contained and there won't be any future work necessary. </p>
@@ -4037,7 +4046,7 @@ efficient data management and periodic reviews of storage requirements, will be 
 Kusama and Polkadot Asset Hubs, making Polkadot and Kusama more accessible and user-friendly.</p>
 <h3 id="compatibility-12"><a class="header" href="#compatibility-12">Compatibility</a></h3>
 <p>The change does not impact compatibility as a <code>redeposit</code> function is already implemented.</p>
-<h2 id="unresolved-questions-13"><a class="header" href="#unresolved-questions-13">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-12"><a class="header" href="#unresolved-questions-12">Unresolved Questions</a></h2>
 <p>If this RFC is accepted, there should not be any unresolved questions regarding how to adapt the
 implementation of deposits for NFT collections.</p>
 <h2 id="addendum"><a class="header" href="#addendum">Addendum</a></h2>
@@ -4322,7 +4331,7 @@ governance call.</p>
 <h2 id="prior-art-and-references-16"><a class="header" href="#prior-art-and-references-16">Prior Art and References</a></h2>
 <p>See comments on the <a href="https://github.com/paritytech/polkadot-sdk/issues/598">tracking issue</a> and the
 <a href="https://github.com/paritytech/polkadot-sdk/pull/1644">in-progress PR</a></p>
-<h2 id="unresolved-questions-14"><a class="header" href="#unresolved-questions-14">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-13"><a class="header" href="#unresolved-questions-13">Unresolved Questions</a></h2>
 <p>Not applicable.</p>
 <h2 id="future-directions-and-related-material-14"><a class="header" href="#future-directions-and-related-material-14">Future Directions and Related Material</a></h2>
 <p>This enables future optimisations for the performance of availability recovery, such as retrieving batched systematic
@@ -4477,7 +4486,7 @@ and for returning the ownership proof alongside the public session keys.</p>
 <p>UIs would need to be updated to support the new RPC and the changed on chain logic.</p>
 <h2 id="prior-art-and-references-17"><a class="header" href="#prior-art-and-references-17">Prior Art and References</a></h2>
 <p>None.</p>
-<h2 id="unresolved-questions-15"><a class="header" href="#unresolved-questions-15">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-14"><a class="header" href="#unresolved-questions-14">Unresolved Questions</a></h2>
 <p>None.</p>
 <h2 id="future-directions-and-related-material-15"><a class="header" href="#future-directions-and-related-material-15">Future Directions and Related Material</a></h2>
 <p>Substrate implementation of the <a href="https://github.com/paritytech/polkadot-sdk/pull/1739">RFC</a>.</p>
@@ -4615,7 +4624,7 @@ Manifesto</a></li>
 <li><a href="https://www.indeed.com/career/engineer/salaries">Indeed: Average Salary for Engineers, United
 States</a></li>
 </ul>
-<h2 id="unresolved-questions-16"><a class="header" href="#unresolved-questions-16">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-15"><a class="header" href="#unresolved-questions-15">Unresolved Questions</a></h2>
 <p>None at present.</p>
 <div style="break-before: page; page-break-before: always;"></div><p><a href="https://github.com/polkadot-fellows/RFCs/blob/main/text/0056-one-transaction-per-notification.md">(source)</a></p>
 <p><strong>Table of Contents</strong></p>
@@ -4701,7 +4710,7 @@ This is equivalent to forcing the <code>Vec&lt;Transaction&gt;</code> to always 
 <p>The change is backwards compatible if done in two steps: modify the sender to always send one transaction per notification, then, after a while, modify the receiver to enforce the new format.</p>
 <h2 id="prior-art-and-references-19"><a class="header" href="#prior-art-and-references-19">Prior Art and References</a></h2>
 <p>Irrelevant.</p>
-<h2 id="unresolved-questions-17"><a class="header" href="#unresolved-questions-17">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-16"><a class="header" href="#unresolved-questions-16">Unresolved Questions</a></h2>
 <p>None.</p>
 <h2 id="future-directions-and-related-material-16"><a class="header" href="#future-directions-and-related-material-16">Future Directions and Related Material</a></h2>
 <p>None. This is a simple isolated change.</p>
@@ -4813,7 +4822,7 @@ Furthermore, when a large number of providers are registered, only the providers
 <p>Irrelevant.</p>
 <h2 id="prior-art-and-references-20"><a class="header" href="#prior-art-and-references-20">Prior Art and References</a></h2>
 <p>Unknown.</p>
-<h2 id="unresolved-questions-18"><a class="header" href="#unresolved-questions-18">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-17"><a class="header" href="#unresolved-questions-17">Unresolved Questions</a></h2>
 <p>While it fundamentally doesn't change much to this RFC, using <code>BabeApi_currentEpoch</code> and <code>BabeApi_nextEpoch</code> might be inappropriate. I'm not familiar enough with good practices within the runtime to have an opinion here. Should it be an entirely new pallet?</p>
 <h2 id="future-directions-and-related-material-17"><a class="header" href="#future-directions-and-related-material-17">Future Directions and Related Material</a></h2>
 <p>This RFC would make it possible to reliably discover archive nodes, which would make it possible to reliably send archive node requests, something that isn't currently possible. This could solve the problem of finding archive RPC node providers by migrating archive-related request to using the native peer-to-peer protocol rather than JSON-RPC.</p>
@@ -5188,7 +5197,7 @@ nodes: [[[2, 3], [4, 5]], [0, 1]]
 <h2 id="prior-art-and-references-21"><a class="header" href="#prior-art-and-references-21">Prior Art and References</a></h2>
 <p><a href="https://github.com/polkadot-fellows/RFCs/pull/46">RFC 46</a> produced by the Alzymologist team is a previous work reference that goes in this direction as well.</p>
 <p>On other ecosystems, there are other solutions to the problem of trusted signing. Cosmos for example has a standardized way of transforming a transaction into some textual representation and this textual representation is included in the signed data. Basically achieving the same as what the RFC proposes, but it requires that for every transaction applied in a block, every node in the network always has to generate this textual representation to ensure the transaction signature is valid.</p>
-<h2 id="unresolved-questions-19"><a class="header" href="#unresolved-questions-19">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-18"><a class="header" href="#unresolved-questions-18">Unresolved Questions</a></h2>
 <p>None.</p>
 <h2 id="future-directions-and-related-material-18"><a class="header" href="#future-directions-and-related-material-18">Future Directions and Related Material</a></h2>
 <ul>
@@ -5266,7 +5275,7 @@ nodes: [[[2, 3], [4, 5]], [0, 1]]
 <p>This change breaks backwards compatiblity because any transaction that is neither signed nor unsigned, but a new transaction type, would be interpreted as having a future extrinsic format version.</p>
 <h2 id="prior-art-and-references-22"><a class="header" href="#prior-art-and-references-22">Prior Art and References</a></h2>
 <p>The original design was originally proposed in the <a href="https://github.com/paritytech/polkadot-sdk/pull/2280"><code>TransactionExtension</code> PR</a>, which is also the motivation behind this effort.</p>
-<h2 id="unresolved-questions-20"><a class="header" href="#unresolved-questions-20">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-19"><a class="header" href="#unresolved-questions-19">Unresolved Questions</a></h2>
 <p>None.</p>
 <h2 id="future-directions-and-related-material-19"><a class="header" href="#future-directions-and-related-material-19">Future Directions and Related Material</a></h2>
 <p>Following this change, the &quot;general&quot; transaction type will be introduced as part of the <a href="https://github.com/paritytech/polkadot-sdk/issues/2415">Extrinsic Horizon</a> effort, which will shape future work.</p>
@@ -5358,7 +5367,7 @@ in order to speed up the time until all nodes have the newest record, nodes can 
 <p>The changes are backwards compatible with the existing protocol, so nodes with both the old protocol and newer protocol can exist in the network, this is achieved by the fact that we use protobuf for serializing and deserializing the records, so new fields will be ignore when deserializing with the older protocol and vice-versa when deserializing an old record with the new protocol the new field will be <code>None</code> and the new code accepts this record as being valid.</p>
 <h2 id="prior-art-and-references-23"><a class="header" href="#prior-art-and-references-23">Prior Art and References</a></h2>
 <p>The enhancements have been inspired by the algorithm specified in <a href="https://github.com/libp2p/specs/blob/master/kad-dht/README.md#value-retrieval">here</a></p>
-<h2 id="unresolved-questions-21"><a class="header" href="#unresolved-questions-21">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-20"><a class="header" href="#unresolved-questions-20">Unresolved Questions</a></h2>
 <p>N/A</p>
 <h2 id="future-directions-and-related-material-20"><a class="header" href="#future-directions-and-related-material-20">Future Directions and Related Material</a></h2>
 <p>N/A</p>
@@ -5578,7 +5587,7 @@ to decode these old versions, but this should be neglectable.</p>
 old extrinsic format and decoded by the runtime.</p>
 <h2 id="prior-art-and-references-25"><a class="header" href="#prior-art-and-references-25">Prior Art and References</a></h2>
 <p>None.</p>
-<h2 id="unresolved-questions-22"><a class="header" href="#unresolved-questions-22">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-21"><a class="header" href="#unresolved-questions-21">Unresolved Questions</a></h2>
 <p>None.</p>
 <h2 id="future-directions-and-related-material-21"><a class="header" href="#future-directions-and-related-material-21">Future Directions and Related Material</a></h2>
 <p>None.</p>
@@ -5872,7 +5881,7 @@ XCM versions, because there is no equivalent capability there.
 Such conversion attempts will explicitly fail.</p>
 <h2 id="prior-art-and-references-26"><a class="header" href="#prior-art-and-references-26">Prior Art and References</a></h2>
 <p>None.</p>
-<h2 id="unresolved-questions-23"><a class="header" href="#unresolved-questions-23">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-22"><a class="header" href="#unresolved-questions-22">Unresolved Questions</a></h2>
 <p>None.</p>
 <h2 id="future-directions-and-related-material-22"><a class="header" href="#future-directions-and-related-material-22">Future Directions and Related Material</a></h2>
 <p>None.</p>
@@ -5954,7 +5963,7 @@ both this new version and the old. In both cases, an &quot;attacker&quot; can do
 <p>Compatible with previous XCM programs.</p>
 <h2 id="prior-art-and-references-27"><a class="header" href="#prior-art-and-references-27">Prior Art and References</a></h2>
 <p>None.</p>
-<h2 id="unresolved-questions-24"><a class="header" href="#unresolved-questions-24">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-23"><a class="header" href="#unresolved-questions-23">Unresolved Questions</a></h2>
 <p>None.</p>
 <h2 id="future-directions-and-related-material-23"><a class="header" href="#future-directions-and-related-material-23">Future Directions and Related Material</a></h2>
 <p>None.</p>
@@ -6223,7 +6232,7 @@ separator.</p>
 <h2 id="prior-art-and-references-28"><a class="header" href="#prior-art-and-references-28">Prior Art and References</a></h2>
 <p>Forum discussion about a new <code>CandidateReceipt</code> format:
 <a href="https://forum.polkadot.network/t/pre-rfc-discussion-candidate-receipt-format-v2/3738">https://forum.polkadot.network/t/pre-rfc-discussion-candidate-receipt-format-v2/3738</a></p>
-<h2 id="unresolved-questions-25"><a class="header" href="#unresolved-questions-25">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-24"><a class="header" href="#unresolved-questions-24">Unresolved Questions</a></h2>
 <p>N/A</p>
 <h2 id="future-directions-and-related-material-24"><a class="header" href="#future-directions-and-related-material-24">Future Directions and Related Material</a></h2>
 <p>The implementation is extensible and future-proof to some extent. With minimal or no breaking
@@ -6340,7 +6349,7 @@ The new proposed instruction, <code>PayFees</code>, doesn't return the leftover 
 In practice, the deprecated <code>BuyExecution</code> needs to be slowly rolled out in favour of <code>PayFees</code>.</p>
 <h2 id="prior-art-and-references-29"><a class="header" href="#prior-art-and-references-29">Prior Art and References</a></h2>
 <p>The closed RFC PR on the xcm-format repository, before XCM RFCs got moved to fellowship RFCs: https://github.com/polkadot-fellows/xcm-format/pull/53.</p>
-<h2 id="unresolved-questions-26"><a class="header" href="#unresolved-questions-26">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-25"><a class="header" href="#unresolved-questions-25">Unresolved Questions</a></h2>
 <p>None</p>
 <h2 id="future-directions-and-related-material-25"><a class="header" href="#future-directions-and-related-material-25">Future Directions and Related Material</a></h2>
 <p>This proposal would greatly benefit from an improved asset trapping system.</p>
@@ -6436,7 +6445,7 @@ You only need to specify the hints you want in one single instruction at the top
 <p>None.</p>
 <h2 id="prior-art-and-references-30"><a class="header" href="#prior-art-and-references-30">Prior Art and References</a></h2>
 <p>The previous RFC PR in the xcm-format repository before XCM RFCs moved to fellowship RFCs: https://github.com/polkadot-fellows/xcm-format/pull/59.</p>
-<h2 id="unresolved-questions-27"><a class="header" href="#unresolved-questions-27">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-26"><a class="header" href="#unresolved-questions-26">Unresolved Questions</a></h2>
 <p>None.</p>
 <h2 id="future-directions-and-related-material-26"><a class="header" href="#future-directions-and-related-material-26">Future Directions and Related Material</a></h2>
 <p>None.</p>
@@ -6498,7 +6507,7 @@ using <code>NetworkId::ByGenesis</code>.</p>
 <p><code>NetworkId::Rococo</code> and <code>NetworkId::Westend</code> can just use <code>NetworkId::ByGenesis</code>, as can other testnets.</p>
 <h2 id="prior-art-and-references-31"><a class="header" href="#prior-art-and-references-31">Prior Art and References</a></h2>
 <p>A previous attempt to add <code>NetworkId::Paseo</code>: https://github.com/polkadot-fellows/xcm-format/pull/58.</p>
-<h2 id="unresolved-questions-28"><a class="header" href="#unresolved-questions-28">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-27"><a class="header" href="#unresolved-questions-27">Unresolved Questions</a></h2>
 <p>None.</p>
 <h2 id="future-directions-and-related-material-27"><a class="header" href="#future-directions-and-related-material-27">Future Directions and Related Material</a></h2>
 <p>None.</p>
@@ -6629,7 +6638,7 @@ Following the same logic, the existing <code>DepositReserveAsset</code>, <code>I
 <li><a href="https://github.com/polkadot-fellows/RFCs/pull/100">RFC: InitiateAssetsTransfer for complex asset transfers</a></li>
 <li><a href="https://github.com/polkadot-fellows/RFCs/pull/109">RFC: Descend XCM origin instead of clearing it where possible</a></li>
 </ul>
-<h2 id="unresolved-questions-29"><a class="header" href="#unresolved-questions-29">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-28"><a class="header" href="#unresolved-questions-28">Unresolved Questions</a></h2>
 <p>None</p>
 <h2 id="future-directions-and-related-material-28"><a class="header" href="#future-directions-and-related-material-28">Future Directions and Related Material</a></h2>
 <div style="break-before: page; page-break-before: always;"></div><p><a href="https://github.com/polkadot-fellows/RFCs/pull/119">(source)</a></p>
@@ -6832,7 +6841,7 @@ At this point, we compute $\beta\prime_w = \sum_v \beta\prime_{w,v}$ on-chain fo
 <p>JAM's block exports should not complicate availability rewards, but could impact some alternative schemes. </p>
 <h2 id="prior-art-and-references-33"><a class="header" href="#prior-art-and-references-33">Prior Art and References</a></h2>
 <p>None</p>
-<h2 id="unresolved-questions-30"><a class="header" href="#unresolved-questions-30">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-29"><a class="header" href="#unresolved-questions-29">Unresolved Questions</a></h2>
 <p>Provide specific questions to discuss and address before the RFC is voted on by the Fellowship. This should include, for example, alternatives to aspects of the proposed design where the appropriate trade-off to make is unclear.</p>
 <h2 id="future-directions-and-related-material-29"><a class="header" href="#future-directions-and-related-material-29">Future Directions and Related Material</a></h2>
 <h3 id="synthetic-parachain-flag"><a class="header" href="#synthetic-parachain-flag">Synthetic parachain flag</a></h3>
@@ -7082,7 +7091,7 @@ The following other host functions are similarly also considered deprecated:</p>
 <p>This RFC might be difficult to implement in Substrate due to the internal code design. It is not clear to the author of this RFC how difficult it would be.</p>
 <h2 id="prior-art"><a class="header" href="#prior-art">Prior Art</a></h2>
 <p>The API of these new functions was heavily inspired by API used by the C programming language.</p>
-<h2 id="unresolved-questions-31"><a class="header" href="#unresolved-questions-31">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-30"><a class="header" href="#unresolved-questions-30">Unresolved Questions</a></h2>
 <p>The changes in this RFC would need to be benchmarked. This involves implementing the RFC and measuring the speed difference.</p>
 <p>It is expected that most host functions are faster or equal speed to their deprecated counterparts, with the following exceptions:</p>
 <ul>
@@ -7380,7 +7389,7 @@ OLD_PRICE = 1000
 <h2 id="prior-art-and-references-35"><a class="header" href="#prior-art-and-references-35">Prior Art and References</a></h2>
 <p>This RFC builds extensively on the available ideas put forward in <a href="https://github.com/polkadot-fellows/RFCs/blob/6f29561a4747bbfd95307ce75cd949dfff359e39/text/0001-agile-coretime.md">RFC-1</a>. </p>
 <p>Additionally, I want to express a special thanks to <a href="https://samuelhaefner.github.io/">Samuel Haefner</a> and <a href="https://sites.google.com/site/dobzin/">Shahar Dobzinski</a> for fruitful discussions and helping me structure my thoughts. </p>
-<h2 id="unresolved-questions-32"><a class="header" href="#unresolved-questions-32">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-31"><a class="header" href="#unresolved-questions-31">Unresolved Questions</a></h2>
 <p>The technical feasability needs to be assessed.</p>
 <div style="break-before: page; page-break-before: always;"></div><p><a href="https://github.com/polkadot-fellows/RFCs/pull/34">(source)</a></p>
 <p><strong>Table of Contents</strong></p>
@@ -7496,7 +7505,7 @@ OLD_PRICE = 1000
 <li><code>DescirbeFamily</code> type: https://github.com/paritytech/polkadot-sdk/blob/master/polkadot/xcm/xcm-builder/src/location_conversion.rs#L122</li>
 <li><code>WithComputedOrigin</code> type: https://github.com/paritytech/polkadot-sdk/blob/master/polkadot/xcm/xcm-builder/src/barriers.rs#L153</li>
 </ul>
-<h2 id="unresolved-questions-33"><a class="header" href="#unresolved-questions-33">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-32"><a class="header" href="#unresolved-questions-32">Unresolved Questions</a></h2>
 <p>Implementation details and overall code is still up to discussion.</p>
 <div style="break-before: page; page-break-before: always;"></div><p><a href="https://github.com/polkadot-fellows/RFCs/pull/35">(source)</a></p>
 <p><strong>Table of Contents</strong></p>
@@ -7578,7 +7587,7 @@ OLD_PRICE = 1000
 <p>We want to highlight the importance for ecosystem builders to create a mechanism for indexers and wallets to be able to understand that changes have occurred such as increasing the pallet version, etc.</p>
 <h2 id="prior-art-and-references-37"><a class="header" href="#prior-art-and-references-37">Prior Art and References</a></h2>
 <p>N/A</p>
-<h2 id="unresolved-questions-34"><a class="header" href="#unresolved-questions-34">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-33"><a class="header" href="#unresolved-questions-33">Unresolved Questions</a></h2>
 <p>N/A</p>
 <h2 id="future-directions-and-related-material-30"><a class="header" href="#future-directions-and-related-material-30">Future Directions and Related Material</a></h2>
 <p>Additionally we would like to re-open the conversation about the potential for there to be free delegations. This was discussed by Dr Gavin Wood at Sub0 2022 and we feel like this would go a great way towards increasing the amount of network participants that are delegating: https://youtu.be/hSoSA6laK3Q?t=526</p>
@@ -7767,7 +7776,7 @@ pub(super) type CheckedCodeHash&lt;T: Config&gt; =
 <p>This RFC does not break compatibility.</p>
 <h2 id="prior-art-and-references-38"><a class="header" href="#prior-art-and-references-38">Prior Art and References</a></h2>
 <p>Prior discussion on this topic: https://github.com/paritytech/polkadot-sdk/issues/1796</p>
-<h2 id="unresolved-questions-35"><a class="header" href="#unresolved-questions-35">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-34"><a class="header" href="#unresolved-questions-34">Unresolved Questions</a></h2>
 <p>None at this time.</p>
 <h2 id="future-directions-and-related-material-31"><a class="header" href="#future-directions-and-related-material-31">Future Directions and Related Material</a></h2>
 <p>As noted in <a href="https://github.com/paritytech/polkadot-sdk/issues/1796">this GitHub issue</a>, we want to raise the per-byte cost of on-chain data storage. However, a substantial increase in this cost would make it highly impractical for on-demand parachains to register on Polkadot.
@@ -7856,7 +7865,7 @@ The <code>:heappages</code> are a rather obscure feature, and it is not clear wh
 <p>Not a breaking change. The runtime-side changes can be applied immediately (without even having to wait for changes in the client), then as soon as the runtime is updated, the client can be updated without any transition period. One can even consider updating the client before the runtime, as it corresponds to path C.</p>
 <h2 id="prior-art-and-references-39"><a class="header" href="#prior-art-and-references-39">Prior Art and References</a></h2>
 <p>None.</p>
-<h2 id="unresolved-questions-36"><a class="header" href="#unresolved-questions-36">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-35"><a class="header" href="#unresolved-questions-35">Unresolved Questions</a></h2>
 <p>None.</p>
 <h2 id="future-directions-and-related-material-32"><a class="header" href="#future-directions-and-related-material-32">Future Directions and Related Material</a></h2>
 <p>This RFC follows the same path as https://github.com/polkadot-fellows/RFCs/pull/4 by scoping everything related to memory allocations to the runtime.</p>
@@ -8004,7 +8013,7 @@ much of a burden or overhead since they've already built the infrastructure for 
 <p>One reference to a similar feature requiring on-chain/off-chain coordination would be the Kappa-Sigma-Mu Society. Nothing on-chain necessarily enforces the rules
 or facilitates bids, challenges, defenses, etc. However, the Society has managed to maintain itself with integrity to its rules. So I don't think this is totally
 out of Kusama's scope. But it will require some off-chain effort to maintain.</p>
-<h2 id="unresolved-questions-37"><a class="header" href="#unresolved-questions-37">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-36"><a class="header" href="#unresolved-questions-36">Unresolved Questions</a></h2>
 <ul>
 <li>Who will develop the tools necessary to implement this feature? How do we select them?</li>
 <li>How can this idea be better implemented with on-chain/substrate features?</li>
@@ -8087,7 +8096,7 @@ out of Kusama's scope. But it will require some off-chain effort to maintain.</p
 <ul>
 <li>Recent discussion / referendum for an alternative way to address this issue: <a href="https://kusama.polkassembly.io/referenda/340">Kusama Referendum 340 - Funding a Decision Deposit Sponsor</a></li>
 </ul>
-<h2 id="unresolved-questions-38"><a class="header" href="#unresolved-questions-38">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-37"><a class="header" href="#unresolved-questions-37">Unresolved Questions</a></h2>
 <p>Feedback on whether my proposed implementation of this is the best way to address the issue - including which calls the track should be allowed to make. Are the track parameters correct or should be use something different? Alternative would be welcome.</p>
 <div style="break-before: page; page-break-before: always;"></div><p><a href="https://github.com/polkadot-fellows/RFCs/pull/74">(source)</a></p>
 <p><strong>Table of Contents</strong></p>
@@ -8677,7 +8686,7 @@ We have the following extrinsics:</p>
 <p>This RFC is compatible with the existing implementation and can be handled via upgrades and migration. It's not intended to replace the existing multisig pallet.</p>
 <h2 id="prior-art-and-references-41"><a class="header" href="#prior-art-and-references-41">Prior Art and References</a></h2>
 <p><a href="https://github.com/paritytech/polkadot-sdk/tree/master/substrate/frame/multisig">multisig pallet in polkadot-sdk</a></p>
-<h2 id="unresolved-questions-39"><a class="header" href="#unresolved-questions-39">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-38"><a class="header" href="#unresolved-questions-38">Unresolved Questions</a></h2>
 <ul>
 <li>On account deletion, should we transfer remaining deposits to treasury or remove signers' addition deposits completely and consider it as fees to start with?</li>
 </ul>
@@ -8777,7 +8786,7 @@ Implement call filters. This will allow multisig accounts to only accept certain
 <p>Updates to Polkadot.js Apps, API and its documentation and those referring to it may be required.</p>
 <h2 id="prior-art-and-references-42"><a class="header" href="#prior-art-and-references-42">Prior Art and References</a></h2>
 <p>No prior articles or references.</p>
-<h2 id="unresolved-questions-40"><a class="header" href="#unresolved-questions-40">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-39"><a class="header" href="#unresolved-questions-39">Unresolved Questions</a></h2>
 <p>No further questions at this stage.</p>
 <h2 id="future-directions-and-related-material-34"><a class="header" href="#future-directions-and-related-material-34">Future Directions and Related Material</a></h2>
 <p>Relates to RFC entitled &quot;Increase maximum length of identity raw data values from 32 bytes&quot;.</p>
@@ -8885,7 +8894,7 @@ Implement call filters. This will allow multisig accounts to only accept certain
 <h2 id="prior-art-and-references-43"><a class="header" href="#prior-art-and-references-43">Prior Art and References</a></h2>
 <h3 id="prior-art-1"><a class="header" href="#prior-art-1">Prior Art</a></h3>
 <p>No prior articles.</p>
-<h2 id="unresolved-questions-41"><a class="header" href="#unresolved-questions-41">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-40"><a class="header" href="#unresolved-questions-40">Unresolved Questions</a></h2>
 <p>None</p>
 <h2 id="future-directions-and-related-material-35"><a class="header" href="#future-directions-and-related-material-35">Future Directions and Related Material</a></h2>
 <p>None</p>
@@ -9020,7 +9029,7 @@ Implement call filters. This will allow multisig accounts to only accept certain
 <ul>
 <li>All related discussions are going to be under this PR.</li>
 </ul>
-<h2 id="unresolved-questions-42"><a class="header" href="#unresolved-questions-42">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-41"><a class="header" href="#unresolved-questions-41">Unresolved Questions</a></h2>
 <ul>
 <li>Are there additional security measures needed to prevent potential abuses of the new functionalities?</li>
 </ul>
@@ -9158,7 +9167,7 @@ Implement call filters. This will allow multisig accounts to only accept certain
 <li>Existing decentralized applications and use cases on other blockchain platforms.</li>
 <li>Proposal #885: EVM-compatible contracts on Asset Hub, which highlights the community's interest in integrating smart contracts within the Polkadot ecosystem.</li>
 </ul>
-<h2 id="unresolved-questions-43"><a class="header" href="#unresolved-questions-43">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-42"><a class="header" href="#unresolved-questions-42">Unresolved Questions</a></h2>
 <ul>
 <li>What specific security measures should be implemented to prevent smart contract vulnerabilities?</li>
 <li>How can we ensure optimal performance while supporting complex smart contracts?</li>
@@ -9449,7 +9458,7 @@ namely:</p>
 <li>Existing pre-checking.</li>
 </ol>
 <p>https://github.com/paritytech/polkadot-sdk/issues/971</p>
-<h2 id="unresolved-questions-44"><a class="header" href="#unresolved-questions-44">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-43"><a class="header" href="#unresolved-questions-43">Unresolved Questions</a></h2>
 <ol>
 <li>What about the initial runtime, shall we make that off-chain as well?</li>
 <li>Good news, at least after the first upgrade, no code will be stored on chain
@@ -9585,7 +9594,7 @@ The instruction should be deprecated as soon as this RFC is approved
 (probably deprecate in v5, remove in v6).</p>
 <h2 id="prior-art-and-references-47"><a class="header" href="#prior-art-and-references-47">Prior Art and References</a></h2>
 <p>The previous RFC PR on the xcm-format repo, before XCM RFCs were moved to fellowship RFCs: https://github.com/polkadot-fellows/xcm-format/pull/57.</p>
-<h2 id="unresolved-questions-45"><a class="header" href="#unresolved-questions-45">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-44"><a class="header" href="#unresolved-questions-44">Unresolved Questions</a></h2>
 <p>None.</p>
 <h2 id="future-directions-and-related-material-39"><a class="header" href="#future-directions-and-related-material-39">Future Directions and Related Material</a></h2>
 <p>The <a href="https://github.com/polkadot-fellows/RFCs/pull/105">new generic fees mechanism</a> is related to this proposal and further stimulates it as the JIT withdraw fees mechanism will become useless anyway.</p>
@@ -9655,7 +9664,7 @@ for compression.</li>
 <p>No compatibility issues identified.</p>
 <h2 id="prior-art-and-references-48"><a class="header" href="#prior-art-and-references-48">Prior Art and References</a></h2>
 <p>None.</p>
-<h2 id="unresolved-questions-46"><a class="header" href="#unresolved-questions-46">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-45"><a class="header" href="#unresolved-questions-45">Unresolved Questions</a></h2>
 <p>None.</p>
 <h2 id="future-directions-and-related-material-40"><a class="header" href="#future-directions-and-related-material-40">Future Directions and Related Material</a></h2>
 <p>None.</p>
@@ -9890,7 +9899,7 @@ to unbrick a stalled para.</p>
 <li><a href="https://forum.polkadot.network/t/how-to-recover-a-parachain/673">How to Recover a Parachain, Polkadot Forum</a></li>
 <li><a href="https://forum.polkadot.network/t/unbrick-collective/6931">Unbrick Collective, Polkadot Forum</a></li>
 </ul>
-<h2 id="unresolved-questions-47"><a class="header" href="#unresolved-questions-47">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-46"><a class="header" href="#unresolved-questions-46">Unresolved Questions</a></h2>
 <ul>
 <li>What are the parameters for the <code>WhitelistedUnbrickCaller</code> track?</li>
 <li>Any other methods that shall be updated to accept <code>Unbrick</code> origin?</li>
@@ -10085,7 +10094,7 @@ from which to start applying the new mechanism, thus, not affecting the already 
 <li><a href="https://docs.rs/polkadot-runtime-common/16.0.0/polkadot_runtime_common/auctions/index.html">Auctions pallet</a> in <a href="https://crates.io/crates/polkadot-runtime-common"><code>polkadot-runtime-commont</code></a>: Defines the mechanism of candle auctions.</li>
 <li><strong>PBA Book</strong>: A good place to read about <a href="https://polkadot-blockchain-academy.github.io/pba-book/cryptography/exotic-primitives/page.html?highlight=vrf#verifiable-random-functionsvrfs">VRFs</a>.</li>
 </ul>
-<h2 id="unresolved-questions-48"><a class="header" href="#unresolved-questions-48">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-47"><a class="header" href="#unresolved-questions-47">Unresolved Questions</a></h2>
 <ul>
 <li>How to determine in a statistically meaningful way that a change in the poll status corresponds to an
 organic behaviour, and not an unwanted, malicious behaviour?</li>
@@ -10186,7 +10195,7 @@ configurations without disruption.</p>
 and leverages standard iterator patterns in Rust programming to improve runtime flexibility.
 Comparable solutions in other governance networks were examined, but this proposal uniquely tailors
 them to Polkadot’s decentralized, runtime-upgradable architecture.</p>
-<h2 id="unresolved-questions-49"><a class="header" href="#unresolved-questions-49">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-48"><a class="header" href="#unresolved-questions-48">Unresolved Questions</a></h2>
 <ul>
 <li>How to handle governance transitions for currently ongoing referenda when changing configuration
 parameters of an existing track? Ideally, most tracks should not have to go through this change,
@@ -10360,7 +10369,7 @@ support version 5 and to remove version 4 in the future.</p>
 <p>This is a result of the work in <a href="https://github.com/paritytech/polkadot-sdk/issues/2415">Extrinsic
 Horizon</a> and
 <a href="https://github.com/polkadot-fellows/RFCs/blob/main/text/0099-transaction-extension-version.md">RFC99</a>.</p>
-<h2 id="unresolved-questions-50"><a class="header" href="#unresolved-questions-50">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-49"><a class="header" href="#unresolved-questions-49">Unresolved Questions</a></h2>
 <p>None.</p>
 <h2 id="future-directions-and-related-material-43"><a class="header" href="#future-directions-and-related-material-43">Future Directions and Related Material</a></h2>
 <p>Following this change, extrinsic version 5 will be introduced as part of the <a href="https://github.com/paritytech/polkadot-sdk/issues/2415">Extrinsic
@@ -10453,7 +10462,7 @@ work.</p>
 </ul>
 <h2 id="prior-art-and-references-54"><a class="header" href="#prior-art-and-references-54">Prior Art and References</a></h2>
 <p>N/A</p>
-<h2 id="unresolved-questions-51"><a class="header" href="#unresolved-questions-51">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-50"><a class="header" href="#unresolved-questions-50">Unresolved Questions</a></h2>
 <p>Some token holders may want these confirmation periods to remain as they are currently and for them not to increase. If this is something that the Polkadot Technical Fellowship considers to be an issue to implement into a runtime upgrade then I can create a Wish For Change to obtain token holder approval.</p>
 <h2 id="future-directions-and-related-material-44"><a class="header" href="#future-directions-and-related-material-44">Future Directions and Related Material</a></h2>
 <p>The parameters of Polkadot OpenGov will likely continue to change over time, there are additional discussions in the community regarding adjusting the <code>min_support</code> for some tracks so that it does not trend towards 0%, similar to the current state of the Whitelisted Caller track. This is outside of the scope of this RFC and requires a lot more discussion.</p>
@@ -10525,7 +10534,7 @@ work.</p>
 <p>Does this proposal break compatibility with existing interfaces, older versions of implementations? Summarize necessary migrations or upgrade strategies, if any.</p>
 <h2 id="prior-art-and-references-55"><a class="header" href="#prior-art-and-references-55">Prior Art and References</a></h2>
 <p>Provide references to either prior art or other relevant research for the submitted design.</p>
-<h2 id="unresolved-questions-52"><a class="header" href="#unresolved-questions-52">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-51"><a class="header" href="#unresolved-questions-51">Unresolved Questions</a></h2>
 <p>Provide specific questions to discuss and address before the RFC is voted on by the Fellowship. This should include, for example, alternatives to aspects of the proposed design where the appropriate trade-off to make is unclear.</p>
 <h2 id="future-directions-and-related-material-45"><a class="header" href="#future-directions-and-related-material-45">Future Directions and Related Material</a></h2>
 <p>Describe future work which could be enabled by this RFC, if it were accepted, as well as related RFCs. This is a place to brain-dump and explore possibilities, which themselves may become their own RFCs.</p>
