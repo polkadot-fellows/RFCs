@@ -12,7 +12,7 @@ This RFC proposes a change that makes it possible to identify types of compresse
 
 ## Motivation
 
-Currently, a compressed blob does not give any idea of what's inside because the only thing that can be inside, according to the spec, is Wasm. In reality, other blob types are already being used, and more are to come. Blob decompression is a blocking operation, and routing the blob to a proper worker should not involve its decompression for the sake of efficiency. Thus, it is necessary to introduce a mechanism allowing to identify the blob type without decompressing it.
+Currently, a compressed blob does not give any idea of what's inside because the only thing that can be inside, according to the spec, is Wasm. In reality, other blob types are already being used, and more are to come. Apart from being error-prone by itself, the current approach does not allow to properly route the blob through the execution paths before its decompression, which will result in suboptimal implementations when more blob types are used. Thus, it is necessary to introduce a mechanism allowing to identify the blob type without decompressing it.
 
 This proposal is intended to:
 1. Fill up gaps in the Polkadot spec, increasing its preciseness and putting it in line with mechanisms already being used in practice but not yet standardized;
