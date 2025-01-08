@@ -221,7 +221,7 @@ detailing proposed changes to the technical implementation of the Polkadot netwo
 <h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
 <p>This RFC proposes a change that makes it possible to identify types of compressed blobs stored on-chain, as well as used off-chain, without the need for decompression.</p>
 <h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
-<p>Currently, a compressed blob does not give any idea of what's inside because the only thing that can be inside, according to the spec, is Wasm. In reality, other blob types are already being used, and more are to come. Blob decompression is a blocking operation, and routing the blob to a proper worker should not involve its decompression for the sake of efficiency. Thus, it is necessary to introduce a mechanism allowing to identify the blob type without decompressing it.</p>
+<p>Currently, a compressed blob does not give any idea of what's inside because the only thing that can be inside, according to the spec, is Wasm. In reality, other blob types are already being used, and more are to come. Apart from being error-prone by itself, the current approach does not allow to properly route the blob through the execution paths before its decompression, which will result in suboptimal implementations when more blob types are used. Thus, it is necessary to introduce a mechanism allowing to identify the blob type without decompressing it.</p>
 <p>This proposal is intended to:</p>
 <ol>
 <li>Fill up gaps in the Polkadot spec, increasing its preciseness and putting it in line with mechanisms already being used in practice but not yet standardized;</li>
