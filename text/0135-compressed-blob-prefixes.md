@@ -17,7 +17,7 @@ Currently, a compressed blob does not give any idea of what's inside because the
 This proposal is intended to:
 1. Fill up gaps in the Polkadot spec, increasing its preciseness and putting it in line with mechanisms already being used in practice but not yet standardized;
 2. Support future work enabling Polkadot to execute PolkaVM and, more generally, other-than-Wasm parachain runtimes;
-3. Allow developers to introduce compression methods other than `zstd` seamlessly in the future.
+3. Allow developers to introduce arbitrary compression methods seamlessly in the future.
 
 ## Stakeholders
 
@@ -99,4 +99,4 @@ None
 
 This proposal creates a foundation for two future work directions:
 * Proposing to introduce other-than-Wasm code executors, including PolkaVM, allowing parachain runtime authors to seamlessly change execution platform using the existing mechanism of runtime upgrades;
-* Proposing to use new compression methods that are faster/better/more secure than `zstd` as soon as they appear, streamlining the adoption of new methods and deprecation of the old ones.
+* Proposing to use arbitrary compression methods in cases when they make sense from the point of view of efficiency and/or performance, including blob-type-specific compression approaches, streamlining the adoption of such methods and deprecation of the old ones.
