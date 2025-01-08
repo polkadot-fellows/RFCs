@@ -43,9 +43,10 @@ Changes proposed below are intended to:
 
 | Prefix name | Prefix bytes | Description |
 | -- | -- | -- |
-| `CBLOB_ZSTD_WASM_OR_POV` | 82, 188, 83, 118, 70, 219, 142, 5 | Wasm code blob or PoV, zstd-compressed |
-| `CBLOB_ZSTD_WASM_CODE`   | 82, 188, 83, 118, 70, 219, 142, 6 | Wasm code blob, zstd-compressed        |
-| `CBLOB_ZSTD_PVM_CODE`    | 82, 188, 83, 118, 70, 219, 142, 7 | PolkaVM code blob, zstd-compressed     |
+| `CBLOB_ZSTD_LEGACY`      | 82, 188, 83, 118, 70, 219, 142, 5 | Wasm code blob or PoV, zstd-compressed |
+| `CBLOB_ZSTD_POV`         | 82, 188, 83, 118, 70, 219, 142, 6 | Proof-of-validity, zstd-compressed     |
+| `CBLOB_ZSTD_WASM_CODE`   | 82, 188, 83, 118, 70, 219, 142, 7 | Wasm code blob, zstd-compressed        |
+| `CBLOB_ZSTD_PVM_CODE`    | 82, 188, 83, 118, 70, 219, 142, 8 | PolkaVM code blob, zstd-compressed     |
 
 * Amend [subsection 2.6.2 "Loading the Runtime Code"](https://spec.polkadot.network/chap-state#sect-loading-runtime-code) and make it reference the newly created "Blob Compression" subsection instead of specifying the prefix and the compression method explicitly;
 * Amend [subsection 8.3.2 "Runtime Compression"](https://spec.polkadot.network/chapter-anv#sect-runtime-compression), which currently reads "Not documented yet", and make it describe the actual parachain runtime compression technics, referencing the newly created  "Blob Compression" subsection;
@@ -58,14 +59,14 @@ No runtime code is changed. Node-side changes are trivial; a PoC already impleme
 ### Timeline
 
 1. The proposed prefix changes are implemented and released. No logic changes yet;
-2. After the supermajority of production networks' nodes upgrades, one more change is released that adds `CBLOB_ZSTD_WASM_CODE` prefix instead of `CBLOB_ZSTD_WASM_OR_POV` when compiling and compressing Wasm parachain runtimes;
-3. Conservatively, wait until no more PVFs prefixed with `CBLOB_ZSTD_WASM_OR_POV` remain on-chain. That may take quite some time. Alternatively, create a migration that alters prefixes of existing blobs;
-4. Rename `CBLOB_ZSTD_WASM_OR_POV` to `CBLOB_ZSTD_POV`, as the PoVs remain the only entity compressed with this prefix by that time. Thus no collator protocol changes are needed.
+2. After the supermajority of production networks' nodes upgrades, one more change is released that adds `CBLOB_ZSTD_WASM_CODE` prefix instead of `CBLOB_ZSTD_LEGACY` when compiling and compressing Wasm parachain runtimes, and `CBLOB_ZSTD_POV` instead of `CBLOB_ZSTD_LEGACY` when compressing PoVs;
+3. Conservatively, wait until no more PVFs prefixed with `CBLOB_ZSTD_LEGACY` remain on-chain. That may take quite some time. Alternatively, create a migration that alters prefixes of existing blobs;
+4. Removing `CBLOB_ZSTD_LEGACY` prefix will be possible after all the collators in all the networks switch to compression with `CBLOB_ZSTD_POV` prefix.
 
 ## Drawbacks
 
 Currently, the only requirement for a compressed blob prefix is not to coincide with Wasm magic bytes (as stated in code comments). Changes proposed here increase prefix collision risk, given that arbitrary data may be compressed in the future. However, it must be taken into account that:
-* Collision probability per arbitrary blob is ≈5,4×10⁻²⁰ for a single random 64-bit prefix (current situation) and ≈1,6×10⁻¹⁹ for the proposed set of three 64-bit prefixes (proposed situation), which is still low enough;
+* Collision probability per arbitrary blob is ≈5,4×10⁻²⁰ for a single random 64-bit prefix (current situation) and ≈2,17×10⁻¹⁹ for the proposed set of four 64-bit prefixes (proposed situation), which is still low enough;
 * The current de facto protocol uses the current compression implementation to compress PoVs, which are arbitrary binary data, so the collision risk already exists and is not introduced by changes proposed here.
 
 ## Testing, Security, and Privacy
