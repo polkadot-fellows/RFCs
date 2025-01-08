@@ -63,7 +63,7 @@ The representation and encoding mechanism is similar to the [`frame-metadata`](h
 ```rust
 decl_runtime_apis! {
     pub trait XcqApi {
-        fn execute_query(query: Vec<u8>, input: Vec<u8>, weight_limit: u64) -> XcqResult;
+        fn execute_query(query: Vec<u8>, input: Vec<u8>, ref_time_limit: u64) -> XcqResult;
         fn metadata() -> Vec<u8>;
     }
 }
@@ -95,7 +95,7 @@ pub fn execute(
     raw_blob: &[u8],
     method: &str,
     input: &[u8],
-    weight_limit: u64,
+    ref_time_limit: u64,
 ) -> Result<Vec<u8>, XcqExecutorError> {...}
 ```
 
@@ -256,8 +256,8 @@ The integration of XCQ into XCM is achieved by adding a new instruction to XCM, 
 
 ```rust
 ReportQuery {
-  query: SizeLimitedXcq,
-  weight_limit: WeightLimit,
+  query: BoundedVec<u8, SIZE_LIMIT>,
+  max_weight: Weight,
   info: QueryResponseInfo,
 }
 ```
@@ -266,32 +266,20 @@ Report to a given destination the results of an XCQ query. After query, a `Query
 
 Operands:
 
-- `query: SizeLimitedXcq` has a size limit(2MB)
+- `query: BoundedVec<u8, SIZE_LIMIT>`: which is the encoded bytes of the tuple `(program, input)`:
   - `program: Vec<u8>`: A pre-built PVM program binary.
   - `input: Vec<u8>`: The arguments of the program.
-- `weight_limit: WeightLimit`: The maximum weight that the query should take. `WeightLimit` is an enum that can specify either `Limit(Weight)` or `Unlimited`.
+where `SIZE_LIMIT` is the generic parameter type size limit (i.e. 2MB).
+
+- `max_weight: Weight`: The maximum weight that the query should take.
 - `info: QueryResponseInfo`: Information for making the response.
-  - `destination: Location`: The destination to which the query response message should be sent.
-  - `query_id: Compact<QueryId>`: The `query_id` field of the `QueryResponse` message
-  - `max_weight: Weight`: The `max_weight` field of the `QueryResponse` message
 
 - Add a new variant to the `Response` type in `QueryResponse`
 
-- `XcqResult = 6 (XcqResult)`
-  `XcqResult` is a enum
-  - `Ok = 0 (Vec<u8>)`: XCQ executes successfully with a SCALE-encoded response.
-  - `Err = 1 (ErrorCode)`: XCQ fails with an error code.
-`ErrorCode` is a enum
-- `ExceedMaxWeight = 0`
-- `MemoryAllocationError = 1`
-- `MemoryAccessError = 2`
-- `CallError = 3`
-- `OtherPVMError = 4`
+- `XcqResult = 6 (Vec<u8>)`
+  The containing bytes is the SCALE-encoded XcqResult
 
 #### Errors
-
-- `BadOrigin`
-- `DestinationUnsupported`
 
 ## Drawbacks
 
