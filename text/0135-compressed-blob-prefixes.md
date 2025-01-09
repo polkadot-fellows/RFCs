@@ -14,10 +14,7 @@ This RFC proposes a change that makes it possible to identify types of compresse
 
 Currently, a compressed blob does not give any idea of what's inside because the only thing that can be inside, according to the spec, is Wasm. In reality, other blob types are already being used, and more are to come. Apart from being error-prone by itself, the current approach does not allow to properly route the blob through the execution paths before its decompression, which will result in suboptimal implementations when more blob types are used. Thus, it is necessary to introduce a mechanism allowing to identify the blob type without decompressing it.
 
-This proposal is intended to:
-1. Fill up gaps in the Polkadot spec, increasing its preciseness and putting it in line with mechanisms already being used in practice but not yet standardized;
-2. Support future work enabling Polkadot to execute PolkaVM and, more generally, other-than-Wasm parachain runtimes;
-3. Allow developers to introduce arbitrary compression methods seamlessly in the future.
+This proposal is intended to support future work enabling Polkadot to execute PolkaVM and, more generally, other-than-Wasm parachain runtimes, and allow developers to introduce arbitrary compression methods seamlessly in the future.
 
 ## Stakeholders
 
@@ -27,19 +24,13 @@ Node developers are the main stakeholders for this proposal. It also creates a f
 
 ### Overview
 
-The current approach to compressing binary blobs is defined in [subsection 2.6.2](https://spec.polkadot.network/chap-state#sect-loading-runtime-code) of Polkadot spec. It involves using `zstd` compression, and the resulting compressed blob is prefixed with a unique 64-bit magic value specified in that subsection. Said subsection only defines the means of compressing Wasm code blobs; no other compression procedure is currently defined by the spec.
+The current approach to compressing binary blobs involves using `zstd` compression, and the resulting compressed blob is prefixed with a unique 64-bit magic value specified in that subsection. The same procedure is used to compress both Wasm code blobs and proofs-of-validity. Currently, having solely a compressed blob, it's impossible to tell what's inside it without decompression, a Wasm blob, or a PoV. That doesn't cause problems in the current protocol, as Wasm blobs and PoV blobs take completely different execution paths in the code.
 
-However, in practice, the current de facto protocol uses the said procedure to compress not only Wasm code blobs but also proofs-of-validity. Such a usage is not stipulated by the spec. Currently, having solely a compressed blob, it's impossible to tell what's inside it without decompression, a Wasm blob, or a PoV. That doesn't cause any problems in the current de facto protocol, as Wasm blobs and PoV blobs take completely different execution paths, and it's impossible to mix them.
+The changes proposed below are intended to define the means for distinguishing compressed blob types in a backward-compatible and future-proof way.
 
-Changes proposed below are intended to:
-* Bring the spec into line with the currently used de facto protocol;
-* Define the means for distinguishing compressed blob types in a backward-compatible and future-proof way;
-* Implement the means defined;
-* Deprecate the legacy compression/decompression mechanism in favor of the proposed one.
+It is proposed to introduce an open list of 64-bit prefixes, each representing a compressed blob of a specific type compressed with a specific compression method. The currently used prefix becomes deprecated and will be removed or reused when it is no longer in use.
 
-### Proposed spec changes
-
-* Add a subsection titled "Blob Compression" and describe how the binary data is compressed generally and list the following well-known prefixes:
+The proposed list of prefixes to support the current as well as currently known future work follows:
 
 | Prefix name | Prefix bytes | Description |
 | -- | -- | -- |
@@ -48,13 +39,7 @@ Changes proposed below are intended to:
 | `CBLOB_ZSTD_WASM_CODE`   | 82, 188, 83, 118, 70, 219, 142, 7 | Wasm code blob, zstd-compressed        |
 | `CBLOB_ZSTD_PVM_CODE`    | 82, 188, 83, 118, 70, 219, 142, 8 | PolkaVM code blob, zstd-compressed     |
 
-* Amend [subsection 2.6.2 "Loading the Runtime Code"](https://spec.polkadot.network/chap-state#sect-loading-runtime-code) and make it reference the newly created "Blob Compression" subsection instead of specifying the prefix and the compression method explicitly;
-* Amend [subsection 8.3.2 "Runtime Compression"](https://spec.polkadot.network/chapter-anv#sect-runtime-compression), which currently reads "Not documented yet", and make it describe the actual parachain runtime compression technics, referencing the newly created  "Blob Compression" subsection;
-* In [section 8, "Availability & Validity"](https://spec.polkadot.network/chapter-anv), either in a separate new subsection or in one of the existing ones, introduce a PoV compression concept, linking it to the newly created "Blob Compression" subsection.
-
-### Proposed code changes
-
-No runtime code is changed. Node-side changes are trivial; a PoC already implemented as a part of [SDK PR#6704](https://github.com/paritytech/polkadot-sdk/pull/6704) may be used as an example.
+No runtime code changes should be needed to imnplement this proposal. Node-side changes are trivial; a PoC already implemented as a part of [SDK PR#6704](https://github.com/paritytech/polkadot-sdk/pull/6704) may be used as an example.
 
 ### Timeline
 
