@@ -46,7 +46,7 @@ No runtime code changes should be needed to imnplement this proposal. Node-side 
 1. The proposed prefix changes are implemented and released. No logic changes yet;
 2. After the supermajority of production networks' nodes upgrades, one more change is released that adds `CBLOB_ZSTD_WASM_CODE` prefix instead of `CBLOB_ZSTD_LEGACY` when compiling and compressing Wasm parachain runtimes, and `CBLOB_ZSTD_POV` instead of `CBLOB_ZSTD_LEGACY` when compressing PoVs;
 3. Conservatively, wait until no more PVFs prefixed with `CBLOB_ZSTD_LEGACY` remain on-chain. That may take quite some time. Alternatively, create a migration that alters prefixes of existing blobs;
-4. Removing `CBLOB_ZSTD_LEGACY` prefix will be possible after all the collators in all the networks switch to compression with `CBLOB_ZSTD_POV` prefix.
+4. Removing `CBLOB_ZSTD_LEGACY` prefix will be possible after all the nodes in all the networks cease using the prefix which is a long process, and additional incentives should be offered to the community to make people upgrade.
 
 ## Drawbacks
 
