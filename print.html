@@ -191,8 +191,6 @@ detailing proposed changes to the technical implementation of the Polkadot netwo
 <li><a href="new/0135-compressed-blob-prefixes.html#explanation">Explanation</a>
 <ul>
 <li><a href="new/0135-compressed-blob-prefixes.html#overview">Overview</a></li>
-<li><a href="new/0135-compressed-blob-prefixes.html#proposed-spec-changes">Proposed spec changes</a></li>
-<li><a href="new/0135-compressed-blob-prefixes.html#proposed-code-changes">Proposed code changes</a></li>
 <li><a href="new/0135-compressed-blob-prefixes.html#timeline">Timeline</a></li>
 </ul>
 </li>
@@ -222,29 +220,15 @@ detailing proposed changes to the technical implementation of the Polkadot netwo
 <p>This RFC proposes a change that makes it possible to identify types of compressed blobs stored on-chain, as well as used off-chain, without the need for decompression.</p>
 <h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
 <p>Currently, a compressed blob does not give any idea of what's inside because the only thing that can be inside, according to the spec, is Wasm. In reality, other blob types are already being used, and more are to come. Apart from being error-prone by itself, the current approach does not allow to properly route the blob through the execution paths before its decompression, which will result in suboptimal implementations when more blob types are used. Thus, it is necessary to introduce a mechanism allowing to identify the blob type without decompressing it.</p>
-<p>This proposal is intended to:</p>
-<ol>
-<li>Fill up gaps in the Polkadot spec, increasing its preciseness and putting it in line with mechanisms already being used in practice but not yet standardized;</li>
-<li>Support future work enabling Polkadot to execute PolkaVM and, more generally, other-than-Wasm parachain runtimes;</li>
-<li>Allow developers to introduce arbitrary compression methods seamlessly in the future.</li>
-</ol>
+<p>This proposal is intended to support future work enabling Polkadot to execute PolkaVM and, more generally, other-than-Wasm parachain runtimes, and allow developers to introduce arbitrary compression methods seamlessly in the future.</p>
 <h2 id="stakeholders"><a class="header" href="#stakeholders">Stakeholders</a></h2>
 <p>Node developers are the main stakeholders for this proposal. It also creates a foundation on which parachain runtime developers will build.</p>
 <h2 id="explanation"><a class="header" href="#explanation">Explanation</a></h2>
 <h3 id="overview"><a class="header" href="#overview">Overview</a></h3>
-<p>The current approach to compressing binary blobs is defined in <a href="https://spec.polkadot.network/chap-state#sect-loading-runtime-code">subsection 2.6.2</a> of Polkadot spec. It involves using <code>zstd</code> compression, and the resulting compressed blob is prefixed with a unique 64-bit magic value specified in that subsection. Said subsection only defines the means of compressing Wasm code blobs; no other compression procedure is currently defined by the spec.</p>
-<p>However, in practice, the current de facto protocol uses the said procedure to compress not only Wasm code blobs but also proofs-of-validity. Such a usage is not stipulated by the spec. Currently, having solely a compressed blob, it's impossible to tell what's inside it without decompression, a Wasm blob, or a PoV. That doesn't cause any problems in the current de facto protocol, as Wasm blobs and PoV blobs take completely different execution paths, and it's impossible to mix them.</p>
-<p>Changes proposed below are intended to:</p>
-<ul>
-<li>Bring the spec into line with the currently used de facto protocol;</li>
-<li>Define the means for distinguishing compressed blob types in a backward-compatible and future-proof way;</li>
-<li>Implement the means defined;</li>
-<li>Deprecate the legacy compression/decompression mechanism in favor of the proposed one.</li>
-</ul>
-<h3 id="proposed-spec-changes"><a class="header" href="#proposed-spec-changes">Proposed spec changes</a></h3>
-<ul>
-<li>Add a subsection titled &quot;Blob Compression&quot; and describe how the binary data is compressed generally and list the following well-known prefixes:</li>
-</ul>
+<p>The current approach to compressing binary blobs involves using <code>zstd</code> compression, and the resulting compressed blob is prefixed with a unique 64-bit magic value specified in that subsection. The same procedure is used to compress both Wasm code blobs and proofs-of-validity. Currently, having solely a compressed blob, it's impossible to tell what's inside it without decompression, a Wasm blob, or a PoV. That doesn't cause problems in the current protocol, as Wasm blobs and PoV blobs take completely different execution paths in the code.</p>
+<p>The changes proposed below are intended to define the means for distinguishing compressed blob types in a backward-compatible and future-proof way.</p>
+<p>It is proposed to introduce an open list of 64-bit prefixes, each representing a compressed blob of a specific type compressed with a specific compression method. The currently used prefix becomes deprecated and will be removed or reused when it is no longer in use.</p>
+<p>The proposed list of prefixes to support the current as well as currently known future work follows:</p>
 <div class="table-wrapper"><table><thead><tr><th>Prefix name</th><th>Prefix bytes</th><th>Description</th></tr></thead><tbody>
 <tr><td><code>CBLOB_ZSTD_LEGACY</code></td><td>82, 188, 83, 118, 70, 219, 142, 5</td><td>Wasm code blob or PoV, zstd-compressed</td></tr>
 <tr><td><code>CBLOB_ZSTD_POV</code></td><td>82, 188, 83, 118, 70, 219, 142, 6</td><td>Proof-of-validity, zstd-compressed</td></tr>
@@ -252,19 +236,13 @@ detailing proposed changes to the technical implementation of the Polkadot netwo
 <tr><td><code>CBLOB_ZSTD_PVM_CODE</code></td><td>82, 188, 83, 118, 70, 219, 142, 8</td><td>PolkaVM code blob, zstd-compressed</td></tr>
 </tbody></table>
 </div>
-<ul>
-<li>Amend <a href="https://spec.polkadot.network/chap-state#sect-loading-runtime-code">subsection 2.6.2 &quot;Loading the Runtime Code&quot;</a> and make it reference the newly created &quot;Blob Compression&quot; subsection instead of specifying the prefix and the compression method explicitly;</li>
-<li>Amend <a href="https://spec.polkadot.network/chapter-anv#sect-runtime-compression">subsection 8.3.2 &quot;Runtime Compression&quot;</a>, which currently reads &quot;Not documented yet&quot;, and make it describe the actual parachain runtime compression technics, referencing the newly created  &quot;Blob Compression&quot; subsection;</li>
-<li>In <a href="https://spec.polkadot.network/chapter-anv">section 8, &quot;Availability &amp; Validity&quot;</a>, either in a separate new subsection or in one of the existing ones, introduce a PoV compression concept, linking it to the newly created &quot;Blob Compression&quot; subsection.</li>
-</ul>
-<h3 id="proposed-code-changes"><a class="header" href="#proposed-code-changes">Proposed code changes</a></h3>
-<p>No runtime code is changed. Node-side changes are trivial; a PoC already implemented as a part of <a href="https://github.com/paritytech/polkadot-sdk/pull/6704">SDK PR#6704</a> may be used as an example.</p>
+<p>No runtime code changes should be needed to imnplement this proposal. Node-side changes are trivial; a PoC already implemented as a part of <a href="https://github.com/paritytech/polkadot-sdk/pull/6704">SDK PR#6704</a> may be used as an example.</p>
 <h3 id="timeline"><a class="header" href="#timeline">Timeline</a></h3>
 <ol>
 <li>The proposed prefix changes are implemented and released. No logic changes yet;</li>
 <li>After the supermajority of production networks' nodes upgrades, one more change is released that adds <code>CBLOB_ZSTD_WASM_CODE</code> prefix instead of <code>CBLOB_ZSTD_LEGACY</code> when compiling and compressing Wasm parachain runtimes, and <code>CBLOB_ZSTD_POV</code> instead of <code>CBLOB_ZSTD_LEGACY</code> when compressing PoVs;</li>
 <li>Conservatively, wait until no more PVFs prefixed with <code>CBLOB_ZSTD_LEGACY</code> remain on-chain. That may take quite some time. Alternatively, create a migration that alters prefixes of existing blobs;</li>
-<li>Removing <code>CBLOB_ZSTD_LEGACY</code> prefix will be possible after all the collators in all the networks switch to compression with <code>CBLOB_ZSTD_POV</code> prefix.</li>
+<li>Removing <code>CBLOB_ZSTD_LEGACY</code> prefix will be possible after all the nodes in all the networks cease using the prefix which is a long process, and additional incentives should be offered to the community to make people upgrade.</li>
 </ol>
 <h2 id="drawbacks"><a class="header" href="#drawbacks">Drawbacks</a></h2>
 <p>Currently, the only requirement for a compressed blob prefix is not to coincide with Wasm magic bytes (as stated in code comments). Changes proposed here increase prefix collision risk, given that arbitrary data may be compressed in the future. However, it must be taken into account that:</p>
