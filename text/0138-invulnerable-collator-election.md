@@ -1,4 +1,4 @@
-# RFC-0136: Election mechanism for invulnerable collators on system chains
+# RFC-0138: Election mechanism for invulnerable collators on system chains
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
