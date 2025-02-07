@@ -14,7 +14,7 @@ All validators track which approval votes they actually use, reporting the aggre
 
 ## Motivation
 
-We want all polkadot subsystems be profitable for validataors, because otherwise operators might profit from running modified code.  In particular, almost all rewards in Kusama/Polkadot should come from work done securing parachains, primarily approval checking, but also backing, availability, and support of XCMP.
+We want all or most polkadot subsystems be profitable for validataors, because otherwise operators might profit from running modified code.  In particular, almost all rewards in Kusama/Polkadot should come from work done securing parachains, primarily approval checking, but also backing, availability, and support of XCMP.
 
 Among these task, our highest priorities must be approval checks, which ensure soundness, and sending availability chunks to approval checkers.  We prove backers must be paid strictly less than approval checkers.
 
@@ -53,6 +53,8 @@ We track this data for each candidate during the approvals process:
 CandidateRewards {
     /// Anyone who backed this parablock
     backers: [AuthorityId; NumBackers],
+    /// Anyone to whome we think no-showed, even only briefly.
+    noshows: HashSet<AuthorityId>,
     /// Anyone who sent us chunks for this candidate
     downloaded_from: HashMap<AuthorityId,u16>,    
     /// Anyone to whome we sent chunks for this candidate
@@ -71,6 +73,8 @@ pub struct ApprovalsTally(Vec<ApprovalTallyLine>);
 pub struct ApprovalTallyLine {
     /// Approvals by this validator which our approvals gadget used in marking candidates approved.
     approval_usages: u32,
+    /// How many times we think this validator no-showed, even only briefly.
+    noshows: u32
     /// Availability chunks we downloaded from this validator for our approval checks we used.
     used_downloads: u32,
     /// Availability chunks we uploaded to this validator which whose approval checks we used.
@@ -87,6 +91,8 @@ After the epoch is finalized, we share the first two lines of its `ApprovalTally
 pub struct ApprovalTallyMessageLine {
     /// Approvals by this validator which our approvals gadget used in marking candidates approved.
     approval_usages: u32,
+    /// How many times we think this validator no-showed, even only briefly.
+    noshows: u32
     /// Availability chunks we downloaded from this validator for our approval checks we used.
     used_downloads: u32,
 }
@@ -97,16 +103,20 @@ pub struct ApprovalsTallyMessage(Vec<ApprovalTallyMessageLine>);
 
 ### Rewards compoutation
 
-We compute the approvals rewards by taking the median of the `approval_usages` fields for each validator across all validators `ApprovalsTallyMessage`s.
+We compute the approvals rewards for each validator by taking the median of the `approval_usages` fields for each validator across all validators `ApprovalsTallyMessage`s.  We compute some `noshows_percentiles` for each validator similarly, but using a 2/3 precentile instead of the median.
 ```
 let mut approval_usages_medians = Vec::new(); 
+let mut noshows_percentiles = = Vec::new(); 
 for i in 0..num_validators {
     let mut v: Vec<u32> = approvals_tally_messages.iter().map(|atm| atm.0[i].approval_usages);
     v.sort();
     approval_usages_medians.push(v[num_validators/2]);
+    let mut v: Vec<u32> = approvals_tally_messages.iter().map(|atm| atm.0[i].noshows);
+    v.sort();
+    noshows_percentiles.push(v[num_validators/3]); 
 }
 ```
-Assuming more than 50% honersty, these median tell us how many approval votes form each validator
+Assuming more than 50% honersty, these median tell us how many approval votes form each validator. 
 
 We re-weight the `used_downloads` from the `i`th validator by their median times their expected `f+1` chunks and divided by how many chunks downloads they claimed, and sum them 
 ```
@@ -125,6 +135,7 @@ for (mmu,atm) in my_missing_uploads.iter_mut().zip(approvals_tally_messages) {
 ```
 We distribute rewards on-chain using `approval_usages_medians` and `reweighted_total_used_downloads`.  Approval checkers could later change from who they download chunks using `my_missing_uploads`.
 
+We deduct small amount of rewards using `noshows_medians` too, likely 1% of the rewards for an approval, but excuse some small number of noshows, ala `noshows_medians[i].saturating_sub(MAX_NO_PENALTY_NOSHOWS)`.
 
 ### Strategies
 
@@ -165,6 +176,8 @@ As discussed in https://hackmd.io/@rgbPIkIdTwSICPuAq67Jbw/S1fHcvXSF we could com
 We never achieve true consensus on approval checkers and their approval votes.  Yet, our approval assignment loop gives a rough concensus, under our Byzantine assumption and some synchrony assumption.  It then follows that miss-reporting by malicious validators should not appreciably alter the median $\alpha_v$ and hence rewards.  
 
 We never tally used approval assignments to candidate equivocations or other forks.  Any validator should always conclude whatever approval checks it begins, even on other forks, but we expect relay chain equivocations should be vanishingly rare, and sassafras should make forks uncommon.
+
+We account for noshows similarly, and deduce a much smaller amount of rewards, but require a 2/3 precentile level, not kjust a median.
 
 ### Availability redistribution
 
