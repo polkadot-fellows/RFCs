@@ -3,7 +3,7 @@
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | Oct 25 2024                                                                    |
-| **Description** | Introduce XCQ (Cross Consensus Query)                                                          |
+| **Description** | Introduce PVQ (PolkaVM Query)                                                          |
 | **Authors**     | Bryan Chen, Jiyuan Zheng |
 
 ## Summary
@@ -181,14 +181,18 @@ As discussed in [Equation A.39 in the Gray Paper](https://graypaper.com/), the i
 #### Host Calls
 
 - `extension_call`: A unified entry point that routes queries to various extensions. It accepts two parameters:
-  1. `extension_id` (a `u64` value split across two 32-bit registers: lower 32 bits in `a0` and upper 32 bits in `a1`)
-  2. `query_data` (with pointer in register `a2` and length in register `a3`)
-The returned results are stored in registers `a0` (pointer) and `a1` (length). The output buffer contains the SCALE-encoded return value.
+  1. `extension_id`
+  An `u64` value for selecting which extension to query, split across two 32-bit registers: lower 32 bits in `a0` and upper 32 bits in `a1`
+  2. `query_data`
+  SCALE-encoded value including the view function index and its arguments, pointer in `a2` and length in `a3`.
+  The returned results are stored in registers `a0` (pointer) and `a1` (length). The output buffer contains the SCALE-encoded return value.
 The host call also has the ability to filter call data requests based on their source of invocation (e.g., Runtime, Extrinsics, RuntimeAPI, or XCM).
 
 - `return_ty`: Returns the type of a specific view function in a specific extension for type assertion. It accepts two parameters:
-  1. `extension_id` (a `u64` value split across two 32-bit registers: lower 32 bits in `a0` and upper 32 bits in `a1`)
-  2. `query_index` (a `u32` value in register `a2`)
+  1. `extension_id`
+  An `u64` value for selecting which extension to query, split across two 32-bit registers: lower 32 bits in `a0` and upper 32 bits in `a1`
+  2. `query_index`
+  A `u32` value indicating the index of the view function in the extension, stored in register `a2`
 The returned results are stored in register `a0` (pointer) and `a1` (length). The output buffer contains the SCALE-encoded return type.
 
 ### RuntimeAPI Integration
@@ -261,14 +265,18 @@ The containing bytes is the SCALE-encoded PVQ results.
 
 #### Errors
 
+[//] (details)
+
 ## Drawbacks
 
 ### Performance issues
 
+- PVQ Program Size: The size of PVQ query programs may not be suitable for efficient storage and transmission via XCMP/HRMP.
+
 ### User experience issues
 
 - Debugging: Currently, there is no full-fledged debuggers for PolkaVM programs. The only debugging approach is to set the PolkaVM backend in interpreter mode and then log the operations at the assembly level, which is too low-level to debug efficiently.
-- Gas computation: According to [this issue](https://github.com/koute/polkavm/issues/17), the gas cost model of PolkaVM is not accurate for now.
+- Gas computation: According to [this issue](https://github.com/koute/polkavm/issues/17), the gas cost model of PolkaVM is not detailed for now.
 
 ## Testing, Security, and Privacy
 
@@ -285,7 +293,7 @@ The containing bytes is the SCALE-encoded PVQ results.
   - Integration tests to ensure proper interaction with off-chain wallets/UI and on-chain XCM, including the aforementioned use cases in **Motivation** section.
 
 - Security:
-  - The PVQ system must enforce a strict read-only policy for all query operations. A mechanism should be implemented to prevent any state-changing operations within Pvq queries. For example, perform a final rollback in  `frame_support::storage::with_transaction` to ensure the storage won't be changed.
+  - The PVQ system must enforce a strict read-only policy for all query operations. A mechanism should be implemented to prevent any state-changing operations within PVQ queries. For example, perform a final rollback in  `frame_support::storage::with_transaction` to ensure the storage won't be changed.
   - Clear guidelines and best practices should be provided for parachain developers to ensure secure implementation.
 
 ## Performance, Ergonomics, and Compatibility
@@ -306,14 +314,42 @@ The proposal defines new apis, which doesn't break compatibility with existing i
 
 There are several discussions related to the proposal, including:
 
-- <https://forum.polkadot.network/t/wasm-view-functions/1045> is the original discussion about having a mechanism to avoid code duplications between the runtime and front-ends/wallets. In the original design, the custom computations are compiled as a wasm function.
-- <https://github.com/paritytech/polkadot-sdk/issues/216> is the issue tracking the `view functions` implementation in runtime implementations
-- <https://github.com/paritytech/polkadot-sdk/pull/4722> is the on-going `view function` pull request. It works at pallet level. If two chains use two different pallets to provide similar functionalities, like pallet-assets and pallet-erc20, we still need to have different codes to support. Therefore, it doesn't conflict with PVQ, and can be utilized by PVQ.
+- [Original discussion](https://forum.polkadot.network/t/wasm-view-functions/1045) about having a mechanism to avoid code duplications between the runtime and front-ends/wallets. In the original design, the custom computations are compiled as a wasm function.
+- [View functions](https://github.com/paritytech/polkadot-sdk/pull/4722) aims to provide view-only functions in pallet level. Additionally, [Facade Project](https://github.com/paritytech/polkadot-sdk/pull/4722) aims to gather and return commonly wanted information in runtime level.
+The PVQ does't conflict with them, which can take advantage of these Pallet View Functions / Runtime APIs and allow people to build arbitrary PVQ programs to obtain more custom/complex data that isn't otherwise expressed by these two proposals.
 
 ## Unresolved Questions
 
+- The custom computation performed in PVQ program involves serialization and deserialization when across the host call boundary. However, integration with such utilities significantly bloats the binary size except that the result value is simple numeric values. We need to find a way to optimize it.
 - The metadata of the PVQ extensions can be integrated into `frame-metadata`'s `CustomMetadata` field, but the trade-offs (i.e. compatibility between versions) need examination.
 
 ## Future Directions and Related Material
+
+The implementation work including:
+
+### PVQ Reference Implementation
+
+PVQ Extension Macros, PVQ Executor, RuntimeAPI Integration are implemented in standalone crate.
+
+XCM integration is implemented in `polkadot-sdk` repository.
+
+### PVQ Program Linker
+
+A tool to trim the standard PVM binary format.
+
+### PVQ Dev Console
+
+A PVQ dev console similar to the chain state page in pjs apps.
+
+- Display all the supported extensions and their methods
+- Allow user to invoke those methods with custom arguments
+
+### PVQ Registry
+
+Although there's no mandatory central registry for storing PVQ binary in an extension-based design, we can still setup a community-driven registry for storing popular PVQ binaries.
+
+### Integration with existing proposals
+
+Once the PVQ reference implementation and the aforementioned proposals are ready, some apis can be aggregated, i.e. the metadata.
 
 [^1]: [Appendix A.7 in JAM Gray Paper](https://graypaper.com/)
