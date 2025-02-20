@@ -119,14 +119,14 @@ mod extensions_impl {
     }
 
     #[extensions_impl::extension_struct_impl]
-    impl extension_core::ExtensionCore<ExtensionConfig> for Extensions {
+    impl extension_core::ExtensionCore<ExtensionsConfig> for Extensions {
         fn has_extension(id: u64) -> bool {
             matches!(id, 0 | 1)
         }
     }
 
     #[extensions_impl::extension_struct_impl]
-    impl extension_fungibles::ExtensionFungibles<ExtensionConfig> for Extensions {
+    impl extension_fungibles::ExtensionFungibles<ExtensionsConfig> for Extensions {
         fn total_supply(asset: u32) -> u64 {
             200
         }
@@ -188,12 +188,30 @@ As discussed in [Equation A.39 in the Gray Paper](https://graypaper.com/), the i
   The returned results are stored in registers `a0` (pointer) and `a1` (length). The output buffer contains the SCALE-encoded return value.
 The host call also has the ability to filter call data requests based on their source of invocation (e.g., Runtime, Extrinsics, RuntimeAPI, or XCM).
 
+**Example Rust Implementation using PolkaVM SDK**:
+
+```rust
+#[polkavm_derive::polkavm_import]
+extern "C" {
+    fn extension_call(extension_id:u64, call_ptr:u32, call_len: u32) -> (u32, u32);
+}
+```
+
 - `return_ty`: Returns the type of a specific view function in a specific extension for type assertion. It accepts two parameters:
   1. `extension_id`
   An `u64` value for selecting which extension to query, split across two 32-bit registers: lower 32 bits in `a0` and upper 32 bits in `a1`
   2. `query_index`
   A `u32` value indicating the index of the view function in the extension, stored in register `a2`
 The returned results are stored in register `a0` (pointer) and `a1` (length). The output buffer contains the SCALE-encoded return type.
+
+**Example Rust Implementation in PolkaVM SDK**:
+
+```rust
+#[polkavm_derive::polkavm_import]
+extern "C" {
+    fn return_ty(extension_id:u64, query_index:u32) -> (u32, u32);
+}
+```
 
 ### RuntimeAPI Integration
 
@@ -325,7 +343,7 @@ The PVQ does't conflict with them, which can take advantage of these Pallet View
 
 ## Future Directions and Related Material
 
-The implementation work including:
+The implementation work includes:
 
 ### PVQ Reference Implementation
 
