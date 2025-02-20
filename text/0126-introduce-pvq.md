@@ -145,7 +145,7 @@ Practically, it has a core method `execute` to initialize the program[^1] and pe
 
 - `program`: The PVQ main binary which is a trimmed standard PolkaVM binary.
 - `args`: The PVQ query data.
-- `ref_time_limit`: Weight limit that the PolkaVM program can consume.
+- `ref_time_limit`: The maximum ref_time that a single query should consume. The overall resource limit is enforced by Runtime config and RPC rate limiting, which is out of the scope. Since the proof size doesn't really matter in the context of runtime API, it's one-dimensional.
 
 ```rust
 pub fn execute(
@@ -246,7 +246,7 @@ ReportQuery {
 }
 ```
 
-Report to a given destination the results of an PVQ. After query, a `QueryResponse` message of type `PvqResult` will be sent to the described destination.
+Report to a given destination the results of a PVQ. After query, a `QueryResponse` message of type `PvqResult` will be sent to the described destination.
 
 Operands:
 
