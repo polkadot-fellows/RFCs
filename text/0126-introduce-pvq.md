@@ -155,10 +155,10 @@ $ExtID = twox64(P \parallel E \parallel M_1 \parallel M_2 \parallel ... \paralle
 
 Where:
 
-- $P$ is the prefix string constant
+- $P$ is the prefix string constant, `pvq-ext`
 - $E$ is the extension name
 - $M_1...M_n$ are the method names in lexicographical order
-- $\parallel$ represents string concatenation
+- $\parallel$ represents string concatenation with a separator `@` to avoid collision
 - $twox64()$ is the 64-bit xxHash function
 
 A permission control system allows filtering extension method invocations based on their origin (Runtime, Extrinsics, RuntimeAPI, or XCM). This enables runtime developers to restrict certain functions from being called through specific interfaces, such as preventing access via XCM when desired.
