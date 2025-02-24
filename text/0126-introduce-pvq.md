@@ -22,11 +22,11 @@ Moreover, the diversity also extends to cross-chain queries.
 
 Therefore, a system that serves as an intermediary layer between runtime implementations and client-side implementations with a unified but flexible interface will be beneficial for both sides. It should be able to:
 
-- Allow runtime developers to provide query apis which may includes data across multiple pallets but aggregate these apis through a unified interface
+- Allow runtime developers to provide query APIs which may include data across multiple pallets but aggregate these APIs through a unified interface
 - Allow client-side developers to query data from this unified interface across different chains but still has the flexibility to perform custom transformations on the raw data
 - Support cross-chain queries through XCM integration
 
-Use cases will benefit from such a system:
+Use cases that will benefit from such a system:
 
 - XCM bridge UI:
   - Query asset balances
@@ -49,15 +49,15 @@ Use cases will benefit from such a system:
 The core idea of PVQ is to have a unified interface that meets the aforementioned requirements.
 
 At the runtime side, an extension-based system is introduced to serve as a standardization layer across different chains.
-Each extension specification defines a set of cohesive apis.
+Each extension specification defines a set of cohesive APIs.
 Runtime developers can freely select which extensions they want to implement, and have full control over how the data is sourced - whether from single or multiple pallet functions, with optional data transformations applied.
 The runtime aggregates all implemented extensions into a single unified interface that takes a query program and corresponding arguments, and returns the query result.
 This interface will be exposed in two ways: as a Substrate RuntimeAPI for off-chain queries, and as an XCM instruction for cross-chain queries.
 
-At the client side or in XCM use cases, it can easily detect what extensions that a runtime supports.
+At the client side or in XCM use cases, the client can easily detect which extensions are supported by a runtime through the metadata API. This allows for runtime feature discovery and enables clients to adapt their behavior based on available functionality.
 Client-side developers can encode their desired custom computation logic into the query program and its arguments, while the actual data access happens through runtime-implemented extensions.
 
-In conclusion, the PVQ involves three components:
+In conclusion, PVQ involves three components:
 
 - PVQ Extension System: Standardize the functionality across different chains.
 - PVQ Executor: Aggregates the extensions and perform the query from off-chain or cross-chain.
@@ -357,7 +357,7 @@ This significantly benefits wallet and dApp developers by eliminating the need t
 
 ### Compatibility
 
-For RuntimeAPI integration, the proposal defines new apis, which doesn't break compatibility with existing interfaces.
+For RuntimeAPI integration, the proposal defines new APIs, which doesn't break compatibility with existing interfaces.
 For XCM Integration, the proposal doesn't modify the existing XCM message format, which is backward compatible.
 
 ## Prior Art and References
@@ -366,11 +366,11 @@ There are several discussions related to the proposal, including:
 
 - [Original discussion](https://forum.polkadot.network/t/wasm-view-functions/1045) about having a mechanism to avoid code duplications between the runtime and front-ends/wallets. In the original design, the custom computations are compiled as a wasm function.
 - [View functions](https://github.com/paritytech/polkadot-sdk/pull/4722) aims to provide view-only functions in pallet level. Additionally, [Facade Project](https://github.com/paritytech/polkadot-sdk/pull/4722) aims to gather and return commonly wanted information in runtime level.
-The PVQ does't conflict with them, which can take advantage of these Pallet View Functions / Runtime APIs and allow people to build arbitrary PVQ programs to obtain more custom/complex data that isn't otherwise expressed by these two proposals.
+The PVQ doesn't conflict with them, and it can take advantage of these Pallet View Functions / Runtime APIs and allow people to build arbitrary PVQ programs to obtain more custom/complex data that isn't otherwise expressed by these two proposals.
 
 ## Unresolved Questions
 
-- The metadata of the PVQ extensions can be integrated into `frame-metadata`'s `CustomMetadata` field, but the trade-offs (i.e. compatibility between versions) need examination.
+- The metadata of PVQ extensions can be integrated into `frame-metadata`'s `CustomMetadata` field, but the trade-offs (i.e. compatibility between versions) need examination.
 
 ## Future Directions and Related Material
 
