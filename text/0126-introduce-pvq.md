@@ -222,11 +222,10 @@ pub fn execute(
     gas_limit: u64,
 ) -> Result<Vec<u8>, PvqExecutorError> {...}
 enum PvqExecutorError {
-  // Not exhaustive, up to the implementor
   InvalidProgramFormat,
   OutOfGas,
-  HostFunctionError(String),
-  OtherPVMError(String),
+  // Implementors can define additional error variants to differentiate specific panic reasons for debugging purposes
+  Panic,
 }
 ```
 
@@ -261,8 +260,9 @@ decl_runtime_apis! {
 type PvqResult =  Result<PvqResponse, PvqError>;
 type PvqResponse = Vec<u8>;
 enum PvqError {
+    InvalidProgramFormat,
     Timeout,
-    Custom(String),
+    Panic(String),
 }
 ```
 
@@ -299,12 +299,18 @@ ReportQuery {
 
 - A new variant to the `Response` type in `QueryResponse`
   - `PvqResult = 6 (BoundedVec<u8, MaxPvqResult>)`
-The containing bytes is the SCALE-encoded PVQ results.
+
+`PvqResult` is a variant type:
+
+- Ok(Vec<u8>): The successful query result
+- Err(PanicReason): The query panics, the specific panic reason is encoded in the bytes.
 
 #### Errors
 
+- `FailedToDecode`: Invalid PVQ program format
+- `WeightLimitExceeded`: The query exceeds the weight limit
+- `Overflow`: The query result is too large to fit into the bounded vec
 - `BadOrigin`
-- `Overflow`
 - `ReanchorFailed`
 - `NotHoldingFees`
 - `Unroutable`
