@@ -147,9 +147,19 @@ mod extensions_impl {
 
 - Hash-based extension id generation mechanism
 
-Extensions are uniquely identified by a hash value computed from their name and method signatures. This means that modifying either the extension name or its method signatures results in a new extension. This design allows new functionality to be added independently of the PVQ core version, enabling a permissionless extension system while keeping the core implementation minimal.
+Extensions are uniquely identified by a hash value computed from their name and method names. This means that modifying either the extension name or its method names results in a new extension. This design allows new functionality to be added independently of the PVQ core version, enabling a permissionless extension system while keeping the core implementation minimal.
 
-- Permission Control Mechanism
+The extension ID generation can be expressed mathematically as:
+
+$ExtID = twox64(P \parallel E \parallel M_1 \parallel M_2 \parallel ... \parallel M_n)$
+
+Where:
+
+- $P$ is the prefix string constant
+- $E$ is the extension name
+- $M_1...M_n$ are the method names in lexicographical order
+- $\parallel$ represents string concatenation
+- $twox64()$ is the 64-bit xxHash function
 
 A permission control system allows filtering extension method invocations based on their origin (Runtime, Extrinsics, RuntimeAPI, or XCM). This enables runtime developers to restrict certain functions from being called through specific interfaces, such as preventing access via XCM when desired.
 
