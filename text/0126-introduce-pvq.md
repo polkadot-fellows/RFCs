@@ -308,7 +308,7 @@ ReportQuery {
 #### Errors
 
 - `FailedToDecode`: Invalid PVQ program format
-- `WeightLimitExceeded`: The query exceeds the weight limit
+- `MaxWeightInvalid`: The query exceeds the weight limit
 - `Overflow`: The query result is too large to fit into the bounded vec
 - `BadOrigin`
 - `ReanchorFailed`
