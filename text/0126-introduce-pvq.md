@@ -244,7 +244,7 @@ The RuntimeAPI for off-chain query usage includes two methods:
 - `execute_query`: Executes the query and returns the result. It takes the query, input, and weight limit as arguments.
   - `program`: The PVQ binary in a trimmed standard PVM program binary format.
   - `args`: The query arguments that is SCALE-encoded.
-  - `ref_time_limit`: The maximum allowed execution time for a single query, measured in reference time units.
+  - `ref_time_limit`: The maximum allowed execution time for a single query, measured in reference time units. The conversion between the PVM gas and reference time is a rather important implementation detail.
 
 - `metadata`: Returns information about available extensions, including their IDs, supported methods, gas costs, etc. This provides feature discovery capabilities. The metadata is encoded using `scale-info`, following a similar approach to [`frame-metadata`](https://github.com/paritytech/frame-metadata/).
 
@@ -334,23 +334,25 @@ ReportQuery {
   - A comprehensive test suite should be developed to cover various scenarios:
     - Positive test cases:
       - Basic queries with various extensions, data types, return values, custom computations, etc.
-      - Accurate conversion between given weight limit and the gas limit of PolkaVM
+      - Accurate conversion between given weight limit and the gas limit of PolkaVM for both off-chain and cross-chain queries
     - Negative test cases:
+      - Queries with invalid input data
       - Queries exceeding weight limits
-      - Invoking queries from unauthorized sources
-    - Edge cases:
-      - Queries with minimal or maximum allowed input sizes
+      - Queries that panics including (no permission, host function error, etc.)
   - Integration tests to ensure proper interaction with off-chain wallets/UI and on-chain XCM, including the aforementioned use cases in **Motivation** section.
 
 - Security:
-  - The PVQ system must enforce a strict read-only policy for all query operations. Clear guidelines and best practices should be provided for parachain developers to ensure secure implementation.
+  - The PVQ extension implementors must enforce a strict read-only policy for all extension methods.
+  - The implementation of the PVM engine must be secure and robust, refer to the discussion in [Gray Paper](https://graypaper.com/) for more details.
+
+- Privacy:
+  NA
 
 ## Performance, Ergonomics, and Compatibility
 
 ### Performance
 
-It's a new functionality, which doesn't modify the existing implementations.
-In the XCM integration, TODO
+It's a new functionality, which doesn't hinder the performance of the existing implementations.
 
 ### Ergonomics
 
@@ -360,6 +362,7 @@ This significantly benefits wallet and dApp developers by eliminating the need t
 ### Compatibility
 
 For RuntimeAPI integration, the proposal defines new apis, which doesn't break compatibility with existing interfaces.
+For XCM Integration, the proposal doesn't modify the existing XCM message format, which is backward compatible.
 
 ## Prior Art and References
 
@@ -375,23 +378,6 @@ The PVQ does't conflict with them, which can take advantage of these Pallet View
 
 ## Future Directions and Related Material
 
-### PVQ Program Linker
-
-A tool to trim the standard PVM binary format.
-
-### PVQ Dev Console
-
-A PVQ dev console similar to the chain state page in pjs apps.
-
-- Display all the supported extensions and their methods
-- Allow user to invoke those methods with custom arguments
-
-### PVQ Registry
-
-Although there's no mandatory central registry for storing PVQ binary in an extension-based design, we can still setup a community-driven registry for storing popular PVQ binaries.
-
-### Integration with existing proposals
-
-Once the PVQ reference implementation and the aforementioned proposals are ready, some apis can be aggregated, i.e. the metadata.
+Once the PVQ and the aforementioned Facade Project are ready, there are opportunities to consolidate overlapping functionality between the two systems. For example, the metadata APIs could potentially be unified to provide a more cohesive interface for runtime information. This would help reduce duplication and improve maintainability while preserving the distinct benefits of each approach.
 
 [^1]: [Appendix A.7 in JAM Gray Paper](https://graypaper.com/)
