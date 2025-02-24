@@ -284,27 +284,34 @@ The integration of PVQ into XCM is achieved by adding a new instruction to XCM, 
 
 Operands:
 
-- `query: BoundedVec<u8, SIZE_LIMIT>`: which is the encoded bytes of the tuple `(program, args)`:
-where `SIZE_LIMIT` is the generic parameter type size limit (i.e. 2MB).
+- `query: BoundedVec<u8, MAX_QUERY_SIZE>`: which is the encoded bytes of the tuple `(program, args)`:
+where `MAX_QUERY_SIZE` is the generic parameter type size limit (i.e. 2MB).
 
 - `max_weight: Weight`: The maximum weight that the query should take.
 - `info: QueryResponseInfo`: Information for making the response.
 
 ```rust
 ReportQuery {
-  query: BoundedVec<u8, SIZE_LIMIT>,
+  query: BoundedVec<u8, MAX_QUERY_SIZE>,
   max_weight: Weight,
   info: QueryResponseInfo,
 }
 ```
 
 - A new variant to the `Response` type in `QueryResponse`
-  - `PvqResult = 6 (Vec<u8>)`
+  - `PvqResult = 6 (BoundedVec<u8, MaxPvqResult>)`
 The containing bytes is the SCALE-encoded PVQ results.
 
 #### Errors
 
-[//] (details)
+- `BadOrigin`
+- `Overflow`
+- `ReanchorFailed`
+- `NotHoldingFees`
+- `Unroutable`
+- `DestinationUnsupported`
+- `ExceedsMaxMessageSize`
+- `Transport`
 
 ## Drawbacks
 
