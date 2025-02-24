@@ -8,8 +8,7 @@
 
 ## Summary
 
-This proposal introduces PVQ (PolkaVM Query), which aims to serve as an intermediary layer between different chain runtime implementations and tools/UI, to provide a unified but flexible interface for cross-chain queries.
-`PVQ` abstracts away concrete implementations across chains and supports custom query computations.
+This proposal introduces PVQ (PolkaVM Query), a unified query interface that bridges different chain runtime implementations and client tools/UIs. PVQ provides an extension-based system where runtime developers can expose chain-specific functionality through standardized interfaces, while allowing client-side developers to perform custom computations on the data through PolkaVM programs. By abstracting away concrete implementations across chains and supporting both off-chain and cross-chain scenarios. PVQ aims to reduce code duplication and development complexity while maintaining flexibility for custom use cases.
 
 ## Motivation
 
