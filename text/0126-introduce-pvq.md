@@ -59,9 +59,9 @@ Client-side developers can encode their desired custom computation logic into th
 
 In conclusion, the PVQ involves three components:
 
-- PVQ Extension system: Standardize the functionality across different chains.
+- PVQ Extension System: Standardize the functionality across different chains.
 - PVQ Executor: Aggregates the extensions and perform the query from off-chain or cross-chain.
-- RuntimeAPI/XCM integration: Support off-chain and cross-chain scenarios.
+- RuntimeAPI/XCM Integration: Support off-chain and cross-chain scenarios.
 
 ### PVQ Extension System
 
@@ -160,7 +160,7 @@ Where:
 - $\parallel$ represents string concatenation with a separator `@` to avoid collision
 - $twox64()$ is the 64-bit xxHash function
 
-A permission control system allows filtering extension method invocations based on their origin (Runtime, Extrinsics, RuntimeAPI, or XCM). This enables runtime developers to restrict certain functions from being called through specific interfaces, such as preventing access via XCM when desired.
+- A permission control system allows filtering extension method invocations based on their origin (Runtime, Extrinsics, RuntimeAPI, or XCM). This enables runtime developers to restrict certain functions from being called through specific interfaces, such as preventing access via XCM when desired.
 
 ### PVQ Executor
 
@@ -175,7 +175,7 @@ While the standard PVM code format contains instructions, jump table, and initia
 PVQ programs have a single static entrypoint that begins at instruction 0, since all PVQ computation can be expressed through a single entry point.
 
 - Argument passing:
-Query data is encoded as invocation arguments. As discussed in [Equation A.36 in the Gray Paper](https://graypaper.com/), arguments starts at `0xfeff0000` which is the stored in `a0`(7th register), and the length is specified at `a1`(8th register).
+Query data is encoded as invocation arguments. Basically, it includes the view function index and its arguments. As discussed in [Equation A.36 in the Gray Paper](https://graypaper.com/), arguments starts at `0xfeff0000` which is the stored in `a0`(7th register), and the length is specified at `a1`(8th register).
 
 - Return results
 As discussed in [Equation A.39 in the Gray Paper](https://graypaper.com/), the invocation returns its output through register `a0` (7th register), which contains a pointer to the output buffer. Register `a1`(8th register) contains the length of the output buffer. The output buffer must be allocated within the program's memory space and contain the SCALE-encoded return value.
@@ -206,9 +206,9 @@ extern "C" {
 
 #### PVQ Executor Implementation
 
-Practically, the executor has a core method `execute` to initialize the program[^1] and perform argument invocation, which takes:
+Practically, the executor has a core method `execute` to initialize the program and perform argument invocation, which takes:
 
-- `program`: The PVQ main binary which is a trimmed standard PolkaVM binary.
+- `program`: The PVQ main binary.
 - `args`: The PVQ query data.
 - `gas_limit`: The maximum PVM gas limit for the query.
 
@@ -241,8 +241,8 @@ pub fn new(context: PvqContext) -> Self
 
 The RuntimeAPI for off-chain query usage includes two methods:
 
-- `execute_query`: Executes the query and returns the result. It takes the query, input, and weight limit as arguments.
-  - `program`: The PVQ binary in a trimmed standard PVM program binary format.
+- `execute_query`: Executes the query and returns the result. It takes:
+  - `program`: The PVQ binary.
   - `args`: The query arguments that is SCALE-encoded.
   - `ref_time_limit`: The maximum allowed execution time for a single query, measured in reference time units. The conversion between the PVM gas and reference time is a rather important implementation detail.
 
@@ -324,10 +324,6 @@ ReportQuery {
 
 - PVQ Program Size: The size of a complicated PVQ program may be too large to be suitable for efficient storage and transmission via XCMP/HRMP.
 
-### User experience issues
-
-- Debugging: Currently, there is no full-fledged debuggers for PolkaVM programs.
-
 ## Testing, Security, and Privacy
 
 - Testing:
@@ -379,5 +375,3 @@ The PVQ does't conflict with them, which can take advantage of these Pallet View
 ## Future Directions and Related Material
 
 Once the PVQ and the aforementioned Facade Project are ready, there are opportunities to consolidate overlapping functionality between the two systems. For example, the metadata APIs could potentially be unified to provide a more cohesive interface for runtime information. This would help reduce duplication and improve maintainability while preserving the distinct benefits of each approach.
-
-[^1]: [Appendix A.7 in JAM Gray Paper](https://graypaper.com/)
