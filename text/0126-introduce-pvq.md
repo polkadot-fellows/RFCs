@@ -8,10 +8,26 @@
 
 ## Summary
 
-This proposal introduces PVQ (PolkaVM Query), which aims to serve as an intermediary layer between different chain runtime implementations and tools/UIs, to provide a unified interface for cross-chain queries.
+This proposal introduces PVQ (PolkaVM Query), which aims to serve as an intermediary layer between different chain runtime implementations and tools/UI, to provide a unified but flexible interface for cross-chain queries.
 `PVQ` abstracts away concrete implementations across chains and supports custom query computations.
 
-Use cases benefiting from `PVQ`:
+## Motivation
+
+In Substrate, runtime APIs facilitate off-chain clients in reading the state of the consensus system.
+However, the APIs defined and implemented by individual chains often fall short of meeting the diverse requirements of client-side developers.
+For example, client-side developers may want some aggregated data from multiple pallets, or do some various custom transformations on the raw data.
+Additionally, chains often implement different APIs and data types (such as `AccountId`) for similar functionality, which increases complexity and development effort on the client side.
+As a result, client-side developers frequently resort to directly accessing storage (which is susceptible to breaking changes) and reimplementing custom computations on the raw data. This leads to code duplication between the Rust runtime logic and UI JavaScript/TypeScript logic, increasing development effort and introducing potential for bugs.
+
+Moreover, the diversity also extends to cross-chain queries.
+
+Therefore, a system that serves as an intermediary layer between runtime implementations and client-side implementations with a unified but flexible interface will be beneficial for both sides. It should be able to:
+
+- Allow runtime developers to provide query apis which may includes data across multiple pallets but aggregate these apis through a unified interface
+- Allow client-side developers to query data from this unified interface across different chains but still has the flexibility to perform custom transformations on the raw data
+- Support cross-chain queries through XCM integration
+
+Use cases will benefit from such a system:
 
 - XCM bridge UI:
   - Query asset balances
@@ -24,16 +40,6 @@ Use cases benefiting from `PVQ`:
   - Query pallet-specific features
   - Construct extrinsics by querying pallet index, call index, etc
 
-## Motivation
-
-In Substrate, runtime APIs facilitate off-chain clients in reading the state of the consensus system.
-However, different chains may expose different APIs for a similar query or have varying data types, such as doing custom transformations on direct data, or differing `AccountId` types.
-This diversity also extends to client-side, which may require custom computations over runtime APIs in various use cases.
-Therefore, tools and UI developers often access storage directly and reimplement custom computations to convert data into user-friendly representations, leading to duplicated code between Rust runtime logic and UI JS/TS logic.
-This duplication increases workload and is prone to bugs.
-
-Therefore, a system is needed to serve as an intermediary layer between concrete chain runtime implementations and tools/UIs, to provide a unified interface for cross-chain queries.
-
 ## Stakeholders
 
 - Runtime Developers
@@ -41,28 +47,32 @@ Therefore, a system is needed to serve as an intermediary layer between concrete
 
 ## Explanation
 
-The overall query pattern of PVQ involves three components:
+The core idea of PVQ is to have a unified interface that meets the aforementioned requirements.
 
-- PVQ Extension: View-functions across different pallets are amalgamated through an extension-based system.
-- PVQ Executor:  Custom computations over view-function results is performed via a PVM invocation.
+At the runtime side, an extension-based system is introduced to serve as a standardization layer across different chains.
+Each extension specification defines a set of cohesive apis.
+Runtime developers can freely select which extensions they want to implement, and have full control over how the data is sourced - whether from single or multiple pallet functions, with optional data transformations applied.
+The runtime aggregates all implemented extensions into a single unified interface that takes a query program and corresponding arguments, and returns the query result.
+This interface will be exposed in two ways: as a Substrate RuntimeAPI for off-chain queries, and as an XCM instruction for cross-chain queries.
+
+At the client side or in XCM use cases, it can easily detect what extensions that a runtime supports.
+Client-side developers can encode their desired custom computation logic into the query program and its arguments, while the actual data access happens through runtime-implemented extensions.
+
+In conclusion, the PVQ involves three components:
+
+- PVQ Extension system: Standardize the functionality across different chains.
+- PVQ Executor: Aggregates the extensions and perform the query from off-chain or cross-chain.
 - RuntimeAPI/XCM integration: Support off-chain and cross-chain scenarios.
 
-### PVQ Extension
+### PVQ Extension System
 
-An extension-based design is suitable for several reasons:
+The PVQ extension system has the following features:
 
-- Different chains may have different data types (i.e account balance), making it challenging to standardize function calls across them.
-An extension-based design with optional associated types allows these diverse data types to be specified and utilized effectively.
-- Function calls distributed across various pallets can be amalgamated into a single extension, simplifying the development process and ensuring a more cohesive and maintainable codebase.
-- In the presence of a hash-based extension addressing mechanism, new functionalities can be added without upgrading the core version of the PVQ, which ensures a permission-less manner and makes the core part in a minimal scope.
-
-Therefore, essential components of a PVQ extension system include:
-
-- A hash-based extension id generation mechanism for addressing and versioning. The hash value derives from the extension name and its method sets. Any update to an extension is treated as a new extension.
-
-- `extension_decl` macro: Defines an extension as a Rust trait with optional associated types.
+- Defines an extension as a Rust trait with optional associated types.
 
 **Example Design**:
+
+The following code declares two extensions: `extension_core` and `extension_fungibles` with some associated types.
 
 ```rust
 #[extension_decl]
@@ -93,9 +103,7 @@ mod extension_fungibles {
 }
 ```
 
-- `extensions_impl` macro: Amalgamates extension implementations and generates extension-level metadata.
-
-**Example Design**:
+The following code implements the extensions, amalgamates them and generates corresponding metadata.
 
 ```rust
 #[extensions_impl]
@@ -137,40 +145,25 @@ mod extensions_impl {
 }
 ```
 
-### PVQ Executer
+- Hash-based extension id generation mechanism
 
-The PVQ Executer, should basically be formulated as a PVM program-argument invocation described in [Appendix A.8 in JAM Gray Paper](https://graypaper.com/). Since the invocation itself only includes custom computations logic, while all the state access is performed by host functions, which means the invocation itself is stateless.
+Extensions are uniquely identified by a hash value computed from their name and method signatures. This means that modifying either the extension name or its method signatures results in a new extension. This design allows new functionality to be added independently of the PVQ core version, enabling a permissionless extension system while keeping the core implementation minimal.
 
-Practically, it has a core method `execute` to initialize the program[^1] and perform argument invocation, which takes:
+- Permission Control Mechanism
 
-- `program`: The PVQ main binary which is a trimmed standard PolkaVM binary.
-- `args`: The PVQ query data.
-- `ref_time_limit`: The maximum ref_time that a single query should consume. The overall resource limit is enforced by Runtime config and RPC rate limiting, which is out of the scope. Since the proof size doesn't really matter in the context of runtime API, it's one-dimensional.
+A permission control system allows filtering extension method invocations based on their origin (Runtime, Extrinsics, RuntimeAPI, or XCM). This enables runtime developers to restrict certain functions from being called through specific interfaces, such as preventing access via XCM when desired.
 
-```rust
-pub fn execute(
-    &mut self,
-    program: &[u8],
-    args: &[u8],
-    ref_time_limit: u64,
-) -> Result<Vec<u8>, PvqExecutorError> {...}
-```
+### PVQ Executor
 
-It also has a executor initialization method to prepare PVM execution context and externality including registering host functions in advance:
+The PVQ Executor provides a unified interface that only takes query programs with corresponding arguments and returns results. It can be formulated as a PVM program-argument invocation, as detailed in [Appendix A.8 in JAM Gray Paper](https://graypaper.com/). Specifically, we call it PVQ invocation.
 
-```rust
-pub fn new(context: PvqContext) -> Self
-```
+#### Program initialization and Results Return
 
-#### PVM Program initialization and Results Return
-
-The PVM program initialization stage within the `execute` function of the `PVQ Executer` is detailed as follows:
-
-- PVQ code size limit:
-The standard PVM code format includes not only the instructions and jump table, but also information on the state of the RAM at program start. However, as aforementioned, the PVQ invocation itself is stateless. Therefore we can trim the standard code format. Specifically, the read-write(heap) data, stack section with their corresponding length encoding can be totally eliminated while the read-only data only includes utility data like host function extension id, which can be limited to a reasonable small size.
+- PVQ program size limit:
+While the standard PVM code format contains instructions, jump table, and initial RAM state information, PVQ programs can be significantly trimmed down. This is because PVQ separates computation logic from state access - the computation happens in the program while state access is handled through host functions. This makes the program stateless, allowing us to eliminate the initial read-write (heap) data and stack sections along with their length encodings in PVQ program binary. The read-only data section can be minimized to only contain essential utility data like host function extension IDs, keeping it within a reasonable size limit.
 
 - Entrypoint:
-Since the custom PVQ computation can be formulated as a single entrypoint, we can statically define it. It should starts at instruction 0.
+PVQ programs have a single static entrypoint that begins at instruction 0, since all PVQ computation can be expressed through a single entry point.
 
 - Argument passing:
 Query data is encoded as invocation arguments. As discussed in [Equation A.36 in the Gray Paper](https://graypaper.com/), arguments starts at `0xfeff0000` which is the stored in `a0`(7th register), and the length is specified at `a1`(8th register).
@@ -178,17 +171,22 @@ Query data is encoded as invocation arguments. As discussed in [Equation A.36 in
 - Return results
 As discussed in [Equation A.39 in the Gray Paper](https://graypaper.com/), the invocation returns its output through register `a0` (7th register), which contains a pointer to the output buffer. Register `a1`(8th register) contains the length of the output buffer. The output buffer must be allocated within the program's memory space and contain the SCALE-encoded return value.
 
-#### Host Calls
+#### Host Functions
 
-- `extension_call`: A unified entry point that routes queries to various extensions. It accepts two parameters:
-  1. `extension_id`
+The following host functions are available to PVQ invocations. The index numbers shown correspond to the values used in the `ecalli` instruction.
+
+1. `extension_call`: A unified entry point that routes queries to various extensions. It accepts two parameters:
+
+- `extension_id`
   An `u64` value for selecting which extension to query, split across two 32-bit registers: lower 32 bits in `a0` and upper 32 bits in `a1`
-  2. `query_data`
+- `query_data`
   SCALE-encoded value including the view function index and its arguments, pointer in `a2` and length in `a3`.
-  The returned results are stored in registers `a0` (pointer) and `a1` (length). The output buffer contains the SCALE-encoded return value.
-The host call also has the ability to filter call data requests based on their source of invocation (e.g., Runtime, Extrinsics, RuntimeAPI, or XCM).
 
-**Example Rust Implementation using PolkaVM SDK**:
+The returned results are stored in registers `a0` (pointer) and `a1` (length). The output buffer contains the SCALE-encoded return value.
+
+All host functions must properly account for and deduct gas based on their computational costs.
+
+**Example Rust Implementation using [PolkaVM SDK](https://github.com/paritytech/polkavm)**:
 
 ```rust
 #[polkavm_derive::polkavm_import]
@@ -197,51 +195,69 @@ extern "C" {
 }
 ```
 
-- `return_ty`: Returns the type of a specific view function in a specific extension for type assertion. It accepts two parameters:
-  1. `extension_id`
-  An `u64` value for selecting which extension to query, split across two 32-bit registers: lower 32 bits in `a0` and upper 32 bits in `a1`
-  2. `query_index`
-  A `u32` value indicating the index of the view function in the extension, stored in register `a2`
-The returned results are stored in register `a0` (pointer) and `a1` (length). The output buffer contains the SCALE-encoded return type.
+#### PVQ Executor Implementation
 
-**Example Rust Implementation in PolkaVM SDK**:
+Practically, the executor has a core method `execute` to initialize the program[^1] and perform argument invocation, which takes:
+
+- `program`: The PVQ main binary which is a trimmed standard PolkaVM binary.
+- `args`: The PVQ query data.
+- `gas_limit`: The maximum PVM gas limit for the query.
+
+**Example Rust Implementation**:
 
 ```rust
-#[polkavm_derive::polkavm_import]
-extern "C" {
-    fn return_ty(extension_id:u64, query_index:u32) -> (u32, u32);
+pub fn execute(
+    &mut self,
+    program: &[u8],
+    args: &[u8],
+    gas_limit: u64,
+) -> Result<Vec<u8>, PvqExecutorError> {...}
+enum PvqExecutorError {
+  // Not exhaustive, up to the implementor
+  InvalidProgramFormat,
+  OutOfGas,
+  HostFunctionError(String),
+  OtherPVMError(String),
 }
+```
+
+Additionally, it provides an initialization method that sets up the PVM execution environment and external interfaces by pre-registering the required host functions:
+
+**Example Rust Implementation**:
+
+```rust
+pub fn new(context: PvqContext) -> Self
 ```
 
 ### RuntimeAPI Integration
 
-The runtime API for off-chain query usage includes two methods:
+The RuntimeAPI for off-chain query usage includes two methods:
 
 - `execute_query`: Executes the query and returns the result. It takes the query, input, and weight limit as arguments.
-The `query` is the PVQ binary in a trimmed standard PVM program binary format.
-The `input` is the query arguments that is SCALE-encoded.
-The `ref_time_limit` is the maximum weight allowed for the query execution.
+  - `program`: The PVQ binary in a trimmed standard PVM program binary format.
+  - `args`: The query arguments that is SCALE-encoded.
+  - `ref_time_limit`: The maximum allowed execution time for a single query, measured in reference time units.
 
-- `metadata`: Return metadata of supported extensions (introduced in later section) and methods, serving as a feature discovery functionality.
-The representation and encoding mechanism is similar to the [`frame-metadata`](https://github.com/paritytech/frame-metadata/), using `scale-info`.
+- `metadata`: Returns information about available extensions, including their IDs, supported methods, gas costs, etc. This provides feature discovery capabilities. The metadata is encoded using `scale-info`, following a similar approach to [`frame-metadata`](https://github.com/paritytech/frame-metadata/).
 
-#### Example PVQ Runtime API
+**Example PVQ Runtime API**:
 
 ```rust
 decl_runtime_apis! {
     pub trait PvqApi {
-        fn execute_query(query: Vec<u8>, input: Vec<u8>, ref_time_limit: u64) -> PvqResult;
+        fn execute_query(program: Vec<u8>, args: Vec<u8>, ref_time_limit: u64) -> PvqResult;
         fn metadata() -> Vec<u8>;
     }
 }
 type PvqResult =  Result<PvqResponse, PvqError>;
 type PvqResponse = Vec<u8>;
 enum PvqError {
+    Timeout,
     Custom(String),
 }
 ```
 
-#### Example Metadata (before SCALE-encoded)
+**Example Metadata**:
 
 ```rust
 pub struct Metadata {
@@ -254,7 +270,15 @@ pub struct Metadata {
 
 The integration of PVQ into XCM is achieved by adding a new instruction to XCM, as well as a new variant of the `Response` type in `QueryResponse` message.:
 
-- A new `ReportQuery` instruction
+- A new `ReportQuery` instruction: report to a given destination the results of a PVQ. After query, a `QueryResponse` message of type `PvqResult` will be sent to the described destination.
+
+Operands:
+
+- `query: BoundedVec<u8, SIZE_LIMIT>`: which is the encoded bytes of the tuple `(program, args)`:
+where `SIZE_LIMIT` is the generic parameter type size limit (i.e. 2MB).
+
+- `max_weight: Weight`: The maximum weight that the query should take.
+- `info: QueryResponseInfo`: Information for making the response.
 
 ```rust
 ReportQuery {
@@ -264,21 +288,8 @@ ReportQuery {
 }
 ```
 
-Report to a given destination the results of a PVQ. After query, a `QueryResponse` message of type `PvqResult` will be sent to the described destination.
-
-Operands:
-
-- `query: BoundedVec<u8, SIZE_LIMIT>`: which is the encoded bytes of the tuple `(program, input)`:
-  - `program: Vec<u8>`: The PVQ binary.
-  - `input: Vec<u8>`: The PVQ arguments.
-where `SIZE_LIMIT` is the generic parameter type size limit (i.e. 2MB).
-
-- `max_weight: Weight`: The maximum weight that the query should take.
-- `info: QueryResponseInfo`: Information for making the response.
-
-- Add a new variant to the `Response` type in `QueryResponse`
-
-- `PvqResult = 6 (Vec<u8>)`
+- A new variant to the `Response` type in `QueryResponse`
+  - `PvqResult = 6 (Vec<u8>)`
 The containing bytes is the SCALE-encoded PVQ results.
 
 #### Errors
@@ -289,12 +300,11 @@ The containing bytes is the SCALE-encoded PVQ results.
 
 ### Performance issues
 
-- PVQ Program Size: The size of PVQ query programs may not be suitable for efficient storage and transmission via XCMP/HRMP.
+- PVQ Program Size: The size of a complicated PVQ program may be too large to be suitable for efficient storage and transmission via XCMP/HRMP.
 
 ### User experience issues
 
-- Debugging: Currently, there is no full-fledged debuggers for PolkaVM programs. The only debugging approach is to set the PolkaVM backend in interpreter mode and then log the operations at the assembly level, which is too low-level to debug efficiently.
-- Gas computation: According to [this issue](https://github.com/koute/polkavm/issues/17), the gas cost model of PolkaVM is not detailed for now.
+- Debugging: Currently, there is no full-fledged debuggers for PolkaVM programs.
 
 ## Testing, Security, and Privacy
 
@@ -319,14 +329,16 @@ The containing bytes is the SCALE-encoded PVQ results.
 ### Performance
 
 It's a new functionality, which doesn't modify the existing implementations.
+In the XCM integration, TODO
 
 ### Ergonomics
 
-The proposal facilitate the wallets and dApps developers. Developers no longer need to examine every concrete implementation to support conceptually similar operations across different chains. Additionally, they gain a more modular development experience through encapsulating custom computations over the exposed APIs in PolkaVM programs.
+From the perspective of off-chain tooling, this proposal streamlines development by unifying multiple chain-specific RuntimeAPIs under a single consistent interface.
+This significantly benefits wallet and dApp developers by eliminating the need to handle individual implementations for similar operations across different chains. The proposal also enhances development flexibility by allowing custom computations to be modularly encapsulated as PolkaVM programs that interact with the exposed APIs.
 
 ### Compatibility
 
-The proposal defines new apis, which doesn't break compatibility with existing interfaces.
+For RuntimeAPI integration, the proposal defines new apis, which doesn't break compatibility with existing interfaces.
 
 ## Prior Art and References
 
@@ -338,18 +350,9 @@ The PVQ does't conflict with them, which can take advantage of these Pallet View
 
 ## Unresolved Questions
 
-- The custom computation performed in PVQ program involves serialization and deserialization when across the host call boundary. However, integration with such utilities significantly bloats the binary size except that the result value is simple numeric values. We need to find a way to optimize it.
 - The metadata of the PVQ extensions can be integrated into `frame-metadata`'s `CustomMetadata` field, but the trade-offs (i.e. compatibility between versions) need examination.
 
 ## Future Directions and Related Material
-
-The implementation work includes:
-
-### PVQ Reference Implementation
-
-PVQ Extension Macros, PVQ Executor, RuntimeAPI Integration are implemented in standalone crate.
-
-XCM integration is implemented in `polkadot-sdk` repository.
 
 ### PVQ Program Linker
 
