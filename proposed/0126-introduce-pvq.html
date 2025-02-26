@@ -1,0 +1,656 @@
+
+<!DOCTYPE HTML>
+<html lang="en" class="polkadot" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>RFC-0126: Introduce PVQ (PolkaVM Query) - Polkadot Fellowship RFCs</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="An online book of RFCs approved or proposed within the Polkadot Fellowship.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/polkadot.css">
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "polkadot" : "polkadot";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('polkadot')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../introduction.html">Introduction</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Newly Proposed</li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Proposed</li><li class="chapter-item expanded "><a href="../proposed/0000-rewards.html">RFC-0000: Validator Rewards</a></li><li class="chapter-item expanded "><a href="../proposed/0123-pending-code-as-storage-location-for-runtime-upgrades.html">RFC-0123: Introduce :pending_code as intermediate storage key for the runtime code</a></li><li class="chapter-item expanded "><a href="../proposed/0126-introduce-pvq.html" class="active">RFC-0126: Introduce PVQ (PolkaVM Query)</a></li><li class="chapter-item expanded "><a href="../proposed/0135-compressed-blob-prefixes.html">RFC-0135: Compressed Blob Prefixes</a></li><li class="chapter-item expanded "><a href="../proposed/0138-invulnerable-collator-election.html">RFC-0138: Election mechanism for invulnerable collators on system chains</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Approved</li><li class="chapter-item expanded "><a href="../approved/0001-agile-coretime.html">RFC-1: Agile Coretime</a></li><li class="chapter-item expanded "><a href="../approved/0005-coretime-interface.html">RFC-5: Coretime Interface</a></li><li class="chapter-item expanded "><a href="../approved/0007-system-collator-selection.html">RFC-0007: System Collator Selection</a></li><li class="chapter-item expanded "><a href="../approved/0008-parachain-bootnodes-dht.html">RFC-0008: Store parachain bootnodes in relay chain DHT</a></li><li class="chapter-item expanded "><a href="../approved/0009-improved-net-light-client-requests.html">RFC-0009: Improved light client requests networking protocol</a></li><li class="chapter-item expanded "><a href="../approved/0010-burn-coretime-revenue.html">RFC-0010: Burn Coretime Revenue</a></li><li class="chapter-item expanded "><a href="../approved/0012-process-for-adding-new-collectives.html">RFC-0012: Process for Adding New System Collectives</a></li><li class="chapter-item expanded "><a href="../approved/0013-prepare-blockbuilder-and-core-runtime-apis-for-mbms.html">RFC-0013: Prepare Core runtime API for MBMs</a></li><li class="chapter-item expanded "><a href="../approved/0014-improve-locking-mechanism-for-parachains.html">RFC-0014: Improve locking mechanism for parachains</a></li><li class="chapter-item expanded "><a href="../approved/0022-adopt-encointer-runtime.html">RFC-0022: Adopt Encointer Runtime</a></li><li class="chapter-item expanded "><a href="../approved/0026-sassafras-consensus.html">RFC-0026: Sassafras Consensus Protocol</a></li><li class="chapter-item expanded "><a href="../approved/0032-minimal-relay.html">RFC-0032: Minimal Relay</a></li><li class="chapter-item expanded "><a href="../approved/0042-extrinsics-state-version.html">RFC-0042: Add System version that replaces StateVersion on RuntimeVersion</a></li><li class="chapter-item expanded "><a href="../approved/0043-storage-proof-size-hostfunction.html">RFC-0043: Introduce storage_proof_size Host Function for Improved Parachain Block Utilization</a></li><li class="chapter-item expanded "><a href="../approved/0045-nft-deposits-asset-hub.html">RFC-0045: Lowering NFT Deposits on Asset Hub</a></li><li class="chapter-item expanded "><a href="../approved/0047-assignment-of-availability-chunks.html">RFC-0047: Assignment of availability chunks to validators</a></li><li class="chapter-item expanded "><a href="../approved/0048-session-keys-runtime-api.html">RFC-0048: Generate ownership proof for SessionKeys</a></li><li class="chapter-item expanded "><a href="../approved/0050-fellowship-salaries.html">RFC-0050: Fellowship Salaries</a></li><li class="chapter-item expanded "><a href="../approved/0056-one-transaction-per-notification.html">RFC-0056: Enforce only one transaction per notification</a></li><li class="chapter-item expanded "><a href="../approved/0059-nodes-capabilities-discovery.html">RFC-0059: Add a discovery mechanism for nodes based on their capabilities</a></li><li class="chapter-item expanded "><a href="../approved/0078-merkleized-metadata.html">RFC-0078: Merkleized Metadata</a></li><li class="chapter-item expanded "><a href="../approved/0084-general-transaction-extrinsic-format.html">RFC-0084: General transactions in extrinsic format</a></li><li class="chapter-item expanded "><a href="../approved/0091-dht-record-creation-time.html">RFC-0091: DHT Authority discovery record creation time</a></li><li class="chapter-item expanded "><a href="../approved/0097-unbonding_queue.html">RFC-0097: Unbonding Queue</a></li><li class="chapter-item expanded "><a href="../approved/0099-transaction-extension-version.html">RFC-0099: Introduce a transaction extension version</a></li><li class="chapter-item expanded "><a href="../approved/0100-xcm-multi-type-asset-transfer.html">RFC-0100: New XCM instruction: InitiateAssetsTransfer</a></li><li class="chapter-item expanded "><a href="../approved/0101-xcm-transact-remove-max-weight-param.html">RFC-0101: XCM Transact remove require_weight_at_most parameter</a></li><li class="chapter-item expanded "><a href="../approved/0103-introduce-core-index-commitment.html">RFC-0103:  Introduce a CoreIndex commitment and a SessionIndex field in candidate receipts</a></li><li class="chapter-item expanded "><a href="../approved/0105-xcm-improved-fee-mechanism.html">RFC-0105: XCM improved fee mechanism</a></li><li class="chapter-item expanded "><a href="../approved/0107-xcm-execution-hints.html">RFC-0107: XCM Execution hints</a></li><li class="chapter-item expanded "><a href="../approved/0108-xcm-remove-testnet-ids.html">RFC-0108: Remove XCM testnet NetworkIds</a></li><li class="chapter-item expanded "><a href="../approved/0122-alias-origin-on-asset-transfers.html">RFC-0122: Asset transfers can alias XCM origin on destination to original origin</a></li><li class="chapter-item expanded "><a href="../approved/0125-xcm-asset-metadata.html">RFC-0125: XCM Asset Metadata</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Stale</li><li class="chapter-item expanded "><a href="../stale/0004-remove-unnecessary-allocator-usage.html">RFC-0004: Remove the host-side runtime memory allocator</a></li><li class="chapter-item expanded "><a href="../stale/0006-dynamic-pricing-for-bulk-coretime-sales.html">RFC-0006: Dynamic Pricing for Bulk Coretime Sales</a></li><li class="chapter-item expanded "><a href="../stale/0015-market-design-revisit.html">RFC-0015: Market Design Revisit</a></li><li class="chapter-item expanded "><a href="../stale/0034-xcm-absolute-location-account-derivation.html">RFC-34: XCM Absolute Location Account Derivation</a></li><li class="chapter-item expanded "><a href="../stale/0035-conviction-voting-delegation-modifications.html"> RFC-0035: Conviction Voting Delegation Modifications</a></li><li class="chapter-item expanded "><a href="../stale/0044-rent-based-registration.html">RFC-0044: Rent based registration model</a></li><li class="chapter-item expanded "><a href="../stale/0054-remove-heap-pages.html">RFC-0054: Remove the concept of "heap pages" from the client</a></li><li class="chapter-item expanded "><a href="../stale/0070-x-track-kusamanetwork.html">RFC-0070: X Track for @kusamanetwork</a></li><li class="chapter-item expanded "><a href="../stale/0073-referedum-deposit-track.html">RFC-0073: Decision Deposit Referendum Track</a></li><li class="chapter-item expanded "><a href="../stale/0074-stateful-multisig-pallet.html">RFC-0074: Stateful Multisig Pallet</a></li><li class="chapter-item expanded "><a href="../stale/0077-increase-max-length-of-identity-pgp-fingerprint-value.html">RFC-0077: Increase maximum length of identity PGP fingerprint values from 20 bytes</a></li><li class="chapter-item expanded "><a href="../stale/0088-broker-pallet-slashable-deposit-purchaser-reputation-reserved-cores.html">RFC-0088: Add slashable locked deposit, purchaser reputation, and reserved cores for on-chain identities to broker pallet</a></li><li class="chapter-item expanded "><a href="../stale/00xx-secondary-marketplace-for-regions.html">RFC-0001: Secondary Market for Regions</a></li><li class="chapter-item expanded "><a href="../stale/00xx-smart-contracts-coretime-chain.html">RFC-0002: Smart Contracts on the Coretime Chain</a></li><li class="chapter-item expanded "><a href="../stale/0102-offchain-parachain-runtime-upgrades.html">RFC-0000: Feature Name Here</a></li><li class="chapter-item expanded "><a href="../stale/0106-xcm-remove-fees-mode.html">RFC-0106: Remove XCM fees mode</a></li><li class="chapter-item expanded "><a href="../stale/0111-pure-proxy-replication.html">RFC-0111: Pure Proxy Replication</a></li><li class="chapter-item expanded "><a href="../stale/0112-compress-state-response-message-in-state-sync.html">RFC-0112: Compress the State Response Message in State Sync</a></li><li class="chapter-item expanded "><a href="../stale/0114-secp256r1-hostfunction.html">RFC-0114: Introduce secp256r1_ecdsa_verify_prehashed Host Function to verify NIST-P256 elliptic curve signatures</a></li><li class="chapter-item expanded "><a href="../stale/0117-unbrick-collective.html">RFC-0117: The Unbrick Collective</a></li><li class="chapter-item expanded "><a href="../stale/0120-referenda-confirmation-by-candle-mechanism.html">RFC-0120: Referenda Confirmation by Candle Mechanism</a></li><li class="chapter-item expanded "><a href="../stale/0121-iterable-referenda-tracks.html">RFC-0121: Iterable Referenda Tracks</a></li><li class="chapter-item expanded "><a href="../stale/0124-extrinsic-version-5.html">RFC-0124: Extrinsic version 5</a></li><li class="chapter-item expanded "><a href="../stale/RFC-114 Adjust Tipper Track Confirmation Periods.html">RFC-114: Adjust Tipper Track Confirmation Periods</a></li><li class="chapter-item expanded "><a href="../stale/TODO-stale-nomination-reward-curve.html">RFC-TODO: Stale Nomination Reward Curve</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="polkadot">Polkadot</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Polkadot Fellowship RFCs</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <p><a href="https://github.com/polkadot-fellows/RFCs/pull/126">(source)</a></p>
+<p><strong>Table of Contents</strong></p>
+<ul>
+<li><a href="#rfc-0126-introduce-pvq-polkavm-query">RFC-0126: Introduce PVQ (PolkaVM Query)</a>
+<ul>
+<li><a href="#summary">Summary</a></li>
+<li><a href="#motivation">Motivation</a></li>
+<li><a href="#stakeholders">Stakeholders</a></li>
+<li><a href="#explanation">Explanation</a>
+<ul>
+<li><a href="#pvq-extension-system">PVQ Extension System</a></li>
+<li><a href="#pvq-executor">PVQ Executor</a></li>
+<li><a href="#runtimeapi-integration">RuntimeAPI Integration</a></li>
+<li><a href="#xcm-integration">XCM integration</a></li>
+</ul>
+</li>
+<li><a href="#drawbacks">Drawbacks</a>
+<ul>
+<li><a href="#performance-issues">Performance issues</a></li>
+</ul>
+</li>
+<li><a href="#testing-security-and-privacy">Testing, Security, and Privacy</a></li>
+<li><a href="#performance-ergonomics-and-compatibility">Performance, Ergonomics, and Compatibility</a>
+<ul>
+<li><a href="#performance">Performance</a></li>
+<li><a href="#ergonomics">Ergonomics</a></li>
+<li><a href="#compatibility">Compatibility</a></li>
+</ul>
+</li>
+<li><a href="#prior-art-and-references">Prior Art and References</a></li>
+<li><a href="#unresolved-questions">Unresolved Questions</a></li>
+<li><a href="#future-directions-and-related-material">Future Directions and Related Material</a></li>
+</ul>
+</li>
+</ul>
+<h1 id="rfc-0126-introduce-pvq-polkavm-query"><a class="header" href="#rfc-0126-introduce-pvq-polkavm-query">RFC-0126: Introduce PVQ (PolkaVM Query)</a></h1>
+<div class="table-wrapper"><table><thead><tr><th></th><th></th></tr></thead><tbody>
+<tr><td><strong>Start Date</strong></td><td>Oct 25, 2024</td></tr>
+<tr><td><strong>Description</strong></td><td>Introduce PVQ (PolkaVM Query)</td></tr>
+<tr><td><strong>Authors</strong></td><td>Bryan Chen, Jiyuan Zheng</td></tr>
+</tbody></table>
+</div>
+<h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
+<p>This proposal introduces PVQ (PolkaVM Query), a unified query interface that bridges different chain runtime implementations and client tools/UIs. PVQ provides an extension-based system where runtime developers can expose chain-specific functionality through standardized interfaces, while allowing client-side developers to perform custom computations on the data through PolkaVM programs. By abstracting away concrete implementations across chains and supporting both off-chain and cross-chain scenarios, PVQ aims to reduce code duplication and development complexity while maintaining flexibility for custom use cases.</p>
+<h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
+<p>In Substrate, runtime APIs facilitate off-chain clients in reading the state of the consensus system.
+However, the APIs defined and implemented by individual chains often fall short of meeting the diverse requirements of client-side developers.
+For example, client-side developers may want some aggregated data from multiple pallets, or apply various custom transformations on the raw data.
+Additionally, chains often implement different APIs and data types (such as <code>AccountId</code>) for similar functionality, which increases complexity and development effort on the client side.
+As a result, client-side developers frequently resort to directly accessing storage (which is susceptible to breaking changes) and reimplementing custom computations on the raw data. This leads to code duplication between the Rust runtime logic and UI JavaScript/TypeScript logic, increasing development effort and introducing potential for bugs.</p>
+<p>Moreover, the diversity also extends to cross-chain queries.</p>
+<p>Therefore, a system that serves as an intermediary layer between runtime implementations and client-side implementations with a unified but flexible interface will be beneficial for both sides. It should be able to:</p>
+<ul>
+<li>Allow runtime developers to provide query APIs which may include data across multiple pallets but aggregate these APIs through a unified interface</li>
+<li>Allow client-side developers to query data from this unified interface across different chains while maintaining the flexibility to perform custom transformations on the raw data</li>
+<li>Support cross-chain queries through XCM integration</li>
+</ul>
+<p>Use cases that will benefit from such a system:</p>
+<ul>
+<li>XCM bridge UI:
+<ul>
+<li>Query asset balances</li>
+<li>Query XCM weight and fee from hop and dest chains</li>
+</ul>
+</li>
+<li>Wallets:
+<ul>
+<li>Query asset balances</li>
+<li>Query weights and fees for operations across chains</li>
+</ul>
+</li>
+<li>Universal dApp that supports all the parachains:
+<ul>
+<li>Perform Feature discovery</li>
+<li>Query pallet-specific features</li>
+<li>Construct extrinsics by querying pallet index, call index, etc</li>
+</ul>
+</li>
+</ul>
+<h2 id="stakeholders"><a class="header" href="#stakeholders">Stakeholders</a></h2>
+<ul>
+<li>Runtime Developers</li>
+<li>Tools/UI Developers</li>
+</ul>
+<h2 id="explanation"><a class="header" href="#explanation">Explanation</a></h2>
+<p>The core idea of PVQ is to have a unified interface that meets the aforementioned requirements.</p>
+<p>On the runtime side, an extension-based system is introduced to serve as a standardization layer across different chains.
+Each extension specification defines a set of cohesive APIs.
+Runtime developers can freely select which extensions they want to implement, and have full control over how the data is sourced - whether from single or multiple pallet functions, with optional data transformations applied.
+The runtime aggregates all implemented extensions into a single unified interface that takes a query program and corresponding arguments, and returns the query result.
+This interface will be exposed in two ways: as a Substrate RuntimeAPI for off-chain queries, and as an XCM instruction for cross-chain queries.</p>
+<p>On the client side or in XCM use cases, the client can easily detect which extensions are supported by a runtime through the metadata API. This allows for runtime feature discovery and enables clients to adapt their behavior based on available functionality.
+Client-side developers can encode their desired custom computation logic into the query program and its arguments, while the actual data access happens through runtime-implemented extensions.</p>
+<p>In conclusion, PVQ involves three components:</p>
+<ul>
+<li>PVQ Extension System: Standardize the functionality across different chains.</li>
+<li>PVQ Executor: Aggregates the extensions and perform the query from off-chain or cross-chain.</li>
+<li>RuntimeAPI/XCM Integration: Support off-chain and cross-chain scenarios.</li>
+</ul>
+<h3 id="pvq-extension-system"><a class="header" href="#pvq-extension-system">PVQ Extension System</a></h3>
+<p>The PVQ extension system has the following features:</p>
+<ul>
+<li>Defines an extension as a Rust trait with optional associated types.</li>
+</ul>
+<p><strong>Example Design</strong>:</p>
+<p>The following code declares two extensions: <code>extension_core</code> and <code>extension_fungibles</code> with some associated types.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[extension_decl]
+mod extension_core {
+    #[extension_decl::config]
+    pub trait Config {
+        type ExtensionId: Codec;
+    }
+    #[extension_decl::view_fns]
+    pub trait ExtensionCore&lt;T: Config&gt; {
+        fn has_extension(id: T::ExtensionId) -&gt; bool;
+    }
+}
+#[extension_decl]
+mod extension_fungibles {
+    #[extension_decl::config]
+    pub trait Config {
+        type AssetId: Codec;
+        type AccountId: Codec;
+        type Balance: Codec;
+    }
+
+    #[extension_decl::view_fns]
+    pub trait ExtensionFungibles&lt;T: Config&gt; {
+        fn total_supply(asset: T::AssetId) -&gt; T::Balance;
+        fn balance(asset: T::AssetId, who: T::AccountId) -&gt; T::Balance;
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p>The following code implements the extensions, amalgamates them and generates the corresponding metadata.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[extensions_impl]
+mod extensions_impl {
+
+    #[extensions_impl::extensions_config]
+    pub struct ExtensionsConfig;
+    #[extensions_impl::extensions_struct]
+    pub struct Extensions;
+
+    #[extensions_impl::extensions_config_impl]
+    impl extension_core::Config for ExtensionsConfig {
+        type ExtensionId = u64;
+    }
+
+    #[extensions_impl::extensions_config_impl]
+    impl extension_fungibles::Config for ExtensionsConfig {
+        type AssetId = u32;
+        type AccountId = [u8; 32];
+        type Balance = u64;
+    }
+
+    #[extensions_impl::extension_struct_impl]
+    impl extension_core::ExtensionCore&lt;ExtensionsConfig&gt; for Extensions {
+        fn has_extension(id: u64) -&gt; bool {
+            matches!(id, 0 | 1)
+        }
+    }
+
+    #[extensions_impl::extension_struct_impl]
+    impl extension_fungibles::ExtensionFungibles&lt;ExtensionsConfig&gt; for Extensions {
+        fn total_supply(asset: u32) -&gt; u64 {
+            200
+        }
+        fn balance(asset: u32, who: [u8; 32]) -&gt; u64 {
+            100
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<ul>
+<li>Hash-based extension id generation mechanism</li>
+</ul>
+<p>Extensions are uniquely identified by a hash value computed from their name and method names. This means that modifying either the extension name or its method names results in a new extension. This design allows new functionality to be added independently of the PVQ core version, enabling a permissionless extension system while keeping the core implementation minimal.</p>
+<p>The extension ID generation can be expressed mathematically as:</p>
+<p>$ExtID = twox64(P \parallel E \parallel M_1 \parallel M_2 \parallel ... \parallel M_n)$</p>
+<p>Where:</p>
+<ul>
+<li>
+<p>$P$ is the prefix string constant, <code>pvq-ext</code></p>
+</li>
+<li>
+<p>$E$ is the extension name</p>
+</li>
+<li>
+<p>$M_1...M_n$ are the method names in lexicographical order</p>
+</li>
+<li>
+<p>$\parallel$ represents string concatenation with a separator <code>@</code> to avoid collision</p>
+</li>
+<li>
+<p>$twox64()$ is the 64-bit xxHash function</p>
+</li>
+<li>
+<p>A permission control system allows filtering extension method invocations based on their origin (Runtime, Extrinsics, RuntimeAPI, or XCM). This enables runtime developers to restrict certain functions from being called through specific interfaces, such as preventing access via XCM when desired.</p>
+</li>
+</ul>
+<h3 id="pvq-executor"><a class="header" href="#pvq-executor">PVQ Executor</a></h3>
+<p>The PVQ Executor provides a unified interface that only takes query programs with corresponding arguments and returns results. It can be formulated as a PVM program-argument invocation, as detailed in <a href="https://graypaper.com/">Appendix A.8 in the JAM Gray Paper</a>. Specifically, we call it PVQ invocation.</p>
+<h4 id="program-initialization-and-results-return"><a class="header" href="#program-initialization-and-results-return">Program initialization and Results Return</a></h4>
+<ul>
+<li>
+<p>PVQ program size limit:
+While the standard PVM code format contains instructions, jump table, and initial RAM state information, PVQ programs can be significantly trimmed down. This is because PVQ separates computation logic from state access: the computation happens in the program while state access is handled through host functions. This makes the program stateless, allowing us to eliminate the initial read-write (heap) data and stack sections along with their length encodings in the PVQ program binary. The read-only data section can be minimized to only contain essential utility data like host function extension IDs, keeping it within a reasonable size limit.</p>
+</li>
+<li>
+<p>Entrypoint:
+PVQ programs have a single static entrypoint that begins at instruction 0, since all PVQ computation can be expressed through a single entry point.</p>
+</li>
+<li>
+<p>Argument passing:
+Query data is encoded as invocation arguments. Specifically, it includes the view function index and its arguments. As discussed in <a href="https://graypaper.com/">Equation A.36 in the Gray Paper</a>, arguments start at <code>0xfeff0000</code> which is stored in <code>a0</code>(7th register), and the length is specified at <code>a1</code>(8th register).</p>
+</li>
+<li>
+<p>Return results
+As discussed in <a href="https://graypaper.com/">Equation A.39 in the Gray Paper</a>, the invocation returns its output through register <code>a0</code> (7th register), which contains a pointer to the output buffer. Register <code>a1</code>(8th register) contains the length of the output buffer. The output buffer must be allocated within the program's memory space and contain the SCALE-encoded return value.</p>
+</li>
+</ul>
+<h4 id="host-functions"><a class="header" href="#host-functions">Host Functions</a></h4>
+<p>The following host functions are available to PVQ invocations. The index numbers shown below correspond to the values used in the <code>ecalli</code> instruction.</p>
+<ol>
+<li><code>extension_call</code>: A unified entry point that routes queries to various extensions. It accepts two parameters:</li>
+</ol>
+<ul>
+<li><code>extension_id</code>
+A <code>u64</code> value for selecting which extension to query, split across two 32-bit registers: lower 32 bits in <code>a0</code> and upper 32 bits in <code>a1</code></li>
+<li><code>query_data</code>
+SCALE-encoded value including the view function index and its arguments, pointer in <code>a2</code> and length in <code>a3</code>.</li>
+</ul>
+<p>The returned results are stored in registers <code>a0</code> (pointer) and <code>a1</code> (length). The output buffer contains the SCALE-encoded return value.</p>
+<p>All host functions must properly account for and deduct gas based on their computational costs.</p>
+<p><strong>Example Rust Implementation using <a href="https://github.com/paritytech/polkavm">PolkaVM SDK</a></strong>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[polkavm_derive::polkavm_import]
+extern &quot;C&quot; {
+    fn extension_call(extension_id:u64, call_ptr:u32, call_len: u32) -&gt; (u32, u32);
+}
+<span class="boring">}</span></code></pre></pre>
+<h4 id="pvq-executor-implementation"><a class="header" href="#pvq-executor-implementation">PVQ Executor Implementation</a></h4>
+<p>Practically, the executor has a core method <code>execute</code> to initialize the program and perform argument invocation, which takes:</p>
+<ul>
+<li><code>program</code>: PVQ main binary.</li>
+<li><code>args</code>: PVQ query data.</li>
+<li><code>gas_limit</code>: Maximum PVM gas limit for the query.</li>
+</ul>
+<p><strong>Example Rust Implementation</strong>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub fn execute(
+    &amp;mut self,
+    program: &amp;[u8],
+    args: &amp;[u8],
+    gas_limit: u64,
+) -&gt; Result&lt;Vec&lt;u8&gt;, PvqExecutorError&gt; {...}
+enum PvqExecutorError {
+  InvalidProgramFormat,
+  OutOfGas,
+  // Implementors can define additional error variants to differentiate specific panic reasons for debugging purposes
+  Panic,
+}
+<span class="boring">}</span></code></pre></pre>
+<p>Additionally, it provides an initialization method that sets up the PVM execution environment and external interfaces by pre-registering the required host functions:</p>
+<p><strong>Example Rust Implementation</strong>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub fn new(context: PvqContext) -&gt; Self
+<span class="boring">}</span></code></pre></pre>
+<h3 id="runtimeapi-integration"><a class="header" href="#runtimeapi-integration">RuntimeAPI Integration</a></h3>
+<p>The RuntimeAPI for off-chain query usage includes two methods:</p>
+<ul>
+<li>
+<p><code>execute_query</code>: Executes the query and returns the result. It takes:</p>
+<ul>
+<li><code>program</code>: PVQ binary.</li>
+<li><code>args</code>: Query arguments that is SCALE-encoded.</li>
+<li><code>ref_time_limit</code>: Maximum allowed execution time for a single query, measured in reference time units. The conversion between the PVM gas and reference time is a rather important implementation detail.</li>
+</ul>
+</li>
+<li>
+<p><code>metadata</code>: Returns information about available extensions, including their IDs, supported methods, gas costs, etc. This provides feature discovery capabilities. The metadata is encoded using <code>scale-info</code>, following a similar approach to <a href="https://github.com/paritytech/frame-metadata/"><code>frame-metadata</code></a>.</p>
+</li>
+</ul>
+<p><strong>Example PVQ Runtime API</strong>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>decl_runtime_apis! {
+    pub trait PvqApi {
+        fn execute_query(program: Vec&lt;u8&gt;, args: Vec&lt;u8&gt;, ref_time_limit: u64) -&gt; PvqResult;
+        fn metadata() -&gt; Vec&lt;u8&gt;;
+    }
+}
+type PvqResult =  Result&lt;PvqResponse, PvqError&gt;;
+type PvqResponse = Vec&lt;u8&gt;;
+enum PvqError {
+    InvalidProgramFormat,
+    Timeout,
+    Panic(String),
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Example Metadata</strong>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct Metadata {
+    pub types: PortableRegistry,
+    pub extensions: Vec&lt;ExtensionMetadata&lt;PortableForm&gt;&gt;,
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="xcm-integration"><a class="header" href="#xcm-integration">XCM integration</a></h3>
+<p>The integration of PVQ into XCM is achieved by adding a new instruction to XCM, as well as a new variant of the <code>Response</code> type in the <code>QueryResponse</code> message.</p>
+<ul>
+<li>A new <code>ReportQuery</code> instruction: report to a given destination the results of a PVQ. After query, a <code>QueryResponse</code> message of type <code>PvqResult</code> will be sent to the described destination.</li>
+</ul>
+<p>Operands:</p>
+<ul>
+<li>
+<p><code>query: BoundedVec&lt;u8, MAX_QUERY_SIZE&gt;</code>: Encoded bytes of the tuple <code>(program, args)</code>. <code>MAX_QUERY_SIZE</code> is the generic parameter type size limit (i.e. 2MB).</p>
+</li>
+<li>
+<p><code>max_weight: Weight</code>: Maximum weight that the query should take.</p>
+</li>
+<li>
+<p><code>info: QueryResponseInfo</code>: Information for making the response.</p>
+</li>
+</ul>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>ReportQuery {
+  query: BoundedVec&lt;u8, MAX_QUERY_SIZE&gt;,
+  max_weight: Weight,
+  info: QueryResponseInfo,
+}
+<span class="boring">}</span></code></pre></pre>
+<ul>
+<li>A new variant to the <code>Response</code> type in <code>QueryResponse</code>
+<ul>
+<li><code>PvqResult = 6 (BoundedVec&lt;u8, MaxPvqResult&gt;)</code></li>
+</ul>
+</li>
+</ul>
+<p><code>PvqResult</code> is a variant type:</p>
+<ul>
+<li><code>Ok(Vec&lt;u8&gt;)</code>: Successful query result</li>
+<li><code>Err(PanicReason)</code>: The query panics, the specific panic reason is encoded in the bytes.</li>
+</ul>
+<h4 id="errors"><a class="header" href="#errors">Errors</a></h4>
+<ul>
+<li><code>FailedToDecode</code>: Invalid PVQ program format</li>
+<li><code>MaxWeightInvalid</code>: Query exceeds the weight limit</li>
+<li><code>Overflow</code>: Query result is too large to fit into the bounded vec</li>
+<li><code>BadOrigin</code></li>
+<li><code>ReanchorFailed</code></li>
+<li><code>NotHoldingFees</code></li>
+<li><code>Unroutable</code></li>
+<li><code>DestinationUnsupported</code></li>
+<li><code>ExceedsMaxMessageSize</code></li>
+<li><code>Transport</code></li>
+</ul>
+<h2 id="drawbacks"><a class="header" href="#drawbacks">Drawbacks</a></h2>
+<h3 id="performance-issues"><a class="header" href="#performance-issues">Performance issues</a></h3>
+<ul>
+<li>PVQ Program Size: The size of a complicated PVQ program may be too large to be suitable for efficient storage and transmission via XCMP/HRMP.</li>
+</ul>
+<h2 id="testing-security-and-privacy"><a class="header" href="#testing-security-and-privacy">Testing, Security, and Privacy</a></h2>
+<ul>
+<li>
+<p>Testing:</p>
+<ul>
+<li>A comprehensive test suite should be developed to cover various scenarios:
+<ul>
+<li>Positive test cases:
+<ul>
+<li>Basic queries with various extensions, data types, return values, custom computations, etc.</li>
+<li>Accurate conversion between given weight limit and the gas limit of PolkaVM for both off-chain and cross-chain queries</li>
+</ul>
+</li>
+<li>Negative test cases:
+<ul>
+<li>Queries with invalid input data</li>
+<li>Queries exceeding weight limits</li>
+<li>Queries that panic including (no permission, host function error, etc.)</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>End-to-end integration testing to verify seamless interaction both off-chain and cross-chain scenarios, validating all use cases outlined in the <strong>Motivation</strong> section above.</li>
+</ul>
+</li>
+<li>
+<p>Security:</p>
+<ul>
+<li>The PVQ extension implementors must enforce a strict read-only policy for all extension methods.</li>
+<li>The implementation of the PVM engine must be secure and robust, refer to the discussion in <a href="https://graypaper.com/">Gray Paper</a> for more details.</li>
+</ul>
+</li>
+<li>
+<p>Privacy:
+N/A</p>
+</li>
+</ul>
+<h2 id="performance-ergonomics-and-compatibility"><a class="header" href="#performance-ergonomics-and-compatibility">Performance, Ergonomics, and Compatibility</a></h2>
+<h3 id="performance"><a class="header" href="#performance">Performance</a></h3>
+<p>As a newly introduced feature, PVQ operates independently and does not impact or degrade the performance of existing runtime implementations.</p>
+<h3 id="ergonomics"><a class="header" href="#ergonomics">Ergonomics</a></h3>
+<p>From the perspective of off-chain tooling, this proposal streamlines development by unifying multiple chain-specific RuntimeAPIs under a single consistent interface.
+This significantly benefits wallet and dApp developers by eliminating the need to handle individual implementations for similar operations across different chains. The proposal also enhances development flexibility by allowing custom computations to be modularly encapsulated as PolkaVM programs that interact with the exposed APIs.</p>
+<h3 id="compatibility"><a class="header" href="#compatibility">Compatibility</a></h3>
+<p>For RuntimeAPI integration, the proposal defines new APIs, which do not break compatibility with existing interfaces.
+For XCM Integration, the proposal does not modify the existing XCM message format, which is backwards compatible.</p>
+<h2 id="prior-art-and-references"><a class="header" href="#prior-art-and-references">Prior Art and References</a></h2>
+<p>There are several discussions related to the proposal, including:</p>
+<ul>
+<li><a href="https://forum.polkadot.network/t/wasm-view-functions/1045">Original discussion</a> about having a mechanism to avoid code duplications between the runtime and front-ends/wallets. In the original design, the custom computations are compiled as a wasm function.</li>
+<li><a href="https://github.com/paritytech/polkadot-sdk/pull/4722">View functions</a> aims to provide view-only functions at the pallet level. Additionally, <a href="https://github.com/paritytech/polkadot-sdk/pull/4722">Facade Project</a> aims to gather and return commonly wanted information in runtime level.
+PVQ does not conflict with them, and it can take advantage of these Pallet View Functions / Runtime APIs and allow people to build arbitrary PVQ programs to obtain more custom/complex data that is not otherwise expressed by these two proposals.</li>
+</ul>
+<h2 id="unresolved-questions"><a class="header" href="#unresolved-questions">Unresolved Questions</a></h2>
+<ul>
+<li>The metadata of PVQ extensions can be integrated into <code>frame-metadata</code>'s <code>CustomMetadata</code> field, but the trade-offs (i.e., compatibility between versions) need examination.</li>
+</ul>
+<h2 id="future-directions-and-related-material"><a class="header" href="#future-directions-and-related-material">Future Directions and Related Material</a></h2>
+<p>Once PVQ and the aforementioned Facade Project are ready, there are opportunities to consolidate overlapping functionality between the two systems. For example, the metadata APIs could potentially be unified to provide a more cohesive interface for runtime information. This would help reduce duplication and improve maintainability while preserving the distinct benefits of each approach.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../proposed/0123-pending-code-as-storage-location-for-runtime-upgrades.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../proposed/0135-compressed-blob-prefixes.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../proposed/0123-pending-code-as-storage-location-for-runtime-upgrades.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../proposed/0135-compressed-blob-prefixes.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>
