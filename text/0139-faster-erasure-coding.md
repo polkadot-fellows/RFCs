@@ -8,27 +8,27 @@
 
 ## Summary
 
-This RFC proposes a change to the erasure coding algorithm as well as the way erasure root is being computed on Polkadot to make both faster.
+This RFC proposes changes to the erasure coding algorithm and the way the erasure root is computed on Polkadot to make both processes faster.
 
 ## Motivation
 
-Data Availability (DA) Layer provided by Polkadot serves as a foundational layer for
+The Data Availability (DA) Layer provided by Polkadot serves as a foundational layer for
 shared security, currently allowing Approval Checkers and Collators to download
-the Proofs-Of-Validity (PoV) for security and liveness purposes respectively.
+the Proofs-of-Validity (PoV) for security and liveness purposes respectively.
 As the number of parachains and PoV sizes grow, it is increasingly important
-for the DA to be as perpormant as possible.
+for the DA to be as performant as possible.
 
 [RFC-47](https://github.com/polkadot-fellows/RFCs/blob/main/text/0047-assignment-of-availability-chunks.md)
 proposed a way to enable systematic chunk recovery for Polkadot's DA, improving
 the efficiency/reducing the CPU overhead. However, systematic recovery can only
-work with almost ideal networking scenario where everyone is connected to the
-corresponding third of validators and as such we need to ensure the system will
-sustain the load in the worst case scenario. On top of that, enabling it
+work with an almost ideal networking scenario where everyone is connected to the
+corresponding third of validators, and as such, we need to ensure the system will
+sustain the load in the worst-case scenario. On top of that, enabling it
 requires making a breaking change to the protocol (including the collator node
 side).
 
-We propose here to bundle another breaking change to the protocol along with RFC-47
-to speed up the erasure coding, which constitutes the CPU bottleneck of DA.
+We propose bundling another breaking change to the protocol along with RFC-47
+to speed up erasure coding, which constitutes the CPU bottleneck of DA.
 
 ## Stakeholders
 
@@ -37,10 +37,10 @@ to speed up the erasure coding, which constitutes the CPU bottleneck of DA.
 
 ## Explanation
 
-In particular, 2 changes are being proposed:
+In particular, two changes are being proposed:
 
-1. Switch the erasure coding algorithm to the one described in Graypaper,
-Appendix H. The SIMD implementations of this algorithm are available in
+1. Switch the erasure coding algorithm to the one described in the Graypaper,
+Appendix H. SIMD implementations of this algorithm are available in:
 
 - [Rust](https://github.com/AndersTrier/reed-solomon-simd),
 - [C++](https://github.com/catid/leopard) and
@@ -192,25 +192,25 @@ impl Bitfield {
 
 ## Drawbacks
 
-Bundling breaking changes with RFC 47 might reset the progress of updating collators. However, omni node initiative can alleviate this problem.
+Bundling breaking changes with RFC 47 might reset the progress of updating collators. However, the omni node initiative can alleviate this problem.
 
 ## Testing, Security, and Privacy
 
-Some testing need to be done to ensure binary compatibility accross implementation in multiple languages.
+Some testing needs to be done to ensure binary compatibility across implementations in multiple languages.
 
 ## Performance and Compatibility
 
 ### Performance
 
-According to [these](https://gist.github.com/ordian/0af2822e20bf905d53410a48dc122fd0) benches, a proper SIMD implementation of reed-solomon is 3-4x faster in encoding and up to 9x in full decoding.
+According to [these benchmarks](https://gist.github.com/ordian/0af2822e20bf905d53410a48dc122fd0), a proper SIMD implementation of Reed-Solomon is 3-4x faster in encoding and up to 9x faster in full decoding.
 
 ### Compatibility
 
-This is a breaking change that can be coordinated the same way as done in RFC 47.
+This is a breaking change that can be coordinated in the same way as done in RFC 47.
 
 ## Prior Art and References
 
-JAM is utilizing the same optimizations as described in the gray paper.
+JAM is utilizing the same optimizations as described in the Graypaper.
 
 ## Unresolved Questions
 
@@ -218,5 +218,5 @@ None.
 
 ## Future Directions and Related Material
 
-In the future, ZK proofs could be used to avoid the need to re-encode the data in order to verify that
-encoding was done correctly.
+In the future, ZK proofs could be used to avoid the need to re-encode the data to verify that
+the encoding was done correctly.
