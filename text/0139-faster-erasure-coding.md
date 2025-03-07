@@ -198,15 +198,11 @@ Bundling breaking changes with RFC 47 might reset the progress of updating colla
 
 Some testing need to be done to ensure binary compatibility accross implementation in multiple languages.
 
-## Performance, Ergonomics, and Compatibility
+## Performance and Compatibility
 
 ### Performance
 
 According to [these](https://gist.github.com/ordian/0af2822e20bf905d53410a48dc122fd0) benches, a proper SIMD implementation of reed-solomon is 3-4x faster in encoding and up to 9x in full decoding.
-
-### Ergonomics
-
-If the proposal alters exposed interfaces to developers or end-users, which types of usage patterns have been optimized for?
 
 ### Compatibility
 
@@ -214,7 +210,7 @@ This is a breaking change that can be coordinated the same way as done in RFC 47
 
 ## Prior Art and References
 
-Provide references to either prior art or other relevant research for the submitted design.
+JAM is utilizing the same optimizations as described in the gray paper.
 
 ## Unresolved Questions
 
