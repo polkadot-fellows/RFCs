@@ -8,48 +8,46 @@
 
 ## Summary
 
-This RFC proposes changes to the erasure coding algorithm and the way the erasure root is computed on Polkadot to make both processes faster.
+This RFC proposes changes to the erasure coding algorithm and the method for computing the erasure root on Polkadot to improve performance of both processes.
 
 ## Motivation
 
-The Data Availability (DA) Layer provided by Polkadot serves as a foundational layer for
-shared security, currently allowing Approval Checkers and Collators to download
-the Proofs-of-Validity (PoV) for security and liveness purposes respectively.
-As the number of parachains and PoV sizes grow, it is increasingly important
-for the DA to be as performant as possible.
+The Data Availability (DA) Layer in Polkadot provides a foundation for
+shared security, enabling Approval Checkers and Collators to download
+Proofs-of-Validity (PoV) for security and liveness purposes respectively.
+As the number of parachains and PoV sizes increase, optimizing the performance
+of the DA layer becomes increasingly critical.
 
 [RFC-47](https://github.com/polkadot-fellows/RFCs/blob/main/text/0047-assignment-of-availability-chunks.md)
-proposed a way to enable systematic chunk recovery for Polkadot's DA, improving
-the efficiency/reducing the CPU overhead. However, systematic recovery can only
-work assumes very good network connectivity to the corresponding one third of
-validators minus modulo some backup tolerance on backers and still requires
-re-encoding anyway, and as such, we need to ensure the system will sustain the
-load in the worst-case scenario. On top of that, enabling it requires making a
-breaking change to the protocol (including the collator node side).
+proposed enabling systematic chunk recovery for Polkadot's DA to improve
+efficiency and reduce CPU overhead. However, systematic recovery assumes
+very good network connectivity to approximately one-third of validators (plus some
+backup tolerance on backers) and still requires re-encoding. Therefore,
+we need to ensure the system can handle load in the worst-case scenario.
 
-We propose bundling another breaking change to the protocol along with RFC-47
-to speed up erasure coding, which constitutes the CPU bottleneck of DA.
+Since RFC-47 already requires a breaking protocol change (including changes to
+collator nodes), we propose bundling another performance-enhancing breaking
+change that addresses the CPU bottleneck in the erasure coding process.
 
 ## Stakeholders
 
-- Infrastructure providers (people who run validator/collator nodes)
-  will need to upgrade their client version in time
+- Infrastructure providers (operators of validator/collator nodes)
+  will need to upgrade their client version in a timely manner
 
 ## Explanation
 
-In particular, two changes are being proposed:
+We propose two specific changes:
 
-1. Switch the erasure coding algorithm to the one described in the Graypaper,
+1. Switch to the erasure coding algorithm described in the Graypaper,
 Appendix H. SIMD implementations of this algorithm are available in:
 
-- [Rust](https://github.com/AndersTrier/reed-solomon-simd),
-- [C++](https://github.com/catid/leopard) and
-- [Go](https://github.com/celestiaorg/go-leopard).
+   - [Rust](https://github.com/AndersTrier/reed-solomon-simd)
+   - [C++](https://github.com/catid/leopard)
+   - [Go](https://github.com/celestiaorg/go-leopard)
 
-2. For computing the erasure root, switch from Merkle Patricia Trie to a Binary
-Merkle Tree.
+2. Replace the Merkle Patricia Trie with a Binary Merkle Tree for computing the erasure root.
 
-Here is a reference implementation for that:
+Here is a reference implementation:
 
 ```rust
 use blake2b_simd::{blake2b as hash_fn, Hash, State as Hasher};
@@ -192,38 +190,41 @@ impl Bitfield {
 
 ### Upgrade path
 
-Here we propose to add support for the new erasure coding scheme on the validator and collator side, but don't activate it until all validators and most collators have been upgraded.
-Block authoring collators remaining on the old version won't be able to produce valid candidates until they upgrade. Parachain full nodes will continue to work as before.
+We propose adding support for the new erasure coding scheme on both validator and collator sides without activating it until:
+1. All validators have upgraded
+2. Most collators have upgraded
 
-An alternative approach would be to allow the collators to opt-in to the new
-erasure coding scheme by using a reserved field of the candidate receipt. This
-has the benefit of allowing us to deploy the new erasure coding scheme faster
-for most parachains at the cost of adding some complexity.
+Block-authoring collators that remain on the old version will be unable to produce valid candidates until they upgrade. Parachain full nodes will continue to function normally without changes.
 
-Since there's not much demand coming on big PoVs, we argue for simplicity and a path for making it future-proof.
+An alternative approach would be to allow collators to opt-in to the new erasure
+coding scheme using a reserved field in the candidate receipt. This would allow
+faster deployment for most parachains but would add complexity.
+
+Given there isn't urgent demand for supporting larger PoVs currently, we recommend prioritizing simplicity with a way to implement future-proofing changes.
 
 ## Drawbacks
 
-Bundling breaking changes with RFC 47 might reset the progress of updating collators. However, the omni node initiative can alleviate this problem.
+Bundling this breaking change with RFC-47 might reset progress in updating collators. However, the omni node initiative should help mitigate this issue.
 
 ## Testing, Security, and Privacy
 
-Some testing needs to be done to ensure binary compatibility across implementations in multiple languages.
+Testing is needed to ensure binary compatibility across implementations in multiple languages.
 
 ## Performance and Compatibility
 
 ### Performance
 
-According to [these benchmarks](https://gist.github.com/ordian/0af2822e20bf905d53410a48dc122fd0), a proper SIMD implementation of Reed-Solomon is 3-4x faster in encoding and up to 9x faster in full decoding.
-Switching to Binary Merkle Trees for proofs makes them 4x smaller and slightly faster to generate and verify.
+According to [benchmarks](https://gist.github.com/ordian/0af2822e20bf905d53410a48dc122fd0):
+- A proper SIMD implementation of Reed-Solomon is 3-4× faster for encoding and up to 9× faster for full decoding
+- Binary Merkle Trees produce proofs that are 4× smaller and slightly faster to generate and verify
 
 ### Compatibility
 
-This is a breaking change that can be coordinated in the same way as done in RFC 47.
+This requires a breaking change that can be coordinated following the same approach as in RFC-47.
 
 ## Prior Art and References
 
-JAM is utilizing the same optimizations as described in the Graypaper.
+JAM already utilizes the same optimizations described in the Graypaper.
 
 ## Unresolved Questions
 
@@ -231,7 +232,6 @@ None.
 
 ## Future Directions and Related Material
 
-In the future, ZK proofs could be used to avoid the need to re-encode the data to verify that
-the encoding was done correctly.
-
-In addition, we should remove the requirement for collators to compute the erasure root for the collator protocol to work.
+Future improvements could include:
+- Using ZK proofs to eliminate the need for re-encoding data to verify correct encoding
+- Removing the requirement for collators to compute the erasure root for the collator protocol
