@@ -203,6 +203,7 @@ Some testing needs to be done to ensure binary compatibility across implementati
 ### Performance
 
 According to [these benchmarks](https://gist.github.com/ordian/0af2822e20bf905d53410a48dc122fd0), a proper SIMD implementation of Reed-Solomon is 3-4x faster in encoding and up to 9x faster in full decoding.
+Switching to Binary Merkle Trees for proofs makes them 4x smaller and slightly faster to generate and verify.
 
 ### Compatibility
 
