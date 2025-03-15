@@ -190,6 +190,18 @@ impl Bitfield {
 }
 ```
 
+### Upgrade path
+
+Here we propose to add support for the new erasure coding scheme on the validator and collator side, but don't activate it until all validators and most collators have been upgraded.
+Block authoring collators remaining on the old version won't be able to produce valid candidates until they upgrade. Parachain full nodes will continue to work as before.
+
+An alternative approach would be to allow the collators to opt-in to the new
+erasure coding scheme by using a reserved field of the candidate receipt. This
+has the benefit of allowing us to deploy the new erasure coding scheme faster
+for most parachains at the cost of adding some complexity.
+
+Since there's not much demand coming on big PoVs, we argue for simplicity and a path for making it future-proof.
+
 ## Drawbacks
 
 Bundling breaking changes with RFC 47 might reset the progress of updating collators. However, the omni node initiative can alleviate this problem.
@@ -221,3 +233,5 @@ None.
 
 In the future, ZK proofs could be used to avoid the need to re-encode the data to verify that
 the encoding was done correctly.
+
+In addition, we should remove the requirement for collators to compute the erasure root for the collator protocol to work.
