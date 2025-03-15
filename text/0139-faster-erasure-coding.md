@@ -21,11 +21,11 @@ for the DA to be as performant as possible.
 [RFC-47](https://github.com/polkadot-fellows/RFCs/blob/main/text/0047-assignment-of-availability-chunks.md)
 proposed a way to enable systematic chunk recovery for Polkadot's DA, improving
 the efficiency/reducing the CPU overhead. However, systematic recovery can only
-work with an almost ideal networking scenario where everyone is connected to the
-corresponding third of validators, and as such, we need to ensure the system will
-sustain the load in the worst-case scenario. On top of that, enabling it
-requires making a breaking change to the protocol (including the collator node
-side).
+work assumes very good network connectivity to the corresponding one third of
+validators minus modulo some backup tolerance on backers and still requires
+re-encoding anyway, and as such, we need to ensure the system will sustain the
+load in the worst-case scenario. On top of that, enabling it requires making a
+breaking change to the protocol (including the collator node side).
 
 We propose bundling another breaking change to the protocol along with RFC-47
 to speed up erasure coding, which constitutes the CPU bottleneck of DA.
