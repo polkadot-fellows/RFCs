@@ -45,7 +45,7 @@ We add roughly these proportions of total rewards covering parachain work:
 - 70-75% - approval and backing validity checks, with the backing rewards being required to be less than approval rewards.  
 - 5-10% - Availability redistribution from availability providers to approval checkers.  We do not reward for availability distribution from backers to availability providers.
 
-### Collection
+### Observation
 
 We track this data for each candidate during the approvals process:
 ```
@@ -101,6 +101,9 @@ pub struct ApprovalTallyMessageLine {
 pub struct ApprovalsTallyMessage(Vec<ApprovalTallyMessageLine>);
 ```
 
+Actual `ApprovalsTallyMessage`s sent over the wire must be signed of course, likely by the grandpa ed25519 key.
+
+
 ### Rewards compoutation
 
 We compute the approvals rewards for each validator by taking the median of the `approval_usages` fields for each validator across all validators `ApprovalsTallyMessage`s.  We compute some `noshows_percentiles` for each validator similarly, but using a 2/3 precentile instead of the median.
@@ -140,6 +143,38 @@ We deduct small amount of rewards using `noshows_medians` too, likely 1% of the 
 ### Strategies
 
 In theory, validators could adopt whatever strategy they like to penalize validators who stiff them on availability redistribution rewards, except they should not stiff back, only choose other availability providers.  We discuss one good strategy below, but initially this could go unimplemented. 
+
+### Concensus
+
+We avoid placing rewards logic on the relay chain now, so we must either collect the signed `ApprovalsTallyMessage`s and do the above computations somewhere sufficently trusted, like a parachain, or via some distributed protocol with its own assumptions.
+
+#### In-core
+
+A dedicated rewards parachain could easily collect the `ApprovalsTallyMessage`s and do the above computations.  In this, we logically have two phases, first we build the on-chain Merkle tree `M` of `ApprovalsTallyMessage`s, and second we process those into the rewards data.
+
+Any in-core approach risks enough malicious collators biasing the rewards by censoring the `ApprovalsTallyMessage`s messages for some validators during the first phase.  After this first phase completes, our second phase proceeds deterministically.
+
+As an option, each validator could handle this second phase itself by creating siongle heavy transaction with `n` state accesses in this Merkle tree `M`, and this transaction sends the era points.
+
+A remark for future developments..
+
+JAM-like non/sub-parachain accumulation could mitigate the risk of the rewards parachain being captured.
+
+JAM services all have either parachain accumulation or else non/sub-parachain accumulation.
+- A parachain should mean any service that tracks mutable state roots onto the relay chain, with its accumulation updating the state roots.  Inherently, these state roots create some capture risk for the parachain, although how much depends upon numerous other factors.
+- A non/sub-parachain means the service does not maintain state like a blockchain does, but could use some tiny state within the relay chain.  Although seemingly less powerful than parachains, these non/sub-parachain accumulations could reduce the capture risk so that any validator could create a block for the service, without knowing any existing state.
+
+In our case, each `ApprovalsTallyMessage` would become a block for the first phase rewards service, so then the accumulation tracks an MMR of the rewards service block hashes, which becomes `M` from Option 1.  At 1024 validators this requires `9 * 32 = 288` bytes for the MMR and `1024/8 = 128` bytes for a bitfield, so 416 bytes of relay chain state in total.  Any validator could then add their `ApprovalsTallyMessage` in any order, but only one per relay chain block, so the submission timeframe should be long enough to prevent censorship.
+
+Arguably after JAM, we should migrate critical functions to non/sub-parachain aka JAM services without mutable state, so this covers validator elections, DKGs, and rewards.  Yet, non/sub-parachains cannot eliminate all censorship risks, so the near term benefits seem questionable.
+
+#### Off-core
+
+All validators could collect `ApprovalsTallyMessage`s and independently compute rewards off-core.  At that point, all validators have opinions about all other validators rewards, but even among honest validators these opinions could differ if some lack some `ApprovalsTallyMessage`s.  
+
+We'd have the same in-core computation problem if we perform statistics like medians upon these opinions. We could however take an optimistic approach where each validator computes medians like above, but then shares their hash of the final rewards list.  If 2/3rds voted for the same hash, then we distribute rewards as above.  If not, then we distribute no rewards until governance selects the correct hash.
+
+We never validate in-core the signatures on `ApprovalsTallyMessage`s or the computation, so this approach permits more direct cheating by malicious 2/3rd majority, but if that occurs then we've broken our security assumptions anyways.  It's likely these hashes do diverge during some network disruptions though, which increases our "drama" factor considerably, which maybe unacceptable.
 
 
 ## Explanation
