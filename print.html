@@ -191,10 +191,11 @@ detailing proposed changes to the technical implementation of the Polkadot netwo
 <li><a href="proposed/0000-rewards.html#logic">Logic</a>
 <ul>
 <li><a href="proposed/0000-rewards.html#categories">Categories</a></li>
-<li><a href="proposed/0000-rewards.html#collection">Collection</a></li>
+<li><a href="proposed/0000-rewards.html#observation">Observation</a></li>
 <li><a href="proposed/0000-rewards.html#messages">Messages</a></li>
 <li><a href="proposed/0000-rewards.html#rewards-compoutation">Rewards compoutation</a></li>
 <li><a href="proposed/0000-rewards.html#strategies">Strategies</a></li>
+<li><a href="proposed/0000-rewards.html#concensus">Concensus</a></li>
 </ul>
 </li>
 <li><a href="proposed/0000-rewards.html#explanation">Explanation</a>
@@ -250,7 +251,7 @@ detailing proposed changes to the technical implementation of the Polkadot netwo
 <li>70-75% - approval and backing validity checks, with the backing rewards being required to be less than approval rewards.</li>
 <li>5-10% - Availability redistribution from availability providers to approval checkers.  We do not reward for availability distribution from backers to availability providers.</li>
 </ul>
-<h3 id="collection"><a class="header" href="#collection">Collection</a></h3>
+<h3 id="observation"><a class="header" href="#observation">Observation</a></h3>
 <p>We track this data for each candidate during the approvals process:</p>
 <pre><code>/// Our subjective record of out availability transfers for this candidate.
 CandidateRewards {
@@ -298,6 +299,7 @@ pub struct ApprovalTallyMessageLine {
 /// Our subjective record of what we used from all other validators on the finalized chain
 pub struct ApprovalsTallyMessage(Vec&lt;ApprovalTallyMessageLine&gt;);
 </code></pre>
+<p>Actual <code>ApprovalsTallyMessage</code>s sent over the wire must be signed of course, likely by the grandpa ed25519 key.</p>
 <h3 id="rewards-compoutation"><a class="header" href="#rewards-compoutation">Rewards compoutation</a></h3>
 <p>We compute the approvals rewards for each validator by taking the median of the <code>approval_usages</code> fields for each validator across all validators <code>ApprovalsTallyMessage</code>s.  We compute some <code>noshows_percentiles</code> for each validator similarly, but using a 2/3 precentile instead of the median.</p>
 <pre><code>let mut approval_usages_medians = Vec::new(); 
@@ -330,6 +332,25 @@ for (mmu,atm) in my_missing_uploads.iter_mut().zip(approvals_tally_messages) {
 <p>We deduct small amount of rewards using <code>noshows_medians</code> too, likely 1% of the rewards for an approval, but excuse some small number of noshows, ala <code>noshows_medians[i].saturating_sub(MAX_NO_PENALTY_NOSHOWS)</code>.</p>
 <h3 id="strategies"><a class="header" href="#strategies">Strategies</a></h3>
 <p>In theory, validators could adopt whatever strategy they like to penalize validators who stiff them on availability redistribution rewards, except they should not stiff back, only choose other availability providers.  We discuss one good strategy below, but initially this could go unimplemented. </p>
+<h3 id="concensus"><a class="header" href="#concensus">Concensus</a></h3>
+<p>We avoid placing rewards logic on the relay chain now, so we must either collect the signed <code>ApprovalsTallyMessage</code>s and do the above computations somewhere sufficently trusted, like a parachain, or via some distributed protocol with its own assumptions.</p>
+<h4 id="in-core"><a class="header" href="#in-core">In-core</a></h4>
+<p>A dedicated rewards parachain could easily collect the <code>ApprovalsTallyMessage</code>s and do the above computations.  In this, we logically have two phases, first we build the on-chain Merkle tree <code>M</code> of <code>ApprovalsTallyMessage</code>s, and second we process those into the rewards data.</p>
+<p>Any in-core approach risks enough malicious collators biasing the rewards by censoring the <code>ApprovalsTallyMessage</code>s messages for some validators during the first phase.  After this first phase completes, our second phase proceeds deterministically.</p>
+<p>As an option, each validator could handle this second phase itself by creating siongle heavy transaction with <code>n</code> state accesses in this Merkle tree <code>M</code>, and this transaction sends the era points.</p>
+<p>A remark for future developments..</p>
+<p>JAM-like non/sub-parachain accumulation could mitigate the risk of the rewards parachain being captured.</p>
+<p>JAM services all have either parachain accumulation or else non/sub-parachain accumulation.</p>
+<ul>
+<li>A parachain should mean any service that tracks mutable state roots onto the relay chain, with its accumulation updating the state roots.  Inherently, these state roots create some capture risk for the parachain, although how much depends upon numerous other factors.</li>
+<li>A non/sub-parachain means the service does not maintain state like a blockchain does, but could use some tiny state within the relay chain.  Although seemingly less powerful than parachains, these non/sub-parachain accumulations could reduce the capture risk so that any validator could create a block for the service, without knowing any existing state.</li>
+</ul>
+<p>In our case, each <code>ApprovalsTallyMessage</code> would become a block for the first phase rewards service, so then the accumulation tracks an MMR of the rewards service block hashes, which becomes <code>M</code> from Option 1.  At 1024 validators this requires <code>9 * 32 = 288</code> bytes for the MMR and <code>1024/8 = 128</code> bytes for a bitfield, so 416 bytes of relay chain state in total.  Any validator could then add their <code>ApprovalsTallyMessage</code> in any order, but only one per relay chain block, so the submission timeframe should be long enough to prevent censorship.</p>
+<p>Arguably after JAM, we should migrate critical functions to non/sub-parachain aka JAM services without mutable state, so this covers validator elections, DKGs, and rewards.  Yet, non/sub-parachains cannot eliminate all censorship risks, so the near term benefits seem questionable.</p>
+<h4 id="off-core"><a class="header" href="#off-core">Off-core</a></h4>
+<p>All validators could collect <code>ApprovalsTallyMessage</code>s and independently compute rewards off-core.  At that point, all validators have opinions about all other validators rewards, but even among honest validators these opinions could differ if some lack some <code>ApprovalsTallyMessage</code>s.</p>
+<p>We'd have the same in-core computation problem if we perform statistics like medians upon these opinions. We could however take an optimistic approach where each validator computes medians like above, but then shares their hash of the final rewards list.  If 2/3rds voted for the same hash, then we distribute rewards as above.  If not, then we distribute no rewards until governance selects the correct hash.</p>
+<p>We never validate in-core the signatures on <code>ApprovalsTallyMessage</code>s or the computation, so this approach permits more direct cheating by malicious 2/3rd majority, but if that occurs then we've broken our security assumptions anyways.  It's likely these hashes do diverge during some network disruptions though, which increases our &quot;drama&quot; factor considerably, which maybe unacceptable.</p>
 <h2 id="explanation"><a class="header" href="#explanation">Explanation</a></h2>
 <h3 id="backing"><a class="header" href="#backing">Backing</a></h3>
 <p>Polkadot's efficency creates subtle liveness concerns:  Anytime one node cannot perform one of its approval checks then Polkadot loses in expectation 3.25 approval checks, or 0.10833 parablocks.  This makes back pressure essential.</p>
