@@ -75,29 +75,23 @@ The following code declares two extensions: `extension_core` and `extension_fung
 
 ```rust
 #[extension_decl]
-mod extension_core {
-    #[extension_decl::config]
-    pub trait Config {
-        type ExtensionId: Codec;
-    }
-    #[extension_decl::view_fns]
-    pub trait ExtensionCore<T: Config> {
-        fn has_extension(id: T::ExtensionId) -> bool;
+pub mod extension_core {
+    #[extension_decl::extension]
+    pub trait ExtensionCore {
+        type ExtensionId;
+        fn has_extension(id: Self::ExtensionId) -> bool;
     }
 }
-#[extension_decl]
-mod extension_fungibles {
-    #[extension_decl::config]
-    pub trait Config {
-        type AssetId: Codec;
-        type AccountId: Codec;
-        type Balance: Codec;
-    }
 
-    #[extension_decl::view_fns]
-    pub trait ExtensionFungibles<T: Config> {
-        fn total_supply(asset: T::AssetId) -> T::Balance;
-        fn balance(asset: T::AssetId, who: T::AccountId) -> T::Balance;
+#[extension_decl]
+pub mod extension_fungibles {
+    #[extension_decl::extension]
+    pub trait ExtensionFungibles {
+        type AssetId;
+        type Balance;
+        type AccountId;
+        fn total_supply(asset: Self::AssetId) -> Self::Balance;
+        fn balance(asset: Self::AssetId, who: Self::AccountId) -> Self::Balance;
     }
 }
 ```
@@ -106,38 +100,27 @@ The following code implements the extensions, amalgamates them and generates the
 
 ```rust
 #[extensions_impl]
-mod extensions_impl {
+pub mod extensions {
+    #[extensions_impl::impl_struct]
+    pub struct ExtensionsImpl;
 
-    #[extensions_impl::extensions_config]
-    pub struct ExtensionsConfig;
-    #[extensions_impl::extensions_struct]
-    pub struct Extensions;
-
-    #[extensions_impl::extensions_config_impl]
-    impl extension_core::Config for ExtensionsConfig {
+    #[extensions_impl::extension]
+    impl pvq_extension_core::extension::ExtensionCore for ExtensionsImpl {
         type ExtensionId = u64;
-    }
-
-    #[extensions_impl::extensions_config_impl]
-    impl extension_fungibles::Config for ExtensionsConfig {
-        type AssetId = u32;
-        type AccountId = [u8; 32];
-        type Balance = u64;
-    }
-
-    #[extensions_impl::extension_struct_impl]
-    impl extension_core::ExtensionCore<ExtensionsConfig> for Extensions {
-        fn has_extension(id: u64) -> bool {
+        fn has_extension(id: Self::ExtensionId) -> bool {
             matches!(id, 0 | 1)
         }
     }
 
-    #[extensions_impl::extension_struct_impl]
-    impl extension_fungibles::ExtensionFungibles<ExtensionsConfig> for Extensions {
-        fn total_supply(asset: u32) -> u64 {
-            200
+    #[extensions_impl::extension]
+    impl pvq_extension_fungibles::extension::ExtensionFungibles for ExtensionsImpl {
+        type AssetId = u32;
+        type AccountId = [u8; 32];
+        type Balance = u64;
+        fn total_supply(_asset: Self::AssetId) -> Self::Balance {
+            100
         }
-        fn balance(asset: u32, who: [u8; 32]) -> u64 {
+        fn balance(_asset: Self::AssetId, _who: Self::AccountId) -> Self::Balance {
             100
         }
     }
@@ -210,7 +193,7 @@ Practically, the executor has a core method `execute` to initialize the program 
 
 - `program`: PVQ main binary.
 - `args`: PVQ query data.
-- `gas_limit`: Maximum PVM gas limit for the query.
+- `gas_limit`: Maximum PVM gas limit for the query. If not provided, the executor works at no gas metering mode.
 
 **Example Rust Implementation**:
 
@@ -219,13 +202,17 @@ pub fn execute(
     &mut self,
     program: &[u8],
     args: &[u8],
-    gas_limit: u64,
+    gas_limit: Option<i64>,
 ) -> Result<Vec<u8>, PvqExecutorError> {...}
-enum PvqExecutorError {
+
+pub enum PvqExecutorError<UserError> {
   InvalidProgramFormat,
-  OutOfGas,
-  // Implementors can define additional error variants to differentiate specific panic reasons for debugging purposes
-  Panic,
+  MemoryAccessError(polkavm::MemoryAccessError),
+  Trap,
+  NotEnoughGas,
+  User(UserError),
+  OtherPvmError(polkavm::Error),
+  // Implementors can define additional error variants to differentiate specific panic reasons for internal debugging purposes.
 }
 ```
 
@@ -244,7 +231,7 @@ The RuntimeAPI for off-chain query usage includes two methods:
 - `execute_query`: Executes the query and returns the result. It takes:
   - `program`: PVQ binary.
   - `args`: Query arguments that is SCALE-encoded.
-  - `ref_time_limit`: Maximum allowed execution time for a single query, measured in reference time units. The conversion between the PVM gas and reference time is a rather important implementation detail.
+  - `gas_limit`: Optional gas limit. If not provided, we have the gas limit which corresponds to 2 seconds as maximum execution time the query.
 
 - `metadata`: Returns information about available extensions, including their IDs, supported methods, gas costs, etc. This provides feature discovery capabilities. The metadata is encoded using `scale-info`, following a similar approach to [`frame-metadata`](https://github.com/paritytech/frame-metadata/).
 
@@ -253,7 +240,7 @@ The RuntimeAPI for off-chain query usage includes two methods:
 ```rust
 decl_runtime_apis! {
     pub trait PvqApi {
-        fn execute_query(program: Vec<u8>, args: Vec<u8>, ref_time_limit: u64) -> PvqResult;
+        fn execute_query(program: Vec<u8>, args: Vec<u8>, gas_limit: Option<i64>) -> PvqResult;
         fn metadata() -> Vec<u8>;
     }
 }
@@ -283,14 +270,14 @@ The integration of PVQ into XCM is achieved by adding a new instruction to XCM, 
 
 Operands:
 
-- `query: BoundedVec<u8, MAX_QUERY_SIZE>`: Encoded bytes of the tuple `(program, args)`. `MAX_QUERY_SIZE` is the generic parameter type size limit (i.e. 2MB).
+- `query: BoundedVec<u8, MaxPvqSize>`: Encoded bytes of the tuple `(program, args)`. `MaxPvqSize` is the generic parameter type size limit (i.e. 2MB).
 
 - `max_weight: Weight`: Maximum weight that the query should take.
 - `info: QueryResponseInfo`: Information for making the response.
 
 ```rust
 ReportQuery {
-  query: BoundedVec<u8, MAX_QUERY_SIZE>,
+  query: BoundedVec<u8, MaxPvqSize>,
   max_weight: Weight,
   info: QueryResponseInfo,
 }
@@ -302,7 +289,7 @@ ReportQuery {
 `PvqResult` is a variant type:
 
 - `Ok(Vec<u8>)`: Successful query result
-- `Err(PanicReason)`: The query panics, the specific panic reason is encoded in the bytes.
+- `Err(PvqError)`: The query panics, the specific panic reason is encoded in the bytes.
 
 #### Errors
 
@@ -369,7 +356,7 @@ PVQ does not conflict with them, and it can take advantage of these Pallet View 
 
 ## Unresolved Questions
 
-- The metadata of PVQ extensions can be integrated into `frame-metadata`'s `CustomMetadata` field, but the trade-offs (i.e., compatibility between versions) need examination.
+- The specific conversion between gas and weight has not been finalized and will likely require development of a suitable benchmarking methodology.
 
 ## Future Directions and Related Material
 
