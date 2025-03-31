@@ -283,29 +283,23 @@ Client-side developers can encode their desired custom computation logic into th
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>#[extension_decl]
-mod extension_core {
-    #[extension_decl::config]
-    pub trait Config {
-        type ExtensionId: Codec;
-    }
-    #[extension_decl::view_fns]
-    pub trait ExtensionCore&lt;T: Config&gt; {
-        fn has_extension(id: T::ExtensionId) -&gt; bool;
+pub mod extension_core {
+    #[extension_decl::extension]
+    pub trait ExtensionCore {
+        type ExtensionId;
+        fn has_extension(id: Self::ExtensionId) -&gt; bool;
     }
 }
-#[extension_decl]
-mod extension_fungibles {
-    #[extension_decl::config]
-    pub trait Config {
-        type AssetId: Codec;
-        type AccountId: Codec;
-        type Balance: Codec;
-    }
 
-    #[extension_decl::view_fns]
-    pub trait ExtensionFungibles&lt;T: Config&gt; {
-        fn total_supply(asset: T::AssetId) -&gt; T::Balance;
-        fn balance(asset: T::AssetId, who: T::AccountId) -&gt; T::Balance;
+#[extension_decl]
+pub mod extension_fungibles {
+    #[extension_decl::extension]
+    pub trait ExtensionFungibles {
+        type AssetId;
+        type Balance;
+        type AccountId;
+        fn total_supply(asset: Self::AssetId) -&gt; Self::Balance;
+        fn balance(asset: Self::AssetId, who: Self::AccountId) -&gt; Self::Balance;
     }
 }
 <span class="boring">}</span></code></pre></pre>
@@ -313,38 +307,27 @@ mod extension_fungibles {
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>#[extensions_impl]
-mod extensions_impl {
+pub mod extensions {
+    #[extensions_impl::impl_struct]
+    pub struct ExtensionsImpl;
 
-    #[extensions_impl::extensions_config]
-    pub struct ExtensionsConfig;
-    #[extensions_impl::extensions_struct]
-    pub struct Extensions;
-
-    #[extensions_impl::extensions_config_impl]
-    impl extension_core::Config for ExtensionsConfig {
+    #[extensions_impl::extension]
+    impl pvq_extension_core::extension::ExtensionCore for ExtensionsImpl {
         type ExtensionId = u64;
-    }
-
-    #[extensions_impl::extensions_config_impl]
-    impl extension_fungibles::Config for ExtensionsConfig {
-        type AssetId = u32;
-        type AccountId = [u8; 32];
-        type Balance = u64;
-    }
-
-    #[extensions_impl::extension_struct_impl]
-    impl extension_core::ExtensionCore&lt;ExtensionsConfig&gt; for Extensions {
-        fn has_extension(id: u64) -&gt; bool {
+        fn has_extension(id: Self::ExtensionId) -&gt; bool {
             matches!(id, 0 | 1)
         }
     }
 
-    #[extensions_impl::extension_struct_impl]
-    impl extension_fungibles::ExtensionFungibles&lt;ExtensionsConfig&gt; for Extensions {
-        fn total_supply(asset: u32) -&gt; u64 {
-            200
+    #[extensions_impl::extension]
+    impl pvq_extension_fungibles::extension::ExtensionFungibles for ExtensionsImpl {
+        type AssetId = u32;
+        type AccountId = [u8; 32];
+        type Balance = u64;
+        fn total_supply(_asset: Self::AssetId) -&gt; Self::Balance {
+            100
         }
-        fn balance(asset: u32, who: [u8; 32]) -&gt; u64 {
+        fn balance(_asset: Self::AssetId, _who: Self::AccountId) -&gt; Self::Balance {
             100
         }
     }
@@ -424,7 +407,7 @@ extern &quot;C&quot; {
 <ul>
 <li><code>program</code>: PVQ main binary.</li>
 <li><code>args</code>: PVQ query data.</li>
-<li><code>gas_limit</code>: Maximum PVM gas limit for the query.</li>
+<li><code>gas_limit</code>: Maximum PVM gas limit for the query. If not provided, the executor works at no gas metering mode.</li>
 </ul>
 <p><strong>Example Rust Implementation</strong>:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -433,13 +416,17 @@ extern &quot;C&quot; {
     &amp;mut self,
     program: &amp;[u8],
     args: &amp;[u8],
-    gas_limit: u64,
+    gas_limit: Option&lt;i64&gt;,
 ) -&gt; Result&lt;Vec&lt;u8&gt;, PvqExecutorError&gt; {...}
-enum PvqExecutorError {
+
+pub enum PvqExecutorError&lt;UserError&gt; {
   InvalidProgramFormat,
-  OutOfGas,
-  // Implementors can define additional error variants to differentiate specific panic reasons for debugging purposes
-  Panic,
+  MemoryAccessError(polkavm::MemoryAccessError),
+  Trap,
+  NotEnoughGas,
+  User(UserError),
+  OtherPvmError(polkavm::Error),
+  // Implementors can define additional error variants to differentiate specific panic reasons for internal debugging purposes.
 }
 <span class="boring">}</span></code></pre></pre>
 <p>Additionally, it provides an initialization method that sets up the PVM execution environment and external interfaces by pre-registering the required host functions:</p>
@@ -456,7 +443,7 @@ enum PvqExecutorError {
 <ul>
 <li><code>program</code>: PVQ binary.</li>
 <li><code>args</code>: Query arguments that is SCALE-encoded.</li>
-<li><code>ref_time_limit</code>: Maximum allowed execution time for a single query, measured in reference time units. The conversion between the PVM gas and reference time is a rather important implementation detail.</li>
+<li><code>gas_limit</code>: Optional gas limit. If not provided, we have the gas limit which corresponds to 2 seconds as maximum execution time the query.</li>
 </ul>
 </li>
 <li>
@@ -468,7 +455,7 @@ enum PvqExecutorError {
 </span><span class="boring">fn main() {
 </span>decl_runtime_apis! {
     pub trait PvqApi {
-        fn execute_query(program: Vec&lt;u8&gt;, args: Vec&lt;u8&gt;, ref_time_limit: u64) -&gt; PvqResult;
+        fn execute_query(program: Vec&lt;u8&gt;, args: Vec&lt;u8&gt;, gas_limit: Option&lt;i64&gt;) -&gt; PvqResult;
         fn metadata() -&gt; Vec&lt;u8&gt;;
     }
 }
@@ -496,7 +483,7 @@ enum PvqError {
 <p>Operands:</p>
 <ul>
 <li>
-<p><code>query: BoundedVec&lt;u8, MAX_QUERY_SIZE&gt;</code>: Encoded bytes of the tuple <code>(program, args)</code>. <code>MAX_QUERY_SIZE</code> is the generic parameter type size limit (i.e. 2MB).</p>
+<p><code>query: BoundedVec&lt;u8, MaxPvqSize&gt;</code>: Encoded bytes of the tuple <code>(program, args)</code>. <code>MaxPvqSize</code> is the generic parameter type size limit (i.e. 2MB).</p>
 </li>
 <li>
 <p><code>max_weight: Weight</code>: Maximum weight that the query should take.</p>
@@ -508,7 +495,7 @@ enum PvqError {
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>ReportQuery {
-  query: BoundedVec&lt;u8, MAX_QUERY_SIZE&gt;,
+  query: BoundedVec&lt;u8, MaxPvqSize&gt;,
   max_weight: Weight,
   info: QueryResponseInfo,
 }
@@ -523,7 +510,7 @@ enum PvqError {
 <p><code>PvqResult</code> is a variant type:</p>
 <ul>
 <li><code>Ok(Vec&lt;u8&gt;)</code>: Successful query result</li>
-<li><code>Err(PanicReason)</code>: The query panics, the specific panic reason is encoded in the bytes.</li>
+<li><code>Err(PvqError)</code>: The query panics, the specific panic reason is encoded in the bytes.</li>
 </ul>
 <h4 id="errors"><a class="header" href="#errors">Errors</a></h4>
 <ul>
@@ -598,7 +585,7 @@ PVQ does not conflict with them, and it can take advantage of these Pallet View 
 </ul>
 <h2 id="unresolved-questions"><a class="header" href="#unresolved-questions">Unresolved Questions</a></h2>
 <ul>
-<li>The metadata of PVQ extensions can be integrated into <code>frame-metadata</code>'s <code>CustomMetadata</code> field, but the trade-offs (i.e., compatibility between versions) need examination.</li>
+<li>The specific conversion between gas and weight has not been finalized and will likely require development of a suitable benchmarking methodology.</li>
 </ul>
 <h2 id="future-directions-and-related-material"><a class="header" href="#future-directions-and-related-material">Future Directions and Related Material</a></h2>
 <p>Once PVQ and the aforementioned Facade Project are ready, there are opportunities to consolidate overlapping functionality between the two systems. For example, the metadata APIs could potentially be unified to provide a more cohesive interface for runtime information. This would help reduce duplication and improve maintainability while preserving the distinct benefits of each approach.</p>
