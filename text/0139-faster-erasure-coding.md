@@ -20,9 +20,9 @@ of the DA layer becomes increasingly critical.
 
 [RFC-47](https://github.com/polkadot-fellows/RFCs/blob/main/text/0047-assignment-of-availability-chunks.md)
 proposed enabling systematic chunk recovery for Polkadot's DA to improve
-efficiency and reduce CPU overhead. However, systematic recovery assumes
-very good network connectivity to approximately one-third of validators (plus some
-backup tolerance on backers) and still requires re-encoding. Therefore,
+efficiency and reduce CPU overhead. However, while it helps under the assumption of
+good network connectivity to a specific one-third of validators (modulo some
+backup tolerance on backers), it still requires re-encoding. Therefore,
 we need to ensure the system can handle load in the worst-case scenario.
 
 Since RFC-47 already requires a breaking protocol change (including changes to
