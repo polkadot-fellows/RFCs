@@ -24,6 +24,7 @@ efficiency and reduce CPU overhead. However, while it helps under the assumption
 good network connectivity to a specific one-third of validators (modulo some
 backup tolerance on backers), it still requires re-encoding. Therefore,
 we need to ensure the system can handle load in the worst-case scenario.
+The proposed change is orthogonal to RFC-47 and can be used in conjunction with it.
 
 Since RFC-47 already requires a breaking protocol change (including changes to
 collator nodes), we propose bundling another performance-enhancing breaking
