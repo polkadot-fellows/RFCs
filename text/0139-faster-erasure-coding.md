@@ -28,7 +28,8 @@ The proposed change is orthogonal to RFC-47 and can be used in conjunction with 
 
 Since RFC-47 already requires a breaking protocol change (including changes to
 collator nodes), we propose bundling another performance-enhancing breaking
-change that addresses the CPU bottleneck in the erasure coding process.
+change that addresses the CPU bottleneck in the erasure coding process, but using
+a separate node feature (`NodeFeatures` part of `HostConfiguration`) for its activation.
 
 ## Stakeholders
 
@@ -63,6 +64,11 @@ coding scheme using a reserved field in the candidate receipt. This would allow
 faster deployment for most parachains but would add complexity.
 
 Given there isn't urgent demand for supporting larger PoVs currently, we recommend prioritizing simplicity with a way to implement future-proofing changes.
+
+In short, the following steps are proposed:
+1. Implement the changes a and wait for most collators to upgrade.
+2. Activate RFC-47 via `Configuration::set_node_feature` runtime change.
+3. Activate the new erasure coding scheme using another `Configuration::set_node_feature` runtime change.
 
 ## Drawbacks
 
