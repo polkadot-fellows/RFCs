@@ -967,13 +967,15 @@ As the number of parachains and PoV sizes increase, optimizing the performance
 of the DA layer becomes increasingly critical.</p>
 <p><a href="https://github.com/polkadot-fellows/RFCs/blob/main/text/0047-assignment-of-availability-chunks.md">RFC-47</a>
 proposed enabling systematic chunk recovery for Polkadot's DA to improve
-efficiency and reduce CPU overhead. However, systematic recovery assumes
-very good network connectivity to approximately one-third of validators (plus some
-backup tolerance on backers) and still requires re-encoding. Therefore,
-we need to ensure the system can handle load in the worst-case scenario.</p>
+efficiency and reduce CPU overhead. However, while it helps under the assumption of
+good network connectivity to a specific one-third of validators (modulo some
+backup tolerance on backers), it still requires re-encoding. Therefore,
+we need to ensure the system can handle load in the worst-case scenario.
+The proposed change is orthogonal to RFC-47 and can be used in conjunction with it.</p>
 <p>Since RFC-47 already requires a breaking protocol change (including changes to
 collator nodes), we propose bundling another performance-enhancing breaking
-change that addresses the CPU bottleneck in the erasure coding process.</p>
+change that addresses the CPU bottleneck in the erasure coding process, but using
+a separate node feature (<code>NodeFeatures</code> part of <code>HostConfiguration</code>) for its activation.</p>
 <h2 id="stakeholders-3"><a class="header" href="#stakeholders-3">Stakeholders</a></h2>
 <ul>
 <li>Infrastructure providers (operators of validator/collator nodes)
@@ -995,146 +997,7 @@ Appendix H. SIMD implementations of this algorithm are available in:</p>
 <p>Replace the Merkle Patricia Trie with a Binary Merkle Tree for computing the erasure root.</p>
 </li>
 </ol>
-<p>Here is a reference implementation:</p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>use blake2b_simd::{blake2b as hash_fn, Hash, State as Hasher};
-
-/// Yields all erasure chunks as an iterator.
-pub struct MerklizedChunks {
-	root: ErasureRoot,
-	data: VecDeque&lt;Vec&lt;u8&gt;&gt;,
-	// This is a Binary Merkle Tree,
-	// where each level is a vector of hashes starting from leaves.
-	// \`\`\`
-	// 0 -&gt; [c, d, e, Hash::zero()]
-	// 1 -&gt; [a = hash(c, d), b = hash(e, Hash::zero())]
-	// 2 -&gt; hash(a, b)
-	// \`\`\`
-	// Levels are guaranteed to have a power of 2 elements.
-	// Leaves might be padded with `Hash::zero()`.
-	tree: Vec&lt;Vec&lt;Hash&gt;&gt;,
-	// Used by the iterator implementation.
-	current_index: u16,
-}
-
-type ErasureRoot = Hash;
-pub struct Proof(BoundedVec&lt;Hash, ConstU32&lt;16&gt;&gt;);
-
-/// A chunk of erasure-encoded block data.
-pub struct ErasureChunk {
-	/// The erasure-encoded chunk of data belonging to the candidate block.
-	pub chunk: Vec&lt;u8&gt;,
-	/// The index of this erasure-encoded chunk of data.
-	pub index: u16,
-	/// Proof for this chunk against an erasure root.
-	pub proof: Proof,
-}
-
-impl Iterator for MerklizedChunks {
-	type Item = ErasureChunk;
-
-	fn next(&amp;mut self) -&gt; Option&lt;Self::Item&gt; {
-		let chunk = self.data.pop_front()?;
-		let d = self.tree.len() - 1;
-		let idx = self.current_index.0;
-		let mut index = idx as usize;
-		let mut path = Vec::with_capacity(d);
-		for i in 0..d {
-			let layer = &amp;self.tree[i];
-			if index % 2 == 0 {
-				path.push(layer[index + 1]);
-			} else {
-				path.push(layer[index - 1]);
-			}
-			index /= 2;
-		}
-		self.current_index += 1;
-		Some(ErasureChunk {
-			chunk,
-			proof: Proof::try_from(path).expect(&quot;the path is limited by tree depth; qed&quot;),
-			index: idx,
-		})
-	}
-}
-
-impl MerklizedChunks {
-	/// Compute `MerklizedChunks` from a list of erasure chunks.
-	pub fn compute(chunks: Vec&lt;Vec&lt;u8&gt;&gt;) -&gt; Self {
-		let mut hashes: Vec&lt;Hash&gt; = chunks
-			.iter()
-			.map(|chunk| {
-				let hash = hash_fn(chunk);
-				Hash::from(hash)
-			})
-			.collect();
-		hashes.resize(chunks.len().next_power_of_two(), Hash::default());
-
-		let depth = hashes.len().ilog2() as usize + 1;
-		let mut tree = vec![Vec::new(); depth];
-		tree[0] = hashes;
-
-		// Build the tree bottom-up.
-		(1..depth).for_each(|lvl| {
-			let len = 2usize.pow((depth - 1 - lvl) as u32);
-			tree[lvl].resize(len, Hash::default());
-
-			// NOTE: This can be parallelized.
-			(0..len).for_each(|i| {
-				let prev = &amp;tree[lvl - 1];
-
-				let hash = combine(prev[2 * i], prev[2 * i + 1]);
-
-				tree[lvl][i] = hash;
-			});
-		});
-
-		assert!(tree[tree.len() - 1].len() == 1, &quot;root must be a single hash&quot;);
-
-		Self {
-			root: ErasureRoot::from(tree[tree.len() - 1][0]),
-			data: chunks.into(),
-			tree,
-			current_index: 0,
-		}
-	}
-}
-
-fn combine(left: Hash, right: Hash) -&gt; Hash {
-	let mut hasher = Hasher::new();
-
-	hasher.update(left.0.as_slice());
-	hasher.update(right.0.as_slice());
-
-	hasher.finalize().into()
-}
-
-impl ErasureChunk {
-	/// Verify the proof of the chunk against the erasure root and index.
-	pub fn verify(&amp;self, root: &amp;ErasureRoot) -&gt; bool {
-		let leaf_hash = Hash::from(hash_fn(&amp;self.chunk));
-		let bits = Bitfield(self.index.0);
-
-		let root_hash = self.proof.0.iter().fold((leaf_hash, 0), |(acc, i), hash| {
-			let (a, b) = if bits.get_bit(i) { (*hash, acc) } else { (acc, *hash) };
-			(combine(a, b), i + 1)
-		});
-
-		// check the index doesn't contain more bits than the proof length
-		let index_bits = 16 - self.index.0.leading_zeros() as usize;
-		index_bits &lt;= self.proof.0.len() &amp;&amp; root_hash.0 == root.0
-	}
-}
-
-struct Bitfield(u16);
-
-impl Bitfield {
-	/// Get the bit at the given index.
-	pub fn get_bit(&amp;self, i: usize) -&gt; bool {
-		self.0 &amp; (1u16 &lt;&lt; i) != 0
-	}
-}
-<span class="boring">}</span></code></pre></pre>
+<p>The reference root merklization implementation can be found <a href="https://github.com/paritytech/erasure-coding/blob/512e77472beb877fe0881a857623d54d97b82bc4/src/merklize.rs#L9-L197">here</a>.</p>
 <h3 id="upgrade-path"><a class="header" href="#upgrade-path">Upgrade path</a></h3>
 <p>We propose adding support for the new erasure coding scheme on both validator and collator sides without activating it until:</p>
 <ol>
@@ -1146,6 +1009,12 @@ impl Bitfield {
 coding scheme using a reserved field in the candidate receipt. This would allow
 faster deployment for most parachains but would add complexity.</p>
 <p>Given there isn't urgent demand for supporting larger PoVs currently, we recommend prioritizing simplicity with a way to implement future-proofing changes.</p>
+<p>In short, the following steps are proposed:</p>
+<ol>
+<li>Implement the changes a and wait for most collators to upgrade.</li>
+<li>Activate RFC-47 via <code>Configuration::set_node_feature</code> runtime change.</li>
+<li>Activate the new erasure coding scheme using another <code>Configuration::set_node_feature</code> runtime change.</li>
+</ol>
 <h2 id="drawbacks-2"><a class="header" href="#drawbacks-2">Drawbacks</a></h2>
 <p>Bundling this breaking change with RFC-47 might reset progress in updating collators. However, the omni node initiative should help mitigate this issue.</p>
 <h2 id="testing-security-and-privacy-2"><a class="header" href="#testing-security-and-privacy-2">Testing, Security, and Privacy</a></h2>
