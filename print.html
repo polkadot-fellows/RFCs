@@ -192,10 +192,10 @@ detailing proposed changes to the technical implementation of the Polkadot netwo
 <ul>
 <li><a href="proposed/0015-market-design-revisit.html#bulk-markets">Bulk Markets</a></li>
 <li><a href="proposed/0015-market-design-revisit.html#benefits-of-this-system">Benefits of this system</a></li>
+<li><a href="proposed/0015-market-design-revisit.html#implications-of-this-system">Implications of this system</a></li>
 <li><a href="proposed/0015-market-design-revisit.html#further-discussion-points">Further Discussion Points</a></li>
 </ul>
 </li>
-<li><a href="proposed/0015-market-design-revisit.html#drawbacks">Drawbacks</a></li>
 <li><a href="proposed/0015-market-design-revisit.html#prior-art-and-references">Prior Art and References</a></li>
 <li><a href="proposed/0015-market-design-revisit.html#unresolved-questions">Unresolved Questions</a></li>
 </ul>
@@ -203,15 +203,16 @@ detailing proposed changes to the technical implementation of the Polkadot netwo
 </ul>
 <h1 id="rfc-0015-market-design-revisit"><a class="header" href="#rfc-0015-market-design-revisit">RFC-0015: Market Design Revisit</a></h1>
 <div class="table-wrapper"><table><thead><tr><th></th><th></th></tr></thead><tbody>
-<tr><td><strong>Start Date</strong></td><td>05.08.2023</td></tr>
+<tr><td><strong>Original Proposition Date</strong></td><td>05.08.2023</td></tr>
+<tr><td><strong>Revision Date</strong></td><td>25.04.2025</td></tr>
 <tr><td><strong>Description</strong></td><td>This RFC refines the previously proposed mechanisms involving the various Coretime markets and presents an integrated framework for harmonious interaction between all markets.</td></tr>
 <tr><td><strong>Authors</strong></td><td>Jonas Gehrlein</td></tr>
 </tbody></table>
 </div>
 <h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
-<p>This document is a proposal for restructuring the bulk markets in the Polkadot UC's coretime allocation system to improve efficiency and fairness. The proposal suggests separating the <code>BULK_PERIOD</code> into <code>MARKET_PERIOD</code> and <code>RENEWAL_PERIOD</code>, allowing for a market-driven price discovery through a clearing price Dutch auction during the <code>MARKET_PERIOD</code> followed by renewal offers at the <code>MARKET_PRICE</code> during the <code>RENEWAL_PERIOD</code>. The new system ensures synchronicity between renewal and market prices, fairness among all current tenants, and efficient price discovery, while preserving price caps to provide security for current tenants. It seeks to start a discussion about the possibility of long-term leases.</p>
+<p>This document is a proposal for restructuring the bulk markets in the Polkadot's coretime allocation system to improve efficiency and fairness. The proposal suggests separating the <code>BULK_PERIOD</code> into <code>MARKET_PERIOD</code> and <code>RENEWAL_PERIOD</code>, allowing for a market-driven price discovery through a clearing price Dutch auction during the <code>MARKET_PERIOD</code> followed by renewal offers at the <code>MARKET_PRICE</code> during the <code>RENEWAL_PERIOD</code>. The new system ensures synchronicity between renewal and market prices, fairness among all current tenants, and efficient price discovery, while preserving price caps to provide security for current tenants. It seeks to start a discussion about the possibility of long-term leases.</p>
 <h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
-<p>While the initial <a href="https://github.com/polkadot-fellows/RFCs/blob/6f29561a4747bbfd95307ce75cd949dfff359e39/text/0001-agile-coretime.md">RFC-1</a> has provided a robust framework for Coretime allocation within the Polkadot UC, this proposal builds upon its strengths and uses many provided building blocks to address some areas that could be further improved. </p>
+<p>While the initial <a href="https://github.com/polkadot-fellows/RFCs/blob/6f29561a4747bbfd95307ce75cd949dfff359e39/text/0001-agile-coretime.md">RFC-1</a> has provided a robust framework for Coretime allocation within the Polkadot, this proposal builds upon its strengths and uses many provided building blocks to address some areas that could be further improved. </p>
 <p>In particular, this proposal introduces the following changes:</p>
 <ul>
 <li>It introduces a <code>RESERVE_PRICE</code> that anchors all markets, promoting price synchronicity within the Bulk markets (flexible + renewals). 
@@ -223,12 +224,13 @@ detailing proposed changes to the technical implementation of the Polkadot netwo
 <li>It reverses the order of the market and renewal phase. 
 <ul>
 <li>This allows to fine-tune the price through market forces.</li>
+<li>This significantly increases the cost for core captures, because captured cores would become increasingly expensive over time.</li>
 </ul>
 </li>
 <li>It exposes the renewal prices, while still being beneficial for longterm tenants, more to market forces. </li>
 <li>It removes the LeadIn period and introduces a (from the perspective of the coretime systemchain) passive Settlement Phase, that allows the secondary market to exert it's force.</li>
 </ul>
-<p>The premise of this proposal is to reduce complexity by introducing a common price (that develops releative to capacity consumption of Polkadot UC), while still allowing for market forces to add efficiency. Longterm lease owners still receive priority <strong>IF</strong> they can pay (close to) the market price. This prevents a situation where the renewal price significantly diverges from renewal prices which allows for core captures. While maximum price increase certainty might seem contradictory to efficient price discovery, the proposed model aims to balance these elements, utilizing market forces to determine the price and allocate cores effectively within certain bounds. It must be stated, that potential price increases remain predictable (in the worst-case) but could be higher than in the originally proposed design. The argument remains, however, that we need to allow market forces to affect all prices for an efficient Coretime pricing and allocation.</p>
+<p>The premise of this proposal is to reduce complexity by introducing a common price (that develops releative to capacity consumption of Polkadot), while still allowing for market forces to add efficiency. Longterm lease owners still receive priority <strong>IF</strong> they can pay (close to) the market price. This prevents a situation where the renewal price significantly diverges from market prices which allows for core captures and general inefficiencies. While maximum price increase certainty might seem contradictory to efficient price discovery, the proposed model aims to balance these elements, utilizing market forces to determine the price and allocate cores effectively within certain bounds. In particular, prices are bounded upward within a <code>BULK_PERIOD</code> and can be calculated for future periods. It must be stated, however, that under high demand, prices could exponentially increase. This is necessary to allow for proper price discovery and efficient Coretime pricing and allocation.</p>
 <p>Ultimately, this the framework proposed here adheres to all requirements stated in RFC-1.</p>
 <h2 id="stakeholders"><a class="header" href="#stakeholders">Stakeholders</a></h2>
 <p>Primary stakeholder sets are:</p>
@@ -241,17 +243,27 @@ detailing proposed changes to the technical implementation of the Polkadot netwo
 <h3 id="bulk-markets"><a class="header" href="#bulk-markets">Bulk Markets</a></h3>
 <p>The <code>BULK_PERIOD</code> has been restructured into two primary segments: the <code>MARKET_PERIOD</code> and <code>RENEWAL_PERIOD</code>, along with an auxiliary <code>SETTLEMENT_PERIOD</code>. This latter period doesn't necessitate any actions from the coretime system chain, but it facilitates a more efficient allocation of coretime in secondary markets. A significant departure from the original proposal lies in the timing of renewals, which now occur post-market phase. This adjustment aims to harmonize renewal prices with their market counterparts, ensuring a more consistent and equitable pricing model.</p>
 <h4 id="market-period-14-days"><a class="header" href="#market-period-14-days">Market Period (14 days)</a></h4>
-<p>During the market period, core sales are conducted through a well-established <strong>clearing price Dutch auction</strong> that features a <code>RESERVE_PRICE</code>. The price initiates at a premium, designated as <code>PRICE_PREMIUM</code> (for instance, 30%) and descends linearly to the <code>RESERVE_PRICE</code> throughout the duration of the <code>MARKET_PERIOD</code>. Each bidder is expected to submit both their desired price and the quantity (that is, the amount of Coretime) they wish to purchase. To secure these acquisitions, bidders must make a deposit equivalent to their bid multiplied by the chosen quantity, in DOT. </p>
-<p>The market achieves resolution once all quantities have been sold, or the <code>RESERVE_PRICE</code> has been reached. This situation leads to determining the <code>MARKET_PRICE</code> either by the lowest bid that was successful in clearing the entire market or by the <code>RESERVE_PRICE</code>. This mechanism yields a uniform price, shaped by market forces (refer to the following discussion for an explanation of its benefits). In other words, all buyers pay the same price (per unit of Coretime). Further down the benefits of this variant of a Dutch auction is discussed.</p>
-<p><strong>Note:</strong> In cases where some cores remain unsold in the market, all buyers are obligated to pay the <code>RESERVE_PRICE</code>.</p>
+<p>During the market period, core sales are conducted through a well-established <strong>clearing price Dutch auction</strong> that features a <code>RESERVE_PRICE</code>. The price initiates at a premium, designated as <code>PRICE_PREMIUM</code> (for instance, 200%) and descends linearly to the <code>RESERVE_PRICE</code> throughout the duration of the <code>MARKET_PERIOD</code>. Each bidder is expected to submit both their desired price and the quantity (that is, the amount of Coretime) they wish to purchase. To secure these acquisitions, bidders must make a deposit equivalent to their bid multiplied by the chosen quantity, in DOT. </p>
+<p>The market achieves resolution once all quantities have been sold, or the <code>RESERVE_PRICE</code> has been reached. This situation leads to determining the <code>CLEARING_PRICE</code> either by the lowest bid that was successful in clearing the entire market or by the <code>RESERVE_PRICE</code>. This mechanism yields a uniform price, shaped by market forces (refer to the following discussion for an explanation of its benefits). In other words, all buyers pay the same price (per unit of Coretime). Further down the benefits of this variant of a Dutch auction is discussed.</p>
+<p><strong>Note:</strong> In cases where some cores remain unsold in the market, all buyers are obligated to pay the <code>RESERVE_PRICE</code>. Bids below the <code>RESERVE_PRICE</code> are not valid.</p>
 <h4 id="renewal-period-7-days"><a class="header" href="#renewal-period-7-days">Renewal Period (7 days)</a></h4>
-<p>As the <code>RENEWAL_PERIOD</code> commences, all current tenants are granted the opportunity to renew their cores at a slight discount of <code>MARKET_PRICE * RENEWAL_DISCOUNT</code> (for instance, 10%). This provision affords marginal benefits to existing tenants, balancing out the non-transferability aspect of renewals.</p>
-<p>At the end of the period, all available cores are allocated to the current tenants who have opted for renewal and the participants who placed bids during the market period. If the demand for cores exceeds supply, the cores left unclaimed from renewals may be awarded to bidders who placed their bids early in the auction, thereby subtly incentivizing early participation. If the supply exceeds the demand, all unsold cores are transferred to the Instantanous Market.</p>
+<p>As the <code>RENEWAL_PERIOD</code> commences, all current tenants are granted the opportunity to renew their cores at the <code>CLEARING_PRICE</code> (optionally, we could grant a small discount, balancing out the non-transferability aspect of renewals). In other words, they have 7 days to pay to renew their cores. After obtaining the information who renewed and who did not, the system has the necessary information to conclusively allocate all cores and transfer ownership.</p>
+<p>In the case where there are combined more renewals and bidders at or above the <code>CLEARING_PRICE</code> than available cores, we allocate cores to the highest to lowest bidders until all available cores are allocated (albeit still at the <code>CLEARING_PRICE</code>). That effectively means that in situations with very high demand, some bidders might not get a core.</p>
+<p>If the supply exceeds the demand, all unallocated cores are transferred to the Instantanous Market.</p>
 <h4 id="reserve-price-adjustment"><a class="header" href="#reserve-price-adjustment">Reserve Price Adjustment</a></h4>
-<p>After all cores are allocated, the <code>RESERVE_PRICE</code> is adjusted following the process described in RFC-1 and serves as baseline price in the next <code>BULK_PERIOD</code>. </p>
-<p><strong>Note:</strong> The particular price curve is outside the scope of the proposal. The <code>MARKET_PRICE</code> (as a function of <code>RESERVE_PRICE</code>), however, is able to capture higher demand very well while being capped downwards. That means, the curve that adjusts the <code>RESERVE_PRICE</code> should be more sensitive to undercapacity.</p>
-<h4 id="price-predictability"><a class="header" href="#price-predictability">Price Predictability</a></h4>
-<p>Tasks that are in the &quot;renewal-pipeline&quot; can determine the upper bound for the price they will pay in any future period. The main driver of any price increase over time is the adjustment of the <code>RESERVE_PRICE</code>, that occurs at the end of each <code>BULK_PERIOD</code> after determining the capacity fillment of Polkadot UC.  To calculate the maximum price in some future period, a task could assume maximum capacity in all upcoming periods and track the resulting price increase of <code>RESERVE_PRICE</code>. In the final period, that price can get a maximum premium of <code>PRICE_PREMIUM</code> and after deducting a potential <code>RENEWAL_DISCOUNT</code>, the maximum price can be determined.</p>
+<p>After all cores are allocated, the <code>RESERVE_PRICE</code> is adjusted similar to the process described in RFC-1, where we define <code>TARGET_CONSUMPTION_RATE</code> as a ratio of the available to unsold cores. Then, the upcoming reserve price is adjusted upwards or downward, depending on whether we over- or undershoot the target consumption. If the consumption is met precisely, the price remains unchanged in the next <code>BULK_PERIOD</code>. </p>
+<p><strong>Note</strong>: When designing this mechanism, we want to make sure that small deviations have a smaller price impact than bigger deviations. We propose the following function:</p>
+<p><code>reserve_price_old</code>: reserve price from the previous period
+<code>consumption_rate</code>: how many cores were sold relative to how many were available.
+<code>TARGET_CONSUMPTION_RATE</code>: how many of the available cores we want to sell without increasing the price. We propose 90%. This leaves enough area downward and upward to adjust prices more aggressively.
+<code>K</code>: sensitivity parameter. How aggressively we want to adjust the price. We propose a value between 2.
+<code>P_MIN</code>: A minimum price we never undercut. This is important to bound the price downward and prevent computational issues if prices drop too low.
+<code>DELTA_MIN</code>: A minimum increment after we reached 100% capacity. This is important to quickly recover after long periods of low demand which resulted in low prices.</p>
+<p>We update the price according to:</p>
+<p><code>p_new = reserve_price_old * exp(K * (consumption_rate - TARGET_CONSUMPTION_RATE))</code></p>
+<p>The <code>RESERVE_PRICE</code> in the next period will be:</p>
+<p><code>RESERVE_PRICE_NEXT = max(p_new, P_MIN)</code></p>
+<p><strong>Note:</strong> To reduce the recovery time from very low prices it is important to, in the case of 100% capacity, at least increment the <code>RESERVE_PRICE_NEXT</code> by <code>DELTA_MIN</code>, which could be, e.g., 100 DOT. </p>
 <h4 id="settlement-period-7-days"><a class="header" href="#settlement-period-7-days">Settlement Period (7 days)</a></h4>
 <p>During the settlement period, participants have ample time to trade Coretime on secondary markets before the onset of the next <code>BULK_PERIOD</code>. This allows for trading with full Coretime availability. Trading transferrable Coretime naturally continues during each <code>BULK_PERIOD</code>, albeit with cores already in use.</p>
 <h3 id="benefits-of-this-system"><a class="header" href="#benefits-of-this-system">Benefits of this system</a></h3>
@@ -259,10 +271,16 @@ detailing proposed changes to the technical implementation of the Polkadot netwo
 <li>The introduction of a single price, the <code>RESERVE_PRICE</code>, provides an anchor for all Coretime markets. This is a preventative measure against the possible divergence and mismatch of prices, which could inadvertently lead to a situation where existing tenants secure cores at significantly below-market rates.</li>
 <li>With a more market-responsive pricing system, we can achieve a more efficient price discovery process. Any price increases will be less arbitrary and more dynamic.</li>
 <li>The ideal strategy for existing tenants is to maintain passivity, i.e., refrain from active market participation and simply accept the offer presented to them during the renewal phase. This approach lessens the organizational overhead for long-term projects.</li>
-<li>In the two-week market phase, the maximum price increase is known well in advance, providing ample time for tenants to secure necessary funds to meet the potential price escalation.</li>
+<li>Prices within a <code>BULK_PERIOD</code> are bound upwards by the current <code>RESERVE_PRICE * PREMIUM</code>. This provides ample time for tenants to secure necessary funds to meet the potential price escalation.</li>
 <li>All existing tenants pay an equal amount for Coretime, reflecting our intent to price the Coretime itself and not the relative timing of individual projects.</li>
 </ul>
-<h4 id="discussion-clearing-price-dutch-auctions"><a class="header" href="#discussion-clearing-price-dutch-auctions">Discussion: Clearing Price Dutch Auctions</a></h4>
+<h3 id="implications-of-this-system"><a class="header" href="#implications-of-this-system">Implications of this system</a></h3>
+<ul>
+<li>Bidders above the clearing price might not receive a core: We aim to grant existing coretime users the exclusive right to renew their cores at a fair market price. To facilitate this, we conduct a market phase before the renewal phase, during which all cores are put up for sale. However, current coretime users are not obligated to participate in this market phase. While advantageous for existing users, this condition may occasionally result in bidders not receiving a core despite bidding above the clearing price. After renewals, any remaining cores will be allocated to bidders in descending order of their bids, still applying the uniform clearing price. We consider this scenario a necessary trade-off to ensure that renewals remain influenced by market dynamics. Ultimately, we believe this approach is justified, as it is preferable to risk delaying new projects until subsequent cycles rather than displacing ongoing projects.</li>
+<li>Bids below the current descending price should always be allowed (i.e., we would not want to require teams sitting and waiting for the price to finally be declined to their taget level). That makes it easy to participate for bidders.</li>
+<li>Bids above the current descending price <strong>are not allowed</strong>. This marks a difference to a simple kth-price auction and prevents sniping.</li>
+</ul>
+<h4 id="insights-clearing-price-dutch-auctions"><a class="header" href="#insights-clearing-price-dutch-auctions">Insights: Clearing Price Dutch Auctions</a></h4>
 <p>Having all bidders pay the market clearing price offers some benefits and disadvantages.</p>
 <ul>
 <li>Advantages:
@@ -271,26 +289,28 @@ detailing proposed changes to the technical implementation of the Polkadot netwo
 <li><strong>Active participation</strong>: Because bidders are protected from overbidding (winner's curse), they are more likely to engage and reveal their true valuations.</li>
 <li><strong>Simplicity</strong>: A single price is easier to work with for pricing renewals later.</li>
 <li><strong>Truthfulness</strong>: There is no need to try to game the market by waiting with bidding. Bidders can just bid their valuations.</li>
+<li><strong>No sniping</strong>: As prices are descending, a player cannot wait until the end to place a high bid. They are only allowed to place the decreasing bid at the time of bidding. </li>
 </ul>
 </li>
 <li>Disadvantages:
 <ul>
-<li><strong>(Potentially) Lower Revenue</strong>: While the theory predicts revenue-equivalence between a uniform price and pay-as-bid type of auction, slightly lower revenue for the former type is observed empirically. Arguably, revenue maximization (i.e., squeezing out the maximum willingness to pay from bidders) is not the priority for Polkadot UC. Instead, it is interested in efficient allocation and the other benefits illustrated above.</li>
+<li><strong>(Potentially) Lower Revenue</strong>: While the theory predicts revenue-equivalence between a uniform price and pay-as-bid type of auction, slightly lower revenue for the former type is observed empirically. Arguably, revenue maximization (i.e., squeezing out the maximum willingness to pay from bidders) is not the priority for Polkadot. Instead, it is interested in efficient allocation and the other benefits illustrated above.</li>
 <li><strong>(Technical) Complexity</strong>: Instead of making a final purchase within the auction, the bid is only a deposit. Some refunds might happen after the auction is finished. This might pose additional challenges from the technical side (e.g., storage requirements).</li>
 </ul>
 </li>
 </ul>
 <h3 id="further-discussion-points"><a class="header" href="#further-discussion-points">Further Discussion Points</a></h3>
 <ul>
-<li><strong>Long-term Coretime</strong>: The Polkadot UC is undergoing a transition from two-year leases without an instantaneous market to a model encompassing instantaneous and one-month leases. This shift seems to pivot from one extreme to another. While the introduction of short-term leases, both instantaneous and for one month, is a constructive move to lower barriers to entry and promote experimentation, it seems to be the case that established projects might benefit from more extended lease options. We could consider offering another product, such as a six-month Coretime lease, using the same mechanism described herein. Although the majority of leases would still be sold on a one-month basis, the addition of this option would enhance market efficiency as it would <strong>strengthen the impact of a secondary market</strong>.</li>
+<li><strong>Long-term Coretime</strong>: The Polkadot is undergoing a transition from two-year leases without an instantaneous market to a model encompassing instantaneous and one-month leases. This shift seems to pivot from one extreme to another. While the introduction of short-term leases, both instantaneous and for one month, is a constructive move to lower barriers to entry and promote experimentation, it seems to be the case that established projects might benefit from more extended lease options. We could consider offering another product, such as a six-month Coretime lease, using the same mechanism described herein. Although the majority of leases would still be sold on a one-month basis, the addition of this option would enhance market efficiency as it would <strong>strengthen the impact of a secondary market</strong>.</li>
+<li><strong>Reintroduction of Candle Auctions</strong>: Polkadot gathered vast experience with candle auctions where more than 200 auctions has been conducted throughout more than two years. <a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5109856">Our study</a> analyzing the results in much detail reveals that the mechanism itself is both efficient and (nearly) extracting optimal revenue. This yields confidence and would allow us to reintroduce them to replace the proposed dutch auction. A benefit would be that we would not need to update reserve prices but a drawback would be that prices are not bound upwards within single periods.</li>
 </ul>
-<h2 id="drawbacks"><a class="header" href="#drawbacks">Drawbacks</a></h2>
-<p>There are trade-offs that arise from this proposal, compared to the initial model. The most notable one is that here, I prioritize requirement 6 over requirement 2. The price, in the very &quot;worst-case&quot; (meaning a huge explosion in demand for coretime) could lead to a much larger increase of prices in Coretime. From an economic perspective, this (rare edgecase) would also mean that we'd vastly underprice Coretime in the original model, leading to highly inefficient allocations.</p>
 <h2 id="prior-art-and-references"><a class="header" href="#prior-art-and-references">Prior Art and References</a></h2>
 <p>This RFC builds extensively on the available ideas put forward in <a href="https://github.com/polkadot-fellows/RFCs/blob/6f29561a4747bbfd95307ce75cd949dfff359e39/text/0001-agile-coretime.md">RFC-1</a>. </p>
 <p>Additionally, I want to express a special thanks to <a href="https://samuelhaefner.github.io/">Samuel Haefner</a> and <a href="https://sites.google.com/site/dobzin/">Shahar Dobzinski</a> for fruitful discussions and helping me structure my thoughts. </p>
 <h2 id="unresolved-questions"><a class="header" href="#unresolved-questions">Unresolved Questions</a></h2>
-<p>The technical feasability needs to be assessed.</p>
+<ul>
+<li>None yet</li>
+</ul>
 <div style="break-before: page; page-break-before: always;"></div><p><a href="https://github.com/polkadot-fellows/RFCs/pull/139">(source)</a></p>
 <p><strong>Table of Contents</strong></p>
 <ul>
@@ -383,7 +403,7 @@ faster deployment for most parachains but would add complexity.</p>
 <li>Activate RFC-47 via <code>Configuration::set_node_feature</code> runtime change.</li>
 <li>Activate the new erasure coding scheme using another <code>Configuration::set_node_feature</code> runtime change.</li>
 </ol>
-<h2 id="drawbacks-1"><a class="header" href="#drawbacks-1">Drawbacks</a></h2>
+<h2 id="drawbacks"><a class="header" href="#drawbacks">Drawbacks</a></h2>
 <p>Bundling this breaking change with RFC-47 might reset progress in updating collators. However, the omni node initiative should help mitigate this issue.</p>
 <h2 id="testing-security-and-privacy"><a class="header" href="#testing-security-and-privacy">Testing, Security, and Privacy</a></h2>
 <p>Testing is needed to ensure binary compatibility across implementations in multiple languages.</p>
@@ -1205,7 +1225,7 @@ approximately:</p>
 <li>of which 15 are Invulnerable, and</li>
 <li>five are elected by bond.</li>
 </ul>
-<h2 id="drawbacks-2"><a class="header" href="#drawbacks-2">Drawbacks</a></h2>
+<h2 id="drawbacks-1"><a class="header" href="#drawbacks-1">Drawbacks</a></h2>
 <p>The primary drawback is a reliance on governance for continued treasury funding of infrastructure
 costs for Invulnerable collators.</p>
 <h2 id="testing-security-and-privacy-3"><a class="header" href="#testing-security-and-privacy-3">Testing, Security, and Privacy</a></h2>
@@ -1332,7 +1352,7 @@ message Response {
 </code></pre>
 <p>The maximum size of a response is set to an arbitrary 16kiB. The responding side should make sure to conform to this limit. Given that <code>fork_id</code> is typically very small and that the only variable-length field is <code>addrs</code>, this is easily achieved by limiting the number of addresses.</p>
 <p>Implementers should be aware that <code>addrs</code> might be very large, and are encouraged to limit the number of <code>addrs</code> to an implementation-defined value.</p>
-<h2 id="drawbacks-3"><a class="header" href="#drawbacks-3">Drawbacks</a></h2>
+<h2 id="drawbacks-2"><a class="header" href="#drawbacks-2">Drawbacks</a></h2>
 <p>The <code>peer_id</code> and <code>addrs</code> fields are in theory not strictly needed, as the PeerId and addresses could be always equal to the PeerId and addresses of the node being registered as the provider and serving the response. However, the Cumulus implementation currently uses two different networking stacks, one of the parachain and one for the relay chain, using two separate PeerIds and addresses, and as such the PeerId and addresses of the other networking stack must be indicated. Asking them to use only one networking stack wouldn't feasible in a realistic time frame.</p>
 <p>The values of the <code>genesis_hash</code> and <code>fork_id</code> fields cannot be verified by the requester and are expected to be unused at the moment. Instead, a client that desires connecting to a parachain is expected to obtain the genesis hash and fork ID of the parachain from the parachain chain specification. These fields are included in the networking protocol nonetheless in case an acceptable solution is found in the future, and in order to allow use cases such as discovering parachains in a not-strictly-trusted way.</p>
 <h2 id="testing-security-and-privacy-4"><a class="header" href="#testing-security-and-privacy-4">Testing, Security, and Privacy</a></h2>
@@ -1464,7 +1484,7 @@ An alternative could have been to specify the <code>child_trie_info</code> for e
 Also note that child tries aren't considered as descendants of the main trie when it comes to the <code>includeDescendants</code> flag. In other words, if the request concerns the main trie, no content coming from child tries is ever sent back.</p>
 <p>This protocol keeps the same maximum response size limit as currently exists (16 MiB). It is not possible for the querier to know in advance whether its query will lead to a reply that exceeds the maximum size. If the reply is too large, the replier should send back only a limited number (but at least one) of requested items in the proof. The querier should then send additional requests for the rest of the items. A response containing none of the requested items is invalid.</p>
 <p>The server is allowed to silently discard some keys of the request if it judges that the number of requested keys is too high. This is in line with the fact that the server might truncate the response.</p>
-<h2 id="drawbacks-4"><a class="header" href="#drawbacks-4">Drawbacks</a></h2>
+<h2 id="drawbacks-3"><a class="header" href="#drawbacks-3">Drawbacks</a></h2>
 <p>This proposal doesn't handle one specific situation: what if a proof containing a single specific item would exceed the response size limit? For example, if the response size limit was 1 MiB, querying the runtime code (which is typically 1.0 to 1.5 MiB) would be impossible as it's impossible to generate a proof less than 1 MiB. The response size limit is currently 16 MiB, meaning that no single storage item must exceed 16 MiB.</p>
 <p>Unfortunately, because it's impossible to verify a Merkle proof before having received it entirely, parsing the proof in a streaming way is also not possible.</p>
 <p>A way to solve this issue would be to Merkle-ize large storage items, so that a proof could include only a portion of a large storage item. Since this would require a change to the trie format, it is not realistically feasible in a short time frame.</p>
@@ -1614,7 +1634,7 @@ Fellowship would help them identify the pallet indices associated with a given c
 or not the Fellowship member agrees with removal.</p>
 <p>Collective removal may also come with other governance calls, for example voiding any scheduled
 Treasury spends that would fund the given collective.</p>
-<h2 id="drawbacks-5"><a class="header" href="#drawbacks-5">Drawbacks</a></h2>
+<h2 id="drawbacks-4"><a class="header" href="#drawbacks-4">Drawbacks</a></h2>
 <p>Passing a Root origin referendum is slow. However, given the network's investment (in terms of code
 maintenance and salaries) in a new collective, this is an appropriate step.</p>
 <h2 id="testing-security-and-privacy-6"><a class="header" href="#testing-security-and-privacy-6">Testing, Security, and Privacy</a></h2>
@@ -1701,7 +1721,7 @@ multi-block migrations available.</li>
 <p><strong>1. Multi-Block-Migrations</strong>: The runtime is being put into lock-down mode for the duration of the migration process by returning <code>OnlyInherents</code> from <code>initialize_block</code>. This ensures that no user provided transaction can interfere with the migration process. It is absolutely necessary to ensure this, otherwise a transaction could call into un-migrated storage and violate storage invariants.</p>
 <p><strong>2. <code>poll</code></strong> is possible by using <code>apply_extrinsic</code> as entry-point and not hindered by this approach. It would not be possible to use a pallet inherent like <code>System::last_inherent</code> to achieve this for two reasons: First is that pallets do not have access to <code>AllPalletsWithSystem</code> which is required to invoke the <code>poll</code> hook on all pallets. Second is that the runtime does currently not enforce an order of inherents. </p>
 <p><strong>3. <code>System::PostInherents</code></strong> can be done in the same manner as <code>poll</code>.</p>
-<h2 id="drawbacks-6"><a class="header" href="#drawbacks-6">Drawbacks</a></h2>
+<h2 id="drawbacks-5"><a class="header" href="#drawbacks-5">Drawbacks</a></h2>
 <p>The previous drawback of cementing the order of inherents has been addressed and removed by redesigning the approach. No further drawbacks have been identified thus far.</p>
 <h2 id="testing-security-and-privacy-7"><a class="header" href="#testing-security-and-privacy-7">Testing, Security, and Privacy</a></h2>
 <p>The new logic of <code>initialize_block</code> can be tested by checking that the block-builder will skip transactions when <code>OnlyInherents</code> is returned.</p>
@@ -1842,7 +1862,7 @@ This can be unified and simplified by moving both parts into the runtime.</p>
 <li>Parachain never produced a block. Including from expired leases.</li>
 <li>Parachain manager never explicitly lock the parachain.</li>
 </ul>
-<h2 id="drawbacks-7"><a class="header" href="#drawbacks-7">Drawbacks</a></h2>
+<h2 id="drawbacks-6"><a class="header" href="#drawbacks-6">Drawbacks</a></h2>
 <p>Parachain locks are designed in such way to ensure the decentralization of parachains. If parachains are not locked when it should be, it could introduce centralization risk for new parachains.</p>
 <p>For example, one possible scenario is that a collective may decide to launch a parachain fully decentralized. However, if the parachain is unable to produce block, the parachain manager will be able to replace the wasm and genesis without the consent of the collective.</p>
 <p>It is considered this risk is tolerable as it requires the wasm/genesis to be invalid at first place. It is not yet practically possible to develop a parachain without any centralized risk currently.</p>
@@ -1921,7 +1941,7 @@ This can be unified and simplified by moving both parts into the runtime.</p>
 <li>Encointer will publish all its crates crates.io</li>
 <li>Encointer does not carry out external auditing of its runtime nor pallets. It would be beneficial but not a requirement from our side if Encointer could join the auditing process of other system chains. </li>
 </ul>
-<h2 id="drawbacks-8"><a class="header" href="#drawbacks-8">Drawbacks</a></h2>
+<h2 id="drawbacks-7"><a class="header" href="#drawbacks-7">Drawbacks</a></h2>
 <p>Other than all other system chains, development and maintenance of the Encointer Network is mainly financed by the KSM Treasury and possibly the DOT Treasury in the future. Encointer is dedicated to maintaining its network and runtime code for as long as possible, but there is a dependency on funding which is not in the hands of the fellowship. The only risk in the context of funding, however, is that the Encointer runtime will see less frequent updates if there's less funding. </p>
 <h2 id="testing-security-and-privacy-9"><a class="header" href="#testing-security-and-privacy-9">Testing, Security, and Privacy</a></h2>
 <p>No changes to the existing system are proposed. Only changes to how maintenance is organized.</p>
@@ -3019,7 +3039,7 @@ sensible to rehearse a migration.</p>
 Staking is the subsystem most constrained by PoV limits. Ensuring that elections, payouts, session
 changes, offences/slashes, etc. work in a parachain on Kusama -- with its larger validator set --
 will give confidence to the chain's robustness on Polkadot.</p>
-<h2 id="drawbacks-9"><a class="header" href="#drawbacks-9">Drawbacks</a></h2>
+<h2 id="drawbacks-8"><a class="header" href="#drawbacks-8">Drawbacks</a></h2>
 <p>These subsystems will have reduced resources in cores than on the Relay Chain. Staking in particular
 may require some optimizations to deal with constraints.</p>
 <h2 id="testing-security-and-privacy-10"><a class="header" href="#testing-security-and-privacy-10">Testing, Security, and Privacy</a></h2>
@@ -3131,7 +3151,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 		system_version: 1,
 	};
 <span class="boring">}</span></code></pre></pre>
-<h2 id="drawbacks-10"><a class="header" href="#drawbacks-10">Drawbacks</a></h2>
+<h2 id="drawbacks-9"><a class="header" href="#drawbacks-9">Drawbacks</a></h2>
 <p>There should be no drawbacks as it would replace <code>state_version</code> with same behavior but documentation should be updated
 so that chains know which <code>system_version</code> to use.</p>
 <h2 id="testing-security-and-privacy-11"><a class="header" href="#testing-security-and-privacy-11">Testing, Security, and Privacy</a></h2>
@@ -3371,7 +3391,7 @@ application to avoid sudden rate changes, as in:</p>
 <p>where the constant <code>a</code> moves the inflection to lower or higher <code>x</code> values, the constant <code>b</code> adjusts
 the rate of the deposit increase, and the independent variable <code>x</code> is the number of collections or
 items, depending on application.</p>
-<h2 id="drawbacks-11"><a class="header" href="#drawbacks-11">Drawbacks</a></h2>
+<h2 id="drawbacks-10"><a class="header" href="#drawbacks-10">Drawbacks</a></h2>
 <p>Modifying deposit requirements necessitates a balanced assessment of the potential drawbacks.
 Highlighted below are cogent points extracted from the discourse on the <a href="https://forum.polkadot.network/t/polkadot-assethub-high-nft-collection-deposit/4262">Polkadot Forum
 conversation</a>,
@@ -3671,7 +3691,7 @@ struct (added in <code>https://github.com/paritytech/polkadot-sdk/pull/2177</cod
 with this scheme does not require a runtime upgrade, but only a referendum that issues a
 <code>Configuration::set_node_feature</code> extrinsic. Once the feature is enabled and new configuration is live, the
 validator-&gt;chunk mapping ceases to be a 1:1 mapping and systematic recovery may begin.</p>
-<h2 id="drawbacks-12"><a class="header" href="#drawbacks-12">Drawbacks</a></h2>
+<h2 id="drawbacks-11"><a class="header" href="#drawbacks-11">Drawbacks</a></h2>
 <ul>
 <li>Getting access to the <code>core_index</code> that used to be occupied by a candidate in some parts of the dispute protocol is
 very complicated (See <a href="approved/0047-assignment-of-availability-chunks.html#appendix-a">appendix A</a>). This RFC assumes that availability-recovery processes initiated during
@@ -3833,7 +3853,7 @@ actual exported function signature looks like:</p>
 already gets the <code>proof</code> passed as <code>Vec&lt;u8&gt;</code>. This <code>proof</code> needs to be decoded to
 the actual <code>Proof</code> type as explained above. The <code>proof</code> and the SCALE encoded
 <code>account_id</code> of the sender are used to verify the ownership of the <code>SessionKeys</code>.</p>
-<h2 id="drawbacks-13"><a class="header" href="#drawbacks-13">Drawbacks</a></h2>
+<h2 id="drawbacks-12"><a class="header" href="#drawbacks-12">Drawbacks</a></h2>
 <p>Validator operators need to pass the their account id when rotating their session keys in a node. 
 This will require updating some high level docs and making users familiar with the slightly changed ergonomics.</p>
 <h2 id="testing-security-and-privacy-14"><a class="header" href="#testing-security-and-privacy-14">Testing, Security, and Privacy</a></h2>
@@ -3973,7 +3993,7 @@ other hand, more people will likely join the Fellowship in the coming years.</p>
 <h3 id="updates"><a class="header" href="#updates">Updates</a></h3>
 <p>Updates to these levels, whether relative ratios, the asset used, or the amount, shall be done via
 RFC.</p>
-<h2 id="drawbacks-14"><a class="header" href="#drawbacks-14">Drawbacks</a></h2>
+<h2 id="drawbacks-13"><a class="header" href="#drawbacks-13">Drawbacks</a></h2>
 <p>By not using DOT for payment, the protocol relies on the stability of other assets and the ability
 to acquire them. However, the asset of choice can be changed in the future.</p>
 <h2 id="testing-security-and-privacy-15"><a class="header" href="#testing-security-and-privacy-15">Testing, Security, and Privacy</a></h2>
@@ -4065,7 +4085,7 @@ A SCALE-compact encoded <code>1</code> is one byte of value <code>4</code>. In o
 This is equivalent to forcing the <code>Vec&lt;Transaction&gt;</code> to always have a length of 1, and I expect the Substrate implementation to simply modify the sending side to add a <code>for</code> loop that sends one notification per item in the <code>Vec</code>.</p>
 <p>As explained in the motivation section, this allows extracting <code>scale(transaction)</code> items without having to know how to decode them.</p>
 <p>By &quot;flattening&quot; the two-steps hierarchy, an implementation only needs to back-pressure individual notifications rather than back-pressure notifications and transactions within notifications.</p>
-<h2 id="drawbacks-15"><a class="header" href="#drawbacks-15">Drawbacks</a></h2>
+<h2 id="drawbacks-14"><a class="header" href="#drawbacks-14">Drawbacks</a></h2>
 <p>This RFC chooses to maintain backwards compatibility at the cost of introducing a very small wart (the <code>Compact(1)</code>).</p>
 <p>An alternative could be to introduce a new version of the transactions notifications protocol that sends one <code>Transaction</code> per notification, but this is significantly more complicated to implement and can always be done later in case the <code>Compact(1)</code> is bothersome.</p>
 <h2 id="testing-security-and-privacy-16"><a class="header" href="#testing-security-and-privacy-16">Testing, Security, and Privacy</a></h2>
@@ -4170,7 +4190,7 @@ If blocks pruning is enabled and the chain is a relay chain, then Substrate unfo
 <p>Implementations that have the <strong>head of the chain provider</strong> capability do not register themselves as providers, but instead are the nodes that participate in the main DHT. In other words, they are the nodes that serve requests of the <code>/&lt;genesis_hash&gt;/kad</code> protocol.</p>
 <p>Any implementation that isn't a head of the chain provider (read: light clients) must not participate in the main DHT. This is already presently the case.</p>
 <p>Implementations must not participate in the main DHT if they don't fulfill the capability yet. For example, a node that is still in the process of warp syncing must not participate in the main DHT. However, assuming that warp syncing doesn't last more than a few seconds, it is acceptable to ignore this requirement in order to avoid complicating implementations too much.</p>
-<h2 id="drawbacks-16"><a class="header" href="#drawbacks-16">Drawbacks</a></h2>
+<h2 id="drawbacks-15"><a class="header" href="#drawbacks-15">Drawbacks</a></h2>
 <p>None that I can see.</p>
 <h2 id="testing-security-and-privacy-17"><a class="header" href="#testing-security-and-privacy-17">Testing, Security, and Privacy</a></h2>
 <p><em>The content of this section is basically the same as the one in RFC 8.</em></p>
@@ -4552,7 +4572,7 @@ nodes: [[[2, 3], [4, 5]], [0, 1]]
 <li>Included in the extrinsic is <code>u8</code>, the &quot;mode&quot;. The mode is either <code>0</code> which means to not include the metadata hash in the signed data or the mode is <code>1</code> to include the metadata hash in <code>V1</code>.</li>
 <li>Included in the signed data is an <code>Option&lt;[u8; 32]&gt;</code>. Depending on the mode the value is either <code>None</code> or <code>Some(metadata_hash)</code>.</li>
 </ul>
-<h2 id="drawbacks-17"><a class="header" href="#drawbacks-17">Drawbacks</a></h2>
+<h2 id="drawbacks-16"><a class="header" href="#drawbacks-16">Drawbacks</a></h2>
 <p>The chunking may not be the optimal case for every kind of offline wallet.</p>
 <h2 id="testing-security-and-privacy-18"><a class="header" href="#testing-security-and-privacy-18">Testing, Security, and Privacy</a></h2>
 <p>All implementations are required to strictly follow the RFC to generate the metadata hash. This includes which hash function to use and how to construct the metadata types tree. So, all implementations are following the same security criteria. As the chains will calculate the metadata hash at compile time, the build process needs to be trusted. However, this is already a solved problem in the Polkadot ecosystem by using reproducible builds. So, anyone can rebuild a chain runtime to ensure that a proposal is actually containing the changes as advertised.</p>
@@ -4630,7 +4650,7 @@ nodes: [[[2, 3], [4, 5]], [0, 1]]
 <tr><td>11</td><td>reserved</td></tr>
 </tbody></table>
 </div>
-<h2 id="drawbacks-18"><a class="header" href="#drawbacks-18">Drawbacks</a></h2>
+<h2 id="drawbacks-17"><a class="header" href="#drawbacks-17">Drawbacks</a></h2>
 <p>This change would reduce the maximum possible transaction version from the current <code>127</code> to <code>63</code>. In order to bypass the new, lower limit, the extrinsic format would have to change again.</p>
 <h2 id="testing-security-and-privacy-19"><a class="header" href="#testing-security-and-privacy-19">Testing, Security, and Privacy</a></h2>
 <p>There is no impact on testing, security or privacy.</p>
@@ -4721,7 +4741,7 @@ You can find a link to the specification <a href="https://github.com/libp2p/spec
 </code></pre>
 <p>Each time a node wants to resolve an authorithy ID it will issue a query with a certain redundancy factor, and from all the results it receives it will decide to pick only the newest record. Additionally,
 in order to speed up the time until all nodes have the newest record, nodes can optionaly implement a logic where they send the new record to nodes that answered with the older record.</p>
-<h2 id="drawbacks-19"><a class="header" href="#drawbacks-19">Drawbacks</a></h2>
+<h2 id="drawbacks-18"><a class="header" href="#drawbacks-18">Drawbacks</a></h2>
 <p>In theory the new protocol creates a bit more traffic on the DHT network, because it waits for DHT records to be received from more than one node, while in the current implementation we just take the first record that we receive and cancel all in-flight requests to other peers. However, because the redundancy factor will be relatively small and this operation happens rarerly, every 10min, this cost is negligible.</p>
 <h2 id="testing-security-and-privacy-20"><a class="header" href="#testing-security-and-privacy-20">Testing, Security, and Privacy</a></h2>
 <p>This RFC's implementation https://github.com/paritytech/polkadot-sdk/pull/3786 had been tested on various local test networks and versi.</p>
@@ -4858,7 +4878,7 @@ The analysis can be reproduced or changed to other parameters using <a href="htt
 <h3 id="potential-extension"><a class="header" href="#potential-extension">Potential Extension</a></h3>
 <p>In addition to a simple queue, we could add a market component that lets users always unbond from staking at the minimum possible waiting time)(== <code>LOWER_BOUND</code>, e.g., 2 days), by paying a variable fee. To achieve this, it is reasonable to split the total unbonding capacity into two chunks, with the first capacity for the simple queue and the remaining capacity for the fee-based unbonding. By doing so, we allow users to choose whether they want the quickest unbond and paying a dynamic fee or join the simple queue. Setting a capacity restriction for both queues enables us to guarantee a predictable unbonding time in the simple queue, while allowing users with the respective willingness to pay to get out even earlier. The fees are dynamically adjusted and are proportional to the unbonding stake (and thereby expressed in a percentage of the requested unbonding stake). In contrast to a unified queue, this prevents the issue that users paying a fee jump in front of other users not paying a fee, pushing their unbonding time back (which would be bad for UX). The revenue generated could be burned.</p>
 <p>This extension and further specifications are left out of this RFC, because it adds further complexity and the empirical analysis above suggests that average unbonding times will already be close the <code>LOWER_BOUND</code>, making a more complex design unnecessary. We advise to first implement the discussed mechanism and assess after some experience whether an extension is desirable.</p>
-<h2 id="drawbacks-20"><a class="header" href="#drawbacks-20">Drawbacks</a></h2>
+<h2 id="drawbacks-19"><a class="header" href="#drawbacks-19">Drawbacks</a></h2>
 <ul>
 <li><strong>Lower security for LRAs:</strong> Without a doubt, the theoretical security against LRAs decreases. But, as we argue, the attack is still costly enough to deter attacks and the attack is sufficiently theoretical. Here, the benefits outweigh the costs.</li>
 <li><strong>Griefing attacks:</strong> A large holder could pretend to unbond a large amount of their tokens to prevent other users to exit the network earlier. This would, however be costly due to the fact that the holder loses out on staking rewards. The larger the impact on the queue, the higher the costs. In any case it must be noted that the <code>UPPER_BOUND</code> is still 28 days, which means that nominators are never left with a longer unbonding period than currently. There is not enough gain for the attacker to endure this cost.</li>
@@ -4940,7 +4960,7 @@ as extrinsic format <code>6</code>, but <code>5</code> is not yet deployed anywh
 </ul>
 <p>The <code>Version</code> being a SCALE encoded <code>u8</code> representing the version of the transaction extensions.</p>
 <p>In the chain runtime the version can be used to determine which set of transaction extensions should be used to decode and to validate the transaction.</p>
-<h2 id="drawbacks-21"><a class="header" href="#drawbacks-21">Drawbacks</a></h2>
+<h2 id="drawbacks-20"><a class="header" href="#drawbacks-20">Drawbacks</a></h2>
 <p>This adds one byte more to each signed transaction. </p>
 <h2 id="testing-security-and-privacy-22"><a class="header" href="#testing-security-and-privacy-22">Testing, Security, and Privacy</a></h2>
 <p>There is no impact on testing, security or privacy.</p>
@@ -5219,7 +5239,7 @@ by executing a <em>single</em> XCM message, even though we'll be mixing multiple
     ).unwrap();
 })
 <span class="boring">}</span></code></pre></pre>
-<h2 id="drawbacks-22"><a class="header" href="#drawbacks-22">Drawbacks</a></h2>
+<h2 id="drawbacks-21"><a class="header" href="#drawbacks-21">Drawbacks</a></h2>
 <p>No drawbacks identified.</p>
 <h2 id="testing-security-and-privacy-23"><a class="header" href="#testing-security-and-privacy-23">Testing, Security, and Privacy</a></h2>
 <p>There should be no security risks related to the new instruction from the XCVM perspective. It follows the same
@@ -5314,7 +5334,7 @@ instruction is hard to use.</p>
 + Transact { origin_kind: OriginKind, call: DoubleEncoded&lt;Call&gt; },
 </code></pre>
 <p>The XCVM implementation shall no longer use <code>require_weight_at_most</code> for weighing. Instead, it shall weigh the Transact instruction by decoding and weighing the inner <code>call</code>.</p>
-<h2 id="drawbacks-23"><a class="header" href="#drawbacks-23">Drawbacks</a></h2>
+<h2 id="drawbacks-22"><a class="header" href="#drawbacks-22">Drawbacks</a></h2>
 <p>No drawbacks, existing scenarios work as before, while this also allows new/easier flows.</p>
 <h2 id="testing-security-and-privacy-24"><a class="header" href="#testing-security-and-privacy-24">Testing, Security, and Privacy</a></h2>
 <p>Currently, an XCVM implementation can weigh a message just by looking at the decoded instructions without decoding the Transact's call, but assuming <code>require_weight_at_most</code> weight for it. With the new version it has to decode the inner call to know its actual weight.</p>
@@ -5552,7 +5572,7 @@ A candidate must not be backed if any of the following are true:</p>
 as backers did off-chain. It currently stores the claim queue at the newest allowed
 relay parent corresponding to the claim queue offset <code>0</code>. The runtime needs to be changed to store
 a claim queue snapshot at all allowed relay parents.</p>
-<h2 id="drawbacks-24"><a class="header" href="#drawbacks-24">Drawbacks</a></h2>
+<h2 id="drawbacks-23"><a class="header" href="#drawbacks-23">Drawbacks</a></h2>
 <p>The only drawback is that further additions to the descriptor are limited to the amount of
 remaining unused space.</p>
 <h2 id="testing-security-and-privacy-25"><a class="header" href="#testing-security-and-privacy-25">Testing, Security, and Privacy</a></h2>
@@ -5700,7 +5720,7 @@ BuyExecution { asset, weight_limit }
 PayFees { asset }
 // ...rest
 <span class="boring">}</span></code></pre></pre>
-<h2 id="drawbacks-25"><a class="header" href="#drawbacks-25">Drawbacks</a></h2>
+<h2 id="drawbacks-24"><a class="header" href="#drawbacks-24">Drawbacks</a></h2>
 <p>There needs to be an explicit change from <code>BuyExecution</code> to <code>PayFees</code>, most often accompanied by a reduction in the assets passed in.</p>
 <h2 id="testing-security-and-privacy-26"><a class="header" href="#testing-security-and-privacy-26">Testing, Security, and Privacy</a></h2>
 <p>It might become a security concern if leftover fees are trapped, since a lot of them are expected.</p>
@@ -5796,7 +5816,7 @@ enum Hint {
 
 type NumVariants = /* Number of variants of the `Hint` enum */;
 <span class="boring">}</span></code></pre></pre>
-<h2 id="drawbacks-26"><a class="header" href="#drawbacks-26">Drawbacks</a></h2>
+<h2 id="drawbacks-25"><a class="header" href="#drawbacks-25">Drawbacks</a></h2>
 <p>The <code>SetHints</code> instruction might be hard to benchmark, since we should look into the actual hints being set to know how much weight to attribute to it.</p>
 <h2 id="testing-security-and-privacy-27"><a class="header" href="#testing-security-and-privacy-27">Testing, Security, and Privacy</a></h2>
 <p><code>Hint</code>s are specified on a per-message basis, so they have to be specified at the beginning of a message.
@@ -5863,7 +5883,7 @@ using <code>NetworkId::ByGenesis</code>.</p>
 </ul>
 <h2 id="explanation-31"><a class="header" href="#explanation-31">Explanation</a></h2>
 <p>Remove <code>Westend</code> and <code>Rococo</code> from the included <code>NetworkId</code>s in the language.</p>
-<h2 id="drawbacks-27"><a class="header" href="#drawbacks-27">Drawbacks</a></h2>
+<h2 id="drawbacks-26"><a class="header" href="#drawbacks-26">Drawbacks</a></h2>
 <p>This RFC will make it less convenient to specify a testnet, but not by a large amount.</p>
 <h2 id="testing-security-and-privacy-28"><a class="header" href="#testing-security-and-privacy-28">Testing, Security, and Privacy</a></h2>
 <p>None.</p>
@@ -5981,7 +6001,7 @@ involved chains.</p>
 <li>user on ParaA on Polkdaot calls function on Ethereum, pays with ETH,</li>
 </ul>
 <img src="https://raw.githubusercontent.com/acatangiu/RFCs/alias-origin-on-asset-transfers/text/0122-transact-over-bridge.png" alt="Transact Over Bridge">
-<h2 id="drawbacks-28"><a class="header" href="#drawbacks-28">Drawbacks</a></h2>
+<h2 id="drawbacks-27"><a class="header" href="#drawbacks-27">Drawbacks</a></h2>
 <p>In terms of ergonomics and user experience, this support for combining an asset transfer with a subsequent action (like Transact) is a net positive.</p>
 <p>In terms of performance, and privacy, this is neutral with no changes.</p>
 <p>In terms of security, the feature by itself is also neutral because it allows <code>preserve_origin: false</code> usage for operating with no extra trust assumptions. When wanting to support preserving origin, chains need to configure secure origin aliasing filters. The one suggested in this RFC should be the right choice for the majority of chains, but each chain will ultimately choose depending on their business model and logic (e.g. chain does not plan to integrate with Asset Hub). It is up to the individual chains to configure accordingly.</p>
@@ -6055,7 +6075,7 @@ Following the same logic, the existing <code>DepositReserveAsset</code>, <code>I
 <p>The runtime code is stored under the special key <code>:code</code> in the state. Nodes and other tooling read the runtime code under this storage key when they want to interact with the runtime for e.g., building/importing blocks or getting the metadata to read the state. To update the runtime code the runtime overwrites the value at <code>:code</code>, and then from the next block on, the new runtime will be loaded. 
 This RFC proposes to first store the new runtime code under <code>:pending_code</code> in the state for one block. When the next block is being built, the block builder first needs to check if <code>:pending_code</code> is set, and if so, it needs to load the runtime from this storage key. While building the block the runtime will move <code>:pending_code</code> to <code>:code</code> to have the runtime code at the default location. Nodes importing the block will also need to load <code>:pending_code</code>  if it exists to ensure that the correct runtime code is used. By doing it this way, the runtime code found at <code>:code</code> in the state of a block will always be able to decode the state. 
 Furthermore, this RFC proposes to introduce <code>system_version: 3</code>. The <code>system_version</code> was introduced in <a href="https://polkadot-fellows.github.io/RFCs/approved/0042-extrinsics-state-version.html"><code>RFC42</code></a>. Version <code>3</code> would then enable the usage of <code>:pending_code</code> when applying a runtime code upgrade. This way, the feature can be introduced first and enabled later when the majority of the nodes have upgraded.</p>
-<h2 id="drawbacks-29"><a class="header" href="#drawbacks-29">Drawbacks</a></h2>
+<h2 id="drawbacks-28"><a class="header" href="#drawbacks-28">Drawbacks</a></h2>
 <p>Because the first block built with the new runtime code will move the runtime code from <code>:pending_code</code> to <code>:code</code>, the runtime code will need to be loaded. This means the runtime code will appear in the proof of validity of a parachain for the first block built with the new runtime code. Generally this  is not a problem as the runtime code is also loaded by the parachain when setting the new runtime code.
 There is still the possibility of having state that is not migrated even when following the proposal as presented by this RFC. The issue is that if the amount of data to be migrated is too big, not all of it can be migrated in one block, because either it takes more time than there is assigned for a block or parachains for example have a fixed budget for their proof of validity. To solve this issue there already exist multi-block migrations that can chunk the migration across multiple blocks. Consensus-critical data needs to be migrated in the first block to ensure that block production etc., can continue. For the other data being migrated by multi-block migrations the migrations could for example expose to the outside which keys are being migrated and should not be indexed until the migration is finished.</p>
 <h2 id="testing-security-and-privacy-30"><a class="header" href="#testing-security-and-privacy-30">Testing, Security, and Privacy</a></h2>
@@ -6280,7 +6300,7 @@ The request can only be executed or rejected in its entirety. It must not be exe
 This RFC proposes to use the <code>Undefined</code> variant of a collection identified by an <code>AssetId</code> as a synonym of the collection itself. I.e., an asset <code>Asset { id: &lt;AssetId&gt;, fun: NonFungible(AssetInstance::Undefined) }</code> is considered an NFT representing the collection itself.</p>
 <p>As a singleton non-fungible instance is barely distinguishable from its collection, this convention shouldn't cause any problems. </p>
 <p>Thus, the <code>AssetInstance</code> docs must be updated accordingly in the implementations.</p>
-<h2 id="drawbacks-30"><a class="header" href="#drawbacks-30">Drawbacks</a></h2>
+<h2 id="drawbacks-29"><a class="header" href="#drawbacks-29">Drawbacks</a></h2>
 <p>Regarding ergonomics, no drawbacks were noticed.</p>
 <p>As for the user experience, it could discover new cross-chain use cases involving asset collections and NFTs, indicating a positive impact.</p>
 <p>There are no security concerns except for the <code>ReportMetadata</code> instruction, which implies that the source of the information must be trusted.</p>
@@ -6650,7 +6670,7 @@ enum PvqError {
 <li><code>ExceedsMaxMessageSize</code></li>
 <li><code>Transport</code></li>
 </ul>
-<h2 id="drawbacks-31"><a class="header" href="#drawbacks-31">Drawbacks</a></h2>
+<h2 id="drawbacks-30"><a class="header" href="#drawbacks-30">Drawbacks</a></h2>
 <h3 id="performance-issues"><a class="header" href="#performance-issues">Performance issues</a></h3>
 <ul>
 <li>PVQ Program Size: The size of a complicated PVQ program may be too large to be suitable for efficient storage and transmission via XCMP/HRMP.</li>
@@ -7193,7 +7213,7 @@ The following other host functions are similarly also considered deprecated:</p>
 <li><code>ext_allocator_free_version_1</code></li>
 <li><code>ext_offchain_network_state_version_1</code></li>
 </ul>
-<h2 id="drawbacks-32"><a class="header" href="#drawbacks-32">Drawbacks</a></h2>
+<h2 id="drawbacks-31"><a class="header" href="#drawbacks-31">Drawbacks</a></h2>
 <p>This RFC might be difficult to implement in Substrate due to the internal code design. It is not clear to the author of this RFC how difficult it would be.</p>
 <h2 id="prior-art"><a class="header" href="#prior-art">Prior Art</a></h2>
 <p>The API of these new functions was heavily inspired by API used by the C programming language.</p>
@@ -7376,7 +7396,7 @@ SCALE_DOWN = 1
 SCALE_UP = 1
 OLD_PRICE = 1000
 </code></pre>
-<h2 id="drawbacks-33"><a class="header" href="#drawbacks-33">Drawbacks</a></h2>
+<h2 id="drawbacks-32"><a class="header" href="#drawbacks-32">Drawbacks</a></h2>
 <p>None at present.</p>
 <h2 id="prior-art-and-references-35"><a class="header" href="#prior-art-and-references-35">Prior Art and References</a></h2>
 <p>This pricing model is based on the requirements from the basic linear solution proposed in RFC-1, which is a simple dynamic pricing model and only used as proof. The present model adds additional considerations to make the model more adaptable under real conditions. </p>
@@ -7482,7 +7502,7 @@ OLD_PRICE = 1000
 <h4 id="describefamily"><a class="header" href="#describefamily">DescribeFamily</a></h4>
 <p>The <code>DescribeFamily</code> location descriptor is part of the <code>HashedDescription</code> MultiLocation hashing system and exists to describe locations in an easy format for encoding and hashing, so that an AccountId can be derived from this MultiLocation.</p>
 <p>This implementation contains a match statement that does not match against absolute locations, so changes to it involve matching against absolute locations and providing appropriate descriptions for hashing.</p>
-<h2 id="drawbacks-34"><a class="header" href="#drawbacks-34">Drawbacks</a></h2>
+<h2 id="drawbacks-33"><a class="header" href="#drawbacks-33">Drawbacks</a></h2>
 <p>No drawbacks have been identified with this proposal.</p>
 <h2 id="testing-security-and-privacy-33"><a class="header" href="#testing-security-and-privacy-33">Testing, Security, and Privacy</a></h2>
 <p>Tests can be done using simple unit tests, as this is not a change to XCM itself but rather to types defined in <code>xcm-builder</code>.</p>
@@ -7570,7 +7590,7 @@ OLD_PRICE = 1000
 <p><strong>Allow a Delegator to delegate/ undelegate their votes for all tracks with a single call</strong> - in order to delegate votes across all tracks, a user must batch 15 calls - resulting in high costs for delegation. A single call for <code>delegate_all</code>/ <code>undelegate_all</code> would reduce the complexity and therefore costs of delegations considerably for prospective Delegators.</p>
 </li>
 </ol>
-<h2 id="drawbacks-35"><a class="header" href="#drawbacks-35">Drawbacks</a></h2>
+<h2 id="drawbacks-34"><a class="header" href="#drawbacks-34">Drawbacks</a></h2>
 <p>We do not foresee any drawbacks by implementing these changes. If anything we believe that this should help to increase overall voter turnout (via the means of delegation) which we see as a net positive.</p>
 <h2 id="testing-security-and-privacy-34"><a class="header" href="#testing-security-and-privacy-34">Testing, Security, and Privacy</a></h2>
 <p>We feel that the Polkadot Technical Fellowship would be the most competent collective to identify the testing requirements for the ideas presented in this RFC.</p>
@@ -7753,7 +7773,7 @@ pub(super) type CheckedCodeHash&lt;T: Config&gt; =
 	StorageMap&lt;_, Twox64Concat, ParaId, ValidationCodeHash&gt;;
 <span class="boring">}</span></code></pre></pre>
 <p>To enable parachain re-registration, we should introduce a new extrinsic in the <code>paras-registrar</code> pallet that allows this. The logic of this extrinsic will be same as regular registration, with the distinction that it can be called by anyone, and the required deposit will be smaller since it only has to cover for the storage of the validation code.</p>
-<h2 id="drawbacks-36"><a class="header" href="#drawbacks-36">Drawbacks</a></h2>
+<h2 id="drawbacks-35"><a class="header" href="#drawbacks-35">Drawbacks</a></h2>
 <p>This RFC does not alter the process of reserving a <code>ParaId</code>, and therefore, it does not propose reducing it, even though such a reduction could be beneficial.</p>
 <p>Even though this RFC doesn't delve into the specifics of the configuration values for parachain registration but rather focuses on the mechanism, configuring it carelessly could lead to potential problems.</p>
 <p>Since the validation code hash and head data are not removed when the parachain is pruned but only when the <code>deregister</code> extrinsic is called, the <code>T::DataDepositPerByte</code> must be set to a higher value to create a strong enough incentive for removing it from the state.</p>
@@ -7842,7 +7862,7 @@ This RFC offers an alternative solution for on-demand parachains, ensuring that 
 </li>
 </ul>
 <p>Each parachain can choose the option that they prefer, but the author of this RFC strongly suggests either option C or B.</p>
-<h2 id="drawbacks-37"><a class="header" href="#drawbacks-37">Drawbacks</a></h2>
+<h2 id="drawbacks-36"><a class="header" href="#drawbacks-36">Drawbacks</a></h2>
 <p>In case of path A, there is one situation where the behaviour pre-RFC is not equivalent to the one post-RFC: when a host function that performs an allocation (for example <code>ext_storage_get</code>) is called, without this RFC this allocation might fail due to reaching the maximum heap pages, while after this RFC this will always succeed.
 This is most likely not a problem, as storage values aren't supposed to be larger than a few megabytes at the very maximum.</p>
 <p>In the unfortunate event where the runtime runs out of memory, path B would make it more difficult to relax the memory limit, as we would need to re-upload the entire Wasm, compared to updating only <code>:heappages</code> in path A or before this RFC.
@@ -7975,7 +7995,7 @@ to implement them. Here's what would be needed:</p>
 <li>a UI to allow layman users to propose referenda on this track</li>
 </ul>
 <p>After everything is complete, we can update the Kusama wiki to include documentation on the X post specifications and include links to the tools/UI.</p>
-<h2 id="drawbacks-38"><a class="header" href="#drawbacks-38">Drawbacks</a></h2>
+<h2 id="drawbacks-37"><a class="header" href="#drawbacks-37">Drawbacks</a></h2>
 <p>The main drawback to this change is that it requires a lot of off-chain coordination. It's easy enough to include the track on Kusama but it's a totally different
 challenge to make it function as intended. The tools need to be built and the auth tokens need to be managed. It would certainly add an administrative burden to whoever
 manages the X account since they would either need to run the tools themselves or manage auth tokens.</p>
@@ -8075,7 +8095,7 @@ out of Kusama's scope. But it will require some off-chain effort to maintain.</p
 <li><strong>Approval &amp; Support curves</strong>: As per the root track, timed to match the decision period</li>
 <li><strong>Maximum deciding</strong>: 10</li>
 </ul>
-<h2 id="drawbacks-39"><a class="header" href="#drawbacks-39">Drawbacks</a></h2>
+<h2 id="drawbacks-38"><a class="header" href="#drawbacks-38">Drawbacks</a></h2>
 <p>This track would provide a route to starting a root referendum with a much-reduced slashable deposit. This might be undesirable but, assuming the decision deposit cost for this track is still high enough, slashing would still act as a disincentive.</p>
 <p>An alternative to this might be to reduce the decision deposit size some of the more expensive tracks. However, part of the purpose of the high deposit - at least on the root track - is to prevent spamming the limited queue with junk referenda.</p>
 <h2 id="testing-security-and-privacy-38"><a class="header" href="#testing-security-and-privacy-38">Testing, Security, and Privacy</a></h2>
@@ -8604,7 +8624,7 @@ pub type PendingProposals&lt;T: Config&gt; = StorageDoubleMap&lt;
 <li>In case threshold is lower than the number of approvers then the proposal is still valid.</li>
 <li>In case threshold is higher than the number of approvers then we catch it during execute proposal and error.</li>
 </ul>
-<h2 id="drawbacks-40"><a class="header" href="#drawbacks-40">Drawbacks</a></h2>
+<h2 id="drawbacks-39"><a class="header" href="#drawbacks-39">Drawbacks</a></h2>
 <ul>
 <li>New pallet to maintain.</li>
 </ul>
@@ -8765,7 +8785,7 @@ Implement call filters. This will allow multisig accounts to only accept certain
 <pre><code>createType(Call):: Call: failed decoding identity.setIdentity:: Struct: failed on args: {...}:: Struct: failed on pgpFingerprint: Option&lt;[u8;20]&gt;:: Expected input with 20 bytes (160 bits), found 40 bytes
 </code></pre>
 <p>Increasing maximum length of identity PGP Fingerprint values from the current 20 bytes/chars limit to at least a 40 bytes/chars limit would overcome these errors and support PGP Fingerprints and GPG Fingerprints, satisfying the solution requirements.</p>
-<h2 id="drawbacks-41"><a class="header" href="#drawbacks-41">Drawbacks</a></h2>
+<h2 id="drawbacks-40"><a class="header" href="#drawbacks-40">Drawbacks</a></h2>
 <p>No drawbacks have been identified.</p>
 <h2 id="testing-security-and-privacy-40"><a class="header" href="#testing-security-and-privacy-40">Testing, Security, and Privacy</a></h2>
 <p>Implementations would be tested for adherance by checking that 40 bytes/chars PGP Fingerprints are supported.</p>
@@ -8870,7 +8890,7 @@ Implement call filters. This will allow multisig accounts to only accept certain
 <li>Any prospective Kusama Coretime purchaser, developer, and user.</li>
 <li>KSM holders.</li>
 </ul>
-<h2 id="drawbacks-42"><a class="header" href="#drawbacks-42">Drawbacks</a></h2>
+<h2 id="drawbacks-41"><a class="header" href="#drawbacks-41">Drawbacks</a></h2>
 <h3 id="performance-38"><a class="header" href="#performance-38">Performance</a></h3>
 <p>The slashable deposit if set too high, may result in an economic impact, where less Kusama Coretime core sales are purchased.</p>
 <h2 id="testing-security-and-privacy-41"><a class="header" href="#testing-security-and-privacy-41">Testing, Security, and Privacy</a></h2>
@@ -8985,7 +9005,7 @@ Implement call filters. This will allow multisig accounts to only accept certain
 </ul>
 </li>
 </ol>
-<h2 id="drawbacks-43"><a class="header" href="#drawbacks-43">Drawbacks</a></h2>
+<h2 id="drawbacks-42"><a class="header" href="#drawbacks-42">Drawbacks</a></h2>
 <p>The main drawback of adding the additional complexity directly to the broker pallet is the potential increase in maintenance overhead. Therefore, we propose adding additional functionality as a separate pallet on the Coretime chain. To take the pressure off from implementing these features, implementation along with unit tests would be taken care of by Lastic (Aurora Makovac, Philip Lucsok).</p>
 <p>There are potential risks of security vulnerabilities in the new market functionalities, such as unauthorized region transfers or incorrect balance adjustments. Therefore, extensive security measures would have to be implemented.</p>
 <h2 id="testing-security-and-privacy-42"><a class="header" href="#testing-security-and-privacy-42">Testing, Security, and Privacy</a></h2>
@@ -9116,7 +9136,7 @@ Implement call filters. This will allow multisig accounts to only accept certain
 </ul>
 </li>
 </ol>
-<h2 id="drawbacks-44"><a class="header" href="#drawbacks-44">Drawbacks</a></h2>
+<h2 id="drawbacks-43"><a class="header" href="#drawbacks-43">Drawbacks</a></h2>
 <p>There are several drawbacks to consider:</p>
 <ul>
 <li><strong>Complexity</strong>: Adding smart contracts introduces significant complexity to the Coretime chain, which may increase maintenance overhead and the potential for bugs.</li>
@@ -9378,7 +9398,7 @@ fetching.</li>
 parachain and only prune the previous one, once the first candidate using the
 new code got finalized. This ensures that disputes will always be able to
 resolve.</p>
-<h2 id="drawbacks-45"><a class="header" href="#drawbacks-45">Drawbacks</a></h2>
+<h2 id="drawbacks-44"><a class="header" href="#drawbacks-44">Drawbacks</a></h2>
 <p>The major drawback of this solution is the same as any solution the moves work
 off-chain, it adds complexity to the node. E.g. nodes needing the PVF, need to
 store them separately, together with their own pruning strategy as well.</p>
@@ -9566,7 +9586,7 @@ That way there is also less surface for bugs.</p>
 <h2 id="explanation-50"><a class="header" href="#explanation-50">Explanation</a></h2>
 <p>The <code>SetFeesMode</code> instruction will be removed.
 The <code>Fees Mode</code> register will be removed.</p>
-<h2 id="drawbacks-46"><a class="header" href="#drawbacks-46">Drawbacks</a></h2>
+<h2 id="drawbacks-45"><a class="header" href="#drawbacks-45">Drawbacks</a></h2>
 <p>Users will have to make sure to put enough assets in <code>WithdrawAsset</code> when
 previously some things might have been charged directly from their accounts.
 This leads to a more predictable behaviour though so it will only be
@@ -9693,7 +9713,7 @@ mod pallet_proxy_replica {
 }
 
 <span class="boring">}</span></code></pre></pre>
-<h2 id="drawbacks-47"><a class="header" href="#drawbacks-47">Drawbacks</a></h2>
+<h2 id="drawbacks-46"><a class="header" href="#drawbacks-46">Drawbacks</a></h2>
 <p>There are two disadvantages to this approach:</p>
 <ul>
 <li>The receiving chain has to trust the sending chain's claim that the account controlling the pure account has commanded the replication.</li>
@@ -9772,7 +9792,7 @@ meaning any network disruption forces the node to re-download the entire state, 
 storage sequentially starting from an empty storage key, which means many entries in the message share the same storage prefix, making it ideal
 for compression.</li>
 </ul>
-<h2 id="drawbacks-48"><a class="header" href="#drawbacks-48">Drawbacks</a></h2>
+<h2 id="drawbacks-47"><a class="header" href="#drawbacks-47">Drawbacks</a></h2>
 <p>None identified.</p>
 <h2 id="testing-security-and-privacy-47"><a class="header" href="#testing-security-and-privacy-47">Testing, Security, and Privacy</a></h2>
 <p>The <a href="https://github.com/liuchengxu/polkadot-sdk/commit/2556fefacd2e817111d838af5f46d3dfa495852d">code changes</a> required for this RFC are straightforward: compress the state response on the sender side and decompress it on the receiver side. Existing sync tests should ensure functionality remains intact.</p>
@@ -9850,7 +9870,7 @@ Most of the modern devices and applications rely on the “secp256r1” elliptic
 ) -&gt; bool;
 <span class="boring">}</span></code></pre></pre>
 <p>The host function MUST return <code>true</code> if the signature is valid or <code>false</code> otherwise.</p>
-<h2 id="drawbacks-49"><a class="header" href="#drawbacks-49">Drawbacks</a></h2>
+<h2 id="drawbacks-48"><a class="header" href="#drawbacks-48">Drawbacks</a></h2>
 <p>N/A</p>
 <h2 id="testing-security-and-privacy-48"><a class="header" href="#testing-security-and-privacy-48">Testing, Security, and Privacy</a></h2>
 <h3 id="security-2"><a class="header" href="#security-2">Security</a></h3>
@@ -9997,7 +10017,7 @@ of the new PVF being set). Therefore, they must have the technical capacity to p
 <li>Being a CTO or Technical Lead in a para team that has opted-in to delegate the Unbrick Collective
 to manage the PVF/head state of the para.</li>
 </ul>
-<h2 id="drawbacks-50"><a class="header" href="#drawbacks-50">Drawbacks</a></h2>
+<h2 id="drawbacks-49"><a class="header" href="#drawbacks-49">Drawbacks</a></h2>
 <p>The ability to modify the Head State and/or the PVF of a para means a possibility to perform
 arbitrary modifications of it (i.e. take control the native parachain token or any bridged assets
 in the para).</p>
@@ -10185,7 +10205,7 @@ candle was <em>&quot;lit-off&quot;</em>.</p>
     cf --&gt; [*]
     rj --&gt; [*]
 </code></pre>
-<h2 id="drawbacks-51"><a class="header" href="#drawbacks-51">Drawbacks</a></h2>
+<h2 id="drawbacks-50"><a class="header" href="#drawbacks-50">Drawbacks</a></h2>
 <p>This approach doesn't include a mechanism to determine whether a change of the poll status in the
 confirming period is due to a legitimate change of mind of the voters, or an exploitation of its
 aforementioned vulnerabilities (like a sniping attack), instead treating all of them as potential
@@ -10284,7 +10304,7 @@ rather enhances them by increasing adaptability.</p>
 to alter track configurations based on storage data rather than static definitions. This opens up
 possibilities for new track types and governance configurations to be deployed without the need for
 upgrades that might take up weeks.</p>
-<h2 id="drawbacks-52"><a class="header" href="#drawbacks-52">Drawbacks</a></h2>
+<h2 id="drawbacks-51"><a class="header" href="#drawbacks-51">Drawbacks</a></h2>
 <p>The most significant drawback is the increased complexity for developers managing track configurations
 via storage-based iterators, which require careful handling to avoid misuse or inefficiencies.</p>
 <p>Additionally, this flexibility could introduce risks if track configurations are modified improperly
@@ -10462,7 +10482,7 @@ consumers downstream in the transition period between these extrinsic versions, 
 <li>Add the <code>General</code> variant starting with v5 extrinsics</li>
 <li>Enable runtimes to support both v4 and v5 extrinsics</li>
 </ul>
-<h2 id="drawbacks-53"><a class="header" href="#drawbacks-53">Drawbacks</a></h2>
+<h2 id="drawbacks-52"><a class="header" href="#drawbacks-52">Drawbacks</a></h2>
 <p>The metadata will have to accommodate two distinct extrinsic format versions at a given point in
 time in order to provide the new functionality in a non-breaking way for users and tooling.</p>
 <p>Although having to support multiple extrinsic versions in metadata involves extra work, the change
@@ -10561,7 +10581,7 @@ work.</p>
 <li>Conservatively, wait until no more PVFs prefixed with <code>CBLOB_ZSTD_LEGACY</code> remain on-chain. That may take quite some time. Alternatively, create a migration that alters prefixes of existing blobs;</li>
 <li>Removing <code>CBLOB_ZSTD_LEGACY</code> prefix will be possible after all the nodes in all the networks cease using the prefix which is a long process, and additional incentives should be offered to the community to make people upgrade.</li>
 </ol>
-<h2 id="drawbacks-54"><a class="header" href="#drawbacks-54">Drawbacks</a></h2>
+<h2 id="drawbacks-53"><a class="header" href="#drawbacks-53">Drawbacks</a></h2>
 <p>Currently, the only requirement for a compressed blob prefix is not to coincide with Wasm magic bytes (as stated in code comments). Changes proposed here increase prefix collision risk, given that arbitrary data may be compressed in the future. However, it must be taken into account that:</p>
 <ul>
 <li>Collision probability per arbitrary blob is ≈5,4×10⁻²⁰ for a single random 64-bit prefix (current situation) and ≈2,17×10⁻¹⁹ for the proposed set of four 64-bit prefixes (proposed situation), which is still low enough;</li>
@@ -10723,7 +10743,7 @@ collators is lower than the minimum number allowed by the pallet configuration, 
 <li>In case no collator registers or qualifies for the first round of the election, the incumbent is
 automatically granted the win and gets to keep the invulnerable slot.</li>
 </ul>
-<h2 id="drawbacks-55"><a class="header" href="#drawbacks-55">Drawbacks</a></h2>
+<h2 id="drawbacks-54"><a class="header" href="#drawbacks-54">Drawbacks</a></h2>
 <p>The first major drawback of this proposal is that it would put more responsibility on governance by
 having people vote regularly in order to maintain the invulnerable collator set on each chain. Today
 the <code>collator-selection</code> pallet employs a fire-and-forget system where the invulnerables are chosen
@@ -10856,7 +10876,7 @@ of this RFC.</p>
 </li>
 </ul>
 <p>This RFC proposes to change the <code>confirm_period</code> for the Big Tipper track to <code>DAYS</code> (i.e. 1 Day) and the <code>confirm_period</code> for the Small Tipper track to <code>12 * HOURS</code> (i.e. 12 Hours).</p>
-<h2 id="drawbacks-56"><a class="header" href="#drawbacks-56">Drawbacks</a></h2>
+<h2 id="drawbacks-55"><a class="header" href="#drawbacks-55">Drawbacks</a></h2>
 <p>The drawback of changing these confirmation periods is that the lifecycle of referenda submitted on those tracks would be ultimately longer, and it would add a greater potential to negatively &quot;snipe&quot; referenda on those tracks by knocking the referendum out of its confirmation period once the decision period has ended. This can be a good or a bad thing depending on your outlook of positive vs negative sniping.</p>
 <h2 id="testing-security-and-privacy-55"><a class="header" href="#testing-security-and-privacy-55">Testing, Security, and Privacy</a></h2>
 <p>This referendum will enhance the security of the protocol as it relates to its treasury. The confirmation period is one of the last lines of defense for the Polkadot token holder DAO to react to a potentially bad referendum and vote NAY in order for its confirmation period to be aborted.</p>
@@ -10930,7 +10950,7 @@ of this RFC.</p>
 </ul>
 <h2 id="explanation-61"><a class="header" href="#explanation-61">Explanation</a></h2>
 <p>Detail-heavy explanation of the RFC, suitable for explanation to an implementer of the changeset. This should address corner cases in detail and provide justification behind decisions, and provide rationale for how the design meets the solution requirements.</p>
-<h2 id="drawbacks-57"><a class="header" href="#drawbacks-57">Drawbacks</a></h2>
+<h2 id="drawbacks-56"><a class="header" href="#drawbacks-56">Drawbacks</a></h2>
 <p>Description of recognized drawbacks to the approach given in the RFC. Non-exhaustively, drawbacks relating to performance, ergonomics, user experience, security, or privacy.</p>
 <h2 id="testing-security-and-privacy-56"><a class="header" href="#testing-security-and-privacy-56">Testing, Security, and Privacy</a></h2>
 <p>Describe the the impact of the proposal on these three high-importance areas - how implementations can be tested for adherence, effects that the proposal has on security and privacy per-se, as well as any possible implementation pitfalls which should be clearly avoided.</p>
