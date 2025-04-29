@@ -22,10 +22,10 @@ In particular, this proposal introduces the following changes:
 - It reverses the order of the market and renewal phase. 
     - This allows to fine-tune the price through market forces.
     - This significantly increases the cost for core captures, because captured cores would become increasingly expensive over time.
-- It exposes the renewal prices, while still being beneficial for longterm tenants, more to market forces. 
+- It exposes the renewal decision, while still guaranteeing longterm tenants to keep their core, more to market forces. 
 - It removes the LeadIn period and introduces a (from the perspective of the coretime systemchain) passive Settlement Phase, that allows the secondary market to exert it's force.
 
-The premise of this proposal is to reduce complexity by introducing a common price (that develops releative to capacity consumption of Polkadot), while still allowing for market forces to add efficiency. Longterm lease owners still receive priority **IF** they can pay (close to) the market price. This prevents a situation where the renewal price significantly diverges from market prices which allows for core captures and general inefficiencies. While maximum price increase certainty might seem contradictory to efficient price discovery, the proposed model aims to balance these elements, utilizing market forces to determine the price and allocate cores effectively within certain bounds. In particular, prices are bounded upward within a `BULK_PERIOD` and can be calculated for future periods. It must be stated, however, that under high demand, prices could exponentially increase. This is necessary to allow for proper price discovery and efficient Coretime pricing and allocation.
+The premise of this proposal is to reduce complexity by introducing a common price (that develops releative to capacity consumption of Polkadot), while still allowing for market forces to add efficiency. Longterm lease owners still receive priority and a guaranteed allocation **IF** they can pay (close to) the market price. This prevents a situation where the renewal price significantly diverges from market prices which allows for core captures and general inefficiencies. While maximum price increase certainty might seem contradictory to efficient price discovery, the proposed model aims to balance these elements, utilizing market forces to determine the price and allocate cores effectively within certain bounds. In particular, prices are bounded upward within a `BULK_PERIOD` and can be calculated for future periods. It must be stated, however, that under high demand, prices could exponentially increase. This is necessary to allow for proper price discovery and efficient Coretime pricing and allocation.
 
 Ultimately, this the framework proposed here adheres to all requirements stated in RFC-1.
 
@@ -33,7 +33,7 @@ Ultimately, this the framework proposed here adheres to all requirements stated 
 
 Primary stakeholder sets are:
 
-- Protocol researchers and developers, largely represented by the Polkadot Fellowship and Parity Technologies' Engineering division.
+- Protocol researchers, developers, and the Polkadot Fellowship.
 - Polkadot Parachain teams both present and future, and their users.
 - Polkadot DOT token holders.
 
@@ -45,7 +45,7 @@ The `BULK_PERIOD` has been restructured into two primary segments: the `MARKET_P
 
 #### Market Period (14 days)
 
-During the market period, core sales are conducted through a well-established **clearing price Dutch auction** that features a `RESERVE_PRICE`. The price initiates at a premium, designated as `PRICE_PREMIUM` (for instance, 200%) and descends linearly to the `RESERVE_PRICE` throughout the duration of the `MARKET_PERIOD`. Each bidder is expected to submit both their desired price and the quantity (that is, the amount of Coretime) they wish to purchase. To secure these acquisitions, bidders must make a deposit equivalent to their bid multiplied by the chosen quantity, in DOT. 
+During the market period, core sales are conducted through a well-established **clearing price Dutch auction** that features a `RESERVE_PRICE`. The price initiates at a premium, designated as `PRICE_PREMIUM` (for instance, 200%) and descends linearly to the `RESERVE_PRICE` throughout the duration of the `MARKET_PERIOD`. Each bidder is expected to submit both their desired price and the quantity (that is, the amount of Coretime) they wish to purchase. To secure these acquisitions, bidders must make a deposit equivalent to their bid multiplied by the chosen quantity, in DOT. Bidders are always allowed to post a bid under the current descending price, but never above it. 
 
 The market achieves resolution once all quantities have been sold, or the `RESERVE_PRICE` has been reached. This situation leads to determining the `CLEARING_PRICE` either by the lowest bid that was successful in clearing the entire market or by the `RESERVE_PRICE`. This mechanism yields a uniform price, shaped by market forces (refer to the following discussion for an explanation of its benefits). In other words, all buyers pay the same price (per unit of Coretime). Further down the benefits of this variant of a Dutch auction is discussed.
 
@@ -53,7 +53,7 @@ The market achieves resolution once all quantities have been sold, or the `RESER
 
 #### Renewal Period (7 days)
 
-As the `RENEWAL_PERIOD` commences, all current tenants are granted the opportunity to renew their cores at the `CLEARING_PRICE` (optionally, we could grant a small discount, balancing out the non-transferability aspect of renewals). In other words, they have 7 days to pay to renew their cores. After obtaining the information who renewed and who did not, the system has the necessary information to conclusively allocate all cores and transfer ownership.
+The renewal period guarantees current tenants the right to renew their core even if they did not win a bid in the market round or did not participate at all. For the `MARKET_PERIOD` to most efficiently discover the price, we want to nudge even existing tenants to participate and place bids in the auction. To nudge them that way, we offer to renew a core at the `CLEARING_PRICE` of the auction with a small `PENALTY` (e.g., 10%). The renewal price would thereby be `CLEARING_PRICE * PENALTY`. In other words, even if they did not participate in the market phase, they have 7 days to pay to renew their cores. After obtaining the information who renewed and who did not, the system has the necessary information to conclusively allocate all cores and transfer ownership.
 
 In the case where there are combined more renewals and bidders at or above the `CLEARING_PRICE` than available cores, we allocate cores to the highest to lowest bidders until all available cores are allocated (albeit still at the `CLEARING_PRICE`). That effectively means that in situations with very high demand, some bidders might not get a core.
 
@@ -70,7 +70,7 @@ After all cores are allocated, the `RESERVE_PRICE` is adjusted similar to the pr
 `TARGET_CONSUMPTION_RATE`: how many of the available cores we want to sell without increasing the price. We propose 90%. This leaves enough area downward and upward to adjust prices more aggressively.
 `K`: sensitivity parameter. How aggressively we want to adjust the price. We propose a value between 2.
 `P_MIN`: A minimum price we never undercut. This is important to bound the price downward and prevent computational issues if prices drop too low.
-`DELTA_MIN`: A minimum increment after we reached 100% capacity. This is important to quickly recover after long periods of low demand which resulted in low prices.
+`MIN_INCREMENT`: A minimum increment after we reached 100% capacity. This is important to quickly recover after long periods of low demand which resulted in low prices.
 
 We update the price according to:
 
@@ -80,7 +80,7 @@ The `RESERVE_PRICE` in the next period will be:
 
 `RESERVE_PRICE_NEXT = max(p_new, P_MIN)`
 
-**Note:** To reduce the recovery time from very low prices it is important to, in the case of 100% capacity, at least increment the `RESERVE_PRICE_NEXT` by `DELTA_MIN`, which could be, e.g., 100 DOT. 
+**Note:** To reduce the recovery time from very low prices it is important to, in the case of 100% capacity, at least increment the `RESERVE_PRICE_NEXT` by `MIN_INCREMENT`, which could be, e.g., 100 DOT.
 
 #### Settlement Period (7 days)
 
