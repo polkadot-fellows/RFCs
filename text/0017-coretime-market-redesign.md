@@ -1,10 +1,10 @@
-# RFC-0017: Market Design Revisit
+# RFC-0017: Coretime Market Redesign
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Original Proposition Date**  | 05.08.2023                                                                                  |
-| **Revision Date**  | 25.04.2025                                                                                  |
-| **Description** | This RFC refines the previously proposed mechanisms involving the various Coretime markets and presents an integrated framework for harmonious interaction between all markets.                                                       |
+| **Revision Date**  | 05.05.2025                                                                                  |
+| **Description** | This RFC redesigns Polkadot's coretime market to ensure that coretime is efficiently priced through a clearing-price Dutch auction. It also introduces a mechanism that guarantees current coretime holders the right to renew their cores outside the market, albeit at a renewal price derived directly from the market outcome. This design aligns renewal and market prices, preserving long-term access for current coretime owners while ensuring that market dynamics exert sufficient pressure on all purchasers, resulting in an efficient allocation.
 | **Authors**     | Jonas Gehrlein                                                                              |
 
 ## Summary
