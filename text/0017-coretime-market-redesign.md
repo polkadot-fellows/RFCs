@@ -45,7 +45,7 @@ The `BULK_PERIOD` has been restructured into two primary segments: the `MARKET_P
 
 #### Market Period (14 days)
 
-During the market period, core sales are conducted through a well-established **clearing price Dutch auction** that features a `RESERVE_PRICE`. The price initiates at a premium, designated as `PRICE_PREMIUM` (for instance, 200%) and descends linearly to the `RESERVE_PRICE` throughout the duration of the `MARKET_PERIOD`. Each bidder is expected to submit both their desired price and the quantity (that is, the amount of Coretime) they wish to purchase. To secure these acquisitions, bidders must make a deposit equivalent to their bid multiplied by the chosen quantity, in DOT. Bidders are always allowed to post a bid under the current descending price, but never above it. 
+During the market period, core sales are conducted through a well-established **clearing price Dutch auction** that features a `RESERVE_PRICE`. The price initiates at a premium, designated as `PRICE_PREMIUM` (for instance, 200% or 300%) and descends linearly to the `RESERVE_PRICE` throughout the duration of the `MARKET_PERIOD`. Each bidder is expected to submit both their desired price and the quantity (that is, the amount of Coretime) they wish to purchase. To secure these acquisitions, bidders must make a deposit equivalent to their bid multiplied by the chosen quantity, in DOT. Bidders are always allowed to post a bid under the current descending price, but never above it. 
 
 The market achieves resolution once all quantities have been sold, or the `RESERVE_PRICE` has been reached. This situation leads to determining the `CLEARING_PRICE` either by the lowest bid that was successful in clearing the entire market or by the `RESERVE_PRICE`. This mechanism yields a uniform price, shaped by market forces (refer to the following discussion for an explanation of its benefits). In other words, all buyers pay the same price (per unit of Coretime). Further down the benefits of this variant of a Dutch auction is discussed.
 
@@ -70,8 +70,8 @@ After all cores are allocated, the `RESERVE_PRICE` is adjusted similar to the pr
 `reserve_price_old`: reserve price from the previous period
 `consumption_rate`: how many cores were sold relative to how many were available.
 `TARGET_CONSUMPTION_RATE`: how many of the available cores we want to sell without increasing the price. We propose 90%. This leaves enough area downward and upward to adjust prices more aggressively.
-`K`: sensitivity parameter. How aggressively we want to adjust the price. We propose a value between 2.
-`P_MIN`: A minimum price we never undercut. This is important to bound the price downward and prevent computational issues if prices drop too low.
+`K`: sensitivity parameter. How aggressively we want to adjust the price. We propose a value between 2 and 3, but might need more evaluation.
+`P_MIN`: A minimum price we never undercut. This is important to bound the price downward and prevent computational issues if prices drop too low. We propose a value of 1 DOT.
 `MIN_INCREMENT`: A minimum increment after we reached 100% capacity. This is important to quickly recover after long periods of low demand which resulted in low prices.
 
 We update the price according to:
