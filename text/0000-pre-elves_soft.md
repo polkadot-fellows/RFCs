@@ -20,9 +20,7 @@ Alistair: TODO?
 
 ## Stakeholders
 
-We modify the availability votes and restrict relay chain blocks, fork choice, and ELVES start conditions, so mostly the parachain
-
-A sassafras RC like JAM has could avoid `preferred_fork` flag, because they have only equivocations not babe forks.
+We modify the availability votes and restrict relay chain blocks, fork choice, and ELVES start conditions, so mostly the parachain.  See alternatives notes on the flag under sassafras chains like JAM.
 
 ## Explanation
 
@@ -76,7 +74,9 @@ Provide specific questions to discuss and address before the RFC is voted on by 
 
 ## Future Directions and Related Material
 
-A sassafras RC like JAM could avoid `preferred_fork` flag, by only releasing availability votes for at most one sassafras equivocation.
+Arguably, a sassafras RC like JAM could avoid `preferred_fork` flag, by only releasing availability votes for at most one sassafras equivocation.  We wanted availability for babe forks, but sassafras has only equivocations, so those block can simply be dropped.
+
+In principle, a sassafras equivocation could still enter the valid chain, assuming 2/3rd of validators provide availability votes for the same equivocations. If JAM lacks the `preferred_fork` flag then enactment proceeds slower in this case, but this should almost never occur.
 
 ### Thresahold randomness
 
