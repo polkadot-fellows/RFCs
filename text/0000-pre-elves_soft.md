@@ -42,11 +42,27 @@ We require relay chain block producers build upon forks preferred by `2 f + 1` v
 
 A relay chain block producer could lack this `2 f + 1` threshold for a prespective parent block `p`, in which case they must build upon the parent of `p` instead.  We know availability votes simply being slow would cause this somtimes, in which case adding slightly more delay could save the relay chain slot Alternatively though, two distinct relay chain blocks in the same slot could each wind up prefered by `f+1` validators, in which case we must abandond the slot entirely.
 
-It's critical that honest validators carefully time when they judge their preferences.  In babe, this adds complexity:  We always prefer a primary slot over a secondary slot, so the validators should delay preferring a secondary slot, giving the primary slot enough time.  We prefer the primary slot with smallest VRF as well, so we need some delay even once we recieve a primary.
-
 ### Elves
 
-We launch the approvals process aka (machine) elves for a relay chain block `p` once `2 f + 1` validators prefer that block, aka `2 f + 1` validators provide availability votes with `relay_parent = p` and `preferred_fork` set.  We could optionally delay this further until we have some valid decendent of `p`.
+We only launch the approvals process aka (machine) elves for a relay chain block `p` once `2 f + 1` validators prefer that block, aka `2 f + 1` validators provide availability votes with `relay_parent = p` and `preferred_fork` set.  We could optionally delay this further until we have some valid decendent of `p`.  
+
+### Fast prunning
+
+In fact, this new fork choice logic creates more short relay chain forks than exist currently:  If the validators split their votes, then we create a new fork in a later slot.  We no longer need to process every fork now though.
+
+Instead, availability votes from honest validators must express the correct preferred fork, which requires validators carefully time when they judge and announce their preference flags.  In babe, we need primary slots to be preferred over secondary slots, so the validators need logic that delays sending availability votes for a secondary slot, giving the primary slot enough time.  We also prefer the primary slot with smallest VRF as well, so we need some delay even once we recieve a primary.
+
+We suggest roughly this approach:
+
+First, download only relay chain block headers, from which we determine our tentative preferred fork.
+
+Second, we download and import only our currently tentatively preferred fork.  We download our availability chunks as soon as we import a currently tentatively preferred relay chain block.  We've no particular target for availability chunks other than simply some delay timer.  In babe, we add some extra delay here for secondary slots, like perhaps 2 seconds minus the actual execution time, so that a fast secondary slot cannot beat a primary slot.
+
+We somtimes obtain an even more preferable header during import, chunk distribution, and delays for our first tentatively preferred fork.  Also, the first could simply turn out invalid.  In either case, we loop to repeat this second step on our new tentative preferred fork.  We repeat this process until an import succeeds and its timers run out, without receiving any more preferable header.  Actual equivocations cannot be preferable over one another, so all this loops terminates reasonably quickly. 
+
+Next, we broadcast our availability vote with its `relay_parent` set to our tentatively preferred fork, and with its `preferred_fork` set.
+
+Finally, if `2 f + 1` other validators have a different preference from us, then we download and import their preferred relay chain block, fetch chunks for it, and provide availability votes with `preferred_fork` zero.  It's possible this occurs earlier than our preference finishes, in which case we probably still send out our preference, if only for forensic evidence. 
 
 ## Concerns: Drawbacks, Testing, Security, and Privacy
 
@@ -56,7 +72,7 @@ We've always known relay chain equivocations break the ELVES threat model.  We o
 
 ## Performance, Ergonomics, and Compatibility
 
-We expect early soft concensus introduce back pressure that radically alters performance.  We no longer run approvals checks upon all forks.  As primary slots occur once every other slot in expectation, one might expect a 30% reduction in CPU load, but this depends upon diverse factors.
+We expect early soft concensus introduce back pressure that radically alters performance.  We no longer run approvals checks upon all forks.  As primary slots occur once every other slot in expectation, one might expect a 25% reduction in CPU load, but this depends upon diverse factors.
 
 We apply back pressure by dropping some whole relay chain blocks though, so this shall increase the expected parachain blocktime somewhat, but how much depens upon future optimisation work.
 
@@ -73,6 +89,8 @@ Major upgrade
 Provide specific questions to discuss and address before the RFC is voted on by the Fellowship. This should include, for example, alternatives to aspects of the proposed design where the appropriate trade-off to make is unclear.
 
 ## Future Directions and Related Material
+
+### Sassafras
 
 Arguably, a sassafras RC like JAM could avoid `preferred_fork` flag, by only releasing availability votes for at most one sassafras equivocation.  We wanted availability for babe forks, but sassafras has only equivocations, so those block can simply be dropped.
 
