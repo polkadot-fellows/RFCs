@@ -227,8 +227,7 @@ detailing proposed changes to the technical implementation of the Polkadot netwo
 <p>We expect this early soft concensus creates back pressure that improves performance under babe forks.</p>
 <p>Alistair: TODO?</p>
 <h2 id="stakeholders"><a class="header" href="#stakeholders">Stakeholders</a></h2>
-<p>We modify the availability votes and restrict relay chain blocks, fork choice, and ELVES start conditions, so mostly the parachain</p>
-<p>A sassafras RC like JAM has could avoid <code>preferred_fork</code> flag, because they have only equivocations not babe forks.</p>
+<p>We modify the availability votes and restrict relay chain blocks, fork choice, and ELVES start conditions, so mostly the parachain.  See alternatives notes on the flag under sassafras chains like JAM.</p>
 <h2 id="explanation"><a class="header" href="#explanation">Explanation</a></h2>
 <h3 id="availability-voting"><a class="header" href="#availability-voting">Availability voting</a></h3>
 <p>At present, availability votes have a bitfield representing the cores, a <code>relay_parent</code>, and a signature.  We process these on-chain in several steps:  We first validate the signatures, zero any bits for cores included/enacted between the <code>relay_parent</code> and our predecessor, sum the set bits for each core, and finally include/enact the core if this exceeds 2/3rds of the validators.</p>
@@ -255,7 +254,8 @@ detailing proposed changes to the technical implementation of the Polkadot netwo
 <h2 id="unresolved-questions"><a class="header" href="#unresolved-questions">Unresolved Questions</a></h2>
 <p>Provide specific questions to discuss and address before the RFC is voted on by the Fellowship. This should include, for example, alternatives to aspects of the proposed design where the appropriate trade-off to make is unclear.</p>
 <h2 id="future-directions-and-related-material"><a class="header" href="#future-directions-and-related-material">Future Directions and Related Material</a></h2>
-<p>A sassafras RC like JAM could avoid <code>preferred_fork</code> flag, by only releasing availability votes for at most one sassafras equivocation.</p>
+<p>Arguably, a sassafras RC like JAM could avoid <code>preferred_fork</code> flag, by only releasing availability votes for at most one sassafras equivocation.  We wanted availability for babe forks, but sassafras has only equivocations, so those block can simply be dropped.</p>
+<p>In principle, a sassafras equivocation could still enter the valid chain, assuming 2/3rd of validators provide availability votes for the same equivocations. If JAM lacks the <code>preferred_fork</code> flag then enactment proceeds slower in this case, but this should almost never occur.</p>
 <h3 id="thresahold-randomness"><a class="header" href="#thresahold-randomness">Thresahold randomness</a></h3>
 <p>We think threshold randomness could reduce the tranche zero approcha checker assigments by roughly 40%, meaning a fixed 15 vs the expected 25 in the elves paper (30 in production now).</p>
 <p>We do know threshold VRF based schemes that address relay chain equivocations directly, by using as input the relay chain block hash.  We have many more options with early soft concensus though.  TODO  In particular, we only know two post-quantum approaches to elves, and the bandwidth efficent one needs early soft concensus.</p>
