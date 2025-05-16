@@ -1,4 +1,4 @@
-# RFC-0144: Remove the host-side runtime memory allocator
+# RFC-0145: Remove the host-side runtime memory allocator
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
