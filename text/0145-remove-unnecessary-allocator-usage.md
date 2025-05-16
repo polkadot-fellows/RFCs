@@ -327,7 +327,7 @@ The changes in this RFC would need to be benchmarked. That involves implementing
 
 It is expected that most host functions are faster or equal in speed to their deprecated counterparts, with the following exceptions:
 
-- `ext_input_size_version_1`/`ext_input_read_version_1` is inherently slower than obtaining a buffer with the entire data due to the two extra function calls and the extra copying. However, given that this only happens once per runtime call, the cost is expected to be negligible.
+- `ext_misc_input_read_version_1` is inherently slower than obtaining a buffer with the entire data due to the two extra function calls and the extra copying. However, given that this only happens once per runtime call, the cost is expected to be negligible.
 
 - The `ext_crypto_*_public_keys`, `ext_offchain_network_state`, and `ext_offchain_http_*` host functions are likely slightly slower than their deprecated counterparts, but given that they are used only in offchain workers, that is acceptable.
 
