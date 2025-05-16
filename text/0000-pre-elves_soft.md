@@ -102,11 +102,13 @@ We think threshold randomness could reduce the tranche zero approcha checker ass
 
 We do know threshold VRF based schemes that address relay chain equivocations directly, by using as input the relay chain block hash.  We have many more options with early soft concensus though.  TODO  In particular, we only know two post-quantum approaches to elves, and the bandwidth efficent one needs early soft concensus.
 
+### Mid-strenght concensus
+
+In this RFC, we only require that each relay chain block contain preference votes for its parent from 2/3rds of validators.  We could enforce the opposite direction too:  Around y>2 seconds after a validator V has seen preference votes for a chain head X from 2/3rd of validators, the V begins rejecting any relay chain block that does not build upon X.  This is tricky because the y>2 second delay must be long enough so that most honest nodes learn both X and its preference votes.  This strengthens MEV defenses that assume some honest nodes.
+
 ### Avoid wall clock time
 
-Avoiding or minimizing wall clock time could provide an interesting development direction.
-
-...
+We know [parachains could baset heir slots upon relay chain slots](https://hackmd.io/@jR1jzpMyTnOUh4BzdHCZBA/rJDmGmtpJx), instaed of wall clock time (RFC ToDo).  After this happens, we could avoid or minimize wall clock timing in the relay chain too, so that relay chain slots could've a floating duration based upon workload.
 
 ### Partial relay chain blocks
 
