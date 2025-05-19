@@ -3,7 +3,7 @@
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | Date of initial proposal                                                                    |
-| **Description** | Provide and exploit a soft concensus before launching approval checks                             |
+| **Description** | Provide and exploit a soft consensus before launching approval checks                             |
 | **Authors**     | Jeff Burdges, Alistair Stewart                                                            |
 
 ## Summary
@@ -86,7 +86,7 @@ Major upgrade
 
 ## Unresolved Questions
 
-Provide specific questions to discuss and address before the RFC is voted on by the Fellowship. This should include, for example, alternatives to aspects of the proposed design where the appropriate trade-off to make is unclear.
+We halt the chain when less than 2/3 of validators are online.  We consider this reasonable since governance now runs on a parachain, ELVES would not secure, and nothing can be finalized anyways.  We could perhaps add some "recovery mode" where the relay chain embeds entire system parachain blocks, but doing so might not warrant the effort required.
 
 ## Future Directions and Related Material
 
@@ -104,7 +104,7 @@ We do know threshold VRF based schemes that address relay chain equivocations di
 
 ### Mid-strenght concensus
 
-In this RFC, we only require that each relay chain block contain preference votes for its parent from 2/3rds of validators.  We could enforce the opposite direction too:  Around y>2 seconds after a validator V has seen preference votes for a chain head X from 2/3rd of validators, the V begins rejecting any relay chain block that does not build upon X.  This is tricky because the y>2 second delay must be long enough so that most honest nodes learn both X and its preference votes.  This strengthens MEV defenses that assume some honest nodes.
+In this RFC, we only require that each relay chain block contain preference votes for its parent from 2/3rds of validators.  We could enforce the opposite direction too:  Around y>2 seconds after a validator V has seen preference votes for a chain head X from 2/3rd of validators, the V begins rejecting any relay chain block that does not build upon X.  This is tricky because the y>2 second delay must be long enough so that most honest nodes learn both X and its preference votes.  In this, we might treat `preferred_fork` votes as evidence for finality of the parent of the vote's `relay_parent`.  This strengthens MEV defenses that assume some honest nodes.
 
 ### Avoid wall clock time
 
