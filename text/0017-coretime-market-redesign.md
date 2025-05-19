@@ -3,7 +3,7 @@
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Original Proposition Date**  | 05.08.2023                                                                                  |
-| **Revision Date**  | 05.05.2025                                                                                  |
+| **Revision Date**  | 19.05.2025                                                                                  |
 | **Description** | This RFC redesigns Polkadot's coretime market to ensure that coretime is efficiently priced through a clearing-price Dutch auction. It also introduces a mechanism that guarantees current coretime holders the right to renew their cores outside the market, albeit at a renewal price derived directly from the market outcome. This design aligns renewal and market prices, preserving long-term access for current coretime owners while ensuring that market dynamics exert sufficient pressure on all purchasers, resulting in an efficient allocation.
 | **Authors**     | Jonas Gehrlein                                                                              |
 
@@ -84,9 +84,9 @@ The `RESERVE_PRICE` in the next period will be:
 
 **Note:** To reduce the recovery time from very low prices it is important to, in the case of 100% capacity, at least increment the `RESERVE_PRICE_NEXT` by `MIN_INCREMENT`, which could be, e.g., 100 DOT.
 
-#### Settlement Period (7 days)
+#### Settlement Period / Secondary Market (7 days)
 
-During the settlement period, participants have ample time to trade Coretime on secondary markets before the onset of the next `BULK_PERIOD`. This allows for trading with full Coretime availability. Trading transferrable Coretime naturally continues during each `BULK_PERIOD`, albeit with cores already in use.
+The remaining 7 days of a sales cycle serve as a settlement period, where participants have ample time to trade Coretime on secondary markets before the onset of the next `BULK_PERIOD`. This proposal makes no assumptions about the structure of these markets, because they are entirely operated on the social layer and handled directly by buyers and sellers. In this context, maintaining restrictions on the resale of renewed cores in the secondary market appears unjustified. In fact, such constraints could be harmful in cases where the primary market does not fully achieve efficiency. **We therefore propose lifting all restrictions on the resale or slicing of cores in the secondary market.**
 
 
 ### Benefits of this system
