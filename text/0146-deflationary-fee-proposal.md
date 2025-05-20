@@ -1,4 +1,4 @@
-# RFC-XXXX: Deflationary Transaction Fee Model for Relay- and System Chains
+# RFC-0146: Deflationary Transaction Fee Model for Relay- and System Chains
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
