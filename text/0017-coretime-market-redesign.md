@@ -90,7 +90,7 @@ The remaining 7 days of a sales cycle serve as a settlement period, where partic
 
 
 ### Benefits of this system
-- The introduction of a single price, the `RESERVE_PRICE`, provides an anchor for all Coretime markets. This is a preventative measure against the possible divergence and mismatch of prices, which could inadvertently lead to a situation where existing tenants secure cores at significantly below-market rates.
+- The introduction of a single price, the `CLEARING_PRICE`, provides an anchor for all Coretime markets. This is a preventative measure against the possible divergence and mismatch of prices, which could inadvertently lead to a situation where existing tenants secure cores at significantly below-market rates.
 - With a more market-responsive pricing system, we can achieve a more efficient price discovery process. Any price increases will be less arbitrary and more dynamic.
 - The ideal strategy for existing tenants is to maintain passivity, i.e., refrain from active market participation and simply accept the offer presented to them during the renewal phase. This approach lessens the organizational overhead for long-term projects.
 - Prices within a `BULK_PERIOD` are bound upwards by the current `RESERVE_PRICE * PREMIUM`. This provides ample time for tenants to secure necessary funds to meet the potential price escalation.
