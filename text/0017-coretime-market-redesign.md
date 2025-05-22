@@ -59,7 +59,7 @@ All current tenants have 7 days to decide whether they want to renew their core 
 
 In the case where there are combined more renewals and bidders at or above the `CLEARING_PRICE` than available cores, we allocate cores to the highest to lowest bidders until all available cores are allocated (albeit still at the `CLEARING_PRICE`). That effectively means that in situations with very high demand, some bidders might not get the coretime they bid for.
 
-If the supply exceeds the demand, all unallocated cores are transferred to the Instantanous Market.
+If the supply exceeds the demand, all unallocated cores are transferred to the On-Demand Market.
 
 #### Reserve Price Adjustment
 
