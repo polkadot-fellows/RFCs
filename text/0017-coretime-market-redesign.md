@@ -120,6 +120,7 @@ Having all bidders pay the market clearing price offers some benefits and disadv
 ### Further Discussion Points
 
 - **Reintroduction of Candle Auctions**: Polkadot gathered vast experience with candle auctions where more than 200 auctions has been conducted throughout more than two years. [Our study](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5109856) analyzing the results in much detail reveals that the mechanism itself is both efficient and (nearly) extracting optimal revenue. This provides confidence to use it to allocate the winners instead of a descending clock auction. Notably, this change solely affects the bidding process and winner determination. Core components, such as the k-th price, reserve price, and maximum price, remain unaffected.
+- **Parameter exposure**: To be able to react quickly, we suggest that the parameters of the model are directly accessible by governance. These include: `P_MIN`, `K`, `MIN_INCREMENT`, `TARGET_CONSUMPTION_RATE`. We suggest the 
 
 
 ## Prior Art and References
