@@ -19,6 +19,10 @@ This RFC is mainly based on [RFC-4](https://github.com/polkadot-fellows/RFCs/pul
 
 * The original RFC required checking if an output buffer address provided to a host function is inside the VM address space range and to stop the runtime execution if that's not the case. That requirement has been removed in this version of the RFC, as in the general case, the host doesn't have exhaustive information about the VM's memory organization. Thus, attempting to write to an out-of-bound region will result in a "normal" runtime panic.
 * Function signatures introduced by [PPP#7](https://github.com/w3f/PPPs/pull/7) have been used in this RFC, as the PPP has already been [properly implemented](https://github.com/paritytech/substrate/pull/11490) and [documented](https://github.com/w3f/polkadot-spec/pull/592/files). However, it has never been officially adopted, nor have its functions been in use.
+* For `*_next_key` input buffer is reused for output.
+* Error codes were harmonized to be always represented by negative values.
+* Return values were harmonized to `i64` everywhere where they represent either a positive outcome as a positive integer or a negative outcome as a negative error code.
+* `ext_offchain_network_peer_id_version_1` now returns a result code instead of silently failing if the network status is unavailable.
 * Added new versions of `ext_misc_runtime_version` and `ext_offchain_random_seed`.
 * Addressed discussions from the original RFC-4 discussion flow.
 
@@ -56,16 +60,16 @@ The new functions directly return the number of bytes written into the `value_ou
 
 ```wat
 (func $ext_storage_next_key_version_2
-    (param $key i64) (param $out i64) (return i32))
+    (param $key_in_out i64) (return i32))
 (func $ext_default_child_storage_next_key_version_2
-    (param $child_storage_key i64) (param $key i64) (param $out i64) (return i32))
+    (param $child_storage_key i64) (param $key_in_out i64) (return i32))
 ```
 
 The behaviour of these functions is identical to their version 1 counterparts.
 
-Instead of allocating a buffer, writing the next key to it, and returning a pointer to it, the new version of these functions accepts an `out` parameter containing [a pointer-size](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size) to the memory location where the host writes the output.
+Instead of allocating a buffer, writing the next key to it, and returning a pointer to it, the new version of these functions accepts an `key_in_out` parameter containing [a pointer-size](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size) to the memory location where the host first reads the input from, and then writes the output to.
 
-These functions return the size, in bytes, of the next key, or `0` if there is no next key. If the size of the next key is larger than the buffer in `out`, the bytes of the key that fit the buffer are written to `out`, and any extra bytes that don't fit are discarded.
+These functions return the size, in bytes, of the next key, or `0` if there is no next key. If the size of the next key is larger than the buffer in `key_in_out`, the bytes of the key that fit the buffer are written to `key_in_out`, and any extra bytes that don't fit are discarded.
 
 Some notes:
 
@@ -170,22 +174,22 @@ These values are equal to the values returned on error by the version 2 (see <ht
 ```wat
 (func $ext_crypto_ed25519_num_public_keys_version_1
     (param $key_type_id i32) (return i32))
-(func $ext_crypto_ed25519_public_key_version_2
+(func $ext_crypto_ed25519_public_key_version_1
     (param $key_type_id i32) (param $key_index i32) (param $out i32))
 (func $ext_crypto_sr25519_num_public_keys_version_1
     (param $key_type_id i32) (return i32))
-(func $ext_crypto_sr25519_public_key_version_2
+(func $ext_crypto_sr25519_public_key_version_1
     (param $key_type_id i32) (param $key_index i32) (param $out i32))
 (func $ext_crypto_ecdsa_num_public_keys_version_1
     (param $key_type_id i32) (return i32))
-(func $ext_crypto_ecdsa_public_key_version_2
+(func $ext_crypto_ecdsa_public_key_version_1
     (param $key_type_id i32) (param $key_index i32) (param $out i32))
 ```
 
 The functions supersede the `ext_crypto_ed25519_public_key_version_1`, `ext_crypto_sr25519_public_key_version_1`, and `ext_crypto_ecdsa_public_key_version_1` host functions.
 
-Instead of calling `ext_crypto_ed25519_public_key_version_1` to obtain the list of all the keys at once, the runtime should instead call `ext_crypto_ed25519_num_public_keys_version_1` to get the number of public keys available, then `ext_crypto_ed25519_public_key_version_2` repeatedly.
-The `ext_crypto_ed25519_public_key_version_2` function writes the public key of the given `key_index` to the memory location designated by `out`. The `key_index` must be between 0 (included) and `n` (excluded), where `n` is the value returned by `ext_crypto_ed25519_num_public_keys_version_1`. Execution must trap if `n` is out of range.
+Instead of calling `ext_crypto_ed25519_public_key_version_1` to obtain the list of all the keys at once, the runtime should instead call `ext_crypto_ed25519_num_public_keys_version_1` to get the number of public keys available, then `ext_crypto_ed25519_public_key_version_1` repeatedly.
+The `ext_crypto_ed25519_public_key_version_1` function writes the public key of the given `key_index` to the memory location designated by `out`. The `key_index` must be between 0 (included) and `n` (excluded), where `n` is the value returned by `ext_crypto_ed25519_num_public_keys_version_1`. Execution must trap if `n` is out of range.
 
 The same explanations apply for `ext_crypto_sr25519_public_key_version_1` and `ext_crypto_ecdsa_public_key_version_1`.
 
@@ -193,14 +197,14 @@ Host implementers should be aware that the list of public keys (including their 
 
 ```wat
 (func $ext_offchain_http_request_start_version_2
-  (param $method i64) (param $uri i64) (param $meta i64) (result i32))
+  (param $method i64) (param $uri i64) (param $meta i64) (result i64))
 ```
 
 The behaviour of this function is identical to its version 1 counterpart. Instead of allocating a buffer, writing the request identifier in it, and returning a pointer to it, version 2 of this function simply returns the newly-assigned identifier to the HTTP request. On failure, this function returns `-1`. An identifier of `-1` is invalid and is reserved to indicate failure.
 
 ```wat
 (func $ext_offchain_http_request_write_body_version_2
-  (param $method i64) (param $uri i64) (param $meta i64) (result i32))
+  (param $method i64) (param $uri i64) (param $meta i64) (result i64))
 (func $ext_offchain_http_response_read_body_version_2
   (param $request_id i32) (param $buffer i64) (param $deadline i64) (result i64))
 ```
@@ -254,10 +258,10 @@ If the buffer in `out` is too small to fit the entire header name or value, only
 (func $ext_offchain_submit_transaction_version_2
     (param $data i64) (return i32))
 (func $ext_offchain_http_request_add_header_version_2
-    (param $request_id i32) (param $name i64) (param $value i64) (result i32))
+    (param $request_id i32) (param $name i64) (param $value i64) (result i64))
 ```
 
-Instead of allocating a buffer, writing `1` or `0` in it, and returning a pointer to it, the version 2 of these functions returns `0` or `1`, where `0` indicates success and `1` indicates failure. The runtime must interpret any non-`0` value as failure, but the client must always return `1` in case of failure.
+Instead of allocating a buffer, writing `1` or `0` in it, and returning a pointer to it, the version 2 of these functions returns `0` or `-1`, where `0` indicates success and `-1` indicates failure.
 
 ```wat
 (func $ext_offchain_local_storage_read_version_1
@@ -272,17 +276,17 @@ The function returns the number of bytes written into the `value_out` buffer. If
 
 ```wat
 (func $ext_offchain_network_peer_id_version_1
-    (param $out i64))
+    (param $out i64) (result i64))
 ```
 
-This function writes [the `PeerId` of the local node](https://spec.polkadot.network/chap-networking#id-node-identities) to the memory location indicated by `out`. A `PeerId` is always 38 bytes long.
+This function writes [the `PeerId` of the local node](https://spec.polkadot.network/chap-networking#id-node-identities) to the memory location indicated by `out`. A `PeerId` is always 38 bytes long. This function returns `0` on success or `-1` if the network state is unavailable.
 
 ```wat
 (func $ext_misc_runtime_version_version_2
-    (param $wasm i64) (param $out i64))
+    (param $wasm i64) (param $out i64) (result i64))
 ```
 
-The behaviour of this function is identical to its version 1 counterpart. Instead of allocating a buffer, writing the output to it, and returning a pointer to it, the new version of this function accepts an `out` parameter containing [pointer-size](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size) to the memory location where the host writes the output.
+The behaviour of this function is identical to its version 1 counterpart. Instead of allocating a buffer, writing the output to it, and returning a pointer to it, the new version of this function accepts an `out` parameter containing [pointer-size](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size) to the memory location where the host writes the output. If the output buffer is not large enough, the version information is truncated. Returns the length of the encoded version information, or `-1` in case of any failure.
 
 ```wat
 (func $ext_offchain_random_seed_version_2 (param $out i32))
@@ -292,7 +296,7 @@ The behaviour of this function is identical to its version 1 counterpart. Instea
 
 ```wat
 (func $ext_misc_input_read_version_1
-    (param $offset i64) (param $out i64) (return i32))
+    (param $offset i64) (param $out i64) (result i64))
 ```
 
 When a runtime function is called, the host uses the allocator to allocate memory within the runtime to write some input data. The new host function provides an alternative way to access the input that doesn't use the allocator.
