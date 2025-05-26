@@ -683,6 +683,10 @@ of the paras, the locked/unlocked state, and the manager info.</p>
 <ul>
 <li>The original RFC required checking if an output buffer address provided to a host function is inside the VM address space range and to stop the runtime execution if that's not the case. That requirement has been removed in this version of the RFC, as in the general case, the host doesn't have exhaustive information about the VM's memory organization. Thus, attempting to write to an out-of-bound region will result in a &quot;normal&quot; runtime panic.</li>
 <li>Function signatures introduced by <a href="https://github.com/w3f/PPPs/pull/7">PPP#7</a> have been used in this RFC, as the PPP has already been <a href="https://github.com/paritytech/substrate/pull/11490">properly implemented</a> and <a href="https://github.com/w3f/polkadot-spec/pull/592/files">documented</a>. However, it has never been officially adopted, nor have its functions been in use.</li>
+<li>For <code>*_next_key</code> input buffer is reused for output.</li>
+<li>Error codes were harmonized to be always represented by negative values.</li>
+<li>Return values were harmonized to <code>i64</code> everywhere where they represent either a positive outcome as a positive integer or a negative outcome as a negative error code.</li>
+<li><code>ext_offchain_network_peer_id_version_1</code> now returns a result code instead of silently failing if the network status is unavailable.</li>
 <li>Added new versions of <code>ext_misc_runtime_version</code> and <code>ext_offchain_random_seed</code>.</li>
 <li>Addressed discussions from the original RFC-4 discussion flow.</li>
 </ul>
@@ -705,13 +709,13 @@ of the paras, the locked/unlocked state, and the manager info.</p>
 <p>The signature and behaviour of <code>ext_storage_read_version_2</code> and <code>ext_default_child_storage_read_version_2</code> are identical to their version 1 counterparts, but the return value has a different meaning.</p>
 <p>The new functions directly return the number of bytes written into the <code>value_out</code> buffer. If the entry doesn't exist, <code>-1</code> is returned. Given that the host must never write more bytes than the size of the buffer in <code>value_out</code>, and that the size of this buffer is expressed as a 32-bit number, the 64-bit value of <code>-1</code> is not ambiguous.</p>
 <pre><code class="language-wat">(func $ext_storage_next_key_version_2
-    (param $key i64) (param $out i64) (return i32))
+    (param $key_in_out i64) (return i32))
 (func $ext_default_child_storage_next_key_version_2
-    (param $child_storage_key i64) (param $key i64) (param $out i64) (return i32))
+    (param $child_storage_key i64) (param $key_in_out i64) (return i32))
 </code></pre>
 <p>The behaviour of these functions is identical to their version 1 counterparts.</p>
-<p>Instead of allocating a buffer, writing the next key to it, and returning a pointer to it, the new version of these functions accepts an <code>out</code> parameter containing <a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">a pointer-size</a> to the memory location where the host writes the output.</p>
-<p>These functions return the size, in bytes, of the next key, or <code>0</code> if there is no next key. If the size of the next key is larger than the buffer in <code>out</code>, the bytes of the key that fit the buffer are written to <code>out</code>, and any extra bytes that don't fit are discarded.</p>
+<p>Instead of allocating a buffer, writing the next key to it, and returning a pointer to it, the new version of these functions accepts an <code>key_in_out</code> parameter containing <a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">a pointer-size</a> to the memory location where the host first reads the input from, and then writes the output to.</p>
+<p>These functions return the size, in bytes, of the next key, or <code>0</code> if there is no next key. If the size of the next key is larger than the buffer in <code>key_in_out</code>, the bytes of the key that fit the buffer are written to <code>key_in_out</code>, and any extra bytes that don't fit are discarded.</p>
 <p>Some notes:</p>
 <ul>
 <li>It is never possible for the next key to be an empty buffer, because an empty key has no preceding key. For this reason, a return value of <code>0</code> can unambiguously be used to indicate the lack of the next key.</li>
@@ -796,28 +800,28 @@ func $ext_crypto_ecdsa_sign_version_2
 <p>These values are equal to the values returned on error by the version 2 (see <a href="https://spec.polkadot.network/chap-host-api#defn-ecdsa-verify-error">https://spec.polkadot.network/chap-host-api#defn-ecdsa-verify-error</a>), but incremented by 1 to reserve 0 for success.</p>
 <pre><code class="language-wat">(func $ext_crypto_ed25519_num_public_keys_version_1
     (param $key_type_id i32) (return i32))
-(func $ext_crypto_ed25519_public_key_version_2
+(func $ext_crypto_ed25519_public_key_version_1
     (param $key_type_id i32) (param $key_index i32) (param $out i32))
 (func $ext_crypto_sr25519_num_public_keys_version_1
     (param $key_type_id i32) (return i32))
-(func $ext_crypto_sr25519_public_key_version_2
+(func $ext_crypto_sr25519_public_key_version_1
     (param $key_type_id i32) (param $key_index i32) (param $out i32))
 (func $ext_crypto_ecdsa_num_public_keys_version_1
     (param $key_type_id i32) (return i32))
-(func $ext_crypto_ecdsa_public_key_version_2
+(func $ext_crypto_ecdsa_public_key_version_1
     (param $key_type_id i32) (param $key_index i32) (param $out i32))
 </code></pre>
 <p>The functions supersede the <code>ext_crypto_ed25519_public_key_version_1</code>, <code>ext_crypto_sr25519_public_key_version_1</code>, and <code>ext_crypto_ecdsa_public_key_version_1</code> host functions.</p>
-<p>Instead of calling <code>ext_crypto_ed25519_public_key_version_1</code> to obtain the list of all the keys at once, the runtime should instead call <code>ext_crypto_ed25519_num_public_keys_version_1</code> to get the number of public keys available, then <code>ext_crypto_ed25519_public_key_version_2</code> repeatedly.
-The <code>ext_crypto_ed25519_public_key_version_2</code> function writes the public key of the given <code>key_index</code> to the memory location designated by <code>out</code>. The <code>key_index</code> must be between 0 (included) and <code>n</code> (excluded), where <code>n</code> is the value returned by <code>ext_crypto_ed25519_num_public_keys_version_1</code>. Execution must trap if <code>n</code> is out of range.</p>
+<p>Instead of calling <code>ext_crypto_ed25519_public_key_version_1</code> to obtain the list of all the keys at once, the runtime should instead call <code>ext_crypto_ed25519_num_public_keys_version_1</code> to get the number of public keys available, then <code>ext_crypto_ed25519_public_key_version_1</code> repeatedly.
+The <code>ext_crypto_ed25519_public_key_version_1</code> function writes the public key of the given <code>key_index</code> to the memory location designated by <code>out</code>. The <code>key_index</code> must be between 0 (included) and <code>n</code> (excluded), where <code>n</code> is the value returned by <code>ext_crypto_ed25519_num_public_keys_version_1</code>. Execution must trap if <code>n</code> is out of range.</p>
 <p>The same explanations apply for <code>ext_crypto_sr25519_public_key_version_1</code> and <code>ext_crypto_ecdsa_public_key_version_1</code>.</p>
 <p>Host implementers should be aware that the list of public keys (including their ordering) must not change while the runtime is running. That is most likely done by copying the list of all available keys either at the start of the execution or the first time the list is accessed.</p>
 <pre><code class="language-wat">(func $ext_offchain_http_request_start_version_2
-  (param $method i64) (param $uri i64) (param $meta i64) (result i32))
+  (param $method i64) (param $uri i64) (param $meta i64) (result i64))
 </code></pre>
 <p>The behaviour of this function is identical to its version 1 counterpart. Instead of allocating a buffer, writing the request identifier in it, and returning a pointer to it, version 2 of this function simply returns the newly-assigned identifier to the HTTP request. On failure, this function returns <code>-1</code>. An identifier of <code>-1</code> is invalid and is reserved to indicate failure.</p>
 <pre><code class="language-wat">(func $ext_offchain_http_request_write_body_version_2
-  (param $method i64) (param $uri i64) (param $meta i64) (result i32))
+  (param $method i64) (param $uri i64) (param $meta i64) (result i64))
 (func $ext_offchain_http_response_read_body_version_2
   (param $request_id i32) (param $buffer i64) (param $deadline i64) (result i64))
 </code></pre>
@@ -856,9 +860,9 @@ The <code>ext_crypto_ed25519_public_key_version_2</code> function writes the pub
 <pre><code class="language-wat">(func $ext_offchain_submit_transaction_version_2
     (param $data i64) (return i32))
 (func $ext_offchain_http_request_add_header_version_2
-    (param $request_id i32) (param $name i64) (param $value i64) (result i32))
+    (param $request_id i32) (param $name i64) (param $value i64) (result i64))
 </code></pre>
-<p>Instead of allocating a buffer, writing <code>1</code> or <code>0</code> in it, and returning a pointer to it, the version 2 of these functions returns <code>0</code> or <code>1</code>, where <code>0</code> indicates success and <code>1</code> indicates failure. The runtime must interpret any non-<code>0</code> value as failure, but the client must always return <code>1</code> in case of failure.</p>
+<p>Instead of allocating a buffer, writing <code>1</code> or <code>0</code> in it, and returning a pointer to it, the version 2 of these functions returns <code>0</code> or <code>-1</code>, where <code>0</code> indicates success and <code>-1</code> indicates failure.</p>
 <pre><code class="language-wat">(func $ext_offchain_local_storage_read_version_1
     (param $kind i32) (param $key i64) (param $value_out i64) (param $offset i32) (result i64))
 </code></pre>
@@ -866,18 +870,18 @@ The <code>ext_crypto_ed25519_public_key_version_2</code> function writes the pub
 <p>It reads the offchain local storage key indicated by <code>kind</code> and <code>key</code> starting at the byte indicated by <code>offset</code>, and writes the value to the <a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">pointer-size</a> indicated by <code>value_out</code>.</p>
 <p>The function returns the number of bytes written into the <code>value_out</code> buffer. If the entry doesn't exist, the <code>-1</code> value is returned. Given that the host must never write more bytes than the size of the buffer in <code>value_out</code>, and that the size of this buffer is expressed as a 32-bit number, a 64-bit value of <code>-1</code> is not ambiguous.</p>
 <pre><code class="language-wat">(func $ext_offchain_network_peer_id_version_1
-    (param $out i64))
+    (param $out i64) (result i64))
 </code></pre>
-<p>This function writes <a href="https://spec.polkadot.network/chap-networking#id-node-identities">the <code>PeerId</code> of the local node</a> to the memory location indicated by <code>out</code>. A <code>PeerId</code> is always 38 bytes long.</p>
+<p>This function writes <a href="https://spec.polkadot.network/chap-networking#id-node-identities">the <code>PeerId</code> of the local node</a> to the memory location indicated by <code>out</code>. A <code>PeerId</code> is always 38 bytes long. This function returns <code>0</code> on success or <code>-1</code> if the network state is unavailable.</p>
 <pre><code class="language-wat">(func $ext_misc_runtime_version_version_2
-    (param $wasm i64) (param $out i64))
+    (param $wasm i64) (param $out i64) (result i64))
 </code></pre>
-<p>The behaviour of this function is identical to its version 1 counterpart. Instead of allocating a buffer, writing the output to it, and returning a pointer to it, the new version of this function accepts an <code>out</code> parameter containing <a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">pointer-size</a> to the memory location where the host writes the output.</p>
+<p>The behaviour of this function is identical to its version 1 counterpart. Instead of allocating a buffer, writing the output to it, and returning a pointer to it, the new version of this function accepts an <code>out</code> parameter containing <a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">pointer-size</a> to the memory location where the host writes the output. If the output buffer is not large enough, the version information is truncated. Returns the length of the encoded version information, or <code>-1</code> in case of any failure.</p>
 <pre><code class="language-wat">(func $ext_offchain_random_seed_version_2 (param $out i32))
 </code></pre>
 <p>The behaviour of this function is identical to its version 1 counterpart. Instead of allocating a buffer, writing the output to it, and returning a pointer to it, the new version of this function accepts an <code>out</code> parameter containing the address of the memory location where the host writes the output. The size is output is always 32 bytes.</p>
 <pre><code class="language-wat">(func $ext_misc_input_read_version_1
-    (param $offset i64) (param $out i64) (return i32))
+    (param $offset i64) (param $out i64) (result i64))
 </code></pre>
 <p>When a runtime function is called, the host uses the allocator to allocate memory within the runtime to write some input data. The new host function provides an alternative way to access the input that doesn't use the allocator.</p>
 <p>The function copies some data from the input data to the runtime's memory. The <code>offset</code> parameter indicates the offset within the input data from which to start copying, and must lie inside the output buffer provided. The <code>out</code> parameter is <a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">a pointer-size</a> and contains the buffer where to write.</p>
