@@ -45,7 +45,7 @@ The `BULK_PERIOD` has been restructured into two primary segments: the `MARKET_P
 
 #### Market Period (14 days)
 
-During the market period, core sales are conducted through a well-established **clearing price Dutch auction** that features a `RESERVE_PRICE`. The price initiates at a premium, designated as `PRICE_PREMIUM` (for instance, 200% or 300%) and descends linearly to the `RESERVE_PRICE` throughout the duration of the `MARKET_PERIOD`. Each bidder is expected to submit both their desired price and the quantity (that is, the amount of Coretime) they wish to purchase. To secure these acquisitions, bidders must make a deposit equivalent to their bid multiplied by the chosen quantity, in DOT. Bidders are always allowed to post a bid under the current descending price, but never above it. 
+During the market period, core sales are conducted through a well-established **clearing price Dutch auction** that features a `RESERVE_PRICE`. The price initiates at a multiplier, designated as `PRICE_MULTIPLIER` (for instance, 200% or 300%) and descends linearly to the `RESERVE_PRICE` throughout the duration of the `MARKET_PERIOD`. Each bidder is expected to submit both their desired price and the quantity (that is, the amount of Coretime) they wish to purchase. To secure these acquisitions, bidders must make a deposit equivalent to their bid multiplied by the chosen quantity, in DOT. Bidders are always allowed to post a bid under the current descending price, but never above it. 
 
 The market achieves resolution once all quantities have been sold, or the `RESERVE_PRICE` has been reached. This situation leads to determining the `CLEARING_PRICE` either by the lowest bid that was successful in clearing the entire market or by the `RESERVE_PRICE`. This mechanism yields a uniform price, shaped by market forces (refer to the following discussion for an explanation of its benefits). In other words, all buyers pay the same price (per unit of Coretime). Further down the benefits of this variant of a Dutch auction is discussed.
 
@@ -95,7 +95,7 @@ The remaining 7 days of a sales cycle serve as a settlement period, where partic
 - The introduction of a single price, the `CLEARING_PRICE`, provides an anchor for all Coretime markets. This is a preventative measure against the possible divergence and mismatch of prices, which could inadvertently lead to a situation where existing tenants secure cores at significantly below-market rates.
 - With a more market-responsive pricing system, we can achieve a more efficient price discovery process. Any price increases will be less arbitrary and more dynamic.
 - The ideal strategy for existing tenants is to maintain passivity, i.e., refrain from active market participation and simply accept the offer presented to them during the renewal phase. This approach lessens the organizational overhead for long-term projects.
-- Prices within a `BULK_PERIOD` are bound upwards by the current `RESERVE_PRICE * PREMIUM`. This provides ample time for tenants to secure necessary funds to meet the potential price escalation.
+- Prices within a `BULK_PERIOD` are bound upwards by the current `RESERVE_PRICE * PRICE_MULTIPLIER`. This provides ample time for tenants to secure necessary funds to meet the potential price escalation.
 - All existing tenants pay an equal amount for Coretime, reflecting our intent to price the Coretime itself and not the relative timing of individual projects.
 
 ### Notes and Implications of this System
