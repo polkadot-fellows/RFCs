@@ -9,7 +9,7 @@
 
 ## Summary
 
-This document is a proposal for restructuring the bulk markets in the Polkadot's coretime allocation system to improve efficiency and fairness. The proposal suggests separating the `BULK_PERIOD` into `MARKET_PERIOD` and `RENEWAL_PERIOD`, allowing for a market-driven price discovery through a clearing price Dutch auction during the `MARKET_PERIOD` followed by renewal offers at the `MARKET_PRICE` during the `RENEWAL_PERIOD`. The new system ensures synchronicity between renewal and market prices, fairness among all current tenants, and efficient price discovery, while preserving price caps to provide security for current tenants. It seeks to start a discussion about the possibility of long-term leases.
+This document is a proposal for restructuring the bulk markets in the Polkadot's coretime allocation system to improve efficiency and fairness. The proposal suggests separating the `BULK_PERIOD` into `MARKET_PERIOD` and `RENEWAL_PERIOD`, allowing for a market-driven price discovery through a clearing price Dutch auction during the `MARKET_PERIOD` followed by renewal offers at the `MARKET_PRICE` during the `RENEWAL_PERIOD`. The new system ensures synchronicity between renewal and market prices, fairness among all current tenants, and efficient price discovery, while preserving price caps to provide security for current tenants.
 
 ## Motivation
 
@@ -90,6 +90,17 @@ The `RESERVE_PRICE` in the next period will be:
 
 The remaining 7 days of a sales cycle serve as a settlement period, where participants have ample time to trade Coretime on secondary markets before the onset of the next `BULK_PERIOD`. This proposal makes no assumptions about the structure of these markets, because they are entirely operated on the social layer and handled directly by buyers and sellers. In this context, maintaining restrictions on the resale of renewed cores in the secondary market appears unjustified. In fact, such constraints could be harmful in cases where the primary market does not fully achieve efficiency. **We therefore propose lifting all restrictions on the resale or slicing of cores in the secondary market.**
 
+#### New Track: Coretime Admin
+
+To be able to react quickly, we suggest that the parameters of the model are directly accessible by governance. These include:
+
+- `P_MIN`
+- `K`
+- `MIN_INCREMENT`
+- `TARGET_CONSUMPTION_RATE`
+- `PENALTY`
+
+This track should allow us to adjust the parameters in a timely manner, within the duration of a `BULK_PERIOD`, so that the changes can take effect before the next period begins.
 
 ### Benefits of this System
 - The introduction of a single price, the `CLEARING_PRICE`, provides an anchor for all Coretime markets. This is a preventative measure against the possible divergence and mismatch of prices, which could inadvertently lead to a situation where existing tenants secure cores at significantly below-market rates.
@@ -122,7 +133,6 @@ Having all bidders pay the market clearing price offers some benefits and disadv
 ### Further Discussion Points
 
 - **Reintroduction of Candle Auctions**: Polkadot gathered vast experience with candle auctions where more than 200 auctions has been conducted throughout more than two years. [Our study](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5109856) analyzing the results in much detail reveals that the mechanism itself is both efficient and (nearly) extracting optimal revenue. This provides confidence to use it to allocate the winners instead of a descending clock auction. Notably, this change solely affects the bidding process and winner determination. Core components, such as the k-th price, reserve price, and maximum price, remain unaffected.
-- **Parameter exposure**: To be able to react quickly, we suggest that the parameters of the model are directly accessible by governance. These include: `P_MIN`, `K`, `MIN_INCREMENT`, `TARGET_CONSUMPTION_RATE`. We suggest the coretime admin track to change these parameters.
 
 
 ## Prior Art and References
