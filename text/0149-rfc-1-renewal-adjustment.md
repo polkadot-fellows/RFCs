@@ -166,3 +166,15 @@ This RFC is altering RFC-1 and taking ideas from RFC-17, mainly the introduction
 This RFC should solve the immediate problems we are seeing in production right
 now. Longer term, improvements to the market in terms of price discovery
 (RFC-17) should be considered, especially once demand grows.
+
+There is an edge case remaining for situations like the following:
+
+1. Not enough demand.
+2. Prices drop to the end price.
+3. Someone buys all the cores relatively cheaply & renews.
+4. Market deprived of cores, but price only goes up by renewal bumps (all cores are renewed).
+5. Market would only recover very slowly or when someone gives up on their renewal.
+
+Mitigation for this edge case is relatively simple: Bump renewals more
+aggressively the less cores are available on the free market. For now, leaving
+a few cores not for sale should be enough to mitigate such a situation.
