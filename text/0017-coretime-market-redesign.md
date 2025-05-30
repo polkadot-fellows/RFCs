@@ -69,12 +69,12 @@ After all cores are allocated, the `RESERVE_PRICE` is adjusted similar to the pr
 
 **Note**: When designing this mechanism, we want to make sure that small deviations have a smaller price impact than bigger deviations. We propose the following function:
 
-`reserve_price_old`: reserve price from the previous period
-`consumption_rate`: how many cores were sold relative to how many were available.
-`TARGET_CONSUMPTION_RATE`: how many of the available cores we want to sell without increasing the price. We propose 90%. This leaves enough area downward and upward to adjust prices more aggressively.
-`K`: sensitivity parameter. How aggressively we want to adjust the price. We propose a value between 2 and 3, but might need more evaluation.
-`P_MIN`: A minimum price we never undercut. This is important to bound the price downward and prevent computational issues if prices drop too low. We propose a value of 1 DOT.
-`MIN_INCREMENT`: A minimum increment after we reached 100% capacity. This is important to quickly recover after long periods of low demand which resulted in low prices.
+- `reserve_price_old`: reserve price from the previous period
+- `consumption_rate`: how many cores were sold relative to how many were available.
+- `TARGET_CONSUMPTION_RATE`: how many of the available cores we want to sell without increasing the price. We propose 90%. This leaves enough area downward and upward to adjust prices more aggressively.
+- `K`: sensitivity parameter. How aggressively we want to adjust the price. We propose a value between 2 and 3, but might need more evaluation.
+- `P_MIN`: A minimum price we never undercut. This is important to bound the price downward and prevent computational issues if prices drop too low. We propose a value of 1 DOT.
+- `MIN_INCREMENT`: A minimum increment after we reached 100% capacity. This is important to quickly recover after long periods of low demand which resulted in low prices.
 
 We update the price according to:
 
