@@ -16,7 +16,7 @@ An implementation can be found [here](https://github.com/paritytech/polkadot-sdk
 
 ## Motivation
 
-In RFC-1 we strived for perfect predictability on renewal prices, but what we
+In RFC-1, we strived for perfect predictability on renewal prices, but what we
 expected unfortunately got proven in practice: Perfect predictability allows
 for core hoarding and cheap market manipulation, with the effect that both on
 Kusama and Polkadot there is no free market for cores anymore. Some actor is
@@ -28,7 +28,7 @@ extend to elastic scaling and in practice, even existing teams wanting to keep
 their core, because they forgot to renew in the interlude.
 
 In a nutshell the current situation is severely hindering teams from deploying
-on Polkadot, we are essentially in a Denial of Service situation.
+on Polkadot: We are essentially in a Denial of Service situation.
 
 ## Stakeholders
 
@@ -74,7 +74,7 @@ keeps being the case, except for extreme market changes - or if you happened to
 be lucky to buy below the target price. In particular, in the above example,
 all cores were sold at 1000 DOT, then tenants who were lucky holding a core at
 10 DOT, would now get bumped to 100 DOT. Tenants who bought at the current
-target price or above would still not be affected at all.
+target price or above would still not be affected.
 
 In other words, we limit price predictability: If the market experiences a bump
 of 100 times the current price, renewals will be affected by a factor of 10.
@@ -89,7 +89,7 @@ effects:
 1. Attacking the system is becoming very expensive. Let's assume 10 cores are
    for sale at an end price of 10 DOT, then an attacker would need to invest
 10_000 DOT to drive up renewal prices to 100 DOT. Not only is this expensive in
-itself with limited effect, the attacker would also have driven up the prices
+itself with limited effect, the attacker would also have driven up the price
 for his own renewals: Core hoarding for price manipulation is no longer
 profitable. An attacker would be at least as much affected as the honest
 parties he is targeting. In practice likely more, as core hoarding hardly means
@@ -97,7 +97,7 @@ holding only one or two cores.
 2. In the honest scenario, where we are just experiencing great adoption: Once
    cores become scarce, prices would go up and renewals would be affected too.
 They are still favored over new entrants (they pay 10x less), but as prices
-keep increasing eventually the least profitable projects will give up their
+keep increasing, eventually the least profitable projects will give up their
 cores, freeing up resources for new entrants. 
 
 
@@ -121,7 +121,7 @@ We are dropping almost perfect predictability on renewal prices, in favor of
 predictability within reasonable bounds. The introduction of a minimum price,
 will also result in huge relative price adjustments for existing tenants,
 because prices were so unreasonably low on Kusama. In practice this should not
-be an issue for any reasonable project.
+be an issue for any real project.
 
 ## Testing, Security, and Privacy
 
@@ -129,7 +129,7 @@ This RFC is proposing a single line of code change. A [test has been
 added](https://github.com/paritytech/polkadot-sdk/pull/8630/files#diff-5c1aa49e85b8916278350cef73f121ceda192adbbf3b16d35e52626a96243fc9R500)
 to make sure it is working as expected.
 
-Security of the system will be improved as attacks now become expensive. It is
+Security of the system will be improved, as attacks now become expensive. It is
 worth mentioning though that while this RFC ensures that attacks are very
 costly, it makes attacking existing tenants possible, which was not the case
 before. This seems to be a sound trade-off though for the following reasons:
@@ -141,7 +141,7 @@ thousands of DOT, each month.
    only adjusting by a maximum of 10 times each month, this gives plenty of
 time to react via Governance/treasury help out to projects, which are seen
 valuable by the DAO, but can not afford the price jumps. Keeping some spare
-cores on the side for such situations seems sensible.
+cores on the side for such situations seems sensible too.
 3. Existing tenants are not automatically more valuable than new tenants. Open
    market participants are still 10 times more exposed to attacks than existing
 tenants. Having them exposed at least with this 10x reduction seems a sensible
