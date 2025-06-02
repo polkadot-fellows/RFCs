@@ -3,33 +3,34 @@
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Original Proposition Date**  | 05.08.2023                                                                                  |
-| **Revision Date**  | 30.05.2025                                                                                  |
-| **Description** | This RFC redesigns Polkadot's coretime market to ensure that coretime is efficiently priced through a clearing-price Dutch auction. It also introduces a mechanism that guarantees current coretime holders the right to renew their cores outside the market, albeit at a renewal price derived directly from the market outcome. This design aligns renewal and market prices, preserving long-term access for current coretime owners while ensuring that market dynamics exert sufficient pressure on all purchasers, resulting in an efficient allocation.
+| **Revision Date**  | 02.06.2025                                                                                  |
+| **Description** | This RFC redesigns Polkadot's coretime market to ensure that coretime is efficiently priced through a clearing-price Dutch auction. It also introduces a mechanism that guarantees current coretime holders the right to renew their cores outside the market—albeit at the market price with an additional charge. This design aligns renewal and market prices, preserving long-term access for current coretime owners while ensuring that market dynamics exert sufficient pressure on all purchasers, resulting in an efficient allocation.
 | **Authors**     | Jonas Gehrlein                                                                              |
+# Summary
 
-## Summary
+This document proposes a restructuring of the bulk markets in Polkadot's coretime allocation system to improve efficiency and fairness. The proposal suggests splitting the `BULK_PERIOD` into three consecutive phases: `MARKET_PERIOD`, `RENEWAL_PERIOD`, and `SETTLEMENT_PERIOD`. This structure enables market-driven price discovery through a clearing-price Dutch auction, followed by renewal offers during the `RENEWAL_PERIOD`.
 
-This document is a proposal for restructuring the bulk markets in the Polkadot's coretime allocation system to improve efficiency and fairness. The proposal suggests separating the `BULK_PERIOD` into `MARKET_PERIOD` and `RENEWAL_PERIOD`, allowing for a market-driven price discovery through a clearing price Dutch auction during the `MARKET_PERIOD` followed by renewal offers at the `MARKET_PRICE` during the `RENEWAL_PERIOD`. The new system ensures synchronicity between renewal and market prices, fairness among all current tenants, and efficient price discovery, while preserving price caps to provide security for current tenants.
+With all coretime consumers paying a unified price, we propose removing all liquidity restrictions on cores purchased either during the initial market phase or renewed during the renewal phase. This allows a meaningful `SETTLEMENT_PERIOD`, during which final agreements and deals between coretime consumers can be orchestrated on the social layer—complementing the agility this system seeks to establish.
 
-## Motivation
+In the new design, we obtain a uniform price, the `clearing_price`, which anchors new entrants and current tenants. To complement market-based price discovery, the design includes a dynamic reserve price adjustment mechanism based on actual core consumption. Together, these two components ensure robust price discovery while mitigating price collapse in cases of slight underutilization or collusive behavior.
 
-While the initial [RFC-1](https://github.com/polkadot-fellows/RFCs/blob/6f29561a4747bbfd95307ce75cd949dfff359e39/text/0001-agile-coretime.md) has provided a robust framework for Coretime allocation within the Polkadot, this proposal builds upon its strengths and uses many provided building blocks to address some areas that could be further improved. 
+# Motivation
 
-In particular, this proposal introduces the following changes:
-- It introduces a `RESERVE_PRICE` that anchors all markets, promoting price synchronicity within the Bulk markets (flexible + renewals). 
-    - This reduces complexity.
-    - This makes sure all consumers pay a closely correlated price for coretime within a `BULK_PERIOD`.
-- It reverses the order of the market and renewal phase. 
-    - This allows to fine-tune the price through market forces.
-    - This significantly increases the cost for core captures, because captured cores would become increasingly expensive over time.
-- It exposes the renewal decision, while still guaranteeing longterm tenants to keep their core, more to market forces. 
-- It removes the LeadIn period and introduces a (from the perspective of the coretime systemchain) passive Settlement Phase, that allows the secondary market to exert it's force.
+After exposing the initial system introduced in [RFC-1](https://github.com/polkadot-fellows/RFCs/blob/6f29561a4747bbfd95307ce75cd949dfff359e39/text/0001-agile-coretime.md) to real-world conditions, several weaknesses have become apparent. These lie especially in the fact that cores captured at very low prices are removed from the open market and can effectively be retained indefinitely, as renewal costs are minimal. The key issue here is the absence of price anchoring, which results in two divergent price paths: one for the initial purchase on the open market, and another fully deterministic one via the renewal bump mechanism.
 
-The premise of this proposal is to reduce complexity by introducing a common price (that develops relative to capacity consumption of Polkadot), while still allowing for market forces to add efficiency. Longterm lease owners still receive priority and a guaranteed allocation **IF** they can pay (close to) the market price. This prevents a situation where the renewal price significantly diverges from market prices which allows for core captures and general inefficiencies. While maximum price increase certainty might seem contradictory to efficient price discovery, the proposed model aims to balance these elements, utilizing market forces to determine the price and allocate cores effectively within certain bounds. In particular, prices are bounded upward within a `BULK_PERIOD` and can be calculated for future periods. It must be stated, however, that under high demand, prices could exponentially increase. This is necessary to allow for proper price discovery and efficient Coretime pricing and allocation.
+This proposal addresses these issues by anchoring all prices to a value derived from the market, while still preserving necessary privileges for current coretime consumers. The goal is to produce robust results across varying demand conditions (low, high, or volatile).
 
-Ultimately, this the framework proposed here adheres to all requirements stated in RFC-1.
+In particular, this proposal introduces the following key changes:
 
-## Stakeholders
+* **Reverses the order** of the market and renewal phases: all cores are first offered on the open market, and only then are renewal options made available.
+* **Introduces a dynamic `reserve_price`**, which is the minimum price coretime can be sold for in a period. This price adjusts based on consumption and does not rely on market participation.
+* **Makes unproductive core captures sufficiently expensive**, as all cores are exposed to the market price.
+
+The premise of this proposal is to offer a straightforward design that discovers the price of coretime within a period as a `clearing_price`. Long-term coretime holders still retain the privilege to keep their cores **if** they can pay the price discovered by the market (with some premium for that privilege). The proposed model aims to strike a balance between leveraging market forces for allocation while operating within defined bounds. In particular, prices are capped *within* a `BULK_PERIOD`, which gives some certainty about prices to existing teams. It must be noted, however, that under high demand, prices could increase exponentially *between* multiple market cycles. This is a necessary feature to ensure proper price discovery and efficient coretime allocation.
+
+Ultimately, the framework proposed here seeks to adhere to all requirements originally stated in RFC-1.
+
+# Stakeholders
 
 Primary stakeholder sets are:
 
@@ -37,86 +38,129 @@ Primary stakeholder sets are:
 - Polkadot Parachain teams both present and future, and their users.
 - Polkadot DOT token holders.
 
-## Explanation
+# Explanation
 
-### Bulk Markets
- 
-The `BULK_PERIOD` has been restructured into two primary segments: the `MARKET_PERIOD` and `RENEWAL_PERIOD`, along with an auxiliary `SETTLEMENT_PERIOD`. This latter period doesn't necessitate any actions from the coretime system chain, but it facilitates a more efficient allocation of coretime in secondary markets. A significant departure from the original proposal lies in the timing of renewals, which now occur post-market phase. This adjustment aims to harmonize renewal prices with their market counterparts, ensuring a more consistent and equitable pricing model.
+## Overview
 
-#### Market Period (14 days)
+The `BULK_PERIOD` has been restructured into two primary segments: the `MARKET_PERIOD` and the `RENEWAL_PERIOD`, along with an auxiliary`SETTLEMENT_PERIOD`. The latter does not require any active participation from the coretime system chain except to simply execute transfers of ownership between market participants. A significant departure from the current design lies in the timing of renewals, which now occur after the market phase. This adjustment aims to harmonize renewal prices with their market counterparts, ensuring a more consistent and equitable pricing model.
 
-During the market period, core sales are conducted through a well-established **clearing price Dutch auction** that features a `RESERVE_PRICE`. The price initiates at a multiplier, designated as `PRICE_MULTIPLIER` (for instance, 200% or 300%) and descends linearly to the `RESERVE_PRICE` throughout the duration of the `MARKET_PERIOD`. Each bidder is expected to submit both their desired price and the quantity (that is, the amount of Coretime) they wish to purchase. To secure these acquisitions, bidders must make a deposit equivalent to their bid multiplied by the chosen quantity, in DOT. Bidders are always allowed to post a bid under the current descending price, but never above it. 
+## Market Period (14 days)
 
-The market achieves resolution once all quantities have been sold, or the `RESERVE_PRICE` has been reached. This situation leads to determining the `CLEARING_PRICE` either by the lowest bid that was successful in clearing the entire market or by the `RESERVE_PRICE`. This mechanism yields a uniform price, shaped by market forces (refer to the following discussion for an explanation of its benefits). In other words, all buyers pay the same price (per unit of Coretime). Further down the benefits of this variant of a Dutch auction is discussed.
+During the market period, core sales are conducted through a well-established **clearing-price Dutch auction** that features a `reserve_price`. Since the auction format is a descending clock, the starting price is initialized as `reserve_price * PRICE_MULTIPLIER` (e.g., 300%). The price then descends linearly over the duration of the `MARKET_PERIOD` toward the `reserve_price`, which serves as the minimum price for coretime within that period.
 
-**Note:** In cases where some cores remain unsold in the market, all buyers are obligated to pay the `RESERVE_PRICE`. Bids below the `RESERVE_PRICE` are not valid.
+Each bidder is expected to submit both their desired price and the quantity (i.e., number of cores) they wish to purchase. To secure these acquisitions, bidders must deposit an amount equivalent to their bid multiplied by the chosen quantity, in DOT. Bidders are always allowed to post a bid at or below the current descending price, but never above it.
 
-#### Renewal Period (7 days)
+The market reaches resolution once all quantities have been sold or the `reserve_price` is reached. In the former case, the `clearing_price` is set equal to the price that sold the last unit. If cores remain unsold, the `clearing_price` is set to the `reserve_price`. This mechanism yields a uniform price that all buyers pay. Among other benefits discussed in the Appendix, this promotes truthful bidding—meaning the optimal strategy is simply to submit one's true valuation of coretime.
 
-The renewal period guarantees current tenants the right to renew their core even if they did not place a bid above the `CLEARING_PRICE` in the auction or did not participate at all. For the `MARKET_PERIOD` to produce the most efficient outcome and properly discover the price, we want as many active bidders as possible if demand is high. Therefore, as we expect at some point much more renewals than new entrants, we want to nudge even existing tenants to participate and place bids during the auction. We can do that, by making the renewal price slightly less attractive than the `CLEARING_PRICE` obtained in the auction. To achieve that, we can simply add a small `PENALTY` (e.g., 30%) to it. The renewal price would thereby be `CLEARING_PRICE * PENALTY`. We can easily argue that the privilege not to participate in the auction and having guaranteed coretime warrants a small price hike.
+## Renewal Period (7 days)
 
-Importantly, the `PENALTY` only applies when the number of bidders in the auction plus current tenants with renewal rights (each counted once) exceeds the number of available cores. In other words, if total demand is lower than the number of offered cores, the `PENALTY` is set to 0% and renewers simply pay the `CLEARING_PRICE`. This reflects the fact that we wouldn’t expect the `CLEARING_PRICE` to exceed the `RESERVE_PRICE` in such cases, making participation in the auction unnecessary. To avoid handling reimbursements, the 30% `PENALTY` is automatically triggered for all renewers as soon as the combined count of unique bidders and potential renewers surpasses the number of available cores.
+The renewal period guarantees current tenants the privilege to renew their core(s), even if they did not win in the auction (i.e., did not submit a bid at or above the `clearing_price`) or did not participate at all.
 
-All current tenants have 7 days to decide whether they want to renew their core or not. After obtaining the information who renewed and who did not, the system has the necessary information to conclusively allocate all cores and transfer ownership.
+All current tenants who obtained less cores from the market than they have the right to renew, have 7 days to decide whether they want to renew their core(s). Once this information is known, the system has everything it needs to conclusively allocate all cores and assign ownership. In cases where the combined number of renewals and auction winners exceeds the number of available cores, renewals are first served and then remaining cores are allocated from highest to lowest bidder until all are assigned (more information in the details on mechanics section). This means that under larger demand than supply (and some renewal decisions), some bidders may not receive the coretime they expected from the auction.
 
-In the case where there are combined more renewals and bidders at or above the `CLEARING_PRICE` than available cores, we allocate cores to the highest to lowest bidders until all available cores are allocated (albeit still at the `CLEARING_PRICE`). That effectively means that in situations with very high demand, some bidders might not get the coretime they bid for.
+While this mechanism is necessary to ensure that current coretime users are not suddenly left without an allocation, potentially disrupting their operations, it may distort price discovery in the open market. Specifically, it could mean that a winning bidder is displaced by a renewal decision.
 
-If the supply exceeds the demand, all unallocated cores are transferred to the On-Demand Market.
+Since bidding is straightforward and can be regarded static (it requires only one transaction) and can therefore be trivially automated, we view renewals as a safety net and want to encourage all coretime users to participate in the auction. To that end, we introduce a financial incentive to bid by increasing the renewal price to `clearing_price * PENALTY` (e.g., 30%). This penalty must be high enough to create a sufficient incentive for teams to prefer bidding over passively renewing.
 
-#### Reserve Price Adjustment
+**Note:** Importantly, the `PENALTY` only applies when the number of unique bidders in the auction plus current tenants with renewal rights exceeds the number of available cores. If total demand is lower than the number of offered cores, the `PENALTY` is set to 0%, and renewers pay only the `clearing_price`. This reflects the fact that we would not expect the `clearing_price` to exceed the `reserve_price` even with all coretime consumers participating in the auction. To avoid managing reimbursements, the 30% `PENALTY` is automatically applied to all renewers as soon as the combined count of unique bidders and potential renewers surpasses the number of available cores.
 
-After all cores are allocated, the `RESERVE_PRICE` is adjusted similar to the process described in RFC-1, where we define `TARGET_CONSUMPTION_RATE` as a ratio of the available to unsold cores. Then, the upcoming reserve price is adjusted upwards or downward, depending on whether we over- or undershoot the target consumption. If the consumption is met precisely, the price remains unchanged in the next `BULK_PERIOD`. 
+## Reserve Price Adjustment
 
-**Note**: When designing this mechanism, we want to make sure that small deviations have a smaller price impact than bigger deviations. We propose the following function:
+After each `RENEWAL_PERIOD`, once all renewal decisions have been collected and cores are fully allocated, the `reserve_price` is updated to capture the demand in the next period. The goal is to ensure that prices adjust smoothly in response to demand fluctuations—rising when demand exceeds targets and falling when it is lower—while avoiding excessive volatility from small deviations.
 
-- `reserve_price_old`: reserve price from the previous period
-- `consumption_rate`: how many cores were sold relative to how many were available.
-- `TARGET_CONSUMPTION_RATE`: how many of the available cores we want to sell without increasing the price. We propose 90%. This leaves enough area downward and upward to adjust prices more aggressively.
-- `K`: sensitivity parameter. How aggressively we want to adjust the price. We propose a value between 2 and 3, but might need more evaluation.
-- `P_MIN`: A minimum price we never undercut. This is important to bound the price downward and prevent computational issues if prices drop too low. We propose a value of 1 DOT.
-- `MIN_INCREMENT`: A minimum increment after we reached 100% capacity. This is important to quickly recover after long periods of low demand which resulted in low prices.
+We define the following parameters:
 
-We update the price according to:
+* `reserve_price_t`: Reserve price in the current period
+* `reserve_price_{t+1}`: Reserve price for the next period (final value after adjustments)
+* `consumption_rate_t`: Fraction of cores sold (including renewals) out of the total available in the current period
+* `TARGET_CONSUMPTION_RATE`: Target ratio of sold-to-available cores (we propose 90%)
+* `K`: Sensitivity parameter controlling how aggressively the price responds to deviations (we propose values between 2 and 3)
+* `P_MIN`: Minimum reserve price floor (we propose 1 DOT to prevent runaway downward spirals and computational issues)
+* `MIN_INCREMENT`: Minimum absolute increment applied when the market is fully saturated (i.e., 100% consumption; proposed value: 100 DOT)
 
-`p_new = reserve_price_old * exp(K * (consumption_rate - TARGET_CONSUMPTION_RATE))`
+We update the price according to the following rule:
 
-The `RESERVE_PRICE` in the next period will be:
+```
+price_candidate_t = reserve_price_t * exp(K * (consumption_rate_t - TARGET_CONSUMPTION_RATE))
+```
 
-`RESERVE_PRICE_NEXT = max(p_new, P_MIN)`
+We then ensure that the price does not fall below `P_MIN`:
 
-**Note:** To reduce the recovery time from very low prices it is important to, in the case of 100% capacity, at least increment the `RESERVE_PRICE_NEXT` by `MIN_INCREMENT`, which could be, e.g., 100 DOT.
+```
+price_candidate_t = max(price_candidate_t, P_MIN)
+```
 
-#### Settlement Period / Secondary Market (7 days)
+If `consumption_rate_t == 100%`, we apply an additional adjustment:
 
-The remaining 7 days of a sales cycle serve as a settlement period, where participants have ample time to trade Coretime on secondary markets before the onset of the next `BULK_PERIOD`. This proposal makes no assumptions about the structure of these markets, because they are entirely operated on the social layer and handled directly by buyers and sellers. In this context, maintaining restrictions on the resale of renewed cores in the secondary market appears unjustified. In fact, such constraints could be harmful in cases where the primary market does not fully achieve efficiency. **We therefore propose lifting all restrictions on the resale or slicing of cores in the secondary market.**
+```
+if (price_candidate_t - reserve_price_t < MIN_INCREMENT) {
+    reserve_price_{t+1} = reserve_price_t + MIN_INCREMENT
+} else {
+    reserve_price_{t+1} = price_candidate_t
+}
+```
 
-#### New Track: Coretime Admin
+In other words, we adjust the `reserve_price` using the exponential scaling rule, except in the special case where consumption is at 100% but the resulting price increase would be less than `MIN_INCREMENT`. In that case, we instead apply the fixed minimum increment. This exception ensures that the system can recover more quickly from prolonged periods of low prices.
 
-To be able to react quickly, we suggest that the parameters of the model are directly accessible by governance. These include:
+We argue that in a situation with persistently low prices and a sudden surge in real demand (i.e., full core consumption), such a jump is both warranted and economically justified.
 
-- `P_MIN`
-- `K`
-- `MIN_INCREMENT`
-- `TARGET_CONSUMPTION_RATE`
-- `PENALTY`
+## Settlement Period / Secondary Market (7 days)
 
-This track should allow us to adjust the parameters in a timely manner, within the duration of a `BULK_PERIOD`, so that the changes can take effect before the next period begins.
+The remaining 7 days of a sales cycle serve as a settlement period, during which participants have ample time to trade coretime on secondary markets before the onset of the next `BULK_PERIOD`. This proposal makes no assumptions about the structure of these markets, as they are entirely operated on the social layer and managed directly by buyers and sellers. In this context, maintaining restrictions on the resale of renewed cores in the secondary market appears unjustified—especially given that prices are uniform and market-driven. In fact, such constraints could be harmful in cases where the primary market does not fully achieve efficiency. 
 
-### Benefits of this System
-- The introduction of a single price, the `CLEARING_PRICE`, provides an anchor for all Coretime markets. This is a preventative measure against the possible divergence and mismatch of prices, which could inadvertently lead to a situation where existing tenants secure cores at significantly below-market rates.
-- With a more market-responsive pricing system, we can achieve a more efficient price discovery process. Any price increases will be less arbitrary and more dynamic.
-- Existing tenants can minimize their costs by bidding their true valuation in the auction, since they can always expect to pay the lowest price that clears the auction (or the `RESERVE_PRICE`). This removes the need for any elaborate bidding strategies and makes participation straight forward without much overhead. In addition, we grant them a safety-net in the situation where they did not participate in the auction (or forgot/ had technical difficulties) or did not bid above the `CLEARING_PRICE`. Then, they still may to renew their core outside the auction phase, but potentially incur a slightly higher price caused by the `PENALTY`. We argue that this is still a fair price to pay for that priviledge.
-- Prices within a `BULK_PERIOD` are bound upwards by the current `RESERVE_PRICE * PRICE_MULTIPLIER`. This provides ample time for tenants to secure necessary funds to meet the potential price escalation.
-- All existing tenants pay an equal amount for Coretime, reflecting our intent to price the Coretime itself and not the relative timing of individual projects.
+We therefore propose lifting all restrictions on the resale or slicing of cores in the secondary market.
 
-### Notes and Implications of this System
-- Bidders above the clearing price might not receive their coretime: We aim to grant existing coretime users the exclusive right to renew their cores at the `CLEARING_PRICE * PENALTY`. To facilitate this, we conduct a market phase before the renewal phase, during which all cores are put up for sale. However, current coretime users are not obligated to participate in this market phase. While the `PENALTY` still nudges them to participate, it might be the case that, together with renewals, there are less cores available than we offered in the market. This condition may occasionally result in bidders not receiving their coretime despite bidding above the clearing price. After renewals, any remaining cores will be allocated to bidders in descending order of their bids, still applying the uniform clearing price. We consider this scenario a necessary trade-off to ensure that renewals remain influenced by market dynamics. Ultimately, we believe this approach is justified, as it is preferable to risk delaying new projects until subsequent cycles rather than displacing ongoing projects.
-- We want current coretime owners to participate in the auction to improve overall efficiency. To encourage this, we introduce a `PENALTY`, which creates some financial incentive to take part during the `MARKET_PERIOD`. However, there’s a challenge: final allocation of cores can only happen after all renewal decisions have been collected. But current tenants would prefer to know whether they’ve won in the auction before deciding whether to fall back to renewal and pay the `PENALTY`. This can be resolved by ensuring that any bid from a current coretime owner that is at or above the `CLEARING_PRICE` is never kicked out. In other words, if a current owner bids at or above the `CLEARING_PRICE`, they are guaranteed to retain the coretime—avoiding the `PENALTY` altogether. If they don’t win in the auction, they can still fall back to renewal, paying `CLEARING_PRICE * PENALTY`. Note that this logic does not apply to new bidders (those without existing coretime): their bids may be displaced (starting from the lowest to highest) depending on the renewal decisions.
-- Bids below the current descending price should always be allowed (i.e., we would not want to require teams sitting and waiting for the price to finally be declined to their target level). That makes it easy to participate for bidders.
-- Bids below the current descending price can always be raised, but only to the clock price at most.
-- Bids above the current descending price **are not allowed**. This marks a difference to a simple kth-price auction and prevents sniping.
+# Additional Considerations
 
-#### Insights: Clearing Price Dutch Auctions
+## New Track: Coretime Admin
+
+To enable rapid response, we propose that the parameters of the model be directly accessible by governance. These include:
+
+* `P_MIN`
+* `K`
+* `PRICE_MULTIPLIER`
+* `MIN_INCREMENT`
+* `TARGET_CONSUMPTION_RATE`
+* `PENALTY`
+
+This setup should allow us to adjust the parameters in a timely manner, within the duration of a `BULK_PERIOD`, so that changes can take effect before the next period begins.
+
+## Transition to the new Model
+
+Upon acceptance of this RFC, we should make sure to transition as smoothly as possible to the new design.
+
+* All teams that own cores in the current system should be endowed with the same number of cores in the new system, with the ability to renew them starting from the first period.
+* The initial `reserve_price` should be chosen sensibly to avoid distortions in the early phases.
+* A sufficient number of cores should be made available on the market to ensure enough liquidity to allow price discovery functions properly.
+
+## Details on Some Mechanics
+
+* The price descends linearly from `reserve_price * PRICE_MULTIPLIER` to the `reserve_price` over the duration of the `MARKET_PERIOD`. Importantly, each discrete price level should be held for a sufficiently long interval (e.g., 6–12 hours).
+* A potential issue arises when we experience demand spikes after prolonged periods of low demand (which result in low reserve prices). In such cases, the price range between `reserve_price` and the upper bound (i.e., `reserve_price * PRICE_MULTIPLIER`) may become economically tight and unable to capture the full willingness to pay from all bidders. If this affects most participants, demand will concentrate at the upper bound of the Dutch auction, making front-running a profitable strategy—either by excessively tipping bidding transactions or through explicit collusion with block producers.
+  To mitigate this, we propose preventing the market from closing at the upper bound prematurely. Even if demand exceeds available cores at this level, we continue collecting all orders. Then, we randomize winners instead of using a first-come-first-served approach. Additionally, we may break up bulk orders and treat them as separate bids. This still gives a higher chance to bidders willing to buy larger quantities, but avoids all-or-nothing outcomes. These steps diminish the benefit of tipping or collusion, since bid timing no longer affects allocation. While we expect such scenarios to be the exception, it's important to note that this will not negatively impact current tenants, who always retain the safety net of renewal. After a few periods of maximum bids at maximum capacity, the range should span wide enough to capture demand within its bounds.
+* One implication of granting the renewal privilege after the `MARKET_PERIOD` is that some bidders, despite bidding above the `clearing_price`, may not receive coretime. We believe this is justified, because the harm of displacing an existing project is bigger than preventing a new project from getting in (if there is no cores available) for a bit. Additionally, this inefficiency is compensated for by the causing entities paying the `PENALTY`. We need, however, additional rules to resolve the allocation issues. These are:
+  1. Bidders who already hold renewable cores cannot be displaced by the renewal decision of another party.
+  2. Among those who *can* be displaced, we begin with the lowest submitted bids.
+* If a current tenant wins cores on the market, they forfeit the right to renew those specific cores. For example, if an entity currently holds three cores and wins two in the market, it may only opt to renew one. The only way to increase the number of cores at the end of a `BULK_PERIOD` is to acquire them entirely through the market.
+* Bids **below** the current descending price should always be allowed. In other words, teams shouldn't have to wait idly for the price to drop to their target.
+* Bids below the current descending price can be **raised**, but only up to the current clock price.
+* Bids **above** the current descending price are **not allowed**. This is a key difference from a simple *kth*-price auction and helps prevent sniping.
+* All cores that remain unallocated after the `RENEWAL_PERIOD` are transferred to the On-Demand Market.
+
+## Implications
+
+* The introduction of a single price (`clearing_price`) provides a consistent anchor for all available coretime. This serves as a safeguard against price divergence, preventing scenarios where entities acquire cores at significantly below-market rates and keep them for minimal costs.
+* With the introduction of the `PENALTY`, it is always financially preferable for teams to participate in the auction. By bidding their true valuation, they maximize their chance of winning a core at the lowest possible price without incurring the penalty.
+* In this design, it is virtually impossible to "accidentally" lose cores, since renewals occur after the market phase and are guaranteed for current tenants.
+* Prices within a `BULK_PERIOD` are bounded upward, as the maximum a renewer could ever pay is `reserve_price * PRICE_MULTIPLIER * PENALTY`. This provides teams with ample time to prepare and secure the necessary funds in anticipation of potential price increases. By incorporating reserve price adjustment into their planning, teams can anticipate worst-case future price increases.
+
+# Appendix
+
+## Further Discussion Points
+
+- **Reintroduction of Candle Auctions**: Polkadot gathered vast experience with candle auctions where more than 200 auctions has been conducted throughout more than two years. [Our study](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5109856) analyzing the results in much detail reveals that the mechanism itself is both efficient and (nearly) extracting optimal revenue. This provides confidence to use it to allocate the winners instead of a descending clock auction. Notably, this change solely affects the bidding process and winner determination. Core components, such as the k-th price, reserve price, and maximum price, remain unaffected.
+
+## Insights: Clearing Price Dutch Auctions
 Having all bidders pay the market clearing price offers some benefits and disadvantages.
 
 - Advantages:
@@ -129,18 +173,8 @@ Having all bidders pay the market clearing price offers some benefits and disadv
     - **(Potentially) Lower Revenue**: While the theory predicts revenue-equivalence between a uniform price and pay-as-bid type of auction, slightly lower revenue for the former type is observed empirically. Arguably, revenue maximization (i.e., squeezing out the maximum willingness to pay from bidders) is not the priority for Polkadot. Instead, it is interested in efficient allocation and the other benefits illustrated above.
     - **(Technical) Complexity**: Instead of making a final purchase within the auction, the bid is only a deposit. Some refunds might happen after the auction is finished. This might pose additional challenges from the technical side (e.g., storage requirements).
 
-
-### Further Discussion Points
-
-- **Reintroduction of Candle Auctions**: Polkadot gathered vast experience with candle auctions where more than 200 auctions has been conducted throughout more than two years. [Our study](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5109856) analyzing the results in much detail reveals that the mechanism itself is both efficient and (nearly) extracting optimal revenue. This provides confidence to use it to allocate the winners instead of a descending clock auction. Notably, this change solely affects the bidding process and winner determination. Core components, such as the k-th price, reserve price, and maximum price, remain unaffected.
-
-
 ## Prior Art and References
 
 This RFC builds extensively on the available ideas put forward in [RFC-1](https://github.com/polkadot-fellows/RFCs/blob/6f29561a4747bbfd95307ce75cd949dfff359e39/text/0001-agile-coretime.md). 
 
-Additionally, I want to express a special thanks to [Samuel Haefner](https://samuelhaefner.github.io/) and [Shahar Dobzinski](https://sites.google.com/site/dobzin/) for fruitful discussions and helping me structure my thoughts. 
-
-## Unresolved Questions
-
-- None yet
+Additionally, I want to express a special thanks to [Samuel Haefner](https://samuelhaefner.github.io/), [Shahar Dobzinski](https://sites.google.com/site/dobzin/), and Alistair Stewart for fruitful discussions and helping me structure my thoughts.
