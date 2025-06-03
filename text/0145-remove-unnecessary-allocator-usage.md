@@ -125,26 +125,30 @@ The version 1 of these functions has been taken as a base rather than the versio
 ```wat
 (func $ext_storage_clear_prefix_version_3
     (param $maybe_prefix i64) (param $maybe_limit i64)
-    (param $maybe_cursor_in_out i64) (param $backend_out i32)
-    (param $unique_out i32) (param $loops_out i32) (return i32))
+    (param $maybe_cursor_in i64) (param $removal_results_out i32))
 (func $ext_default_child_storage_clear_prefix_version_3
     (param $child_storage_key i64) (param $prefix i64) (param $maybe_limit i64)
-    (param $maybe_cursor_in_out i64) (param $backend_out i32)
-    (param $unique_out i32) (param $loops_out i32) (return i32))
+    (param $maybe_cursor_in i64) (param $removal_results_out i32))
 (func $ext_default_child_storage_kill_version_4
     (param $child_storage_key i64) (param $maybe_limit i64)
-    (param $maybe_cursor_in_out i64) (param $backend_out i32)
-    (param $unique_out i32) (param $loops_out i32) (return i32))
+    (param $maybe_cursor_in i64) (param $removal_results_out i32))
 ```
 
-These functions amend already implemented but still unused functions introduced by [PPP#7](https://github.com/w3f/PPPs/pull/7), hence there's no version number change. `maybe_limit` defines the limit of backend deletions, not counting keys in the current overlay. `maybe_cursor_in_out` may be used to pass a continuation cursor. The cursor is written into the same field if the limit was reached and not all the keys were cleared; otherwise, `None` is written. (CAVEAT: It's impossible to determine appropriate buffer size; the approach is discussible). `backend_out`, `unique_out` and `loops_out` parameters contain the memory location where the output is written (respectively, the number of items removed from the backend DB; the number of unique keys removes, including overlay; the number of iterations done). Any of the output parameters may be `-1`, in which case no output is written. The functions return `0` to indicate success, or `1` if `maybe_cursor_in_out` buffer length was not enough to write the new cursor; in the latter case, `None` is written to the buffer.
+These functions amend already implemented but still unused functions introduced by [PPP#7](https://github.com/w3f/PPPs/pull/7), hence there's no version number change. `maybe_limit` defines the limit of backend deletions, not counting keys in the current overlay. `maybe_cursor_in` may be used to pass a continuation cursor. After the operation is completed, a SCALE-encoded [varying data](https://spec.polkadot.network/id-cryptography-encoding#defn-varrying-data-type) are written to the provided output buffer. The varying data consists from the following fields, in order:
 
+* [Optional](https://spec.polkadot.network/id-cryptography-encoding#defn-option-type) continuation cursor. Absence of the cursor denotes the end of the operation;
+* 32-bit unsigned integer representing the number of items removed from the backend DB;
+* 32-bit unsigned integer representing the number of unique keys removes, including overlay;
+* 32-bit unsigned integer representing the number of iterations done.
+
+The size of the output buffer must be determined at the compile time. If the SCALE-encoded data do not fit into the buffer, the data are silently trucated. The caller may determine the truncation by checking the value length data contained in the SCALE-encoded data header.
+ 
 ```wat
 (func $ext_crypto_ed25519_sign_version_2
     (param $key_type_id i32) (param $key i32) (param $msg i64) (param $out i32) (return i32))
 (func $ext_crypto_sr25519_sign_version_2
     (param $key_type_id i32) (param $key i32) (param $msg i64) (param $out i32) (return i32))
-func $ext_crypto_ecdsa_sign_version_2
+(func $ext_crypto_ecdsa_sign_version_2
     (param $key_type_id i32) (param $key i32) (param $msg i64) (param $out i32) (return i32))
 (func $ext_crypto_ecdsa_sign_prehashed_version_2
     (param $key_type_id i32) (param $key i32) (param $msg i64) (param $out i32) (return i64))
