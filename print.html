@@ -523,120 +523,157 @@ account_id
 <div style="break-before: page; page-break-before: always;"></div><p><a href="https://github.com/polkadot-fellows/RFCs/pull/17">(source)</a></p>
 <p><strong>Table of Contents</strong></p>
 <ul>
-<li><a href="proposed/0017-coretime-market-redesign.html#rfc-0017-coretime-market-redesign">RFC-0017: Coretime Market Redesign</a>
-<ul>
+<li><a href="proposed/0017-coretime-market-redesign.html#rfc-0017-coretime-market-redesign">RFC-0017: Coretime Market Redesign</a></li>
 <li><a href="proposed/0017-coretime-market-redesign.html#summary">Summary</a></li>
 <li><a href="proposed/0017-coretime-market-redesign.html#motivation">Motivation</a></li>
 <li><a href="proposed/0017-coretime-market-redesign.html#stakeholders">Stakeholders</a></li>
 <li><a href="proposed/0017-coretime-market-redesign.html#explanation">Explanation</a>
 <ul>
-<li><a href="proposed/0017-coretime-market-redesign.html#bulk-markets">Bulk Markets</a></li>
-<li><a href="proposed/0017-coretime-market-redesign.html#benefits-of-this-system">Benefits of this System</a></li>
-<li><a href="proposed/0017-coretime-market-redesign.html#notes-and-implications-of-this-system">Notes and Implications of this System</a></li>
-<li><a href="proposed/0017-coretime-market-redesign.html#further-discussion-points">Further Discussion Points</a></li>
+<li><a href="proposed/0017-coretime-market-redesign.html#overview">Overview</a></li>
+<li><a href="proposed/0017-coretime-market-redesign.html#market-period-14-days">Market Period (14 days)</a></li>
+<li><a href="proposed/0017-coretime-market-redesign.html#renewal-period-7-days">Renewal Period (7 days)</a></li>
+<li><a href="proposed/0017-coretime-market-redesign.html#reserve-price-adjustment">Reserve Price Adjustment</a></li>
+<li><a href="proposed/0017-coretime-market-redesign.html#settlement-period--secondary-market-7-days">Settlement Period / Secondary Market (7 days)</a></li>
 </ul>
 </li>
+<li><a href="proposed/0017-coretime-market-redesign.html#additional-considerations">Additional Considerations</a>
+<ul>
+<li><a href="proposed/0017-coretime-market-redesign.html#new-track-coretime-admin">New Track: Coretime Admin</a></li>
+<li><a href="proposed/0017-coretime-market-redesign.html#transition-to-the-new-model">Transition to the new Model</a></li>
+<li><a href="proposed/0017-coretime-market-redesign.html#details-on-some-mechanics">Details on Some Mechanics</a></li>
+<li><a href="proposed/0017-coretime-market-redesign.html#implications">Implications</a></li>
+</ul>
+</li>
+<li><a href="proposed/0017-coretime-market-redesign.html#appendix">Appendix</a>
+<ul>
+<li><a href="proposed/0017-coretime-market-redesign.html#further-discussion-points">Further Discussion Points</a></li>
+<li><a href="proposed/0017-coretime-market-redesign.html#insights-clearing-price-dutch-auctions">Insights: Clearing Price Dutch Auctions</a></li>
 <li><a href="proposed/0017-coretime-market-redesign.html#prior-art-and-references">Prior Art and References</a></li>
-<li><a href="proposed/0017-coretime-market-redesign.html#unresolved-questions">Unresolved Questions</a></li>
 </ul>
 </li>
 </ul>
 <h1 id="rfc-0017-coretime-market-redesign"><a class="header" href="#rfc-0017-coretime-market-redesign">RFC-0017: Coretime Market Redesign</a></h1>
 <div class="table-wrapper"><table><thead><tr><th></th><th></th></tr></thead><tbody>
 <tr><td><strong>Original Proposition Date</strong></td><td>05.08.2023</td></tr>
-<tr><td><strong>Revision Date</strong></td><td>30.05.2025</td></tr>
-<tr><td><strong>Description</strong></td><td>This RFC redesigns Polkadot's coretime market to ensure that coretime is efficiently priced through a clearing-price Dutch auction. It also introduces a mechanism that guarantees current coretime holders the right to renew their cores outside the market, albeit at a renewal price derived directly from the market outcome. This design aligns renewal and market prices, preserving long-term access for current coretime owners while ensuring that market dynamics exert sufficient pressure on all purchasers, resulting in an efficient allocation.</td></tr>
+<tr><td><strong>Revision Date</strong></td><td>02.06.2025</td></tr>
+<tr><td><strong>Description</strong></td><td>This RFC redesigns Polkadot's coretime market to ensure that coretime is efficiently priced through a clearing-price Dutch auction. It also introduces a mechanism that guarantees current coretime holders the right to renew their cores outside the market—albeit at the market price with an additional charge. This design aligns renewal and market prices, preserving long-term access for current coretime owners while ensuring that market dynamics exert sufficient pressure on all purchasers, resulting in an efficient allocation.</td></tr>
 <tr><td><strong>Authors</strong></td><td>Jonas Gehrlein</td></tr>
 </tbody></table>
 </div>
-<h2 id="summary-3"><a class="header" href="#summary-3">Summary</a></h2>
-<p>This document is a proposal for restructuring the bulk markets in the Polkadot's coretime allocation system to improve efficiency and fairness. The proposal suggests separating the <code>BULK_PERIOD</code> into <code>MARKET_PERIOD</code> and <code>RENEWAL_PERIOD</code>, allowing for a market-driven price discovery through a clearing price Dutch auction during the <code>MARKET_PERIOD</code> followed by renewal offers at the <code>MARKET_PRICE</code> during the <code>RENEWAL_PERIOD</code>. The new system ensures synchronicity between renewal and market prices, fairness among all current tenants, and efficient price discovery, while preserving price caps to provide security for current tenants.</p>
-<h2 id="motivation-3"><a class="header" href="#motivation-3">Motivation</a></h2>
-<p>While the initial <a href="https://github.com/polkadot-fellows/RFCs/blob/6f29561a4747bbfd95307ce75cd949dfff359e39/text/0001-agile-coretime.md">RFC-1</a> has provided a robust framework for Coretime allocation within the Polkadot, this proposal builds upon its strengths and uses many provided building blocks to address some areas that could be further improved. </p>
-<p>In particular, this proposal introduces the following changes:</p>
+<h1 id="summary-3"><a class="header" href="#summary-3">Summary</a></h1>
+<p>This document proposes a restructuring of the bulk markets in Polkadot's coretime allocation system to improve efficiency and fairness. The proposal suggests splitting the <code>BULK_PERIOD</code> into three consecutive phases: <code>MARKET_PERIOD</code>, <code>RENEWAL_PERIOD</code>, and <code>SETTLEMENT_PERIOD</code>. This structure enables market-driven price discovery through a clearing-price Dutch auction, followed by renewal offers during the <code>RENEWAL_PERIOD</code>.</p>
+<p>With all coretime consumers paying a unified price, we propose removing all liquidity restrictions on cores purchased either during the initial market phase or renewed during the renewal phase. This allows a meaningful <code>SETTLEMENT_PERIOD</code>, during which final agreements and deals between coretime consumers can be orchestrated on the social layer—complementing the agility this system seeks to establish.</p>
+<p>In the new design, we obtain a uniform price, the <code>clearing_price</code>, which anchors new entrants and current tenants. To complement market-based price discovery, the design includes a dynamic reserve price adjustment mechanism based on actual core consumption. Together, these two components ensure robust price discovery while mitigating price collapse in cases of slight underutilization or collusive behavior.</p>
+<h1 id="motivation-3"><a class="header" href="#motivation-3">Motivation</a></h1>
+<p>After exposing the initial system introduced in <a href="https://github.com/polkadot-fellows/RFCs/blob/6f29561a4747bbfd95307ce75cd949dfff359e39/text/0001-agile-coretime.md">RFC-1</a> to real-world conditions, several weaknesses have become apparent. These lie especially in the fact that cores captured at very low prices are removed from the open market and can effectively be retained indefinitely, as renewal costs are minimal. The key issue here is the absence of price anchoring, which results in two divergent price paths: one for the initial purchase on the open market, and another fully deterministic one via the renewal bump mechanism.</p>
+<p>This proposal addresses these issues by anchoring all prices to a value derived from the market, while still preserving necessary privileges for current coretime consumers. The goal is to produce robust results across varying demand conditions (low, high, or volatile).</p>
+<p>In particular, this proposal introduces the following key changes:</p>
 <ul>
-<li>It introduces a <code>RESERVE_PRICE</code> that anchors all markets, promoting price synchronicity within the Bulk markets (flexible + renewals). 
-<ul>
-<li>This reduces complexity.</li>
-<li>This makes sure all consumers pay a closely correlated price for coretime within a <code>BULK_PERIOD</code>.</li>
+<li><strong>Reverses the order</strong> of the market and renewal phases: all cores are first offered on the open market, and only then are renewal options made available.</li>
+<li><strong>Introduces a dynamic <code>reserve_price</code></strong>, which is the minimum price coretime can be sold for in a period. This price adjusts based on consumption and does not rely on market participation.</li>
+<li><strong>Makes unproductive core captures sufficiently expensive</strong>, as all cores are exposed to the market price.</li>
 </ul>
-</li>
-<li>It reverses the order of the market and renewal phase. 
-<ul>
-<li>This allows to fine-tune the price through market forces.</li>
-<li>This significantly increases the cost for core captures, because captured cores would become increasingly expensive over time.</li>
-</ul>
-</li>
-<li>It exposes the renewal decision, while still guaranteeing longterm tenants to keep their core, more to market forces. </li>
-<li>It removes the LeadIn period and introduces a (from the perspective of the coretime systemchain) passive Settlement Phase, that allows the secondary market to exert it's force.</li>
-</ul>
-<p>The premise of this proposal is to reduce complexity by introducing a common price (that develops relative to capacity consumption of Polkadot), while still allowing for market forces to add efficiency. Longterm lease owners still receive priority and a guaranteed allocation <strong>IF</strong> they can pay (close to) the market price. This prevents a situation where the renewal price significantly diverges from market prices which allows for core captures and general inefficiencies. While maximum price increase certainty might seem contradictory to efficient price discovery, the proposed model aims to balance these elements, utilizing market forces to determine the price and allocate cores effectively within certain bounds. In particular, prices are bounded upward within a <code>BULK_PERIOD</code> and can be calculated for future periods. It must be stated, however, that under high demand, prices could exponentially increase. This is necessary to allow for proper price discovery and efficient Coretime pricing and allocation.</p>
-<p>Ultimately, this the framework proposed here adheres to all requirements stated in RFC-1.</p>
-<h2 id="stakeholders-2"><a class="header" href="#stakeholders-2">Stakeholders</a></h2>
+<p>The premise of this proposal is to offer a straightforward design that discovers the price of coretime within a period as a <code>clearing_price</code>. Long-term coretime holders still retain the privilege to keep their cores <strong>if</strong> they can pay the price discovered by the market (with some premium for that privilege). The proposed model aims to strike a balance between leveraging market forces for allocation while operating within defined bounds. In particular, prices are capped <em>within</em> a <code>BULK_PERIOD</code>, which gives some certainty about prices to existing teams. It must be noted, however, that under high demand, prices could increase exponentially <em>between</em> multiple market cycles. This is a necessary feature to ensure proper price discovery and efficient coretime allocation.</p>
+<p>Ultimately, the framework proposed here seeks to adhere to all requirements originally stated in RFC-1.</p>
+<h1 id="stakeholders-2"><a class="header" href="#stakeholders-2">Stakeholders</a></h1>
 <p>Primary stakeholder sets are:</p>
 <ul>
 <li>Protocol researchers, developers, and the Polkadot Fellowship.</li>
 <li>Polkadot Parachain teams both present and future, and their users.</li>
 <li>Polkadot DOT token holders.</li>
 </ul>
-<h2 id="explanation-3"><a class="header" href="#explanation-3">Explanation</a></h2>
-<h3 id="bulk-markets"><a class="header" href="#bulk-markets">Bulk Markets</a></h3>
-<p>The <code>BULK_PERIOD</code> has been restructured into two primary segments: the <code>MARKET_PERIOD</code> and <code>RENEWAL_PERIOD</code>, along with an auxiliary <code>SETTLEMENT_PERIOD</code>. This latter period doesn't necessitate any actions from the coretime system chain, but it facilitates a more efficient allocation of coretime in secondary markets. A significant departure from the original proposal lies in the timing of renewals, which now occur post-market phase. This adjustment aims to harmonize renewal prices with their market counterparts, ensuring a more consistent and equitable pricing model.</p>
-<h4 id="market-period-14-days"><a class="header" href="#market-period-14-days">Market Period (14 days)</a></h4>
-<p>During the market period, core sales are conducted through a well-established <strong>clearing price Dutch auction</strong> that features a <code>RESERVE_PRICE</code>. The price initiates at a multiplier, designated as <code>PRICE_MULTIPLIER</code> (for instance, 200% or 300%) and descends linearly to the <code>RESERVE_PRICE</code> throughout the duration of the <code>MARKET_PERIOD</code>. Each bidder is expected to submit both their desired price and the quantity (that is, the amount of Coretime) they wish to purchase. To secure these acquisitions, bidders must make a deposit equivalent to their bid multiplied by the chosen quantity, in DOT. Bidders are always allowed to post a bid under the current descending price, but never above it. </p>
-<p>The market achieves resolution once all quantities have been sold, or the <code>RESERVE_PRICE</code> has been reached. This situation leads to determining the <code>CLEARING_PRICE</code> either by the lowest bid that was successful in clearing the entire market or by the <code>RESERVE_PRICE</code>. This mechanism yields a uniform price, shaped by market forces (refer to the following discussion for an explanation of its benefits). In other words, all buyers pay the same price (per unit of Coretime). Further down the benefits of this variant of a Dutch auction is discussed.</p>
-<p><strong>Note:</strong> In cases where some cores remain unsold in the market, all buyers are obligated to pay the <code>RESERVE_PRICE</code>. Bids below the <code>RESERVE_PRICE</code> are not valid.</p>
-<h4 id="renewal-period-7-days"><a class="header" href="#renewal-period-7-days">Renewal Period (7 days)</a></h4>
-<p>The renewal period guarantees current tenants the right to renew their core even if they did not place a bid above the <code>CLEARING_PRICE</code> in the auction or did not participate at all. For the <code>MARKET_PERIOD</code> to produce the most efficient outcome and properly discover the price, we want as many active bidders as possible if demand is high. Therefore, as we expect at some point much more renewals than new entrants, we want to nudge even existing tenants to participate and place bids during the auction. We can do that, by making the renewal price slightly less attractive than the <code>CLEARING_PRICE</code> obtained in the auction. To achieve that, we can simply add a small <code>PENALTY</code> (e.g., 30%) to it. The renewal price would thereby be <code>CLEARING_PRICE * PENALTY</code>. We can easily argue that the privilege not to participate in the auction and having guaranteed coretime warrants a small price hike.</p>
-<p>Importantly, the <code>PENALTY</code> only applies when the number of bidders in the auction plus current tenants with renewal rights (each counted once) exceeds the number of available cores. In other words, if total demand is lower than the number of offered cores, the <code>PENALTY</code> is set to 0% and renewers simply pay the <code>CLEARING_PRICE</code>. This reflects the fact that we wouldn’t expect the <code>CLEARING_PRICE</code> to exceed the <code>RESERVE_PRICE</code> in such cases, making participation in the auction unnecessary. To avoid handling reimbursements, the 30% <code>PENALTY</code> is automatically triggered for all renewers as soon as the combined count of unique bidders and potential renewers surpasses the number of available cores.</p>
-<p>All current tenants have 7 days to decide whether they want to renew their core or not. After obtaining the information who renewed and who did not, the system has the necessary information to conclusively allocate all cores and transfer ownership.</p>
-<p>In the case where there are combined more renewals and bidders at or above the <code>CLEARING_PRICE</code> than available cores, we allocate cores to the highest to lowest bidders until all available cores are allocated (albeit still at the <code>CLEARING_PRICE</code>). That effectively means that in situations with very high demand, some bidders might not get the coretime they bid for.</p>
-<p>If the supply exceeds the demand, all unallocated cores are transferred to the On-Demand Market.</p>
-<h4 id="reserve-price-adjustment"><a class="header" href="#reserve-price-adjustment">Reserve Price Adjustment</a></h4>
-<p>After all cores are allocated, the <code>RESERVE_PRICE</code> is adjusted similar to the process described in RFC-1, where we define <code>TARGET_CONSUMPTION_RATE</code> as a ratio of the available to unsold cores. Then, the upcoming reserve price is adjusted upwards or downward, depending on whether we over- or undershoot the target consumption. If the consumption is met precisely, the price remains unchanged in the next <code>BULK_PERIOD</code>. </p>
-<p><strong>Note</strong>: When designing this mechanism, we want to make sure that small deviations have a smaller price impact than bigger deviations. We propose the following function:</p>
+<h1 id="explanation-3"><a class="header" href="#explanation-3">Explanation</a></h1>
+<h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
+<p>The <code>BULK_PERIOD</code> has been restructured into two primary segments: the <code>MARKET_PERIOD</code> and the <code>RENEWAL_PERIOD</code>, along with an auxiliary<code>SETTLEMENT_PERIOD</code>. The latter does not require any active participation from the coretime system chain except to simply execute transfers of ownership between market participants. A significant departure from the current design lies in the timing of renewals, which now occur after the market phase. This adjustment aims to harmonize renewal prices with their market counterparts, ensuring a more consistent and equitable pricing model.</p>
+<h2 id="market-period-14-days"><a class="header" href="#market-period-14-days">Market Period (14 days)</a></h2>
+<p>During the market period, core sales are conducted through a well-established <strong>clearing-price Dutch auction</strong> that features a <code>reserve_price</code>. Since the auction format is a descending clock, the starting price is initialized as <code>reserve_price * PRICE_MULTIPLIER</code> (e.g., 300%). The price then descends linearly over the duration of the <code>MARKET_PERIOD</code> toward the <code>reserve_price</code>, which serves as the minimum price for coretime within that period.</p>
+<p>Each bidder is expected to submit both their desired price and the quantity (i.e., number of cores) they wish to purchase. To secure these acquisitions, bidders must deposit an amount equivalent to their bid multiplied by the chosen quantity, in DOT. Bidders are always allowed to post a bid at or below the current descending price, but never above it.</p>
+<p>The market reaches resolution once all quantities have been sold or the <code>reserve_price</code> is reached. In the former case, the <code>clearing_price</code> is set equal to the price that sold the last unit. If cores remain unsold, the <code>clearing_price</code> is set to the <code>reserve_price</code>. This mechanism yields a uniform price that all buyers pay. Among other benefits discussed in the Appendix, this promotes truthful bidding—meaning the optimal strategy is simply to submit one's true valuation of coretime.</p>
+<h2 id="renewal-period-7-days"><a class="header" href="#renewal-period-7-days">Renewal Period (7 days)</a></h2>
+<p>The renewal period guarantees current tenants the privilege to renew their core(s), even if they did not win in the auction (i.e., did not submit a bid at or above the <code>clearing_price</code>) or did not participate at all.</p>
+<p>All current tenants who obtained less cores from the market than they have the right to renew, have 7 days to decide whether they want to renew their core(s). Once this information is known, the system has everything it needs to conclusively allocate all cores and assign ownership. In cases where the combined number of renewals and auction winners exceeds the number of available cores, renewals are first served and then remaining cores are allocated from highest to lowest bidder until all are assigned (more information in the details on mechanics section). This means that under larger demand than supply (and some renewal decisions), some bidders may not receive the coretime they expected from the auction.</p>
+<p>While this mechanism is necessary to ensure that current coretime users are not suddenly left without an allocation, potentially disrupting their operations, it may distort price discovery in the open market. Specifically, it could mean that a winning bidder is displaced by a renewal decision.</p>
+<p>Since bidding is straightforward and can be regarded static (it requires only one transaction) and can therefore be trivially automated, we view renewals as a safety net and want to encourage all coretime users to participate in the auction. To that end, we introduce a financial incentive to bid by increasing the renewal price to <code>clearing_price * PENALTY</code> (e.g., 30%). This penalty must be high enough to create a sufficient incentive for teams to prefer bidding over passively renewing.</p>
+<p><strong>Note:</strong> Importantly, the <code>PENALTY</code> only applies when the number of unique bidders in the auction plus current tenants with renewal rights exceeds the number of available cores. If total demand is lower than the number of offered cores, the <code>PENALTY</code> is set to 0%, and renewers pay only the <code>clearing_price</code>. This reflects the fact that we would not expect the <code>clearing_price</code> to exceed the <code>reserve_price</code> even with all coretime consumers participating in the auction. To avoid managing reimbursements, the 30% <code>PENALTY</code> is automatically applied to all renewers as soon as the combined count of unique bidders and potential renewers surpasses the number of available cores.</p>
+<h2 id="reserve-price-adjustment"><a class="header" href="#reserve-price-adjustment">Reserve Price Adjustment</a></h2>
+<p>After each <code>RENEWAL_PERIOD</code>, once all renewal decisions have been collected and cores are fully allocated, the <code>reserve_price</code> is updated to capture the demand in the next period. The goal is to ensure that prices adjust smoothly in response to demand fluctuations—rising when demand exceeds targets and falling when it is lower—while avoiding excessive volatility from small deviations.</p>
+<p>We define the following parameters:</p>
 <ul>
-<li><code>reserve_price_old</code>: reserve price from the previous period</li>
-<li><code>consumption_rate</code>: how many cores were sold relative to how many were available.</li>
-<li><code>TARGET_CONSUMPTION_RATE</code>: how many of the available cores we want to sell without increasing the price. We propose 90%. This leaves enough area downward and upward to adjust prices more aggressively.</li>
-<li><code>K</code>: sensitivity parameter. How aggressively we want to adjust the price. We propose a value between 2 and 3, but might need more evaluation.</li>
-<li><code>P_MIN</code>: A minimum price we never undercut. This is important to bound the price downward and prevent computational issues if prices drop too low. We propose a value of 1 DOT.</li>
-<li><code>MIN_INCREMENT</code>: A minimum increment after we reached 100% capacity. This is important to quickly recover after long periods of low demand which resulted in low prices.</li>
+<li><code>reserve_price_t</code>: Reserve price in the current period</li>
+<li><code>reserve_price_{t+1}</code>: Reserve price for the next period (final value after adjustments)</li>
+<li><code>consumption_rate_t</code>: Fraction of cores sold (including renewals) out of the total available in the current period</li>
+<li><code>TARGET_CONSUMPTION_RATE</code>: Target ratio of sold-to-available cores (we propose 90%)</li>
+<li><code>K</code>: Sensitivity parameter controlling how aggressively the price responds to deviations (we propose values between 2 and 3)</li>
+<li><code>P_MIN</code>: Minimum reserve price floor (we propose 1 DOT to prevent runaway downward spirals and computational issues)</li>
+<li><code>MIN_INCREMENT</code>: Minimum absolute increment applied when the market is fully saturated (i.e., 100% consumption; proposed value: 100 DOT)</li>
 </ul>
-<p>We update the price according to:</p>
-<p><code>p_new = reserve_price_old * exp(K * (consumption_rate - TARGET_CONSUMPTION_RATE))</code></p>
-<p>The <code>RESERVE_PRICE</code> in the next period will be:</p>
-<p><code>RESERVE_PRICE_NEXT = max(p_new, P_MIN)</code></p>
-<p><strong>Note:</strong> To reduce the recovery time from very low prices it is important to, in the case of 100% capacity, at least increment the <code>RESERVE_PRICE_NEXT</code> by <code>MIN_INCREMENT</code>, which could be, e.g., 100 DOT.</p>
-<h4 id="settlement-period--secondary-market-7-days"><a class="header" href="#settlement-period--secondary-market-7-days">Settlement Period / Secondary Market (7 days)</a></h4>
-<p>The remaining 7 days of a sales cycle serve as a settlement period, where participants have ample time to trade Coretime on secondary markets before the onset of the next <code>BULK_PERIOD</code>. This proposal makes no assumptions about the structure of these markets, because they are entirely operated on the social layer and handled directly by buyers and sellers. In this context, maintaining restrictions on the resale of renewed cores in the secondary market appears unjustified. In fact, such constraints could be harmful in cases where the primary market does not fully achieve efficiency. <strong>We therefore propose lifting all restrictions on the resale or slicing of cores in the secondary market.</strong></p>
-<h4 id="new-track-coretime-admin"><a class="header" href="#new-track-coretime-admin">New Track: Coretime Admin</a></h4>
-<p>To be able to react quickly, we suggest that the parameters of the model are directly accessible by governance. These include:</p>
+<p>We update the price according to the following rule:</p>
+<pre><code>price_candidate_t = reserve_price_t * exp(K * (consumption_rate_t - TARGET_CONSUMPTION_RATE))
+</code></pre>
+<p>We then ensure that the price does not fall below <code>P_MIN</code>:</p>
+<pre><code>price_candidate_t = max(price_candidate_t, P_MIN)
+</code></pre>
+<p>If <code>consumption_rate_t == 100%</code>, we apply an additional adjustment:</p>
+<pre><code>if (price_candidate_t - reserve_price_t &lt; MIN_INCREMENT) {
+    reserve_price_{t+1} = reserve_price_t + MIN_INCREMENT
+} else {
+    reserve_price_{t+1} = price_candidate_t
+}
+</code></pre>
+<p>In other words, we adjust the <code>reserve_price</code> using the exponential scaling rule, except in the special case where consumption is at 100% but the resulting price increase would be less than <code>MIN_INCREMENT</code>. In that case, we instead apply the fixed minimum increment. This exception ensures that the system can recover more quickly from prolonged periods of low prices.</p>
+<p>We argue that in a situation with persistently low prices and a sudden surge in real demand (i.e., full core consumption), such a jump is both warranted and economically justified.</p>
+<h2 id="settlement-period--secondary-market-7-days"><a class="header" href="#settlement-period--secondary-market-7-days">Settlement Period / Secondary Market (7 days)</a></h2>
+<p>The remaining 7 days of a sales cycle serve as a settlement period, during which participants have ample time to trade coretime on secondary markets before the onset of the next <code>BULK_PERIOD</code>. This proposal makes no assumptions about the structure of these markets, as they are entirely operated on the social layer and managed directly by buyers and sellers. In this context, maintaining restrictions on the resale of renewed cores in the secondary market appears unjustified—especially given that prices are uniform and market-driven. In fact, such constraints could be harmful in cases where the primary market does not fully achieve efficiency. </p>
+<p>We therefore propose lifting all restrictions on the resale or slicing of cores in the secondary market.</p>
+<h1 id="additional-considerations"><a class="header" href="#additional-considerations">Additional Considerations</a></h1>
+<h2 id="new-track-coretime-admin"><a class="header" href="#new-track-coretime-admin">New Track: Coretime Admin</a></h2>
+<p>To enable rapid response, we propose that the parameters of the model be directly accessible by governance. These include:</p>
 <ul>
 <li><code>P_MIN</code></li>
 <li><code>K</code></li>
+<li><code>PRICE_MULTIPLIER</code></li>
 <li><code>MIN_INCREMENT</code></li>
 <li><code>TARGET_CONSUMPTION_RATE</code></li>
 <li><code>PENALTY</code></li>
 </ul>
-<p>This track should allow us to adjust the parameters in a timely manner, within the duration of a <code>BULK_PERIOD</code>, so that the changes can take effect before the next period begins.</p>
-<h3 id="benefits-of-this-system"><a class="header" href="#benefits-of-this-system">Benefits of this System</a></h3>
+<p>This setup should allow us to adjust the parameters in a timely manner, within the duration of a <code>BULK_PERIOD</code>, so that changes can take effect before the next period begins.</p>
+<h2 id="transition-to-the-new-model"><a class="header" href="#transition-to-the-new-model">Transition to the new Model</a></h2>
+<p>Upon acceptance of this RFC, we should make sure to transition as smoothly as possible to the new design.</p>
 <ul>
-<li>The introduction of a single price, the <code>CLEARING_PRICE</code>, provides an anchor for all Coretime markets. This is a preventative measure against the possible divergence and mismatch of prices, which could inadvertently lead to a situation where existing tenants secure cores at significantly below-market rates.</li>
-<li>With a more market-responsive pricing system, we can achieve a more efficient price discovery process. Any price increases will be less arbitrary and more dynamic.</li>
-<li>Existing tenants can minimize their costs by bidding their true valuation in the auction, since they can always expect to pay the lowest price that clears the auction (or the <code>RESERVE_PRICE</code>). This removes the need for any elaborate bidding strategies and makes participation straight forward without much overhead. In addition, we grant them a safety-net in the situation where they did not participate in the auction (or forgot/ had technical difficulties) or did not bid above the <code>CLEARING_PRICE</code>. Then, they still may to renew their core outside the auction phase, but potentially incur a slightly higher price caused by the <code>PENALTY</code>. We argue that this is still a fair price to pay for that priviledge.</li>
-<li>Prices within a <code>BULK_PERIOD</code> are bound upwards by the current <code>RESERVE_PRICE * PRICE_MULTIPLIER</code>. This provides ample time for tenants to secure necessary funds to meet the potential price escalation.</li>
-<li>All existing tenants pay an equal amount for Coretime, reflecting our intent to price the Coretime itself and not the relative timing of individual projects.</li>
+<li>All teams that own cores in the current system should be endowed with the same number of cores in the new system, with the ability to renew them starting from the first period.</li>
+<li>The initial <code>reserve_price</code> should be chosen sensibly to avoid distortions in the early phases.</li>
+<li>A sufficient number of cores should be made available on the market to ensure enough liquidity to allow price discovery functions properly.</li>
 </ul>
-<h3 id="notes-and-implications-of-this-system"><a class="header" href="#notes-and-implications-of-this-system">Notes and Implications of this System</a></h3>
+<h2 id="details-on-some-mechanics"><a class="header" href="#details-on-some-mechanics">Details on Some Mechanics</a></h2>
 <ul>
-<li>Bidders above the clearing price might not receive their coretime: We aim to grant existing coretime users the exclusive right to renew their cores at the <code>CLEARING_PRICE * PENALTY</code>. To facilitate this, we conduct a market phase before the renewal phase, during which all cores are put up for sale. However, current coretime users are not obligated to participate in this market phase. While the <code>PENALTY</code> still nudges them to participate, it might be the case that, together with renewals, there are less cores available than we offered in the market. This condition may occasionally result in bidders not receiving their coretime despite bidding above the clearing price. After renewals, any remaining cores will be allocated to bidders in descending order of their bids, still applying the uniform clearing price. We consider this scenario a necessary trade-off to ensure that renewals remain influenced by market dynamics. Ultimately, we believe this approach is justified, as it is preferable to risk delaying new projects until subsequent cycles rather than displacing ongoing projects.</li>
-<li>We want current coretime owners to participate in the auction to improve overall efficiency. To encourage this, we introduce a <code>PENALTY</code>, which creates some financial incentive to take part during the <code>MARKET_PERIOD</code>. However, there’s a challenge: final allocation of cores can only happen after all renewal decisions have been collected. But current tenants would prefer to know whether they’ve won in the auction before deciding whether to fall back to renewal and pay the <code>PENALTY</code>. This can be resolved by ensuring that any bid from a current coretime owner that is at or above the <code>CLEARING_PRICE</code> is never kicked out. In other words, if a current owner bids at or above the <code>CLEARING_PRICE</code>, they are guaranteed to retain the coretime—avoiding the <code>PENALTY</code> altogether. If they don’t win in the auction, they can still fall back to renewal, paying <code>CLEARING_PRICE * PENALTY</code>. Note that this logic does not apply to new bidders (those without existing coretime): their bids may be displaced (starting from the lowest to highest) depending on the renewal decisions.</li>
-<li>Bids below the current descending price should always be allowed (i.e., we would not want to require teams sitting and waiting for the price to finally be declined to their target level). That makes it easy to participate for bidders.</li>
-<li>Bids below the current descending price can always be raised, but only to the clock price at most.</li>
-<li>Bids above the current descending price <strong>are not allowed</strong>. This marks a difference to a simple kth-price auction and prevents sniping.</li>
+<li>The price descends linearly from <code>reserve_price * PRICE_MULTIPLIER</code> to the <code>reserve_price</code> over the duration of the <code>MARKET_PERIOD</code>. Importantly, each discrete price level should be held for a sufficiently long interval (e.g., 6–12 hours).</li>
+<li>A potential issue arises when we experience demand spikes after prolonged periods of low demand (which result in low reserve prices). In such cases, the price range between <code>reserve_price</code> and the upper bound (i.e., <code>reserve_price * PRICE_MULTIPLIER</code>) may become economically tight and unable to capture the full willingness to pay from all bidders. If this affects most participants, demand will concentrate at the upper bound of the Dutch auction, making front-running a profitable strategy—either by excessively tipping bidding transactions or through explicit collusion with block producers.
+To mitigate this, we propose preventing the market from closing at the upper bound prematurely. Even if demand exceeds available cores at this level, we continue collecting all orders. Then, we randomize winners instead of using a first-come-first-served approach. Additionally, we may break up bulk orders and treat them as separate bids. This still gives a higher chance to bidders willing to buy larger quantities, but avoids all-or-nothing outcomes. These steps diminish the benefit of tipping or collusion, since bid timing no longer affects allocation. While we expect such scenarios to be the exception, it's important to note that this will not negatively impact current tenants, who always retain the safety net of renewal. After a few periods of maximum bids at maximum capacity, the range should span wide enough to capture demand within its bounds.</li>
+<li>One implication of granting the renewal privilege after the <code>MARKET_PERIOD</code> is that some bidders, despite bidding above the <code>clearing_price</code>, may not receive coretime. We believe this is justified, because the harm of displacing an existing project is bigger than preventing a new project from getting in (if there is no cores available) for a bit. Additionally, this inefficiency is compensated for by the causing entities paying the <code>PENALTY</code>. We need, however, additional rules to resolve the allocation issues. These are:
+<ol>
+<li>Bidders who already hold renewable cores cannot be displaced by the renewal decision of another party.</li>
+<li>Among those who <em>can</em> be displaced, we begin with the lowest submitted bids.</li>
+</ol>
+</li>
+<li>If a current tenant wins cores on the market, they forfeit the right to renew those specific cores. For example, if an entity currently holds three cores and wins two in the market, it may only opt to renew one. The only way to increase the number of cores at the end of a <code>BULK_PERIOD</code> is to acquire them entirely through the market.</li>
+<li>Bids <strong>below</strong> the current descending price should always be allowed. In other words, teams shouldn't have to wait idly for the price to drop to their target.</li>
+<li>Bids below the current descending price can be <strong>raised</strong>, but only up to the current clock price.</li>
+<li>Bids <strong>above</strong> the current descending price are <strong>not allowed</strong>. This is a key difference from a simple <em>kth</em>-price auction and helps prevent sniping.</li>
+<li>All cores that remain unallocated after the <code>RENEWAL_PERIOD</code> are transferred to the On-Demand Market.</li>
 </ul>
-<h4 id="insights-clearing-price-dutch-auctions"><a class="header" href="#insights-clearing-price-dutch-auctions">Insights: Clearing Price Dutch Auctions</a></h4>
+<h2 id="implications"><a class="header" href="#implications">Implications</a></h2>
+<ul>
+<li>The introduction of a single price (<code>clearing_price</code>) provides a consistent anchor for all available coretime. This serves as a safeguard against price divergence, preventing scenarios where entities acquire cores at significantly below-market rates and keep them for minimal costs.</li>
+<li>With the introduction of the <code>PENALTY</code>, it is always financially preferable for teams to participate in the auction. By bidding their true valuation, they maximize their chance of winning a core at the lowest possible price without incurring the penalty.</li>
+<li>In this design, it is virtually impossible to &quot;accidentally&quot; lose cores, since renewals occur after the market phase and are guaranteed for current tenants.</li>
+<li>Prices within a <code>BULK_PERIOD</code> are bounded upward, as the maximum a renewer could ever pay is <code>reserve_price * PRICE_MULTIPLIER * PENALTY</code>. This provides teams with ample time to prepare and secure the necessary funds in anticipation of potential price increases. By incorporating reserve price adjustment into their planning, teams can anticipate worst-case future price increases.</li>
+</ul>
+<h1 id="appendix"><a class="header" href="#appendix">Appendix</a></h1>
+<h2 id="further-discussion-points"><a class="header" href="#further-discussion-points">Further Discussion Points</a></h2>
+<ul>
+<li><strong>Reintroduction of Candle Auctions</strong>: Polkadot gathered vast experience with candle auctions where more than 200 auctions has been conducted throughout more than two years. <a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5109856">Our study</a> analyzing the results in much detail reveals that the mechanism itself is both efficient and (nearly) extracting optimal revenue. This provides confidence to use it to allocate the winners instead of a descending clock auction. Notably, this change solely affects the bidding process and winner determination. Core components, such as the k-th price, reserve price, and maximum price, remain unaffected.</li>
+</ul>
+<h2 id="insights-clearing-price-dutch-auctions"><a class="header" href="#insights-clearing-price-dutch-auctions">Insights: Clearing Price Dutch Auctions</a></h2>
 <p>Having all bidders pay the market clearing price offers some benefits and disadvantages.</p>
 <ul>
 <li>Advantages:
@@ -655,17 +692,9 @@ account_id
 </ul>
 </li>
 </ul>
-<h3 id="further-discussion-points"><a class="header" href="#further-discussion-points">Further Discussion Points</a></h3>
-<ul>
-<li><strong>Reintroduction of Candle Auctions</strong>: Polkadot gathered vast experience with candle auctions where more than 200 auctions has been conducted throughout more than two years. <a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5109856">Our study</a> analyzing the results in much detail reveals that the mechanism itself is both efficient and (nearly) extracting optimal revenue. This provides confidence to use it to allocate the winners instead of a descending clock auction. Notably, this change solely affects the bidding process and winner determination. Core components, such as the k-th price, reserve price, and maximum price, remain unaffected.</li>
-</ul>
 <h2 id="prior-art-and-references-3"><a class="header" href="#prior-art-and-references-3">Prior Art and References</a></h2>
 <p>This RFC builds extensively on the available ideas put forward in <a href="https://github.com/polkadot-fellows/RFCs/blob/6f29561a4747bbfd95307ce75cd949dfff359e39/text/0001-agile-coretime.md">RFC-1</a>. </p>
-<p>Additionally, I want to express a special thanks to <a href="https://samuelhaefner.github.io/">Samuel Haefner</a> and <a href="https://sites.google.com/site/dobzin/">Shahar Dobzinski</a> for fruitful discussions and helping me structure my thoughts. </p>
-<h2 id="unresolved-questions-2"><a class="header" href="#unresolved-questions-2">Unresolved Questions</a></h2>
-<ul>
-<li>None yet</li>
-</ul>
+<p>Additionally, I want to express a special thanks to <a href="https://samuelhaefner.github.io/">Samuel Haefner</a>, <a href="https://sites.google.com/site/dobzin/">Shahar Dobzinski</a>, and Alistair Stewart for fruitful discussions and helping me structure my thoughts.</p>
 <div style="break-before: page; page-break-before: always;"></div><p><a href="https://github.com/polkadot-fellows/RFCs/pull/117">(source)</a></p>
 <p><strong>Table of Contents</strong></p>
 <ul>
@@ -820,7 +849,7 @@ to unbrick a stalled para.</p>
 <li><a href="https://forum.polkadot.network/t/how-to-recover-a-parachain/673">How to Recover a Parachain, Polkadot Forum</a></li>
 <li><a href="https://forum.polkadot.network/t/unbrick-collective/6931">Unbrick Collective, Polkadot Forum</a></li>
 </ul>
-<h2 id="unresolved-questions-3"><a class="header" href="#unresolved-questions-3">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-2"><a class="header" href="#unresolved-questions-2">Unresolved Questions</a></h2>
 <ul>
 <li>What are the parameters for the <code>WhitelistedUnbrickCaller</code> track?</li>
 <li>Any other methods that shall be updated to accept <code>Unbrick</code> origin?</li>
@@ -1101,7 +1130,7 @@ The <code>ext_crypto_ed25519_public_key_version_1</code> function writes the pub
 <li><code>ext_allocator_free_version_1</code></li>
 <li><code>ext_offchain_network_state_version_1</code></li>
 </ul>
-<h2 id="unresolved-questions-4"><a class="header" href="#unresolved-questions-4">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-3"><a class="header" href="#unresolved-questions-3">Unresolved Questions</a></h2>
 <p>The changes in this RFC would need to be benchmarked. That involves implementing the RFC and measuring the speed difference.</p>
 <p>It is expected that most host functions are faster or equal in speed to their deprecated counterparts, with the following exceptions:</p>
 <ul>
@@ -1248,7 +1277,7 @@ The <code>ext_crypto_ed25519_public_key_version_1</code> function writes the pub
 <p><em>Socialization:</em></p>
 <p>The essensials of this proposal were presented at Polkadot Decoded 2023 Copenhagen on the Main Stage. A small amount of socialization at the Parachain Summit preceeded it and some substantial discussion followed it. Parity Ecosystem team is currently soliciting views from ecosystem teams who would be key stakeholders.</p>
 <h2 id="explanation-6"><a class="header" href="#explanation-6">Explanation</a></h2>
-<h3 id="overview"><a class="header" href="#overview">Overview</a></h3>
+<h3 id="overview-1"><a class="header" href="#overview-1">Overview</a></h3>
 <p>Upon implementation of this proposal, the parachain-centric slot auctions and associated crowdloans cease. Instead, Coretime on the Polkadot UC is sold by the Polkadot System in two separate formats: <em>Bulk Coretime</em> and <em>Instantaneous Coretime</em>.</p>
 <p>When a Polkadot Core is utilized, we say it is dedicated to a <em>Task</em> rather than a &quot;parachain&quot;. The Task to which a Core is dedicated may change at every Relay-chain block and while one predominant type of Task is to secure a Cumulus-based blockchain (i.e. a parachain), other types of Tasks are envisioned.</p>
 <p>Bulk Coretime is sold periodically on a specialised system chain known as the <em>Coretime-chain</em> and allocated in advance of its usage, whereas Instantaneous Coretime is sold on the Relay-chain immediately prior to usage on a block-by-block basis.</p>
@@ -2009,7 +2038,7 @@ migration.</p>
 <li>SR Labs Auditors</li>
 <li>Current collators including Paranodes, Stake Plus, Turboflakes, Peter Mensik, SIK, and many more.</li>
 </ul>
-<h2 id="unresolved-questions-5"><a class="header" href="#unresolved-questions-5">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-4"><a class="header" href="#unresolved-questions-4">Unresolved Questions</a></h2>
 <p>None at this time.</p>
 <h2 id="future-directions-and-related-material-5"><a class="header" href="#future-directions-and-related-material-5">Future Directions and Related Material</a></h2>
 <p>There may exist in the future system chains for which this model of collator selection is not
@@ -2126,7 +2155,7 @@ If this every becomes a problem, this value of 20 is an arbitrary constant that 
 <p>Irrelevant.</p>
 <h2 id="prior-art-and-references-8"><a class="header" href="#prior-art-and-references-8">Prior Art and References</a></h2>
 <p>None.</p>
-<h2 id="unresolved-questions-6"><a class="header" href="#unresolved-questions-6">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-5"><a class="header" href="#unresolved-questions-5">Unresolved Questions</a></h2>
 <p>While it fundamentally doesn't change much to this RFC, using <code>BabeApi_currentEpoch</code> and <code>BabeApi_nextEpoch</code> might be inappropriate. I'm not familiar enough with good practices within the runtime to have an opinion here. Should it be an entirely new pallet?</p>
 <h2 id="future-directions-and-related-material-6"><a class="header" href="#future-directions-and-related-material-6">Future Directions and Related Material</a></h2>
 <p>It is possible that in the future a client could connect to a parachain without having to rely on a trusted parachain specification.</p>
@@ -2250,7 +2279,7 @@ Also note that child tries aren't considered as descendants of the main trie whe
 <p>The prior networking protocol is maintained for now. The older version of this protocol could get removed in a long time.</p>
 <h2 id="prior-art-and-references-9"><a class="header" href="#prior-art-and-references-9">Prior Art and References</a></h2>
 <p>None. This RFC is a clean-up of an existing mechanism.</p>
-<h2 id="unresolved-questions-7"><a class="header" href="#unresolved-questions-7">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-6"><a class="header" href="#unresolved-questions-6">Unresolved Questions</a></h2>
 <p>None</p>
 <h2 id="future-directions-and-related-material-7"><a class="header" href="#future-directions-and-related-material-7">Future Directions and Related Material</a></h2>
 <p>The current networking protocol could be deprecated in a long time. Additionally, the current &quot;state requests&quot; protocol (used for warp syncing) could also be deprecated in favor of this one.</p>
@@ -2398,7 +2427,7 @@ ones.</p>
 <h2 id="prior-art-and-references-10"><a class="header" href="#prior-art-and-references-10">Prior Art and References</a></h2>
 <p>The launch of the Technical Fellowship, see the
 <a href="https://forum.polkadot.network/t/calling-polkadot-core-developers/506">initial forum post</a>.</p>
-<h2 id="unresolved-questions-8"><a class="header" href="#unresolved-questions-8">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-7"><a class="header" href="#unresolved-questions-7">Unresolved Questions</a></h2>
 <p>None at this time.</p>
 <div style="break-before: page; page-break-before: always;"></div><p><a href="https://github.com/polkadot-fellows/RFCs/blob/main/text/0013-prepare-blockbuilder-and-core-runtime-apis-for-mbms.md">(source)</a></p>
 <p><strong>Table of Contents</strong></p>
@@ -2496,7 +2525,7 @@ transactions</a></li>
 <li><a href="https://github.com/paritytech/substrate/issues/5757">There is no module hook after inherents and before
 transactions</a></li>
 </ul>
-<h2 id="unresolved-questions-9"><a class="header" href="#unresolved-questions-9">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-8"><a class="header" href="#unresolved-questions-8">Unresolved Questions</a></h2>
 <p><del>Please suggest a better name for <code>BlockExecutiveMode</code>. We already tried: <code>RuntimeExecutiveMode</code>,
 <code>ExtrinsicInclusionMode</code>. The names of the modes <code>Normal</code> and <code>Minimal</code> were also called
 <code>AllExtrinsics</code> and <code>OnlyInherents</code>, so if you have naming preferences; please post them.</del><br />
@@ -2633,7 +2662,7 @@ This can be unified and simplified by moving both parts into the runtime.</p>
 <li>Allow parachain to renew lease without actually run another parachain: https://github.com/paritytech/polkadot/issues/6685</li>
 <li>Always treat parachain that never produced block for a significant amount of time as unlocked: https://github.com/paritytech/polkadot/issues/7539</li>
 </ul>
-<h2 id="unresolved-questions-10"><a class="header" href="#unresolved-questions-10">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-9"><a class="header" href="#unresolved-questions-9">Unresolved Questions</a></h2>
 <p>None at this stage.</p>
 <h2 id="future-directions-and-related-material-9"><a class="header" href="#future-directions-and-related-material-9">Future Directions and Related Material</a></h2>
 <p>This RFC is only intended to be a short term solution. Slots will be removed in future and lock mechanism is likely going to be replaced with a more generalized parachain manage &amp; recovery system in future. Therefore long term impacts of this RFC are not considered.</p>
@@ -2698,7 +2727,7 @@ This can be unified and simplified by moving both parts into the runtime.</p>
 <p>No changes</p>
 <h2 id="prior-art-and-references-13"><a class="header" href="#prior-art-and-references-13">Prior Art and References</a></h2>
 <p><a href="https://github.com/encointer/encointer-parachain/tree/master/polkadot-parachains/encointer-runtime">Existing Encointer runtime repo</a></p>
-<h2 id="unresolved-questions-11"><a class="header" href="#unresolved-questions-11">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-10"><a class="header" href="#unresolved-questions-10">Unresolved Questions</a></h2>
 <p>None identified</p>
 <h2 id="future-directions-and-related-material-10"><a class="header" href="#future-directions-and-related-material-10">Future Directions and Related Material</a></h2>
 <p>More info on Encointer: <a href="https://encointer.org">encointer.org</a></p>
@@ -3813,7 +3842,7 @@ Application developers will need to interact with multiple chains in the network
 <li><a href="https://github.com/paritytech/polkadot/issues/323">Transactionless Relay-chain</a></li>
 <li><a href="https://github.com/paritytech/polkadot-sdk/issues/491">Moving Staking off the Relay Chain</a></li>
 </ul>
-<h2 id="unresolved-questions-12"><a class="header" href="#unresolved-questions-12">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-11"><a class="header" href="#unresolved-questions-11">Unresolved Questions</a></h2>
 <p>There remain some implementation questions, like how to use balances for both Staking and
 Governance. See, for example, <a href="https://github.com/paritytech/polkadot-sdk/issues/491">Moving Staking off the Relay
 Chain</a>.</p>
@@ -3917,7 +3946,7 @@ so that chains know which <code>system_version</code> to use.</p>
 <p>We <a href="https://github.com/paritytech/polkadot-sdk/pull/1691">proposed</a> introducing a similar change by introducing a
 parameter to <code>frame_system::Config</code> but did not feel that
 is the correct way of introducing this change.</p>
-<h2 id="unresolved-questions-13"><a class="header" href="#unresolved-questions-13">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-12"><a class="header" href="#unresolved-questions-12">Unresolved Questions</a></h2>
 <p>I do not have any specific questions about this change at the moment.</p>
 <h2 id="future-directions-and-related-material-12"><a class="header" href="#future-directions-and-related-material-12">Future Directions and Related Material</a></h2>
 <p>IMO, this change is pretty self-contained and there won't be any future work necessary. </p>
@@ -4184,7 +4213,7 @@ efficient data management and periodic reviews of storage requirements, will be 
 Kusama and Polkadot Asset Hubs, making Polkadot and Kusama more accessible and user-friendly.</p>
 <h3 id="compatibility-11"><a class="header" href="#compatibility-11">Compatibility</a></h3>
 <p>The change does not impact compatibility as a <code>redeposit</code> function is already implemented.</p>
-<h2 id="unresolved-questions-14"><a class="header" href="#unresolved-questions-14">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-13"><a class="header" href="#unresolved-questions-13">Unresolved Questions</a></h2>
 <p>If this RFC is accepted, there should not be any unresolved questions regarding how to adapt the
 implementation of deposits for NFT collections.</p>
 <h2 id="addendum"><a class="header" href="#addendum">Addendum</a></h2>
@@ -4469,7 +4498,7 @@ governance call.</p>
 <h2 id="prior-art-and-references-17"><a class="header" href="#prior-art-and-references-17">Prior Art and References</a></h2>
 <p>See comments on the <a href="https://github.com/paritytech/polkadot-sdk/issues/598">tracking issue</a> and the
 <a href="https://github.com/paritytech/polkadot-sdk/pull/1644">in-progress PR</a></p>
-<h2 id="unresolved-questions-15"><a class="header" href="#unresolved-questions-15">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-14"><a class="header" href="#unresolved-questions-14">Unresolved Questions</a></h2>
 <p>Not applicable.</p>
 <h2 id="future-directions-and-related-material-13"><a class="header" href="#future-directions-and-related-material-13">Future Directions and Related Material</a></h2>
 <p>This enables future optimisations for the performance of availability recovery, such as retrieving batched systematic
@@ -4624,7 +4653,7 @@ and for returning the ownership proof alongside the public session keys.</p>
 <p>UIs would need to be updated to support the new RPC and the changed on chain logic.</p>
 <h2 id="prior-art-and-references-18"><a class="header" href="#prior-art-and-references-18">Prior Art and References</a></h2>
 <p>None.</p>
-<h2 id="unresolved-questions-16"><a class="header" href="#unresolved-questions-16">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-15"><a class="header" href="#unresolved-questions-15">Unresolved Questions</a></h2>
 <p>None.</p>
 <h2 id="future-directions-and-related-material-14"><a class="header" href="#future-directions-and-related-material-14">Future Directions and Related Material</a></h2>
 <p>Substrate implementation of the <a href="https://github.com/paritytech/polkadot-sdk/pull/1739">RFC</a>.</p>
@@ -4762,7 +4791,7 @@ Manifesto</a></li>
 <li><a href="https://www.indeed.com/career/engineer/salaries">Indeed: Average Salary for Engineers, United
 States</a></li>
 </ul>
-<h2 id="unresolved-questions-17"><a class="header" href="#unresolved-questions-17">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-16"><a class="header" href="#unresolved-questions-16">Unresolved Questions</a></h2>
 <p>None at present.</p>
 <div style="break-before: page; page-break-before: always;"></div><p><a href="https://github.com/polkadot-fellows/RFCs/blob/main/text/0056-one-transaction-per-notification.md">(source)</a></p>
 <p><strong>Table of Contents</strong></p>
@@ -4848,7 +4877,7 @@ This is equivalent to forcing the <code>Vec&lt;Transaction&gt;</code> to always 
 <p>The change is backwards compatible if done in two steps: modify the sender to always send one transaction per notification, then, after a while, modify the receiver to enforce the new format.</p>
 <h2 id="prior-art-and-references-20"><a class="header" href="#prior-art-and-references-20">Prior Art and References</a></h2>
 <p>Irrelevant.</p>
-<h2 id="unresolved-questions-18"><a class="header" href="#unresolved-questions-18">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-17"><a class="header" href="#unresolved-questions-17">Unresolved Questions</a></h2>
 <p>None.</p>
 <h2 id="future-directions-and-related-material-15"><a class="header" href="#future-directions-and-related-material-15">Future Directions and Related Material</a></h2>
 <p>None. This is a simple isolated change.</p>
@@ -4960,7 +4989,7 @@ Furthermore, when a large number of providers are registered, only the providers
 <p>Irrelevant.</p>
 <h2 id="prior-art-and-references-21"><a class="header" href="#prior-art-and-references-21">Prior Art and References</a></h2>
 <p>Unknown.</p>
-<h2 id="unresolved-questions-19"><a class="header" href="#unresolved-questions-19">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-18"><a class="header" href="#unresolved-questions-18">Unresolved Questions</a></h2>
 <p>While it fundamentally doesn't change much to this RFC, using <code>BabeApi_currentEpoch</code> and <code>BabeApi_nextEpoch</code> might be inappropriate. I'm not familiar enough with good practices within the runtime to have an opinion here. Should it be an entirely new pallet?</p>
 <h2 id="future-directions-and-related-material-16"><a class="header" href="#future-directions-and-related-material-16">Future Directions and Related Material</a></h2>
 <p>This RFC would make it possible to reliably discover archive nodes, which would make it possible to reliably send archive node requests, something that isn't currently possible. This could solve the problem of finding archive RPC node providers by migrating archive-related request to using the native peer-to-peer protocol rather than JSON-RPC.</p>
@@ -5335,7 +5364,7 @@ nodes: [[[2, 3], [4, 5]], [0, 1]]
 <h2 id="prior-art-and-references-22"><a class="header" href="#prior-art-and-references-22">Prior Art and References</a></h2>
 <p><a href="https://github.com/polkadot-fellows/RFCs/pull/46">RFC 46</a> produced by the Alzymologist team is a previous work reference that goes in this direction as well.</p>
 <p>On other ecosystems, there are other solutions to the problem of trusted signing. Cosmos for example has a standardized way of transforming a transaction into some textual representation and this textual representation is included in the signed data. Basically achieving the same as what the RFC proposes, but it requires that for every transaction applied in a block, every node in the network always has to generate this textual representation to ensure the transaction signature is valid.</p>
-<h2 id="unresolved-questions-20"><a class="header" href="#unresolved-questions-20">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-19"><a class="header" href="#unresolved-questions-19">Unresolved Questions</a></h2>
 <p>None.</p>
 <h2 id="future-directions-and-related-material-17"><a class="header" href="#future-directions-and-related-material-17">Future Directions and Related Material</a></h2>
 <ul>
@@ -5413,7 +5442,7 @@ nodes: [[[2, 3], [4, 5]], [0, 1]]
 <p>This change breaks backwards compatiblity because any transaction that is neither signed nor unsigned, but a new transaction type, would be interpreted as having a future extrinsic format version.</p>
 <h2 id="prior-art-and-references-23"><a class="header" href="#prior-art-and-references-23">Prior Art and References</a></h2>
 <p>The original design was originally proposed in the <a href="https://github.com/paritytech/polkadot-sdk/pull/2280"><code>TransactionExtension</code> PR</a>, which is also the motivation behind this effort.</p>
-<h2 id="unresolved-questions-21"><a class="header" href="#unresolved-questions-21">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-20"><a class="header" href="#unresolved-questions-20">Unresolved Questions</a></h2>
 <p>None.</p>
 <h2 id="future-directions-and-related-material-18"><a class="header" href="#future-directions-and-related-material-18">Future Directions and Related Material</a></h2>
 <p>Following this change, the &quot;general&quot; transaction type will be introduced as part of the <a href="https://github.com/paritytech/polkadot-sdk/issues/2415">Extrinsic Horizon</a> effort, which will shape future work.</p>
@@ -5505,7 +5534,7 @@ in order to speed up the time until all nodes have the newest record, nodes can 
 <p>The changes are backwards compatible with the existing protocol, so nodes with both the old protocol and newer protocol can exist in the network, this is achieved by the fact that we use protobuf for serializing and deserializing the records, so new fields will be ignore when deserializing with the older protocol and vice-versa when deserializing an old record with the new protocol the new field will be <code>None</code> and the new code accepts this record as being valid.</p>
 <h2 id="prior-art-and-references-24"><a class="header" href="#prior-art-and-references-24">Prior Art and References</a></h2>
 <p>The enhancements have been inspired by the algorithm specified in <a href="https://github.com/libp2p/specs/blob/master/kad-dht/README.md#value-retrieval">here</a></p>
-<h2 id="unresolved-questions-22"><a class="header" href="#unresolved-questions-22">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-21"><a class="header" href="#unresolved-questions-21">Unresolved Questions</a></h2>
 <p>N/A</p>
 <h2 id="future-directions-and-related-material-19"><a class="header" href="#future-directions-and-related-material-19">Future Directions and Related Material</a></h2>
 <p>N/A</p>
@@ -5613,7 +5642,7 @@ in order to speed up the time until all nodes have the newest record, nodes can 
 <p>We can observe that historical unbonds only trigger an unbonding time larger than <code>LOWER_BOUND</code> in situations with extensive and/or clustered unbonding amounts. The average unbonding time across the whole timeseries is ~2.67 days. We can, however, see it taking effect pushing unbonding times up during large unbonding events. In the largest events, we hit a maximum of 28 days. This gives us reassurance that it is sufficiently sensitive and it makes sense to match the <code>UPPER_BOUND</code> with the historically largest unbonds. </p>
 <p>The main parameter affecting the situation is the <code>max_unstake</code>. The relationship is obvious: decreasing the <code>max_unstake</code> makes the queue more sensitive, i.e., having it spike more quickly and higher with unbonding events. Given that these events historically were mostly associated with parachain auctions, we can assume that, in the absence of major systemic events, users will experience drastically reduced unbonding times.
 The analysis can be reproduced or changed to other parameters using <a href="https://github.com/jonasW3F/unbonding_queue_analysis">this repository</a>.</p>
-<h2 id="additional-considerations"><a class="header" href="#additional-considerations">Additional Considerations</a></h2>
+<h2 id="additional-considerations-1"><a class="header" href="#additional-considerations-1">Additional Considerations</a></h2>
 <h3 id="deferred-slashing"><a class="header" href="#deferred-slashing">Deferred slashing</a></h3>
 <p>Currently we defer applying many slashes until around 28 days have passed. This was implemented so we can conveniently cancel slashes via governance in the case that the slashing was due to a bug. While rare on Polkadot, such bugs cause a significant fraction of slashes. This includes slashing for attacks other than LRAs for which we've assumed that 2 days is enough to slash. But 2 days in not enough to cancel slashes via OpenGov.</p>
 <p>Owing to the way exposures, which nominators back validators with how many tokens, are stored, it is hard to search for whether a nominator has deferred slashes that need to be applied to them on chain as of now. So we cannot simply check when a nominator attempts to withdraw their bond. </p>
@@ -5725,7 +5754,7 @@ to decode these old versions, but this should be neglectable.</p>
 old extrinsic format and decoded by the runtime.</p>
 <h2 id="prior-art-and-references-26"><a class="header" href="#prior-art-and-references-26">Prior Art and References</a></h2>
 <p>None.</p>
-<h2 id="unresolved-questions-23"><a class="header" href="#unresolved-questions-23">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-22"><a class="header" href="#unresolved-questions-22">Unresolved Questions</a></h2>
 <p>None.</p>
 <h2 id="future-directions-and-related-material-20"><a class="header" href="#future-directions-and-related-material-20">Future Directions and Related Material</a></h2>
 <p>None.</p>
@@ -6019,7 +6048,7 @@ XCM versions, because there is no equivalent capability there.
 Such conversion attempts will explicitly fail.</p>
 <h2 id="prior-art-and-references-27"><a class="header" href="#prior-art-and-references-27">Prior Art and References</a></h2>
 <p>None.</p>
-<h2 id="unresolved-questions-24"><a class="header" href="#unresolved-questions-24">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-23"><a class="header" href="#unresolved-questions-23">Unresolved Questions</a></h2>
 <p>None.</p>
 <h2 id="future-directions-and-related-material-21"><a class="header" href="#future-directions-and-related-material-21">Future Directions and Related Material</a></h2>
 <p>None.</p>
@@ -6101,7 +6130,7 @@ both this new version and the old. In both cases, an &quot;attacker&quot; can do
 <p>Compatible with previous XCM programs.</p>
 <h2 id="prior-art-and-references-28"><a class="header" href="#prior-art-and-references-28">Prior Art and References</a></h2>
 <p>None.</p>
-<h2 id="unresolved-questions-25"><a class="header" href="#unresolved-questions-25">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-24"><a class="header" href="#unresolved-questions-24">Unresolved Questions</a></h2>
 <p>None.</p>
 <h2 id="future-directions-and-related-material-22"><a class="header" href="#future-directions-and-related-material-22">Future Directions and Related Material</a></h2>
 <p>None.</p>
@@ -6370,7 +6399,7 @@ separator.</p>
 <h2 id="prior-art-and-references-29"><a class="header" href="#prior-art-and-references-29">Prior Art and References</a></h2>
 <p>Forum discussion about a new <code>CandidateReceipt</code> format:
 <a href="https://forum.polkadot.network/t/pre-rfc-discussion-candidate-receipt-format-v2/3738">https://forum.polkadot.network/t/pre-rfc-discussion-candidate-receipt-format-v2/3738</a></p>
-<h2 id="unresolved-questions-26"><a class="header" href="#unresolved-questions-26">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-25"><a class="header" href="#unresolved-questions-25">Unresolved Questions</a></h2>
 <p>N/A</p>
 <h2 id="future-directions-and-related-material-23"><a class="header" href="#future-directions-and-related-material-23">Future Directions and Related Material</a></h2>
 <p>The implementation is extensible and future-proof to some extent. With minimal or no breaking
@@ -6487,7 +6516,7 @@ The new proposed instruction, <code>PayFees</code>, doesn't return the leftover 
 In practice, the deprecated <code>BuyExecution</code> needs to be slowly rolled out in favour of <code>PayFees</code>.</p>
 <h2 id="prior-art-and-references-30"><a class="header" href="#prior-art-and-references-30">Prior Art and References</a></h2>
 <p>The closed RFC PR on the xcm-format repository, before XCM RFCs got moved to fellowship RFCs: https://github.com/polkadot-fellows/xcm-format/pull/53.</p>
-<h2 id="unresolved-questions-27"><a class="header" href="#unresolved-questions-27">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-26"><a class="header" href="#unresolved-questions-26">Unresolved Questions</a></h2>
 <p>None</p>
 <h2 id="future-directions-and-related-material-24"><a class="header" href="#future-directions-and-related-material-24">Future Directions and Related Material</a></h2>
 <p>This proposal would greatly benefit from an improved asset trapping system.</p>
@@ -6583,7 +6612,7 @@ You only need to specify the hints you want in one single instruction at the top
 <p>None.</p>
 <h2 id="prior-art-and-references-31"><a class="header" href="#prior-art-and-references-31">Prior Art and References</a></h2>
 <p>The previous RFC PR in the xcm-format repository before XCM RFCs moved to fellowship RFCs: https://github.com/polkadot-fellows/xcm-format/pull/59.</p>
-<h2 id="unresolved-questions-28"><a class="header" href="#unresolved-questions-28">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-27"><a class="header" href="#unresolved-questions-27">Unresolved Questions</a></h2>
 <p>None.</p>
 <h2 id="future-directions-and-related-material-25"><a class="header" href="#future-directions-and-related-material-25">Future Directions and Related Material</a></h2>
 <p>None.</p>
@@ -6645,7 +6674,7 @@ using <code>NetworkId::ByGenesis</code>.</p>
 <p><code>NetworkId::Rococo</code> and <code>NetworkId::Westend</code> can just use <code>NetworkId::ByGenesis</code>, as can other testnets.</p>
 <h2 id="prior-art-and-references-32"><a class="header" href="#prior-art-and-references-32">Prior Art and References</a></h2>
 <p>A previous attempt to add <code>NetworkId::Paseo</code>: https://github.com/polkadot-fellows/xcm-format/pull/58.</p>
-<h2 id="unresolved-questions-29"><a class="header" href="#unresolved-questions-29">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-28"><a class="header" href="#unresolved-questions-28">Unresolved Questions</a></h2>
 <p>None.</p>
 <h2 id="future-directions-and-related-material-26"><a class="header" href="#future-directions-and-related-material-26">Future Directions and Related Material</a></h2>
 <p>None.</p>
@@ -6776,7 +6805,7 @@ Following the same logic, the existing <code>DepositReserveAsset</code>, <code>I
 <li><a href="https://github.com/polkadot-fellows/RFCs/pull/100">RFC: InitiateAssetsTransfer for complex asset transfers</a></li>
 <li><a href="https://github.com/polkadot-fellows/RFCs/pull/109">RFC: Descend XCM origin instead of clearing it where possible</a></li>
 </ul>
-<h2 id="unresolved-questions-30"><a class="header" href="#unresolved-questions-30">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-29"><a class="header" href="#unresolved-questions-29">Unresolved Questions</a></h2>
 <p>None</p>
 <h2 id="future-directions-and-related-material-27"><a class="header" href="#future-directions-and-related-material-27">Future Directions and Related Material</a></h2>
 <div style="break-before: page; page-break-before: always;"></div><p><a href="https://github.com/polkadot-fellows/RFCs/blob/main/text/0123-pending-code-as-storage-location-for-runtime-upgrades.md">(source)</a></p>
@@ -6839,7 +6868,7 @@ There is still the possibility of having state that is not migrated even when fo
 For Polkadot/Kusama this means that also the parachain nodes need to be running with a relay chain node version that supports this new feature. Otherwise the parachains will stop producing/finalizing nodes as they can not sync the relay chain any more.</p>
 <h2 id="prior-art-and-references-34"><a class="header" href="#prior-art-and-references-34">Prior Art and References</a></h2>
 <p>The <a href="https://github.com/paritytech/polkadot-sdk/issues/64">issue</a> initially reported a bug that led to this RFC. It also discusses multiple solutions for the problem.</p>
-<h2 id="unresolved-questions-31"><a class="header" href="#unresolved-questions-31">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-30"><a class="header" href="#unresolved-questions-30">Unresolved Questions</a></h2>
 <p>None</p>
 <h2 id="future-directions-and-related-material-28"><a class="header" href="#future-directions-and-related-material-28">Future Directions and Related Material</a></h2>
 <ul>
@@ -7477,7 +7506,7 @@ For XCM Integration, the proposal does not modify the existing XCM message forma
 <li><a href="https://github.com/paritytech/polkadot-sdk/pull/4722">View functions</a> aims to provide view-only functions at the pallet level. Additionally, <a href="https://github.com/paritytech/polkadot-sdk/pull/4722">Facade Project</a> aims to gather and return commonly wanted information in runtime level.
 PVQ does not conflict with them, and it can take advantage of these Pallet View Functions / Runtime APIs and allow people to build arbitrary PVQ programs to obtain more custom/complex data that is not otherwise expressed by these two proposals.</li>
 </ul>
-<h2 id="unresolved-questions-32"><a class="header" href="#unresolved-questions-32">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-31"><a class="header" href="#unresolved-questions-31">Unresolved Questions</a></h2>
 <ul>
 <li>The specific conversion between gas and weight has not been finalized and will likely require development of a suitable benchmarking methodology.</li>
 </ul>
@@ -7527,7 +7556,7 @@ PVQ does not conflict with them, and it can take advantage of these Pallet View 
 <h2 id="stakeholders-40"><a class="header" href="#stakeholders-40">Stakeholders</a></h2>
 <p>Node developers are the main stakeholders for this proposal. It also creates a foundation on which parachain runtime developers will build.</p>
 <h2 id="explanation-40"><a class="header" href="#explanation-40">Explanation</a></h2>
-<h3 id="overview-1"><a class="header" href="#overview-1">Overview</a></h3>
+<h3 id="overview-2"><a class="header" href="#overview-2">Overview</a></h3>
 <p>The current approach to compressing binary blobs involves using <code>zstd</code> compression, and the resulting compressed blob is prefixed with a unique 64-bit magic value specified in that subsection. The same procedure is used to compress both Wasm code blobs and proofs-of-validity. Currently, having solely a compressed blob, it's impossible to tell what's inside it without decompression, a Wasm blob, or a PoV. That doesn't cause problems in the current protocol, as Wasm blobs and PoV blobs take completely different execution paths in the code.</p>
 <p>The changes proposed below are intended to define the means for distinguishing compressed blob types in a backward-compatible and future-proof way.</p>
 <p>It is proposed to introduce an open list of 64-bit prefixes, each representing a compressed blob of a specific type compressed with a specific compression method. The currently used prefix becomes deprecated and will be removed or reused when it is no longer in use.</p>
@@ -7564,7 +7593,7 @@ PVQ does not conflict with them, and it can take advantage of these Pallet View 
 <p>The change is designed to be backward-compatible. </p>
 <h2 id="prior-art-and-references-37"><a class="header" href="#prior-art-and-references-37">Prior Art and References</a></h2>
 <p><a href="https://github.com/paritytech/polkadot-sdk/pull/6704">SDK PR#6704</a> (WIP) introduces a mechanism similar to that described in this proposal and proves the necessity of such a change.</p>
-<h2 id="unresolved-questions-33"><a class="header" href="#unresolved-questions-33">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-32"><a class="header" href="#unresolved-questions-32">Unresolved Questions</a></h2>
 <p>None</p>
 <h2 id="future-directions-and-related-material-31"><a class="header" href="#future-directions-and-related-material-31">Future Directions and Related Material</a></h2>
 <p>This proposal creates a foundation for two future work directions:</p>
@@ -7679,7 +7708,7 @@ faster deployment for most parachains but would add complexity.</p>
 <p>This requires a breaking change that can be coordinated following the same approach as in RFC-47.</p>
 <h2 id="prior-art-and-references-38"><a class="header" href="#prior-art-and-references-38">Prior Art and References</a></h2>
 <p>JAM already utilizes the same optimizations described in the Graypaper.</p>
-<h2 id="unresolved-questions-34"><a class="header" href="#unresolved-questions-34">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-33"><a class="header" href="#unresolved-questions-33">Unresolved Questions</a></h2>
 <p>None.</p>
 <h2 id="future-directions-and-related-material-32"><a class="header" href="#future-directions-and-related-material-32">Future Directions and Related Material</a></h2>
 <p>Future improvements could include:</p>
@@ -7920,7 +7949,7 @@ At this point, we compute $\beta\prime_w = \sum_v \beta\prime_{w,v}$ on-chain fo
 <p>JAM's block exports should not complicate availability rewards, but could impact some alternative schemes. </p>
 <h2 id="prior-art-and-references-39"><a class="header" href="#prior-art-and-references-39">Prior Art and References</a></h2>
 <p>None</p>
-<h2 id="unresolved-questions-35"><a class="header" href="#unresolved-questions-35">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-34"><a class="header" href="#unresolved-questions-34">Unresolved Questions</a></h2>
 <p>Provide specific questions to discuss and address before the RFC is voted on by the Fellowship. This should include, for example, alternatives to aspects of the proposed design where the appropriate trade-off to make is unclear.</p>
 <h2 id="future-directions-and-related-material-33"><a class="header" href="#future-directions-and-related-material-33">Future Directions and Related Material</a></h2>
 <h3 id="synthetic-parachain-flag"><a class="header" href="#synthetic-parachain-flag">Synthetic parachain flag</a></h3>
@@ -8170,7 +8199,7 @@ The following other host functions are similarly also considered deprecated:</p>
 <p>This RFC might be difficult to implement in Substrate due to the internal code design. It is not clear to the author of this RFC how difficult it would be.</p>
 <h2 id="prior-art-1"><a class="header" href="#prior-art-1">Prior Art</a></h2>
 <p>The API of these new functions was heavily inspired by API used by the C programming language.</p>
-<h2 id="unresolved-questions-36"><a class="header" href="#unresolved-questions-36">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-35"><a class="header" href="#unresolved-questions-35">Unresolved Questions</a></h2>
 <p>The changes in this RFC would need to be benchmarked. This involves implementing the RFC and measuring the speed difference.</p>
 <p>It is expected that most host functions are faster or equal speed to their deprecated counterparts, with the following exceptions:</p>
 <ul>
@@ -8251,7 +8280,7 @@ This would remove the possibility to synchronize older blocks, which is probably
 <li>Brokers involved in the trade of Bulk Coretime</li>
 </ul>
 <h2 id="explanation-44"><a class="header" href="#explanation-44">Explanation</a></h2>
-<h3 id="overview-2"><a class="header" href="#overview-2">Overview</a></h3>
+<h3 id="overview-3"><a class="header" href="#overview-3">Overview</a></h3>
 <p>The dynamic pricing model sets the new price based on supply and demand in the previous period. The model is a function of the number of Regions sold, piecewise-defined by two power functions.</p>
 <ul>
 <li>The left side ranges from 0 to the target. It represents situations where demand was lower than the target.</li>
@@ -8473,7 +8502,7 @@ OLD_PRICE = 1000
 <li><code>DescirbeFamily</code> type: https://github.com/paritytech/polkadot-sdk/blob/master/polkadot/xcm/xcm-builder/src/location_conversion.rs#L122</li>
 <li><code>WithComputedOrigin</code> type: https://github.com/paritytech/polkadot-sdk/blob/master/polkadot/xcm/xcm-builder/src/barriers.rs#L153</li>
 </ul>
-<h2 id="unresolved-questions-37"><a class="header" href="#unresolved-questions-37">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-36"><a class="header" href="#unresolved-questions-36">Unresolved Questions</a></h2>
 <p>Implementation details and overall code is still up to discussion.</p>
 <div style="break-before: page; page-break-before: always;"></div><p><a href="https://github.com/polkadot-fellows/RFCs/pull/35">(source)</a></p>
 <p><strong>Table of Contents</strong></p>
@@ -8555,7 +8584,7 @@ OLD_PRICE = 1000
 <p>We want to highlight the importance for ecosystem builders to create a mechanism for indexers and wallets to be able to understand that changes have occurred such as increasing the pallet version, etc.</p>
 <h2 id="prior-art-and-references-42"><a class="header" href="#prior-art-and-references-42">Prior Art and References</a></h2>
 <p>N/A</p>
-<h2 id="unresolved-questions-38"><a class="header" href="#unresolved-questions-38">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-37"><a class="header" href="#unresolved-questions-37">Unresolved Questions</a></h2>
 <p>N/A</p>
 <h2 id="future-directions-and-related-material-34"><a class="header" href="#future-directions-and-related-material-34">Future Directions and Related Material</a></h2>
 <p>Additionally we would like to re-open the conversation about the potential for there to be free delegations. This was discussed by Dr Gavin Wood at Sub0 2022 and we feel like this would go a great way towards increasing the amount of network participants that are delegating: https://youtu.be/hSoSA6laK3Q?t=526</p>
@@ -8744,7 +8773,7 @@ pub(super) type CheckedCodeHash&lt;T: Config&gt; =
 <p>This RFC does not break compatibility.</p>
 <h2 id="prior-art-and-references-43"><a class="header" href="#prior-art-and-references-43">Prior Art and References</a></h2>
 <p>Prior discussion on this topic: https://github.com/paritytech/polkadot-sdk/issues/1796</p>
-<h2 id="unresolved-questions-39"><a class="header" href="#unresolved-questions-39">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-38"><a class="header" href="#unresolved-questions-38">Unresolved Questions</a></h2>
 <p>None at this time.</p>
 <h2 id="future-directions-and-related-material-35"><a class="header" href="#future-directions-and-related-material-35">Future Directions and Related Material</a></h2>
 <p>As noted in <a href="https://github.com/paritytech/polkadot-sdk/issues/1796">this GitHub issue</a>, we want to raise the per-byte cost of on-chain data storage. However, a substantial increase in this cost would make it highly impractical for on-demand parachains to register on Polkadot.
@@ -8833,7 +8862,7 @@ The <code>:heappages</code> are a rather obscure feature, and it is not clear wh
 <p>Not a breaking change. The runtime-side changes can be applied immediately (without even having to wait for changes in the client), then as soon as the runtime is updated, the client can be updated without any transition period. One can even consider updating the client before the runtime, as it corresponds to path C.</p>
 <h2 id="prior-art-and-references-44"><a class="header" href="#prior-art-and-references-44">Prior Art and References</a></h2>
 <p>None.</p>
-<h2 id="unresolved-questions-40"><a class="header" href="#unresolved-questions-40">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-39"><a class="header" href="#unresolved-questions-39">Unresolved Questions</a></h2>
 <p>None.</p>
 <h2 id="future-directions-and-related-material-36"><a class="header" href="#future-directions-and-related-material-36">Future Directions and Related Material</a></h2>
 <p>This RFC follows the same path as https://github.com/polkadot-fellows/RFCs/pull/4 by scoping everything related to memory allocations to the runtime.</p>
@@ -8981,7 +9010,7 @@ much of a burden or overhead since they've already built the infrastructure for 
 <p>One reference to a similar feature requiring on-chain/off-chain coordination would be the Kappa-Sigma-Mu Society. Nothing on-chain necessarily enforces the rules
 or facilitates bids, challenges, defenses, etc. However, the Society has managed to maintain itself with integrity to its rules. So I don't think this is totally
 out of Kusama's scope. But it will require some off-chain effort to maintain.</p>
-<h2 id="unresolved-questions-41"><a class="header" href="#unresolved-questions-41">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-40"><a class="header" href="#unresolved-questions-40">Unresolved Questions</a></h2>
 <ul>
 <li>Who will develop the tools necessary to implement this feature? How do we select them?</li>
 <li>How can this idea be better implemented with on-chain/substrate features?</li>
@@ -9064,7 +9093,7 @@ out of Kusama's scope. But it will require some off-chain effort to maintain.</p
 <ul>
 <li>Recent discussion / referendum for an alternative way to address this issue: <a href="https://kusama.polkassembly.io/referenda/340">Kusama Referendum 340 - Funding a Decision Deposit Sponsor</a></li>
 </ul>
-<h2 id="unresolved-questions-42"><a class="header" href="#unresolved-questions-42">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-41"><a class="header" href="#unresolved-questions-41">Unresolved Questions</a></h2>
 <p>Feedback on whether my proposed implementation of this is the best way to address the issue - including which calls the track should be allowed to make. Are the track parameters correct or should be use something different? Alternative would be welcome.</p>
 <div style="break-before: page; page-break-before: always;"></div><p><a href="https://github.com/polkadot-fellows/RFCs/pull/74">(source)</a></p>
 <p><strong>Table of Contents</strong></p>
@@ -9654,7 +9683,7 @@ We have the following extrinsics:</p>
 <p>This RFC is compatible with the existing implementation and can be handled via upgrades and migration. It's not intended to replace the existing multisig pallet.</p>
 <h2 id="prior-art-and-references-46"><a class="header" href="#prior-art-and-references-46">Prior Art and References</a></h2>
 <p><a href="https://github.com/paritytech/polkadot-sdk/tree/master/substrate/frame/multisig">multisig pallet in polkadot-sdk</a></p>
-<h2 id="unresolved-questions-43"><a class="header" href="#unresolved-questions-43">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-42"><a class="header" href="#unresolved-questions-42">Unresolved Questions</a></h2>
 <ul>
 <li>On account deletion, should we transfer remaining deposits to treasury or remove signers' addition deposits completely and consider it as fees to start with?</li>
 </ul>
@@ -9754,7 +9783,7 @@ Implement call filters. This will allow multisig accounts to only accept certain
 <p>Updates to Polkadot.js Apps, API and its documentation and those referring to it may be required.</p>
 <h2 id="prior-art-and-references-47"><a class="header" href="#prior-art-and-references-47">Prior Art and References</a></h2>
 <p>No prior articles or references.</p>
-<h2 id="unresolved-questions-44"><a class="header" href="#unresolved-questions-44">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-43"><a class="header" href="#unresolved-questions-43">Unresolved Questions</a></h2>
 <p>No further questions at this stage.</p>
 <h2 id="future-directions-and-related-material-38"><a class="header" href="#future-directions-and-related-material-38">Future Directions and Related Material</a></h2>
 <p>Relates to RFC entitled &quot;Increase maximum length of identity raw data values from 32 bytes&quot;.</p>
@@ -9862,7 +9891,7 @@ Implement call filters. This will allow multisig accounts to only accept certain
 <h2 id="prior-art-and-references-48"><a class="header" href="#prior-art-and-references-48">Prior Art and References</a></h2>
 <h3 id="prior-art-2"><a class="header" href="#prior-art-2">Prior Art</a></h3>
 <p>No prior articles.</p>
-<h2 id="unresolved-questions-45"><a class="header" href="#unresolved-questions-45">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-44"><a class="header" href="#unresolved-questions-44">Unresolved Questions</a></h2>
 <p>None</p>
 <h2 id="future-directions-and-related-material-39"><a class="header" href="#future-directions-and-related-material-39">Future Directions and Related Material</a></h2>
 <p>None</p>
@@ -9997,7 +10026,7 @@ Implement call filters. This will allow multisig accounts to only accept certain
 <ul>
 <li>All related discussions are going to be under this PR.</li>
 </ul>
-<h2 id="unresolved-questions-46"><a class="header" href="#unresolved-questions-46">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-45"><a class="header" href="#unresolved-questions-45">Unresolved Questions</a></h2>
 <ul>
 <li>Are there additional security measures needed to prevent potential abuses of the new functionalities?</li>
 </ul>
@@ -10135,7 +10164,7 @@ Implement call filters. This will allow multisig accounts to only accept certain
 <li>Existing decentralized applications and use cases on other blockchain platforms.</li>
 <li>Proposal #885: EVM-compatible contracts on Asset Hub, which highlights the community's interest in integrating smart contracts within the Polkadot ecosystem.</li>
 </ul>
-<h2 id="unresolved-questions-47"><a class="header" href="#unresolved-questions-47">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-46"><a class="header" href="#unresolved-questions-46">Unresolved Questions</a></h2>
 <ul>
 <li>What specific security measures should be implemented to prevent smart contract vulnerabilities?</li>
 <li>How can we ensure optimal performance while supporting complex smart contracts?</li>
@@ -10426,7 +10455,7 @@ namely:</p>
 <li>Existing pre-checking.</li>
 </ol>
 <p>https://github.com/paritytech/polkadot-sdk/issues/971</p>
-<h2 id="unresolved-questions-48"><a class="header" href="#unresolved-questions-48">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-47"><a class="header" href="#unresolved-questions-47">Unresolved Questions</a></h2>
 <ol>
 <li>What about the initial runtime, shall we make that off-chain as well?</li>
 <li>Good news, at least after the first upgrade, no code will be stored on chain
@@ -10562,7 +10591,7 @@ The instruction should be deprecated as soon as this RFC is approved
 (probably deprecate in v5, remove in v6).</p>
 <h2 id="prior-art-and-references-52"><a class="header" href="#prior-art-and-references-52">Prior Art and References</a></h2>
 <p>The previous RFC PR on the xcm-format repo, before XCM RFCs were moved to fellowship RFCs: https://github.com/polkadot-fellows/xcm-format/pull/57.</p>
-<h2 id="unresolved-questions-49"><a class="header" href="#unresolved-questions-49">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-48"><a class="header" href="#unresolved-questions-48">Unresolved Questions</a></h2>
 <p>None.</p>
 <h2 id="future-directions-and-related-material-43"><a class="header" href="#future-directions-and-related-material-43">Future Directions and Related Material</a></h2>
 <p>The <a href="https://github.com/polkadot-fellows/RFCs/pull/105">new generic fees mechanism</a> is related to this proposal and further stimulates it as the JIT withdraw fees mechanism will become useless anyway.</p>
@@ -10687,7 +10716,7 @@ mod pallet_proxy_replica {
 <p>None.</p>
 <h2 id="prior-art-and-references-53"><a class="header" href="#prior-art-and-references-53">Prior Art and References</a></h2>
 <p>None.</p>
-<h2 id="unresolved-questions-50"><a class="header" href="#unresolved-questions-50">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-49"><a class="header" href="#unresolved-questions-49">Unresolved Questions</a></h2>
 <p>None.</p>
 <h2 id="future-directions-and-related-material-44"><a class="header" href="#future-directions-and-related-material-44">Future Directions and Related Material</a></h2>
 <ul>
@@ -10759,7 +10788,7 @@ for compression.</li>
 <p>No compatibility issues identified.</p>
 <h2 id="prior-art-and-references-54"><a class="header" href="#prior-art-and-references-54">Prior Art and References</a></h2>
 <p>None.</p>
-<h2 id="unresolved-questions-51"><a class="header" href="#unresolved-questions-51">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-50"><a class="header" href="#unresolved-questions-50">Unresolved Questions</a></h2>
 <p>None.</p>
 <h2 id="future-directions-and-related-material-45"><a class="header" href="#future-directions-and-related-material-45">Future Directions and Related Material</a></h2>
 <p>None.</p>
@@ -11013,7 +11042,7 @@ from which to start applying the new mechanism, thus, not affecting the already 
 <li><a href="https://docs.rs/polkadot-runtime-common/16.0.0/polkadot_runtime_common/auctions/index.html">Auctions pallet</a> in <a href="https://crates.io/crates/polkadot-runtime-common"><code>polkadot-runtime-commont</code></a>: Defines the mechanism of candle auctions.</li>
 <li><strong>PBA Book</strong>: A good place to read about <a href="https://polkadot-blockchain-academy.github.io/pba-book/cryptography/exotic-primitives/page.html?highlight=vrf#verifiable-random-functionsvrfs">VRFs</a>.</li>
 </ul>
-<h2 id="unresolved-questions-52"><a class="header" href="#unresolved-questions-52">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-51"><a class="header" href="#unresolved-questions-51">Unresolved Questions</a></h2>
 <ul>
 <li>How to determine in a statistically meaningful way that a change in the poll status corresponds to an
 organic behaviour, and not an unwanted, malicious behaviour?</li>
@@ -11178,7 +11207,7 @@ support version 5 and to remove version 4 in the future.</p>
 <p>This is a result of the work in <a href="https://github.com/paritytech/polkadot-sdk/issues/2415">Extrinsic
 Horizon</a> and
 <a href="https://github.com/polkadot-fellows/RFCs/blob/main/text/0099-transaction-extension-version.md">RFC99</a>.</p>
-<h2 id="unresolved-questions-53"><a class="header" href="#unresolved-questions-53">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-52"><a class="header" href="#unresolved-questions-52">Unresolved Questions</a></h2>
 <p>None.</p>
 <h2 id="future-directions-and-related-material-47"><a class="header" href="#future-directions-and-related-material-47">Future Directions and Related Material</a></h2>
 <p>Following this change, extrinsic version 5 will be introduced as part of the <a href="https://github.com/paritytech/polkadot-sdk/issues/2415">Extrinsic
@@ -11360,7 +11389,7 @@ invulnerable set for each chain can be grandfathered in when upgrading the <code
 pallet version.</p>
 <h2 id="prior-art-and-references-58"><a class="header" href="#prior-art-and-references-58">Prior Art and References</a></h2>
 <p>This RFC builds on RFC-7, which introduced the election mechanism for system chain collators.</p>
-<h2 id="unresolved-questions-54"><a class="header" href="#unresolved-questions-54">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-53"><a class="header" href="#unresolved-questions-53">Unresolved Questions</a></h2>
 <ul>
 <li>How long should the period between individual elections be? How long should the full election
 cycle be?
@@ -11470,7 +11499,7 @@ of this RFC.</p>
 </ul>
 <h2 id="prior-art-and-references-59"><a class="header" href="#prior-art-and-references-59">Prior Art and References</a></h2>
 <p>N/A</p>
-<h2 id="unresolved-questions-55"><a class="header" href="#unresolved-questions-55">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-54"><a class="header" href="#unresolved-questions-54">Unresolved Questions</a></h2>
 <p>Some token holders may want these confirmation periods to remain as they are currently and for them not to increase. If this is something that the Polkadot Technical Fellowship considers to be an issue to implement into a runtime upgrade then I can create a Wish For Change to obtain token holder approval.</p>
 <h2 id="future-directions-and-related-material-49"><a class="header" href="#future-directions-and-related-material-49">Future Directions and Related Material</a></h2>
 <p>The parameters of Polkadot OpenGov will likely continue to change over time, there are additional discussions in the community regarding adjusting the <code>min_support</code> for some tracks so that it does not trend towards 0%, similar to the current state of the Whitelisted Caller track. This is outside of the scope of this RFC and requires a lot more discussion.</p>
@@ -11542,7 +11571,7 @@ of this RFC.</p>
 <p>Does this proposal break compatibility with existing interfaces, older versions of implementations? Summarize necessary migrations or upgrade strategies, if any.</p>
 <h2 id="prior-art-and-references-60"><a class="header" href="#prior-art-and-references-60">Prior Art and References</a></h2>
 <p>Provide references to either prior art or other relevant research for the submitted design.</p>
-<h2 id="unresolved-questions-56"><a class="header" href="#unresolved-questions-56">Unresolved Questions</a></h2>
+<h2 id="unresolved-questions-55"><a class="header" href="#unresolved-questions-55">Unresolved Questions</a></h2>
 <p>Provide specific questions to discuss and address before the RFC is voted on by the Fellowship. This should include, for example, alternatives to aspects of the proposed design where the appropriate trade-off to make is unclear.</p>
 <h2 id="future-directions-and-related-material-50"><a class="header" href="#future-directions-and-related-material-50">Future Directions and Related Material</a></h2>
 <p>Describe future work which could be enabled by this RFC, if it were accepted, as well as related RFCs. This is a place to brain-dump and explore possibilities, which themselves may become their own RFCs.</p>
