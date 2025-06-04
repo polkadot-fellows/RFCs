@@ -13,7 +13,7 @@ Update the runtime-host interface so that it no longer uses the host-side alloca
 
 The API of these new functions was heavily inspired by the API used by the C programming language.
 
-This RFC is mainly based on [RFC-4](https://github.com/polkadot-fellows/RFCs/pull/4) by @tomaka, which has never been adopted, and supercedes it.
+This RFC is mainly based on [RFC-4](https://github.com/polkadot-fellows/RFCs/pull/4) by @tomaka, which has never been adopted, and supersedes it.
 
 ### Changes
 
@@ -60,9 +60,9 @@ The new functions directly return the number of bytes written into the `value_ou
 
 ```wat
 (func $ext_storage_next_key_version_2
-    (param $key_in_out i64) (return i32))
+    (param $key_in_out i64) (result i32))
 (func $ext_default_child_storage_next_key_version_2
-    (param $child_storage_key i64) (param $key_in_out i64) (return i32))
+    (param $child_storage_key i64) (param $key_in_out i64) (result i32))
 ```
 
 The behaviour of these functions is identical to their version 1 counterparts.
@@ -104,9 +104,9 @@ Some notes:
 (func $ext_crypto_ed25519_generate_version_2
     (param $key_type_id i32) (param $seed i64) (param $out i32))
 (func $ext_crypto_sr25519_generate_version_2
-    (param $key_type_id i32) (param $seed i64) (param $out i32) (return i32))
+    (param $key_type_id i32) (param $seed i64) (param $out i32) (result i32))
 (func $ext_crypto_ecdsa_generate_version_2
-    (param $key_type_id i32) (param $seed i64) (param $out i32) (return i32))
+    (param $key_type_id i32) (param $seed i64) (param $out i32) (result i32))
 ```
 
 The behaviour of these functions is identical to their version 1 or version 2 counterparts. Instead of allocating a buffer, writing the output to it, and returning a pointer to it, the new version of these functions accepts an `out` parameter containing the memory location where the host writes the output. The output is always of a size known at compilation time.
@@ -141,17 +141,17 @@ These functions amend already implemented but still unused functions introduced 
 * 32-bit unsigned integer representing the number of unique keys removes, including overlay;
 * 32-bit unsigned integer representing the number of iterations done.
 
-The size of the output buffer must be determined at the compile time. If the SCALE-encoded data do not fit into the buffer, the data are silently trucated. The caller may determine the truncation by checking the value length data contained in the SCALE-encoded data header.
+The size of the output buffer must be determined at the compile time. If the SCALE-encoded data do not fit into the buffer, the data are silently truncated. The caller may determine the truncation by checking the value length data contained in the SCALE-encoded data header.
  
 ```wat
 (func $ext_crypto_ed25519_sign_version_2
-    (param $key_type_id i32) (param $key i32) (param $msg i64) (param $out i32) (return i32))
+    (param $key_type_id i32) (param $key i32) (param $msg i64) (param $out i32) (result i32))
 (func $ext_crypto_sr25519_sign_version_2
-    (param $key_type_id i32) (param $key i32) (param $msg i64) (param $out i32) (return i32))
+    (param $key_type_id i32) (param $key i32) (param $msg i64) (param $out i32) (result i32))
 (func $ext_crypto_ecdsa_sign_version_2
-    (param $key_type_id i32) (param $key i32) (param $msg i64) (param $out i32) (return i32))
+    (param $key_type_id i32) (param $key i32) (param $msg i64) (param $out i32) (result i32))
 (func $ext_crypto_ecdsa_sign_prehashed_version_2
-    (param $key_type_id i32) (param $key i32) (param $msg i64) (param $out i32) (return i64))
+    (param $key_type_id i32) (param $key i32) (param $msg i64) (param $out i32) (result i64))
 ```
 
 The behaviour of these functions is identical to their version 1 counterparts. The new versions of these functions accept an `out` parameter containing the memory location where the host writes the signature. The signatures are always of a size known at compilation time. On success, these functions return `0`. If the public key can't be found in the keystore, these functions return `1` and do not write anything to `out`.
@@ -160,9 +160,9 @@ Note that the return value is `0` on success and `1` on failure, while the previ
 
 ```wat
 (func $ext_crypto_secp256k1_ecdsa_recover_version_3
-    (param $sig i32) (param $msg i32) (param $out i32) (return i32))
+    (param $sig i32) (param $msg i32) (param $out i32) (result i32))
 (func $ext_crypto_secp256k1_ecdsa_recover_compressed_version_3
-    (param $sig i32) (param $msg i32) (param $out i32) (return i32))
+    (param $sig i32) (param $msg i32) (param $out i32) (result i32))
 ```
 
 The behaviour of these functions is identical to their version 2 counterparts. The new versions of these functions accept an `out` parameter containing the memory location where the host writes the signature. The signatures are always of a size known at compilation time. On success, these functions return `0`. On failure, these functions return a non-zero value and do not write anything to `out`.
@@ -177,15 +177,15 @@ These values are equal to the values returned on error by the version 2 (see <ht
 
 ```wat
 (func $ext_crypto_ed25519_num_public_keys_version_1
-    (param $key_type_id i32) (return i32))
+    (param $key_type_id i32) (result i32))
 (func $ext_crypto_ed25519_public_key_version_1
     (param $key_type_id i32) (param $key_index i32) (param $out i32))
 (func $ext_crypto_sr25519_num_public_keys_version_1
-    (param $key_type_id i32) (return i32))
+    (param $key_type_id i32) (result i32))
 (func $ext_crypto_sr25519_public_key_version_1
     (param $key_type_id i32) (param $key_index i32) (param $out i32))
 (func $ext_crypto_ecdsa_num_public_keys_version_1
-    (param $key_type_id i32) (return i32))
+    (param $key_type_id i32) (result i32))
 (func $ext_crypto_ecdsa_public_key_version_1
     (param $key_type_id i32) (param $key_index i32) (param $out i32))
 ```
@@ -260,7 +260,7 @@ If the buffer in `out` is too small to fit the entire header name or value, only
 
 ```wat
 (func $ext_offchain_submit_transaction_version_2
-    (param $data i64) (return i32))
+    (param $data i64) (result i32))
 (func $ext_offchain_http_request_add_header_version_2
     (param $request_id i32) (param $name i64) (param $value i64) (result i64))
 ```
@@ -272,7 +272,7 @@ Instead of allocating a buffer, writing `1` or `0` in it, and returning a pointe
     (param $kind i32) (param $key i64) (param $value_out i64) (param $offset i32) (result i64))
 ```
 
-This function supercedes the `ext_offchain_local_storage_get_version_1` host function, and uses an API and logic similar to `ext_storage_read_version_2`.
+This function supersedes the `ext_offchain_local_storage_get_version_1` host function, and uses an API and logic similar to `ext_storage_read_version_2`.
 
 It reads the offchain local storage key indicated by `kind` and `key` starting at the byte indicated by `offset`, and writes the value to the [pointer-size](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size) indicated by `value_out`.
 
