@@ -2,7 +2,7 @@
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
-| **Start Date**  | June 7th, 2025                                                                              |
+| **Start Date**  | June 5th, 2025                                                                              |
 | **Description** | Allow voters to simultaneously delegate and vote                                            |
 | **Authors**     | polka.dom (polkadotdom)                                                                     |
 
