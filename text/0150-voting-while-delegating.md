@@ -8,7 +8,7 @@
 
 ## Summary
 
-This RFC proposes changes to `pallet-conviction-voting` that allow for simultaneous voting and delegation. For example, Alice could delegate to Bob, then later vote on a referendum while keeping their delegation to Bob intact. It is a strict subset of [RFC 35](https://github.com/polkadot-fellows/RFCs/pull/35).
+This RFC proposes changes to `pallet-conviction-voting` that allow for simultaneous voting and delegation. For example, Alice could delegate to Bob, then later vote on a referendum while keeping their delegation to Bob intact. It is a strict subset of Leemo's [RFC 35](https://github.com/polkadot-fellows/RFCs/pull/35).
 
 ## Motivation
 
