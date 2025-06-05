@@ -86,7 +86,7 @@ This change would mean a more complicated STF for voting, which would increase d
 
 ### Performance
 
-The proposed changes would increase both the compute and storage requirements linearly for all voting functions.
+The proposed changes would increase both the compute and storage requirements by about 2x for all voting functions. No change in complexity.
 
 ### Ergonomics
 
