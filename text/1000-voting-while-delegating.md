@@ -17,9 +17,9 @@ Under our current voting system, a voter can either vote or delegate. To vote, t
 
 ### The Issue
 
-Empirically, the vast majority of people do not vote on day to day policy. This was foreseen and is the reason governance has delegation. However, more worriedly, it has also been observed that most people do not delegate, leaving a large percentage of our voting population unrepresented.
+Empirically, the vast majority of people do not vote on day to day policy. This was foreseen and is the reason governance has delegation. However, more worriedly, it has also been observed that most people do not delegate either, leaving a large percentage of our voting population unrepresented.
 
-### Analysis
+### Factors Limiting Delegation
 
 One could think of three major reasons for this lack of delegation. 
 
@@ -36,7 +36,7 @@ One may ask, could a voter not just undelegate, vote, then delegate again? Could
 
 ## Stakeholders
 
-`Runtime developers`: If runtime developers were relying on the previous assumptions for their [VotingHooks](https://github.com/paritytech/polkadot-sdk/blob/master/substrate/frame/conviction-voting/src/lib.rs#L159) implementations, they will need to rethink their approach. In addition, a runtime migration is needed. Lastly, it is a serious change in governance that requires some consideration beyond the technical. 
+`Runtime developers`: If runtime developers are relying on the previous assumptions for their [VotingHooks](https://github.com/paritytech/polkadot-sdk/blob/master/substrate/frame/conviction-voting/src/lib.rs#L159) implementations, they will need to rethink their approach. In addition, a runtime migration is needed. Lastly, it is a serious change in governance that requires some consideration beyond the technical. 
 
 `App developers`: Apps like Subsquare and Polkassembly would need to update their user interface logic. They will also need to handle the new error.
 
@@ -48,15 +48,15 @@ One may ask, could a voter not just undelegate, vote, then delegate again? Could
 
 ### New Data & Runtime Logic
 
-The [Voting Enum](https://github.com/paritytech/polkadot-sdk/blob/master/substrate/frame/conviction-voting/src/vote.rs#L225) is first collapsed, as there's no longer a distinction between the variants. Then a `(poll index -> retracted votes count)` data item would be added to the user's voting data stored in [VotingFor](https://github.com/paritytech/polkadot-sdk/blob/master/substrate/frame/conviction-voting/src/lib.rs#L165). This would keep track of the per poll balance that has been clawed back from the user by their delegators. 
+The [Voting Enum](https://github.com/paritytech/polkadot-sdk/blob/master/substrate/frame/conviction-voting/src/vote.rs#L225) is first collapsed, as there's no longer a distinction between the variants. Then a `(poll index -> retracted votes count)` data item would be added to the user's voting data stored in [VotingFor](https://github.com/paritytech/polkadot-sdk/blob/master/substrate/frame/conviction-voting/src/lib.rs#L165). This would keep track of the per poll balance that has been clawed back from the user by those delegating to them. 
 
-All changes to pallet conviction voting's STF would follow that simple change. For example, when a user votes standard, the final amount added to the poll's tally will be `balance + (amount delegated to user - retracted votes)`. Then, if they are delegating, it will update their delegate's vote data with the newly retracted votes.
+All changes to pallet-conviction-voting's STF would follow that simple change. For example, when a user votes standard, the final amount added to the poll's tally will be `balance + (amount delegated to user - retracted votes)`. Then, if they are delegating, it will update their delegate's vote data with the newly retracted votes.
 
 The retracted amount is always the full delegated amount. For example, if Alice delegates 10 UNITS to Bob and then votes with 5 UNITS, the full 10 UNITS is still added as a clawback to Bob for that poll. This is both for simplicity and to ensure we don't make unnecessary assumptions about what Alice wants.
 
-Because you need to add the clawback, a delegator's vote can affect a delegate's voting data. If a delegator's vote or delegation makes the delegate's voting data exceed [MaxVotes](https://github.com/paritytech/polkadot-sdk/blob/master/substrate/frame/conviction-voting/src/vote.rs#L206-L216), the transaction will fail. In practice, this means this new system is somewhere between the old and the ideal. However, this will incentivize delegates to stay on top of voting data clearance. And with MaxVotes set to [512](https://github.com/polkadot-fellows/runtimes/blob/main/relay/polkadot/src/governance/mod.rs#L43) at our current referenda rates, it would be difficult to hit this limit.
+Because you need to add the clawback, a delegator's vote can affect a delegate's voting data. If a delegator's vote or delegation makes the delegate's voting data exceed [MaxVotes](https://github.com/paritytech/polkadot-sdk/blob/master/substrate/frame/conviction-voting/src/vote.rs#L206-L216), the transaction will fail. In practice, this means this new system is somewhere between the old and the ideal. However, this will incentivize delegates to stay on top of voting data clearance. And given our current referenda rates and MaxVotes set to [512](https://github.com/polkadot-fellows/runtimes/blob/main/relay/polkadot/src/governance/mod.rs#L43), it would be difficult to hit this limit.
 
-A new error is to be introduced that signals MaxVotes was reached specifically for the delegate.
+A new error is to be introduced that signals MaxVotes was reached specifically for the delegate's voting data.
 
 ### Locked Balance
 
@@ -108,4 +108,4 @@ None
 
 ## Future Directions and Related Material
 
-It is possible we would like to add a system parameter for the rate of change of the voting/delegation system. This could prevent wild swings in the voter preferences function and motivate/shield delegates by solidifying their positions over some amount of time. However, it's unclear that this would be necessary or even valuable.
+It is possible we would like to add a system parameter for the rate of change of the voting/delegation system. This could prevent wild swings in the voter preferences function and motivate/shield delegates by solidifying their positions over some amount of time. However, it's unclear that this would be valuable or even desirable.
