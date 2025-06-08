@@ -48,9 +48,13 @@ One may ask, could a voter not just undelegate, vote, then delegate again? Could
 
 ### New Data & Runtime Logic
 
-The [Voting Enum](https://github.com/paritytech/polkadot-sdk/blob/master/substrate/frame/conviction-voting/src/vote.rs#L225) is first collapsed, as there's no longer a distinction between the variants. Then a `(poll index -> retracted votes count)` data item would be added to the user's voting data stored in [VotingFor](https://github.com/paritytech/polkadot-sdk/blob/master/substrate/frame/conviction-voting/src/lib.rs#L165). This would keep track of the per poll balance that has been clawed back from the user by those delegating to them. 
+The [Voting Enum](https://github.com/paritytech/polkadot-sdk/blob/master/substrate/frame/conviction-voting/src/vote.rs#L225) is first collapsed, as there's no longer a distinction between the variants. Then a `(poll index -> retracted votes count)` data item would be added to the user's voting data stored in [VotingFor](https://github.com/paritytech/polkadot-sdk/blob/master/substrate/frame/conviction-voting/src/lib.rs#L165). This would keep track of the per poll balance that has been clawed back from the user by those delegating to them.
 
-All changes to pallet-conviction-voting's STF would follow that simple change. For example, when a user votes standard, the final amount added to the poll's tally will be `balance + (amount delegated to user - retracted votes)`. Then, if they are delegating, it will update their delegate's vote data with the newly retracted votes.
+The implementation must allow for the `(poll index -> retracted votes)` data to exist even if the user does not currently have a vote for that poll. A simple example that highlights the necessity is as follows: A delegator votes first, then the delegate does. If the delegator is not allowed to create the retracted votes data on the delegate, the tally count would be corrupted when the delegate votes.
+
+It follows then that the delegator must also handle clean up of that data when their vote is removed. Otherwise, the delegate has no immediate monetary incentive to clean the retracted votes state.
+
+All changes to pallet-conviction-voting's STF would follow those simple changes. For example, when a user votes standard, the final amount added to the poll's tally will be `balance + (amount delegated to user - retracted votes)`. Then, if they are delegating, it will update their delegate's vote data with the newly retracted votes.
 
 The retracted amount is always the full delegated amount. For example, if Alice delegates 10 UNITS to Bob and then votes with 5 UNITS, the full 10 UNITS is still added as a clawback to Bob for that poll. This is both for simplicity and to ensure we don't make unnecessary assumptions about what Alice wants.
 
