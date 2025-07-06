@@ -36,7 +36,7 @@ One may ask, could a voter not just undelegate, vote, then delegate again? Could
 
 ## Stakeholders
 
-`Runtime developers`: If runtime developers are relying on the previous assumptions for their [VotingHooks](https://github.com/paritytech/polkadot-sdk/blob/master/substrate/frame/conviction-voting/src/lib.rs#L159) implementations, they will need to rethink their approach. In addition, a runtime migration is needed. Lastly, it is a serious change in governance that requires some consideration beyond the technical. 
+`Runtime developers`: If runtime developers are relying on the previous assumptions for their [VotingHooks](https://github.com/paritytech/polkadot-sdk/blob/939fc198daaf5e8ae319419f112dacbc1ea7aefe/substrate/frame/conviction-voting/src/lib.rs#L159) implementations, they will need to rethink their approach. In addition, a runtime migration is needed. Lastly, it is a serious change in governance that requires some consideration beyond the technical. 
 
 `App developers`: Apps like Subsquare and Polkassembly would need to update their user interface logic. They will also need to handle the new error.
 
@@ -48,7 +48,7 @@ One may ask, could a voter not just undelegate, vote, then delegate again? Could
 
 ### New Data & Runtime Logic
 
-The [Voting Enum](https://github.com/paritytech/polkadot-sdk/blob/master/substrate/frame/conviction-voting/src/vote.rs#L225) is first collapsed, as there's no longer a distinction between the variants. Then a `(poll index -> retracted votes count)` data item would be added to the user's voting data stored in [VotingFor](https://github.com/paritytech/polkadot-sdk/blob/master/substrate/frame/conviction-voting/src/lib.rs#L165). This would keep track of the per poll balance that has been clawed back from the user by those delegating to them.
+The [Voting Enum](https://github.com/paritytech/polkadot-sdk/blob/939fc198daaf5e8ae319419f112dacbc1ea7aefe/substrate/frame/conviction-voting/src/vote.rs#L256-L264) is first collapsed, as there's no longer a distinction between the variants. Then a `(poll index -> retracted votes count)` data item would be added to the user's voting data stored in [VotingFor](https://github.com/paritytech/polkadot-sdk/blob/939fc198daaf5e8ae319419f112dacbc1ea7aefe/substrate/frame/conviction-voting/src/lib.rs#L165). This would keep track of the per poll balance that has been clawed back from the user by those delegating to them.
 
 The implementation must allow for the `(poll index -> retracted votes)` data to exist even if the user does not currently have a vote for that poll. A simple example that highlights the necessity is as follows: A delegator votes first, then the delegate does. If the delegator is not allowed to create the retracted votes data on the delegate, the tally count would be corrupted when the delegate votes.
 
@@ -58,7 +58,7 @@ All changes to pallet-conviction-voting's STF would follow those simple changes.
 
 The retracted amount is always the full delegated amount. For example, if Alice delegates 10 UNITS to Bob and then votes with 5 UNITS, the full 10 UNITS is still added as a clawback to Bob for that poll. This is both for simplicity and to ensure we don't make unnecessary assumptions about what Alice wants.
 
-Because you need to add the clawback, a delegator's vote can affect a delegate's voting data. If a delegator's vote or delegation makes the delegate's voting data exceed [MaxVotes](https://github.com/paritytech/polkadot-sdk/blob/master/substrate/frame/conviction-voting/src/vote.rs#L206-L216), the transaction will fail. In practice, this means this new system is somewhere between the old and the ideal. However, this will incentivize delegates to stay on top of voting data clearance. And given our current referenda rates and MaxVotes set to [512](https://github.com/polkadot-fellows/runtimes/blob/main/relay/polkadot/src/governance/mod.rs#L43), it would be difficult to hit this limit.
+Because you need to add the clawback, a delegator's vote can affect a delegate's voting data. If a delegator's vote or delegation makes the delegate's voting data exceed [MaxVotes](https://github.com/paritytech/polkadot-sdk/blob/939fc198daaf5e8ae319419f112dacbc1ea7aefe/substrate/frame/conviction-voting/src/lib.rs#L138), the transaction will fail. In practice, this means this new system is somewhere between the old and the ideal. However, this will incentivize delegates to stay on top of voting data clearance. And given our current referenda rates and MaxVotes set to [512](https://github.com/polkadot-fellows/runtimes/blob/34ecb949660704ccf139a06afb075c6a729b1295/relay/polkadot/src/governance/mod.rs#L43), it would be difficult to hit this limit.
 
 A new error is to be introduced that signals MaxVotes was reached specifically for the delegate's voting data.
 
@@ -104,7 +104,7 @@ App developers will need to update their user interfaces to accommodate the new 
 
 ## Prior Art and References
 
-A current WIP implementation can be found [here](https://github.com/PolkadotDom/polkadot-sdk/tree/dom/vote-while-delegating/substrate/frame/conviction-voting/src). While WIP, it is STF complete & heavily commented for ease of understanding.
+A current implementation can be found [here](https://github.com/paritytech/polkadot-sdk/pull/9026).
 
 ## Unresolved Questions
 
