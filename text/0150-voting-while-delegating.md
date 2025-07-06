@@ -48,7 +48,7 @@ One may ask, could a voter not just undelegate, vote, then delegate again? Could
 
 ### New Data & Runtime Logic
 
-The [Voting Enum](https://github.com/paritytech/polkadot-sdk/blob/939fc198daaf5e8ae319419f112dacbc1ea7aefe/substrate/frame/conviction-voting/src/vote.rs#L256-L264) is first collapsed, as there's no longer a distinction between the variants. Then a `(poll index -> retracted votes count)` data item would be added to the user's voting data stored in [VotingFor](https://github.com/paritytech/polkadot-sdk/blob/939fc198daaf5e8ae319419f112dacbc1ea7aefe/substrate/frame/conviction-voting/src/lib.rs#L165). This would keep track of the per poll balance that has been clawed back from the user by those delegating to them.
+The [Voting Enum](https://github.com/paritytech/polkadot-sdk/blob/939fc198daaf5e8ae319419f112dacbc1ea7aefe/substrate/frame/conviction-voting/src/vote.rs#L256-L264) is first consolidated, as there's no longer a distinction between the variants. Then a `(poll index -> retracted votes count)` data item would be added to the user's voting data stored in [VotingFor](https://github.com/paritytech/polkadot-sdk/blob/939fc198daaf5e8ae319419f112dacbc1ea7aefe/substrate/frame/conviction-voting/src/lib.rs#L165). This would keep track of the per poll balance that has been clawed back from the user by those delegating to them.
 
 The implementation must allow for the `(poll index -> retracted votes)` data to exist even if the user does not currently have a vote for that poll. A simple example that highlights the necessity is as follows: A delegator votes first, then the delegate does. If the delegator is not allowed to create the retracted votes data on the delegate, the tally count would be corrupted when the delegate votes.
 
@@ -68,7 +68,7 @@ A user's locked balance will be the greater of the delegation lock and the votin
 
 ### Migrations 
 
-A runtime migration is necessary, though simple considering voting and delegation are currently separate.
+A runtime migration is necessary, though simple considering voting and delegation are currently separate. It would iterate over the [VotingFor](https://github.com/paritytech/polkadot-sdk/blob/939fc198daaf5e8ae319419f112dacbc1ea7aefe/substrate/frame/conviction-voting/src/lib.rs#L165) storage item and convert [VotingOf](https://github.com/paritytech/polkadot-sdk/blob/939fc198daaf5e8ae319419f112dacbc1ea7aefe/substrate/frame/conviction-voting/src/lib.rs#L171) to the [new data type](https://github.com/PolkadotDom/polkadot-sdk/blob/dom/vote-while-delegating/substrate/frame/conviction-voting/src/vote.rs#L227).
 
 ## Drawbacks
 
