@@ -1,0 +1,431 @@
+
+<!DOCTYPE HTML>
+<html lang="en" class="polkadot" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>RFC-0152: Decentralized Convex-Preference Coretime Market for Polkadot - Polkadot Fellowship RFCs</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="An online book of RFCs approved or proposed within the Polkadot Fellowship.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/polkadot.css">
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "polkadot" : "polkadot";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('polkadot')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../introduction.html">Introduction</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Newly Proposed</li><li class="chapter-item expanded "><a href="../new/0151-crowdsourced-decision-deposits.html">RFC-0151: Crowdsourced Decision Deposits</a></li><li class="chapter-item expanded "><a href="../new/0152-decentralized-convex-preference-coretime-market-for-polkadot.html" class="active">RFC-0152: Decentralized Convex-Preference Coretime Market for Polkadot</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Proposed</li><li class="chapter-item expanded "><a href="../proposed/0000-rewards.html">RFC-0000: Validator Rewards</a></li><li class="chapter-item expanded "><a href="../proposed/0150-voting-while-delegating.html">RFC-150: Allow Voting While Delegating</a></li><li class="chapter-item expanded "><a href="../proposed/xxxx-improve-the-security-of-proof-of-possession.html">RFC-XXXX: Adding customized mandatory context to proof of possession statement</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Approved</li><li class="chapter-item expanded "><a href="../approved/0001-agile-coretime.html">RFC-1: Agile Coretime</a></li><li class="chapter-item expanded "><a href="../approved/0005-coretime-interface.html">RFC-5: Coretime Interface</a></li><li class="chapter-item expanded "><a href="../approved/0007-system-collator-selection.html">RFC-0007: System Collator Selection</a></li><li class="chapter-item expanded "><a href="../approved/0008-parachain-bootnodes-dht.html">RFC-0008: Store parachain bootnodes in relay chain DHT</a></li><li class="chapter-item expanded "><a href="../approved/0009-improved-net-light-client-requests.html">RFC-0009: Improved light client requests networking protocol</a></li><li class="chapter-item expanded "><a href="../approved/0010-burn-coretime-revenue.html">RFC-0010: Burn Coretime Revenue</a></li><li class="chapter-item expanded "><a href="../approved/0012-process-for-adding-new-collectives.html">RFC-0012: Process for Adding New System Collectives</a></li><li class="chapter-item expanded "><a href="../approved/0013-prepare-blockbuilder-and-core-runtime-apis-for-mbms.html">RFC-0013: Prepare Core runtime API for MBMs</a></li><li class="chapter-item expanded "><a href="../approved/0014-improve-locking-mechanism-for-parachains.html">RFC-0014: Improve locking mechanism for parachains</a></li><li class="chapter-item expanded "><a href="../approved/0017-coretime-market-redesign.html">RFC-0017: Coretime Market Redesign</a></li><li class="chapter-item expanded "><a href="../approved/0022-adopt-encointer-runtime.html">RFC-0022: Adopt Encointer Runtime</a></li><li class="chapter-item expanded "><a href="../approved/0026-sassafras-consensus.html">RFC-0026: Sassafras Consensus Protocol</a></li><li class="chapter-item expanded "><a href="../approved/0032-minimal-relay.html">RFC-0032: Minimal Relay</a></li><li class="chapter-item expanded "><a href="../approved/0042-extrinsics-state-version.html">RFC-0042: Add System version that replaces StateVersion on RuntimeVersion</a></li><li class="chapter-item expanded "><a href="../approved/0043-storage-proof-size-hostfunction.html">RFC-0043: Introduce storage_proof_size Host Function for Improved Parachain Block Utilization</a></li><li class="chapter-item expanded "><a href="../approved/0045-nft-deposits-asset-hub.html">RFC-0045: Lowering NFT Deposits on Asset Hub</a></li><li class="chapter-item expanded "><a href="../approved/0047-assignment-of-availability-chunks.html">RFC-0047: Assignment of availability chunks to validators</a></li><li class="chapter-item expanded "><a href="../approved/0048-session-keys-runtime-api.html">RFC-0048: Generate ownership proof for SessionKeys</a></li><li class="chapter-item expanded "><a href="../approved/0050-fellowship-salaries.html">RFC-0050: Fellowship Salaries</a></li><li class="chapter-item expanded "><a href="../approved/0056-one-transaction-per-notification.html">RFC-0056: Enforce only one transaction per notification</a></li><li class="chapter-item expanded "><a href="../approved/0059-nodes-capabilities-discovery.html">RFC-0059: Add a discovery mechanism for nodes based on their capabilities</a></li><li class="chapter-item expanded "><a href="../approved/0078-merkleized-metadata.html">RFC-0078: Merkleized Metadata</a></li><li class="chapter-item expanded "><a href="../approved/0084-general-transaction-extrinsic-format.html">RFC-0084: General transactions in extrinsic format</a></li><li class="chapter-item expanded "><a href="../approved/0091-dht-record-creation-time.html">RFC-0091: DHT Authority discovery record creation time</a></li><li class="chapter-item expanded "><a href="../approved/0097-unbonding_queue.html">RFC-0097: Unbonding Queue</a></li><li class="chapter-item expanded "><a href="../approved/0099-transaction-extension-version.html">RFC-0099: Introduce a transaction extension version</a></li><li class="chapter-item expanded "><a href="../approved/0100-xcm-multi-type-asset-transfer.html">RFC-0100: New XCM instruction: InitiateAssetsTransfer</a></li><li class="chapter-item expanded "><a href="../approved/0101-xcm-transact-remove-max-weight-param.html">RFC-0101: XCM Transact remove require_weight_at_most parameter</a></li><li class="chapter-item expanded "><a href="../approved/0103-introduce-core-index-commitment.html">RFC-0103:  Introduce a CoreIndex commitment and a SessionIndex field in candidate receipts</a></li><li class="chapter-item expanded "><a href="../approved/0105-xcm-improved-fee-mechanism.html">RFC-0105: XCM improved fee mechanism</a></li><li class="chapter-item expanded "><a href="../approved/0107-xcm-execution-hints.html">RFC-0107: XCM Execution hints</a></li><li class="chapter-item expanded "><a href="../approved/0108-xcm-remove-testnet-ids.html">RFC-0108: Remove XCM testnet NetworkIds</a></li><li class="chapter-item expanded "><a href="../approved/0122-alias-origin-on-asset-transfers.html">RFC-0122: Asset transfers can alias XCM origin on destination to original origin</a></li><li class="chapter-item expanded "><a href="../approved/0123-pending-code-as-storage-location-for-runtime-upgrades.html">RFC-0123: Introduce :pending_code as intermediate storage key for the runtime code</a></li><li class="chapter-item expanded "><a href="../approved/0125-xcm-asset-metadata.html">RFC-0125: XCM Asset Metadata</a></li><li class="chapter-item expanded "><a href="../approved/0126-introduce-pvq.html">RFC-0126: Introduce PVQ (PolkaVM Query)</a></li><li class="chapter-item expanded "><a href="../approved/0135-compressed-blob-prefixes.html">RFC-0135: Compressed Blob Prefixes</a></li><li class="chapter-item expanded "><a href="../approved/0139-faster-erasure-coding.html">RFC-0139: Faster Erasure Coding</a></li><li class="chapter-item expanded "><a href="../approved/0146-deflationary-fee-proposal.html">RFC-0146: Deflationary Transaction Fee Model for the Relay Chain and its System Parachains</a></li><li class="chapter-item expanded "><a href="../approved/0149-rfc-1-renewal-adjustment.html">RFC-0149: Renewal Adjustment</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Stale</li><li class="chapter-item expanded "><a href="../stale/0000-pre-elves_soft.html">RFC-0000: Pre-ELVES soft concensus</a></li><li class="chapter-item expanded "><a href="../stale/0004-remove-unnecessary-allocator-usage.html">RFC-0004: Remove the host-side runtime memory allocator</a></li><li class="chapter-item expanded "><a href="../stale/0006-dynamic-pricing-for-bulk-coretime-sales.html">RFC-0006: Dynamic Pricing for Bulk Coretime Sales</a></li><li class="chapter-item expanded "><a href="../stale/0034-xcm-absolute-location-account-derivation.html">RFC-34: XCM Absolute Location Account Derivation</a></li><li class="chapter-item expanded "><a href="../stale/0035-conviction-voting-delegation-modifications.html"> RFC-0035: Conviction Voting Delegation Modifications</a></li><li class="chapter-item expanded "><a href="../stale/0044-rent-based-registration.html">RFC-0044: Rent based registration model</a></li><li class="chapter-item expanded "><a href="../stale/0054-remove-heap-pages.html">RFC-0054: Remove the concept of "heap pages" from the client</a></li><li class="chapter-item expanded "><a href="../stale/0070-x-track-kusamanetwork.html">RFC-0070: X Track for @kusamanetwork</a></li><li class="chapter-item expanded "><a href="../stale/0073-referedum-deposit-track.html">RFC-0073: Decision Deposit Referendum Track</a></li><li class="chapter-item expanded "><a href="../stale/0074-stateful-multisig-pallet.html">RFC-0074: Stateful Multisig Pallet</a></li><li class="chapter-item expanded "><a href="../stale/0077-increase-max-length-of-identity-pgp-fingerprint-value.html">RFC-0077: Increase maximum length of identity PGP fingerprint values from 20 bytes</a></li><li class="chapter-item expanded "><a href="../stale/0088-broker-pallet-slashable-deposit-purchaser-reputation-reserved-cores.html">RFC-0088: Add slashable locked deposit, purchaser reputation, and reserved cores for on-chain identities to broker pallet</a></li><li class="chapter-item expanded "><a href="../stale/00xx-secondary-marketplace-for-regions.html">RFC-0001: Secondary Market for Regions</a></li><li class="chapter-item expanded "><a href="../stale/00xx-smart-contracts-coretime-chain.html">RFC-0002: Smart Contracts on the Coretime Chain</a></li><li class="chapter-item expanded "><a href="../stale/0102-offchain-parachain-runtime-upgrades.html">RFC-0000: Feature Name Here</a></li><li class="chapter-item expanded "><a href="../stale/0106-xcm-remove-fees-mode.html">RFC-0106: Remove XCM fees mode</a></li><li class="chapter-item expanded "><a href="../stale/0111-pure-proxy-replication.html">RFC-0111: Pure Proxy Replication</a></li><li class="chapter-item expanded "><a href="../stale/0112-compress-state-response-message-in-state-sync.html">RFC-0112: Compress the State Response Message in State Sync</a></li><li class="chapter-item expanded "><a href="../stale/0114-secp256r1-hostfunction.html">RFC-0114: Introduce secp256r1_ecdsa_verify_prehashed Host Function to verify NIST-P256 elliptic curve signatures</a></li><li class="chapter-item expanded "><a href="../stale/0117-unbrick-collective.html">RFC-0117: The Unbrick Collective</a></li><li class="chapter-item expanded "><a href="../stale/0120-referenda-confirmation-by-candle-mechanism.html">RFC-0120: Referenda Confirmation by Candle Mechanism</a></li><li class="chapter-item expanded "><a href="../stale/0124-extrinsic-version-5.html">RFC-0124: Extrinsic version 5</a></li><li class="chapter-item expanded "><a href="../stale/0138-invulnerable-collator-election.html">RFC-0138: Election mechanism for invulnerable collators on system chains</a></li><li class="chapter-item expanded "><a href="../stale/0145-remove-unnecessary-allocator-usage.html">RFC-0145: Remove the host-side runtime memory allocator</a></li><li class="chapter-item expanded "><a href="../stale/RFC-114 Adjust Tipper Track Confirmation Periods.html">RFC-114: Adjust Tipper Track Confirmation Periods</a></li><li class="chapter-item expanded "><a href="../stale/TODO-stale-nomination-reward-curve.html">RFC-TODO: Stale Nomination Reward Curve</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="polkadot">Polkadot</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Polkadot Fellowship RFCs</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <p><a href="https://github.com/polkadot-fellows/RFCs/pull/152">(source)</a></p>
+<p><strong>Table of Contents</strong></p>
+<ul>
+<li><a href="#rfc-0152-decentralized-convex-preference-coretime-market-for-polkadot">RFC-0152: Decentralized Convex-Preference Coretime Market for Polkadot</a>
+<ul>
+<li><a href="#summary">Summary</a></li>
+<li><a href="#motivation">Motivation</a></li>
+<li><a href="#stakeholders">Stakeholders</a></li>
+<li><a href="#explanation">Explanation</a>
+<ul>
+<li><a href="#guide-level-explanation">Guide-Level Explanation</a></li>
+<li><a href="#reference-level-explanation">Reference-Level Explanation</a></li>
+</ul>
+</li>
+<li><a href="#drawbacks">Drawbacks</a>
+<ul>
+<li><a href="#performance">Performance</a></li>
+<li><a href="#user-experience">User Experience</a></li>
+<li><a href="#governance-burden">Governance Burden</a></li>
+</ul>
+</li>
+<li><a href="#testing-security-and-privacy">Testing, Security, and Privacy</a>
+<ul>
+<li><a href="#precision-and-determinism-in-arithmetic">Precision and Determinism in Arithmetic</a></li>
+<li><a href="#security">Security</a></li>
+<li><a href="#privacy">Privacy</a></li>
+<li><a href="#testing-and-recommendations">Testing and Recommendations</a></li>
+</ul>
+</li>
+<li><a href="#performance-ergonomics-and-compatibility">Performance, Ergonomics, and Compatibility</a>
+<ul>
+<li><a href="#performance-1">Performance</a></li>
+<li><a href="#ergonomics">Ergonomics</a></li>
+<li><a href="#compatibility">Compatibility</a></li>
+</ul>
+</li>
+<li><a href="#prior-art-and-references">Prior Art and References</a></li>
+<li><a href="#unresolved-questions">Unresolved Questions</a></li>
+<li><a href="#future-directions-and-related-material">Future Directions and Related Material</a></li>
+</ul>
+</li>
+</ul>
+<h1 id="rfc-0152-decentralized-convex-preference-coretime-market-for-polkadot"><a class="header" href="#rfc-0152-decentralized-convex-preference-coretime-market-for-polkadot">RFC-0152: Decentralized Convex-Preference Coretime Market for Polkadot</a></h1>
+<div class="table-wrapper"><table><thead><tr><th></th><th></th></tr></thead><tbody>
+<tr><td><strong>Start Date</strong></td><td>2025-06-30</td></tr>
+<tr><td><strong>Description</strong></td><td>This RFC proposes a decentralized market mechanism for allocating Coretime on Polkadot, replacing the existing Dutch auction method (RFC17). The proposed model leverages convex preference interactions among agents, eliminating explicit bidding and centralized price determination. This ensures fairness, transparency, and decentralization.</td></tr>
+<tr><td>**Conflicts-With</td><td>RFC-0017</td></tr>
+<tr><td><strong>Authors</strong></td><td>Diego Correa Tristain <a href="mailto:algoritmia@labormedia.cl">algoritmia@labormedia.cl</a></td></tr>
+</tbody></table>
+</div>
+<h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
+<p>This RFC proposes a decentralized market mechanism for allocating Coretime on Polkadot, replacing the existing Dutch auction method (RFC17). The proposed model leverages convex preference interactions among agents, eliminating explicit bidding and centralized price determination. This ensures fairness, transparency, and decentralization.</p>
+<h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
+<p>The current auction-based model (RFC17) presents critical issues:</p>
+<ul>
+<li>
+<p><strong>Front-running and timing asymmetry</strong>: Actors with superior infrastructure or timing strategies possess unfair advantages.</p>
+</li>
+<li>
+<p><strong>Complexity and cognitive overhead</strong>: Auctions pose challenges for participant comprehension and effective engagement.</p>
+</li>
+<li>
+<p><strong>Resource hoarding and inefficiency</strong>: Auctions allow strategic actors to monopolize resources, restricting equitable participation.</p>
+</li>
+</ul>
+<p>The decentralized convex-preference model addresses these issues by facilitating asynchronous, equitable and transparent access <strong>before</strong> state coordination and deterministic verifiability <strong>during and after</strong> protocol consensus.</p>
+<h2 id="stakeholders"><a class="header" href="#stakeholders">Stakeholders</a></h2>
+<p>Primary set of stakeholders are:</p>
+<ul>
+<li>Parachain Teams &amp; Developers</li>
+<li>Governance Bodies (Polkadot Fellowship, Polkadot Governance, Technical Committees)</li>
+<li>Core Developers &amp; Runtime Engineers</li>
+<li>Application Builders / Smart Contract Developers</li>
+<li>End Users of Polkadot Ecosystem dApps</li>
+<li>Token Holders &amp; Investors</li>
+<li>Researchers / Economists / Protocol Designers</li>
+<li>Communication Hubs (e.g., The Kusamarian, Polkadot Forum Moderators, Ecosystem Ambassadors)</li>
+</ul>
+<h2 id="explanation"><a class="header" href="#explanation">Explanation</a></h2>
+<h3 id="guide-level-explanation"><a class="header" href="#guide-level-explanation">Guide-Level Explanation</a></h3>
+<p>Agents participating in the Coretime market (such as parachains, parathreads, or smart contracts) declare two parameters:</p>
+<ul>
+<li>
+<p><strong>Asset Holdings</strong>: Their initial allocation of Coretime and tokens (e.g., DOT).</p>
+</li>
+<li>
+<p><strong>Preference Parameter (α)</strong>: A scalar value between 0 and 1 indicating their valuation preference between Coretime and tokens.</p>
+</li>
+</ul>
+<p>These parameters are recorded transparently on-chain. Transactions between agents are conducted through deterministic convex optimizations, ensuring local Pareto-optimal exchanges. A global equilibrium price naturally emerges from these local interactions without any centralized authority or external pricing mechanism <a href="https://github.com/onedge-network/Emergent_Properties_paper">Tristain, 2024</a>.</p>
+<h3 id="reference-level-explanation"><a class="header" href="#reference-level-explanation">Reference-Level Explanation</a></h3>
+<h4 id="economic-model"><a class="header" href="#economic-model">Economic Model</a></h4>
+<p>Agents' preferences are represented using a Cobb-Douglas utility function:</p>
+<p>$U_i(x, y) = x^{α_i} y^{1-α_i}$</p>
+<p>where:</p>
+<ul>
+<li>$x$ represents the quantity of Coretime.</li>
+<li>$y$ represents the quantity of tokens.</li>
+<li>$α_i \in [0,1]$ is the scalar preference parameter.</li>
+</ul>
+<h4 id="mechanism-implementation"><a class="header" href="#mechanism-implementation">Mechanism Implementation</a></h4>
+<p>Implementation involves the following components:</p>
+<ol>
+<li><strong>Preference Declaration:</strong> Agents MUST explicitly register their scalar preference (α) and initial asset holdings on-chain.</li>
+<li><strong>Interaction Module:</strong> A dedicated runtime pallet or smart contract SHOULD manage interactions, ensuring Pareto-optimal deterministic outcomes.</li>
+<li><strong>Convergence Enforcement:</strong> Interaction ordering MUST follow a deterministic protocol prioritizing transactions significantly enhancing price convergence, sequencing from higher to lower exchange ratios.</li>
+<li><strong>On-chain Verifiability:</strong> Transaction histories and convergence processes MUST be transparently auditable and verifiable on-chain.</li>
+</ol>
+<h4 id="example-flow-diagram"><a class="header" href="#example-flow-diagram">Example Flow Diagram</a></h4>
+<pre><code>Preference &amp; Asset Declaration → Paired-exchange Convex Optimization → Interaction Ordering (High-to-Low Exchange Impact) → Global Price Convergence → On-chain Auditability
+</code></pre>
+<h2 id="drawbacks"><a class="header" href="#drawbacks">Drawbacks</a></h2>
+<h3 id="performance"><a class="header" href="#performance">Performance</a></h3>
+<ul>
+<li>Initial implementation complexity due to the introduction of a new runtime module.</li>
+</ul>
+<h3 id="user-experience"><a class="header" href="#user-experience">User Experience</a></h3>
+<ul>
+<li>User education and UI development required for scalar preference parameter comprehension.</li>
+</ul>
+<h3 id="governance-burden"><a class="header" href="#governance-burden">Governance Burden</a></h3>
+<ul>
+<li>Additional review and audit complexity due to innovative economic logic.</li>
+</ul>
+<h2 id="testing-security-and-privacy"><a class="header" href="#testing-security-and-privacy">Testing, Security, and Privacy</a></h2>
+<p>The implementation of this decentralized convex-preference Coretime market mechanism demands particular care in maintaining determinism, accuracy, and security in all on-chain interactions. Key considerations include:</p>
+<h3 id="precision-and-determinism-in-arithmetic"><a class="header" href="#precision-and-determinism-in-arithmetic">Precision and Determinism in Arithmetic</a></h3>
+<ul>
+<li>
+<p>The proposed mechanism relies on convex optimization over continuous variables, which REQUIRES floating-point arithmetic or high-precision fixed-point alternatives.</p>
+</li>
+<li>
+<p>To ensure deterministic behavior across all nodes, arithmetic operations MUST be implemented using deterministic libraries or Wasm-compatible fixed-point math, avoiding non-deterministic floating-point behavior across architectures.</p>
+</li>
+<li>
+<p>Verifiability of Pareto-optimal outcomes across interactions MUST be reproducible and provable, potentially leveraging range-limited arithmetic or bounded rational approximations for optimization solvers.</p>
+</li>
+</ul>
+<h3 id="security"><a class="header" href="#security">Security</a></h3>
+<ul>
+<li>
+<p>Preference declarations and asset holdings MUST be immutably recorded on-chain, subject to strict validation and input constraints to prevent manipulation.</p>
+</li>
+<li>
+<p>The optimization process MUST prevent overflow, underflow, or division-by-zero attacks in edge-case preference combinations (e.g., α close to 0 or 1).</p>
+</li>
+<li>
+<p>Any deterministic interaction ordering logic MUST be auditable and resistant to manipulation or reordering incentives by privileged actors.</p>
+</li>
+</ul>
+<h3 id="privacy"><a class="header" href="#privacy">Privacy</a></h3>
+<ul>
+<li>
+<p>Although the model emphasizes transparency and verifiability, it MAY be beneficial in future iterations to support privacy-preserving preference commitment schemes (e.g., via homomorphic encryption or zero-knowledge commitments).</p>
+</li>
+<li>
+<p>This MAY allow agents to express preferences without revealing them publicly, while still enabling fair participation and on-chain verification.</p>
+</li>
+</ul>
+<h3 id="testing-and-recommendations"><a class="header" href="#testing-and-recommendations">Testing and Recommendations</a></h3>
+<ul>
+<li>
+<p>Simulation of multiple interacting agents with heterogeneous preferences and randomized initial allocations SHOULD be used to validate global convergence and equilibrium behavior.</p>
+</li>
+<li>
+<p>Fuzz testing and symbolic execution SHOULD be applied to the interaction module to identify corner cases in the optimization pipeline.</p>
+</li>
+<li>
+<p>Formal verification of convergence routines and boundedness of the optimization space is RECOMMENDED for high-assurance deployments.</p>
+</li>
+</ul>
+<h2 id="performance-ergonomics-and-compatibility"><a class="header" href="#performance-ergonomics-and-compatibility">Performance, Ergonomics, and Compatibility</a></h2>
+<p>This leads to a more fluid, computation-bound system where efficiency stems from algorithmic design and verification speed, not from externally imposed timing constraints. Compatibility with existing Substrate pallets can be explored through modular implementation.</p>
+<h3 id="performance-1"><a class="header" href="#performance-1">Performance</a></h3>
+<p>The system's performance depends on the availability of computational resources, not on arbitrary time windows or rounds. Price discovery and convergence are calculated as fast as the system can process the deterministic interaction rules. Pair-wise interactions can be batched and accumulated asynchronously. This enhances real-time responsiveness while removing artificial scheduling constraints.</p>
+<h3 id="ergonomics"><a class="header" href="#ergonomics">Ergonomics</a></h3>
+<p>Agents only need to express a simple scalar preference and their token/Coretime holdings, removing cognitive complexity. This lightweight interaction model improves usability, especially for smaller participants.</p>
+<h3 id="compatibility"><a class="header" href="#compatibility">Compatibility</a></h3>
+<p>The mechanism is fully compatible with asynchronous execution architectures. Because it relies on deterministic local state transitions, it integrates seamlessly with Byzantine fault-tolerant consensus protocols and supports scalable, decentralized implementations.</p>
+<h2 id="prior-art-and-references"><a class="header" href="#prior-art-and-references">Prior Art and References</a></h2>
+<p><a href="https://github.com/polkadot-fellows/RFCs/blob/6f29561a4747bbfd95307ce75cd949dfff359e39/text/0001-agile-coretime.md">RFC-1</a></p>
+<p>Initial Forum Discussion (superseded) : <a href="https://forum.polkadot.network/t/invitation-to-critically-evaluate-core-time-pricing-model-framework/13404">Invitation to Critically Evaluate Core Time Pricing Model Framework</a></p>
+<p>RFC Draft Proposal Preliminary Forum Thread: RFC: Decentralized Convex-Preference Coretime Market for Polkadot <a href="https://forum.polkadot.network/t/rfc-decentralized-convex-preference-coretime-market-for-polkadot-draft/13573">Draft</a></p>
+<p>&quot;Emergent Properties of Distributed Agents with Two-Stage Convex Zero-Sum Optimal Exchange Network&quot;: <a href="https://github.com/onedge-network/Emergent_Properties_paper">Tristain, 2024</a></p>
+<p>Personally, I want to express a special gratitude to <a href="https://www.researchgate.net/profile/Edmundo-Beteta">Edmundo Beteta</a> for introduccing me to Microeconomics Theory and guiding my curiosity at the Faculty of Economics and Administration, Universidad de Chile.</p>
+<h2 id="unresolved-questions"><a class="header" href="#unresolved-questions">Unresolved Questions</a></h2>
+<ul>
+<li>
+<p>Optimal method for initial rollout (experimental sandbox vs. partial deployment on Polkadot).</p>
+</li>
+<li>
+<p>OPTIONAL criteria and heuristics for deterministic interaction ordering.</p>
+</li>
+</ul>
+<h2 id="future-directions-and-related-material"><a class="header" href="#future-directions-and-related-material">Future Directions and Related Material</a></h2>
+<ul>
+<li>
+<p>Extend the model to support multi-asset allocations with additional priority mechanisms.</p>
+</li>
+<li>
+<p>Apply similar decentralized convex-preference principles to broader decentralized resource allocation challenges (e.g. JAM, energy/resource coordination, price stabilization).</p>
+</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../new/0151-crowdsourced-decision-deposits.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../proposed/0000-rewards.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../new/0151-crowdsourced-decision-deposits.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../proposed/0000-rewards.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>
