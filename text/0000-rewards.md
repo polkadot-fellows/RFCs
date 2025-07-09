@@ -104,7 +104,7 @@ pub struct ApprovalsTallyMessage(Vec<ApprovalTallyMessageLine>);
 Actual `ApprovalsTallyMessage`s sent over the wire must be signed of course, likely by the grandpa ed25519 key.
 
 
-### Rewards compoutation
+### Rewards computation
 
 We compute the approvals rewards for each validator by taking the median of the `approval_usages` fields for each validator across all validators `ApprovalsTallyMessage`s.  We compute some `noshows_percentiles` for each validator similarly, but using a 2/3 precentile instead of the median.
 ```
