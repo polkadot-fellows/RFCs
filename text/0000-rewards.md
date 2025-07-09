@@ -154,7 +154,7 @@ A dedicated rewards parachain could easily collect the `ApprovalsTallyMessage`s 
 
 Any in-core approach risks enough malicious collators biasing the rewards by censoring the `ApprovalsTallyMessage`s messages for some validators during the first phase.  After this first phase completes, our second phase proceeds deterministically.
 
-As an option, each validator could handle this second phase itself by creating siongle heavy transaction with `n` state accesses in this Merkle tree `M`, and this transaction sends the era points.
+As an option, each validator could handle this second phase itself by creating single heavy transaction with `n` state accesses in this Merkle tree `M`, and this transaction sends the era points.
 
 A remark for future developments..
 
