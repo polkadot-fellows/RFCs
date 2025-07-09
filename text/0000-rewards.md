@@ -64,7 +64,7 @@ CandidateRewards {
 We no longer require this data during disputes.  
 <!-- You could optionally track a `downloaded_one: Option<AuthorityBitField>` too, for the nodes from whome we douwnloaded only one chunk, but this seems like premature optimization -->
 
-After we approve a relay chain block, then we collect all its `CandidateRewards` into an `ApprovalsTally`, with one `ApprovalTallyRecord` for each validator.  In this, we compute `approval_usages` from the final run of the approvals loop, plus `0.8` for each backer.
+After we approve a relay chain block, then we collect all its `CandidateRewards` into an `ApprovalsTally`, with one `ApprovalTallyLine` for each validator.  In this, we compute `approval_usages` from the final run of the approvals loop, plus `0.8` for each backer.
 ```
 /// Our subjective record of what we used from, and provided to, all other validators on the finalized chain
 pub struct ApprovalsTally(Vec<ApprovalTallyLine>);
