@@ -187,7 +187,7 @@
 <li><a href="#categories">Categories</a></li>
 <li><a href="#observation">Observation</a></li>
 <li><a href="#messages">Messages</a></li>
-<li><a href="#rewards-compoutation">Rewards compoutation</a></li>
+<li><a href="#rewards-computation">Rewards computation</a></li>
 <li><a href="#strategies">Strategies</a></li>
 <li><a href="#concensus">Concensus</a></li>
 </ul>
@@ -261,7 +261,7 @@ CandidateRewards {
 </code></pre>
 <p>We no longer require this data during disputes.</p>
 <!-- You could optionally track a `downloaded_one: Option<AuthorityBitField>` too, for the nodes from whome we douwnloaded only one chunk, but this seems like premature optimization -->
-<p>After we approve a relay chain block, then we collect all its <code>CandidateRewards</code> into an <code>ApprovalsTally</code>, with one <code>ApprovalTallyRecord</code> for each validator.  In this, we compute <code>approval_usages</code> from the final run of the approvals loop, plus <code>0.8</code> for each backer.</p>
+<p>After we approve a relay chain block, then we collect all its <code>CandidateRewards</code> into an <code>ApprovalsTally</code>, with one <code>ApprovalTallyLine</code> for each validator.  In this, we compute <code>approval_usages</code> from the final run of the approvals loop, plus <code>0.8</code> for each backer.</p>
 <pre><code>/// Our subjective record of what we used from, and provided to, all other validators on the finalized chain
 pub struct ApprovalsTally(Vec&lt;ApprovalTallyLine&gt;);
 
@@ -294,7 +294,7 @@ pub struct ApprovalTallyMessageLine {
 pub struct ApprovalsTallyMessage(Vec&lt;ApprovalTallyMessageLine&gt;);
 </code></pre>
 <p>Actual <code>ApprovalsTallyMessage</code>s sent over the wire must be signed of course, likely by the grandpa ed25519 key.</p>
-<h3 id="rewards-compoutation"><a class="header" href="#rewards-compoutation">Rewards compoutation</a></h3>
+<h3 id="rewards-computation"><a class="header" href="#rewards-computation">Rewards computation</a></h3>
 <p>We compute the approvals rewards for each validator by taking the median of the <code>approval_usages</code> fields for each validator across all validators <code>ApprovalsTallyMessage</code>s.  We compute some <code>noshows_percentiles</code> for each validator similarly, but using a 2/3 precentile instead of the median.</p>
 <pre><code>let mut approval_usages_medians = Vec::new(); 
 let mut noshows_percentiles = = Vec::new(); 
@@ -331,7 +331,7 @@ for (mmu,atm) in my_missing_uploads.iter_mut().zip(approvals_tally_messages) {
 <h4 id="in-core"><a class="header" href="#in-core">In-core</a></h4>
 <p>A dedicated rewards parachain could easily collect the <code>ApprovalsTallyMessage</code>s and do the above computations.  In this, we logically have two phases, first we build the on-chain Merkle tree <code>M</code> of <code>ApprovalsTallyMessage</code>s, and second we process those into the rewards data.</p>
 <p>Any in-core approach risks enough malicious collators biasing the rewards by censoring the <code>ApprovalsTallyMessage</code>s messages for some validators during the first phase.  After this first phase completes, our second phase proceeds deterministically.</p>
-<p>As an option, each validator could handle this second phase itself by creating siongle heavy transaction with <code>n</code> state accesses in this Merkle tree <code>M</code>, and this transaction sends the era points.</p>
+<p>As an option, each validator could handle this second phase itself by creating single heavy transaction with <code>n</code> state accesses in this Merkle tree <code>M</code>, and this transaction sends the era points.</p>
 <p>A remark for future developments..</p>
 <p>JAM-like non/sub-parachain accumulation could mitigate the risk of the rewards parachain being captured.</p>
 <p>JAM services all have either parachain accumulation or else non/sub-parachain accumulation.</p>
