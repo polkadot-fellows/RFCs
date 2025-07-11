@@ -38,7 +38,7 @@ We've discussed roughly this rewards protocol in https://hackmd.io/@rgbPIkIdTwSI
 
 We alter the [current rewards scheme](https://wiki.polkadot.network/docs/maintain-guides-validator-payout) by reducing to roughly these proportions of total rewards:
 - 15-20% - Relay chain block production and uncle logic 
-- 5% - Rnything else related to relay chain finality, primarily beefy proving, but maybe other tasts exist.
+- 5% - Anything else related to relay chain finality, primarily beefy proving, but maybe other tastes exist.
 - Any existing rewards for on-chain validity statements would only cover backers, so those rewards must be removed.
 
 We add roughly these proportions of total rewards covering parachain work:
