@@ -87,7 +87,7 @@ At finality we sum these `ApprovalsTally` for one for the whole epoch so far, in
 
 ### Messages
 
-After the epoch is finalized, we share the first two lines of its `ApprovalTally`.
+After the epoch is finalized, we share the first three field of each `ApprovalTallyLine` in its `ApprovalTally`.
 ```
 /// Our subjective record of what we used from some other validator on the finalized chain
 pub struct ApprovalTallyMessageLine {
