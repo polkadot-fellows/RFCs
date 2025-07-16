@@ -262,6 +262,7 @@ CandidateRewards {
 <p>We no longer require this data during disputes.</p>
 <!-- You could optionally track a `downloaded_one: Option<AuthorityBitField>` too, for the nodes from whome we douwnloaded only one chunk, but this seems like premature optimization -->
 <p>After we approve a relay chain block, then we collect all its <code>CandidateRewards</code> into an <code>ApprovalsTally</code>, with one <code>ApprovalTallyLine</code> for each validator.  In this, we compute <code>approval_usages</code> from the final run of the approvals loop, plus <code>0.8</code> for each backer.</p>
+<p>We say a validator 𝑢 uses an approval vote by a validator 𝑣 on a candidate 𝑐 if the approval assignments loop by 𝑢 counted the vote by 𝑣 towards approving the candidate 𝑐.</p>
 <pre><code>/// Our subjective record of what we used from, and provided to, all other validators on the finalized chain
 pub struct ApprovalsTally(Vec&lt;ApprovalTallyLine&gt;);
 
@@ -279,7 +280,7 @@ pub struct ApprovalTallyLine {
 </code></pre>
 <p>At finality we sum these <code>ApprovalsTally</code> for one for the whole epoch so far, into another <code>ApprovalsTally</code>.  We can optionally sum them earlier at chain heads, but this requires mutablity.</p>
 <h3 id="messages"><a class="header" href="#messages">Messages</a></h3>
-<p>After the epoch is finalized, we share the first two lines of its <code>ApprovalTally</code>.</p>
+<p>After the epoch is finalized, we share the first three field of each <code>ApprovalTallyLine</code> in its <code>ApprovalTally</code>.</p>
 <pre><code>/// Our subjective record of what we used from some other validator on the finalized chain
 pub struct ApprovalTallyMessageLine {
     /// Approvals by this validator which our approvals gadget used in marking candidates approved.
