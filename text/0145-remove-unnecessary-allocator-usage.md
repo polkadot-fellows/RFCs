@@ -4,7 +4,8 @@
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 2025-05-16                                                                                   |
 | **Description** | Update the runtime-host interface to no longer make use of a host-side allocator            |
-| **Authors**     | Pierre Krieger, Someone Unknown                                                             |
+| **Authors**     | Pierre Krieger, Someone Unknown       
+                                                      |
 ## Summary
 
 Update the runtime-host interface so that it no longer uses the host-side allocator.
@@ -13,18 +14,16 @@ Update the runtime-host interface so that it no longer uses the host-side alloca
 
 The API of these new functions was heavily inspired by the API used by the C programming language.
 
-This RFC is mainly based on [RFC-4](https://github.com/polkadot-fellows/RFCs/pull/4) by @tomaka, which has never been adopted, and supersedes it.
+This RFC is mainly based on [RFC-4](https://github.com/polkadot-fellows/RFCs/pull/4) by @tomaka, which was never adopted, and this RFC supersedes it.
 
-### Changes
+### Changes from RFC-4
 
-* The original RFC required checking if an output buffer address provided to a host function is inside the VM address space range and to stop the runtime execution if that's not the case. That requirement has been removed in this version of the RFC, as in the general case, the host doesn't have exhaustive information about the VM's memory organization. Thus, attempting to write to an out-of-bound region will result in a "normal" runtime panic.
+* The original RFC required checking if an output buffer address provided to a host function is inside the VM address space range and to stop the runtime execution if that's not the case. That requirement has been removed in this version of the RFC, as in the general case, the host doesn't have exhaustive information about the VM's memory organization. Thus, attempting to write to an out-of-bounds region will result in a "normal" runtime panic.
 * Function signatures introduced by [PPP#7](https://github.com/w3f/PPPs/pull/7) have been used in this RFC, as the PPP has already been [properly implemented](https://github.com/paritytech/substrate/pull/11490) and [documented](https://github.com/w3f/polkadot-spec/pull/592/files). However, it has never been officially adopted, nor have its functions been in use.
-* For `*_next_key` input buffer is reused for output.
-* Error codes were harmonized to be always represented by negative values.
 * Return values were harmonized to `i64` everywhere where they represent either a positive outcome as a positive integer or a negative outcome as a negative error code.
 * `ext_offchain_network_peer_id_version_1` now returns a result code instead of silently failing if the network status is unavailable.
 * Added new versions of `ext_misc_runtime_version` and `ext_offchain_random_seed`.
-* Addressed discussions from the original RFC-4 discussion flow.
+* Addressed discussions from the original RFC-4 discussion thread.
 
 ## Motivation
 
@@ -32,7 +31,7 @@ The heap allocation of the runtime is currently controlled by the host using a m
 
 The API of many host functions contains buffer allocations. For example, when calling `ext_hashing_twox_256_version_1`, the host allocates a 32-byte buffer using the host allocator, and returns a pointer to this buffer to the runtime. The runtime later has to call `ext_allocator_free_version_1` on this pointer to free the buffer.
 
-Even though no benchmark has been done, it is pretty obvious that this design is very inefficient. To continue with the example of `ext_hashing_twox_256_version_1`, it would be more efficient to instead write the output hash to a buffer allocated by the runtime on its stack and passed by pointer to the function. Allocating a buffer on the stack in the worst-case scenario consists of simply decreasing a number; in the best-case scenario, it is free. Doing so would save many VM memory reads and writes by the allocator, and would save a function call to `ext_allocator_free_version_1`.
+Even though no benchmark has been done, it is pretty obvious that this design is very inefficient. To continue with the example of `ext_hashing_twox_256_version_1`, it would be more efficient to instead write the output hash to a buffer allocated by the runtime on its stack and passed by pointer to the function. Allocating a buffer on the stack, in the worst case, consists simply of decreasing a number; in the best case, it is free. Doing so would save many VM memory reads and writes by the allocator, and would save a function call to `ext_allocator_free_version_1`.
 
 Furthermore, the existence of the host-side allocator has become questionable over time. It is implemented in a very naive way, and for determinism and backwards compatibility reasons, it needs to be implemented exactly identically in every client implementation. Runtimes make substantial use of heap memory allocations, and each allocation needs to go through the runtime <-> host boundary twice (once for allocating and once for freeing). Moving the allocator to the runtime side would be a good idea, although it would increase the runtime size. But before the host-side allocator can be deprecated, all the host functions that use it must be updated to avoid using it.
 
@@ -42,304 +41,678 @@ No attempt was made to convince stakeholders.
 
 ## Explanation
 
-### New host functions
+### New definitions
 
-This section contains a list of new host functions to introduce and amendments to the existing ones.
+#### <a name="new-def-i"></a>New Definition I: Runtime Optional Positive Integer
+
+The Runtime optional positive integer is a signed 64-bit value. Positive values in the range of [0..2³²) represent corresponding unsigned 32-bit values. The value of `-1` represents a non-existing value (an _absent_ value). All other values are invalid.
+
+#### <a name="new-def-ii"></a>New Definition II: Runtime Optional Pointer-Size
+
+The runtime optional pointer-size has exactly the same definition as runtime pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) with the value of 2⁶⁴-1 representing a non-existing value (an _absent_ value).
+
+### Changes to host functions
+
+#### ext_storage_get
+
+The function is deprecated. Users are encouraged to use `ext_storage_read_version_2` instead.
+
+#### ext_storage_read
+
+The new version 2 is introduced, deprecating `ext_storage_read_version_1`. The new signature is
 
 ```wat
 (func $ext_storage_read_version_2
-    (param $key i64) (param $value_out i64) (param $offset i32) (result i64))
-(func $ext_default_child_storage_read_version_2
-    (param $child_storage_key i64) (param $key i64) (param $value_out i64)
-    (param $offset i32) (result i64))
+    (param $key i64) (param $value_out i64) (param $value_offset i32) (result i64))
 ```
 
-The signature and behaviour of `ext_storage_read_version_2` and `ext_default_child_storage_read_version_2` are identical to their version 1 counterparts, but the return value has a different meaning.
+##### Arguments
 
-The new functions directly return the number of bytes written into the `value_out` buffer. If the entry doesn't exist, `-1` is returned. Given that the host must never write more bytes than the size of the buffer in `value_out`, and that the size of this buffer is expressed as a 32-bit number, the 64-bit value of `-1` is not ambiguous.
+* `key` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the storage key being read;
+* `value_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the value read should be stored. If the buffer is not long enough to accommodate the value, the value is truncated to the length of the buffer;
+* `value_offset` is a 32-bit offset from which the value reading should start.
 
-```wat
-(func $ext_storage_next_key_version_2
-    (param $key_in_out i64) (result i32))
-(func $ext_default_child_storage_next_key_version_2
-    (param $child_storage_key i64) (param $key_in_out i64) (result i32))
-```
+##### Result
 
-The behaviour of these functions is identical to their version 1 counterparts.
+The result is an optional positive integer ([New Definition I](#new-def-i)), representing either the full length of the value in storage or the _absence_ of such a value in storage.
 
-Instead of allocating a buffer, writing the next key to it, and returning a pointer to it, the new version of these functions accepts an `key_in_out` parameter containing [a pointer-size](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size) to the memory location where the host first reads the input from, and then writes the output to.
+##### Changes
 
-These functions return the size, in bytes, of the next key, or `0` if there is no next key. If the size of the next key is larger than the buffer in `key_in_out`, the bytes of the key that fit the buffer are written to `key_in_out`, and any extra bytes that don't fit are discarded.
+The logic of the function is unchanged since the previous version. Only the result representation has changed.
 
-Some notes:
+#### ext_storage_clear_prefix
 
-- It is never possible for the next key to be an empty buffer, because an empty key has no preceding key. For this reason, a return value of `0` can unambiguously be used to indicate the lack of the next key.
-- The `ext_storage_next_key_version_2` and `ext_default_child_storage_next_key_version_2` are typically used to enumerate keys that start with a certain prefix. Since storage keys are constructed by concatenating hashes, the runtime is expected to know the size of the next key and can allocate a buffer that can fit said key. When the next key doesn't belong to the desired prefix, it might not fit the buffer, but given that the start of the key is written to the buffer anyway, this can be detected to avoid calling the function the second time with a larger buffer.
-
-```wat
-(func $ext_hashing_keccak_256_version_2
-    (param $data i64) (param $out i32))
-(func $ext_hashing_keccak_512_version_2
-    (param $data i64) (param $out i32))
-(func $ext_hashing_sha2_256_version_2
-    (param $data i64) (param $out i32))
-(func $ext_hashing_blake2_128_version_2
-    (param $data i64) (param $out i32))
-(func $ext_hashing_blake2_256_version_2
-    (param $data i64) (param $out i32))
-(func $ext_hashing_twox_64_version_2
-    (param $data i64) (param $out i32))
-(func $ext_hashing_twox_128_version_2
-    (param $data i64) (param $out i32))
-(func $ext_hashing_twox_256_version_2
-    (param $data i64) (param $out i32))
-(func $ext_trie_blake2_256_root_version_3
-    (param $data i64) (param $version i32) (param $out i32))
-(func $ext_trie_blake2_256_ordered_root_version_3
-    (param $data i64) (param $version i32) (param $out i32))
-(func $ext_trie_keccak_256_root_version_3
-    (param $data i64) (param $version i32) (param $out i32))
-(func $ext_trie_keccak_256_ordered_root_version_3
-    (param $data i64) (param $version i32) (param $out i32))
-(func $ext_crypto_ed25519_generate_version_2
-    (param $key_type_id i32) (param $seed i64) (param $out i32))
-(func $ext_crypto_sr25519_generate_version_2
-    (param $key_type_id i32) (param $seed i64) (param $out i32) (result i32))
-(func $ext_crypto_ecdsa_generate_version_2
-    (param $key_type_id i32) (param $seed i64) (param $out i32) (result i32))
-```
-
-The behaviour of these functions is identical to their version 1 or version 2 counterparts. Instead of allocating a buffer, writing the output to it, and returning a pointer to it, the new version of these functions accepts an `out` parameter containing the memory location where the host writes the output. The output is always of a size known at compilation time.
-
-```wat
-(func $ext_default_child_storage_root_version_3
-    (param $child_storage_key i64) (param $out i32))
-(func $ext_storage_root_version_3
-    (param $out i32))
-```
-
-The behaviour of these functions is identical to their version 1 and version 2 counterparts. Instead of allocating a buffer, writing the output to it, and returning a pointer to it, the new versions of these functions accept an `out` parameter containing the memory location where the host writes the output. The output is always of a size known at compilation time.
-
-The version 1 of these functions has been taken as a base rather than the version 2, as a [PPP#6](https://github.com/w3f/PPPs/pull/6) deprecating the version 2 of these functions has previously been accepted.
+The new version 3 is introduced, deprecating `ext_storage_clear_prefix_version_2`. The new signature is
 
 ```wat
 (func $ext_storage_clear_prefix_version_3
-    (param $maybe_prefix i64) (param $maybe_limit i64)
-    (param $maybe_cursor_in i64) (param $removal_results_out i32))
+    (param $maybe_prefix i64) (param $maybe_limit i64) (param $maybe_cursor_in i64)
+    (param $maybe_cursor_out i64) (param $backend i32) (param $unique i32) (param $loops i32)
+    (result i32))
+```
+
+##### Arguments
+
+* `maybe_prefix` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) containing a (possibly empty) storage prefix being cleared;
+* `maybe_limit` is an optional positive integer ([New Definition I](#new-def-i)) representing either the maximum number of backend deletions which may happen, or the _absence_ of such a limit. The number of backend iterations may surpass this limit by no more than one;
+* `maybe_cursor_in` is an optional pointer-size ([New Definition II](#new-def-ii)) representing the cursor returned by the previous (unfinished) call to this function. It should be _absent_ on the first call;
+* `maybe_cursor_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the continuation cursor will optionally be written (see also the Result section);
+* `backend` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a 4-byte buffer where a 32-bit integer representing the number of items removed from the backend database will be written;
+* `unique` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a 4-byte buffer where a 32-bit integer representing the number of unique keys removed, taking into account both the backend and the overlay;
+* `loops` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a 4-byte buffer where a 32-bit integer representing the number of iterations (each requiring a storage seek/read) which were done will be written.
+
+##### Result
+
+The result represents the length of the continuation cursor which was written to the buffer provided in `maybe_cursor_out`. A zero value represents the absence of such a cursor and no need for continuation (the prefix has been completely cleared). If the buffer is not large enough to accommodate the cursor, the latter will be truncated, but the full length of the cursor will always be returned.
+
+##### Changes
+
+The new version adopts [PPP#7](https://github.com/w3f/PPPs/pull/7), hence the significant change in the function interface with respect to the previous version. The reasoning for such a change was provided in the [original proposal discussion](https://github.com/w3f/polkadot-spec/issues/588).
+
+#### ext_storage_root
+
+The new version 3 is introduced, deprecating `ext_storage_root_version_2`. The signature is
+
+```wat
+(func $ext_storage_root_version_3
+    (param $out i64) (result i32))
+```
+
+##### Arguments
+
+* `out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the SCALE-encoded storage root, calculated after committing all the existing operations, will be stored.
+
+##### Results
+
+The result is the length of the output stored in the buffer provided in `out`. If the buffer is not large enough to accommodate the data, the latter will be truncated, but the full length of the output data will always be returned.
+
+##### Changes
+
+The new version adopts [PPP#6](https://github.com/w3f/PPPs/pull/6) deprecating the argument that used to represent the storage version.
+
+#### ext_storage_next_key
+
+The new version 2 is introduced, deprecating `ext_storage_next_key_version_1`. The signature is
+
+```wat
+(func $ext_storage_next_key_version_2
+    (param $key_in i64) (param $key_out i64) (result i32))
+```
+##### Changes
+
+The logic of the function is unchanged since the previous version. The signature has changed to align with the new memory allocation strategy.
+
+##### Arguments
+
+* `key_in` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer containing a storage key;
+* `key_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to an output buffer where the next key in the storage in the lexicographical order will be written.
+
+##### Result
+
+The result is the length of the output key, or zero if no next key was found. If the buffer provided in `key_out` is not large enough to accommodate the data, the latter will be truncated, but the full length of the output data will always be returned.
+
+#### ext_default_child_storage_get
+
+The function is deprecated. Users are encouraged to use `ext_default_child_storage_read_version_2` instead.
+
+#### ext_default_child_storage_read
+
+The new version 2 is introduced, deprecating `ext_default_child_storage_read_version_1`. The new signature is
+
+```wat
+(func $ext_storage_read_version_2
+    (param $storage_key i64) (param $key i64) (param $value_out i64) (param $value_offset i32)
+    (result i64))
+```
+
+##### Arguments
+
+* `storage_key` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the child storage key ([Definition 219](https://spec.polkadot.network/chap-host-api#defn-child-storage-type));
+* `key` is the storage key being read;
+* `value_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the value read should be stored. If the buffer is not long enough to accommodate the value, the value is truncated to the length of the buffer;
+* `value_offset` is a 32-bit offset from which the value reading should start.
+
+##### Result
+
+The result is an optional positive integer ([New Definition I](#new-def-i)), representing either the full length of the value in storage or the _absence_ of such a value in storage.
+
+##### Changes
+
+The logic of the function is unchanged since the previous version. Only the result representation has changed.
+
+#### ext_default_child_storage_storage_kill
+
+The new version 4 is introduced, deprecating `ext_default_child_storage_storage_kill_version_3`. The new signature is
+
+```wat
+(func $ext_default_child_storage_storage_kill_version_4
+    (param $storage_key i64) (param $maybe_limit i64) (param $maybe_cursor_in i64)
+    (param $maybe_cursor_out i64) (param $backend i32) (param $unique i32) (param $loops i32)
+    (result i32))
+```
+
+##### Arguments
+
+* `storage_key` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the child storage key ([Definition 219](https://spec.polkadot.network/chap-host-api#defn-child-storage-type));
+* `maybe_limit` is an optional positive integer representing either the maximum number of backend deletions which may happen, or the absence of such a limit. The number of backend iterations may surpass this limit by no more than one;
+* `maybe_cursor_in` is an optional pointer-size representing the cursor returned by the previous (unfinished) call to this function. It should be _absent_ on the first call;
+* `maybe_cursor_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the continuation cursor will optionally be written (see also the Result section);
+* `backend` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a 4-byte buffer where a 32-bit integer representing the number of items removed from the backend database will be written;
+* `unique` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a 4-byte buffer where a 32-bit integer representing the number of unique keys removed, taking into account both the backend and the overlay;
+* `loops` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a 4-byte buffer where a 32-bit integer representing the number of iterations (each requiring a storage seek/read) which were done will be written.
+
+##### Result
+
+The result represents the length of the continuation cursor which was written to the buffer provided in `maybe_cursor_out`. A zero value represents the absence of such a cursor and no need for continuation (the prefix has been completely cleared). If the buffer is not large enough to accommodate the cursor, the latter will be truncated, but the full length of the cursor will always be returned.
+
+##### Changes
+
+The new version adopts [PPP#7](https://github.com/w3f/PPPs/pull/7), hence the significant change in the function interface with respect to the previous version. The reasoning for such a change was provided in the [original proposal discussion](https://github.com/w3f/polkadot-spec/issues/588).
+
+#### ext_default_child_storage_clear_prefix
+
+The new version 3 is introduced, deprecating `ext_default_child_storage_clear_prefix_version_2`. The new signature is
+
+```wat
 (func $ext_default_child_storage_clear_prefix_version_3
-    (param $child_storage_key i64) (param $prefix i64) (param $maybe_limit i64)
-    (param $maybe_cursor_in i64) (param $removal_results_out i32))
-(func $ext_default_child_storage_kill_version_4
-    (param $child_storage_key i64) (param $maybe_limit i64)
-    (param $maybe_cursor_in i64) (param $removal_results_out i32))
+    (param $storage_key i64) (param $prefix i64) (param $maybe_limit i64)
+    (param $maybe_cursor_in i64) (param $maybe_cursor_out i64) (param $backend i32)
+    (param $unique i32) (param $loops i32) (result i32))
 ```
 
-These functions amend already implemented but still unused functions introduced by [PPP#7](https://github.com/w3f/PPPs/pull/7), hence there's no version number change. `maybe_limit` defines the limit of backend deletions, not counting keys in the current overlay. `maybe_cursor_in` may be used to pass a continuation cursor. After the operation is completed, a SCALE-encoded [varying data](https://spec.polkadot.network/id-cryptography-encoding#defn-varrying-data-type) are written to the provided output buffer. The varying data consists from the following fields, in order:
+##### Arguments
 
-* [Optional](https://spec.polkadot.network/id-cryptography-encoding#defn-option-type) continuation cursor. Absence of the cursor denotes the end of the operation;
-* 32-bit unsigned integer representing the number of items removed from the backend DB;
-* 32-bit unsigned integer representing the number of unique keys removes, including overlay;
-* 32-bit unsigned integer representing the number of iterations done.
+* `storage_key` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the child storage key ([Definition 219](https://spec.polkadot.network/chap-host-api#defn-child-storage-type));
+* `prefix` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) containing a storage prefix being cleared;
+* `maybe_limit` is an optional positive integer representing either the maximum number of backend deletions which may happen, or the absence of such a limit. The number of backend iterations may surpass this limit by no more than one;
+* `maybe_cursor_in` is an optional pointer-size representing the cursor returned by the previous (unfinished) call to this function. It should be _absent_ on the first call;
+* `maybe_cursor_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the continuation cursor will optionally be written (see also the Result section);
+* `backend` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a 4-byte buffer where a 32-bit integer representing the number of items removed from the backend database will be written;
+* `unique` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a 4-byte buffer where a 32-bit integer representing the number of unique keys removed, taking into account both the backend and the overlay;
+* `loops` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a 4-byte buffer where a 32-bit integer representing the number of iterations (each requiring a storage seek/read) which were done will be written.
 
-The size of the output buffer must be determined at the compile time. If the SCALE-encoded data do not fit into the buffer, the data are silently truncated. The caller may determine the truncation by checking the value length data contained in the SCALE-encoded data header.
- 
-```wat
-(func $ext_crypto_ed25519_sign_version_2
-    (param $key_type_id i32) (param $key i32) (param $msg i64) (param $out i32) (result i32))
-(func $ext_crypto_sr25519_sign_version_2
-    (param $key_type_id i32) (param $key i32) (param $msg i64) (param $out i32) (result i32))
-(func $ext_crypto_ecdsa_sign_version_2
-    (param $key_type_id i32) (param $key i32) (param $msg i64) (param $out i32) (result i32))
-(func $ext_crypto_ecdsa_sign_prehashed_version_2
-    (param $key_type_id i32) (param $key i32) (param $msg i64) (param $out i32) (result i64))
-```
+##### Result
 
-The behaviour of these functions is identical to their version 1 counterparts. The new versions of these functions accept an `out` parameter containing the memory location where the host writes the signature. The signatures are always of a size known at compilation time. On success, these functions return `0`. If the public key can't be found in the keystore, these functions return `1` and do not write anything to `out`.
+The result represents the length of the continuation cursor which was written to the buffer provided in `maybe_cursor_out`. A zero value represents the absence of such a cursor and no need for continuation (the prefix has been completely cleared). If the buffer is not large enough to accommodate the cursor, the latter will be truncated, but the full length of the cursor will always be returned.
 
-Note that the return value is `0` on success and `1` on failure, while the previous version of these functions wrote `1` on success (as it represents a SCALE-encoded `Some`) and `0` on failure (as it represents a SCALE-encoded `None`). Returning `0` on success and non-zero on failure is consistent with standard practices in the C programming language and is less surprising than the opposite.
+##### Changes
+
+The new version adopts [PPP#7](https://github.com/w3f/PPPs/pull/7), hence the significant change in the function interface with respect to the previous version. The reasoning for such a change was provided in the [original proposal discussion](https://github.com/w3f/polkadot-spec/issues/588).
+
+#### ext_default_child_storage_root
+
+The new version 3 is introduced, deprecating `ext_default_child_storage_root_version_2`. The signature is
 
 ```wat
-(func $ext_crypto_secp256k1_ecdsa_recover_version_3
-    (param $sig i32) (param $msg i32) (param $out i32) (result i32))
-(func $ext_crypto_secp256k1_ecdsa_recover_compressed_version_3
-    (param $sig i32) (param $msg i32) (param $out i32) (result i32))
+(func $ext_default_child_storage_root_version_3
+    (param $storage_key i64) (param $out i64) (result i32))
 ```
 
-The behaviour of these functions is identical to their version 2 counterparts. The new versions of these functions accept an `out` parameter containing the memory location where the host writes the signature. The signatures are always of a size known at compilation time. On success, these functions return `0`. On failure, these functions return a non-zero value and do not write anything to `out`.
+##### Arguments
 
-The non-zero value written on failure is:
+* `storage_key` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the child storage key ([Definition 219](https://spec.polkadot.network/chap-host-api#defn-child-storage-type));
+* `out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the SCALE-encoded storage root, calculated after committing all the existing operations, will be stored.
 
-- 1: incorrect value of R or S
-- 2: incorrect value of V
-- 3: invalid signature
+##### Results
 
-These values are equal to the values returned on error by the version 2 (see <https://spec.polkadot.network/chap-host-api#defn-ecdsa-verify-error>), but incremented by 1 to reserve 0 for success.
+The result is the length of the output stored in the buffer provided in `out`. If the buffer is not large enough to accommodate the data, the latter will be truncated, but the full length of the output data will always be returned.
+
+##### Changes
+
+The new version adopts [PPP#6](https://github.com/w3f/PPPs/pull/6) deprecating the argument that used to represent the storage version.
+
+#### ext_default_child_storage_next_key
+
+The new version 2 is introduced, deprecating `ext_default_child_storage_next_key_version_1`. The signature is
 
 ```wat
-(func $ext_crypto_ed25519_num_public_keys_version_1
-    (param $key_type_id i32) (result i32))
-(func $ext_crypto_ed25519_public_key_version_1
-    (param $key_type_id i32) (param $key_index i32) (param $out i32))
-(func $ext_crypto_sr25519_num_public_keys_version_1
-    (param $key_type_id i32) (result i32))
-(func $ext_crypto_sr25519_public_key_version_1
-    (param $key_type_id i32) (param $key_index i32) (param $out i32))
-(func $ext_crypto_ecdsa_num_public_keys_version_1
-    (param $key_type_id i32) (result i32))
-(func $ext_crypto_ecdsa_public_key_version_1
-    (param $key_type_id i32) (param $key_index i32) (param $out i32))
+(func $ext_default_child_storage_next_key_version_2
+    (param $storage_key i64) (param $key_in i64) (param $key_out i64) (result i32))
 ```
 
-The functions supersede the `ext_crypto_ed25519_public_key_version_1`, `ext_crypto_sr25519_public_key_version_1`, and `ext_crypto_ecdsa_public_key_version_1` host functions.
+##### Arguments
 
-Instead of calling `ext_crypto_ed25519_public_key_version_1` to obtain the list of all the keys at once, the runtime should instead call `ext_crypto_ed25519_num_public_keys_version_1` to get the number of public keys available, then `ext_crypto_ed25519_public_key_version_1` repeatedly.
-The `ext_crypto_ed25519_public_key_version_1` function writes the public key of the given `key_index` to the memory location designated by `out`. The `key_index` must be between 0 (included) and `n` (excluded), where `n` is the value returned by `ext_crypto_ed25519_num_public_keys_version_1`. Execution must trap if `n` is out of range.
+* `storage_key` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the child storage key ([Definition 219](https://spec.polkadot.network/chap-host-api#defn-child-storage-type));
+* `key_in` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer containing a storage key;
+* `key_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to an output buffer where the next key in the storage in the lexicographical order will be written.
 
-The same explanations apply for `ext_crypto_sr25519_public_key_version_1` and `ext_crypto_ecdsa_public_key_version_1`.
+##### Result
 
-Host implementers should be aware that the list of public keys (including their ordering) must not change while the runtime is running. That is most likely done by copying the list of all available keys either at the start of the execution or the first time the list is accessed.
+The result is the length of the output key, or zero if no next key was found. If the buffer provided in `key_out` is not large enough to accommodate the data, the latter will be truncated, but the full length of the output data will always be returned.
+
+##### Changes
+
+The logic of the function is unchanged since the previous version. The signature has changed to align with the new memory allocation strategy.
+
+#### ext_trie_{blake2|keccak}\_256_\[ordered_]root
+
+The following functions share the same signatures and set of changes:
+* `ext_trie_blake2_256_root`
+* `ext_trie_blake2_256_ordered_root`
+* `ext_trie_keccak_256_root`
+* `ext_trie_keccak_256_ordered_root`
+
+For the aforementioned functions, versions 3 were introduced, and the corresponding versions 2 were deprecated. The signature is:
 
 ```wat
-(func $ext_offchain_http_request_start_version_2
-  (param $method i64) (param $uri i64) (param $meta i64) (result i64))
+(func $ext_trie_{blake2|keccak}_256_[ordered_]root_version_3
+    (param $input i64) (param $version i32) (param $out i32))
 ```
 
-The behaviour of this function is identical to its version 1 counterpart. Instead of allocating a buffer, writing the request identifier in it, and returning a pointer to it, version 2 of this function simply returns the newly-assigned identifier to the HTTP request. On failure, this function returns `-1`. An identifier of `-1` is invalid and is reserved to indicate failure.
+##### Arguments
+
+* `input` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the SCALE-encoded vector of the trie key-value pairs;
+* `version` is the state version, where `0` denotes V0 and `1` denotes V1 state version. Other state versions may be introduced in the future;
+* `out` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a 32-byte buffer, where the calculated trie root will be stored.
+
+##### Changes
+
+The logic of the function is unchanged since the previous version. The signature has changed to align with the new memory allocation strategy.
+
+#### ext_misc_runtime_version
+
+The new version 2 is introduced, deprecating `ext_default_child_storage_next_key_version_1`. The signature is
 
 ```wat
-(func $ext_offchain_http_request_write_body_version_2
-  (param $method i64) (param $uri i64) (param $meta i64) (result i64))
-(func $ext_offchain_http_response_read_body_version_2
-  (param $request_id i32) (param $buffer i64) (param $deadline i64) (result i64))
+(func $ext_misc_runtime_version_version_2
+    (param $wasm i64) (param $out i64) (result i64))
 ```
+##### Arguments
 
-The behaviour of these functions is identical to their version 1 counterpart. Instead of allocating a buffer, writing two bytes in it, and returning a pointer to it, the new version of these functions simply indicates what happened:
+* `wasm` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the Wasm blob from which the version information should be extracted;
+* `out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the buffer where the SCALE-encoded extracted version information will be stored.
 
-- For `ext_offchain_http_request_write_body_version_2`, 0 on success.
-- For `ext_offchain_http_response_read_body_version_2`, 0 or a non-zero number of bytes on success.
-- -1 if the deadline was reached.
-- -2 if there was an I/O error while processing the request.
-- -3 if the identifier of the request is invalid.
+##### Result
 
-These values are equal to the values returned on error by version 1 (see <https://spec.polkadot.network/chap-host-api#defn-http-error>), but tweaked to reserve positive numbers for success.
+The result is an optional positive integer ([New Definition I](#new-def-i)) representing the length of the output data. If the buffer is not large enough to accommodate the data, the latter will be truncated, but the full length of the output data will always be returned. An _absent_ value represents the absence of the version information in the Wasm blob or a failure to read one.
 
-When it comes to `ext_offchain_http_response_read_body_version_2`, the host implementers must not read too much data at once to avoid ambiguity in the returned value. Given that the `buffer` size is always inferior or equal to 4 GiB, this is not a problem.
+##### Changes
+
+The logic of the function is unchanged since the previous version. The signature has changed to align with the new memory allocation strategy.
+
+#### ext_crypto_{ed25519|sr25519|ecdsa}_public_keys
+
+The following functions are deprecated:
+* `ext_crypto_ed25519_public_keys_version_1`
+* `ext_crypto_sr25519_public_keys_version_1`
+* `ext_crypto_ecdsa_public_keys_version_1`
+
+Users are encouraged to use the new `*_num_public_keys` and `*_public_key` counterparts.
+
+#### ext_crypto_{ed25519|sr25519|ecdsa}_num_public_keys
+
+New functions, all sharing the same signature and logic, are introduced:
+* `ext_crypto_ed25519_num_public_keys_version_1`
+* `ext_crypto_sr25519_num_public_keys_version_1`
+* `ext_crypto_ecdsa_num_public_keys_version_1`
+
+The signature is:
 
 ```wat
-(func $ext_offchain_http_response_wait_version_2
-    (param $ids i64) (param $deadline i64) (param $out i32))
+(func $ext_crypto_{ed25519|sr25519|ecdsa}_num_public_keys
+    (param $id i32) (result i32))
 ```
 
-The behaviour of this function is identical to its version 1 counterpart. Instead of allocating a buffer, writing the output to it, and returning a pointer to it, the new version of this function accepts an `out` parameter containing the memory location where the host writes the output.
+##### Arguments
 
-The encoding of the response code is also modified compared to its version 1 counterpart, and each response code now encodes up to 4 little-endian bytes as described below:
+* `id` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to the key type identifier ([Definition 220](https://spec.polkadot.network/chap-host-api#defn-key-type-id)).
 
-- 100-999: The request has finished with the given HTTP status code.
-- -1: The deadline was reached.
-- -2: There was an I/O error while processing the request.
-- -3: The identifier of the request is invalid.
+##### Result
 
-The buffer passed to `out` must always have a size of `4 * n` where `n` is the number of elements in the `ids`.
+The result represents a (possibly zero) number of keys of the given type known to the keystore.
+
+#### ext_crypto_{ed25519|sr25519|ecdsa}_public_key
+
+New functions, all sharing the same signature and logic, are introduced:
+* `ext_crypto_ed25519_public_key_version_1`
+* `ext_crypto_sr25519_public_key_version_1`
+* `ext_crypto_ecdsa_public_key_version_1`
+
+The signature is:
 
 ```wat
-(func $ext_offchain_http_response_header_name_version_1
-    (param $request_id i32) (param $header_index i32) (param $out i64) (result i64))
-(func $ext_offchain_http_response_header_value_version_1
-    (param $request_id i32) (param $header_index i32) (param $out i64) (result i64))
+(func $ext_crypto_{ed25519|sr25519|ecdsa}_public_key
+    (param $id i32) (param $index i32) (param $out))
 ```
 
-These functions supersede the `ext_offchain_http_response_headers_version_1` host function.
+##### Arguments
 
-Contrary to `ext_offchain_http_response_headers_version_1`, only one header indicated by `header_index` can be read at a time. Instead of calling `ext_offchain_http_response_headers_version_1` once, the runtime should call `ext_offchain_http_response_header_name_version_1` and `ext_offchain_http_response_header_value_version_1` multiple times with an increasing `header_index`, until a value of `-1` is returned.
+* `id` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to the key type identifier ([Definition 220](https://spec.polkadot.network/chap-host-api#defn-key-type-id)).
+* `index` is the index of the key in the keystore. If the index is out of bounds (determined by the value returned by the respective `_num_public_keys` function) the function will panic;
+* `out` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to the output buffer of the respective size (depending on key type) where the key will be written.
 
-These functions accept an `out` parameter containing [a pointer-size](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size) to the memory location where the header name or value should be written.
+#### ext_crypto_{ed25519|sr25519|ecdsa}_generate
 
-These functions return the size, in bytes, of the header name or header value. If the request doesn't exist or is in an invalid state (as documented for `ext_offchain_http_response_headers_version_1`) or the `header_index` is out of range, a value of `-1` is returned. Given that the host must never write more bytes than the size of the buffer in `out`, and that the size of this buffer is expressed as a 32-bit number, a 64-bit value of `-1` is not ambiguous.
+The following functions share the same signatures and set of changes:
+* `ext_crypto_ed25519_generate`
+* `ext_crypto_sr25519_generate`
+* `ext_crypto_ecdsa_generate`
 
-If the buffer in `out` is too small to fit the entire header name or value, only the bytes that fit are written, and the rest are discarded.
+For the aforementioned functions, versions 2 are introduced, and the corresponding versions 1 are deprecated. The signature is:
+
+```wat
+(func $ext_crypto_{ed25519|sr25519|ecdsa}_generate_version_2
+    (param $id i32) (param $seed i64) (param $out i32))
+```
+
+##### Arguments
+
+* `id` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to the key type identifier ([Definition 220](https://spec.polkadot.network/chap-host-api#defn-key-type-id)). The function will panic if the identifier is invalid;
+* `seed` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the SCALE-encoded Option value ([Definition 200](https://spec.polkadot.network/id-cryptography-encoding#defn-option-type)) containing the BIP-39 seed which must be valid UTF-8. The function will panic if the seed is not valid UTF-8;
+* `out` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to the output buffer of the respective size (depending on key type) where the generated key will be written.
+
+##### Changes
+
+The logic of the functions is unchanged since the previous version. The signature has changed to align with the new memory allocation strategy.
+
+#### ext_crypto_{ed25519|sr25519|ecdsa}_sign\[_prehashed]
+
+The following functions share the same signatures and set of changes:
+* `ext_crypto_ed25519_sign`
+* `ext_crypto_sr25519_sign`
+* `ext_crypto_ecdsa_sign`
+* `ext_crypto_ecdsa_sign_prehashed`
+
+For the aforementioned functions, versions 2 are introduced, and the corresponding versions 1 are deprecated. The signature is:
+
+```wat
+(func $ext_crypto_{ed25519|sr25519|ecdsa}_sign{_prehashed|}_version_2
+    (param $id i32) (param $pub_key i32) (param $msg i64) (param $out i64) (result i64))
+```
+
+##### Arguments
+
+* `id` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to the key type identifier ([Definition 220](https://spec.polkadot.network/chap-host-api#defn-key-type-id)). The function will panic if the identifier is invalid;
+* `pub_key` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to the public key bytes (as returned by the respective `_public_key` function);
+* `msg` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the message that is to be signed;
+* `out` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to the output buffer of the respective size (depending on key type) where the signature will be written.
+
+##### Result
+
+The function returns `0` on success. On error, `-1` is returned and the output buffer should be considered uninitialized.
+
+##### Changes
+
+The logic of the functions is unchanged since the previous version. The signature has changed to align with the new memory allocation strategy.
+
+#### ext_crypto_secp256k1_ecdsa_recover\[_compressed]
+
+The following functions share the same signatures and set of changes:
+* `ext_crypto_secp256k1_ecdsa_recover`
+* `ext_crypto_secp256k1_ecdsa_recover_compressed`
+
+For the aforementioned functions, versions 3 are introduced, and the corresponding versions 2 are deprecated. The signature is:
+
+```wat
+(func $ext_crypto_secp256k1_ecdsa_recover\[_compressed]_version_3
+    (param $sig i32) (param $msg i32) (param $out i32) (result i64))
+```
+
+##### Arguments
+
+* `sig` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to the buffer containing the 65-byte signature in RSV format. V must be either 0/1 or 27/28;
+* `msg` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to the buffer containing the 256-bit Blake2 hash of the message;
+* `out` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to the output buffer of the respective size (depending on key type) where the recovered public key will be written.
+
+##### Result
+
+The function returns `0` on success. On error, it returns a negative ECDSA verification error code, where `-1` stands for incorrect R or S, `-2` stands for invalid V, and `-3` stands for invalid signature.
+
+##### Changes
+
+The signature has changed to align with the new memory allocation strategy. The return error encoding, defined under [Definition 221](https://spec.polkadot.network/chap-host-api#defn-ecdsa-verify-error), is changed to promote the unification of host function result reporting (zero and positive values are for success, and the negative values are for failure codes).
+
+#### ext_hashing_{keccak|sha2|blake2|twox}_{64|128|256|512}
+
+The following functions share the same signatures and set of changes:
+* `ext_hashing_keccak_256`
+* `ext_hashing_keccak_512`
+* `ext_hashing_sha2_256`
+* `ext_hashing_blake2_128`
+* `ext_hashing_blake2_256`
+* `ext_hashing_twox_64`
+* `ext_hashing_twox_128`
+* `ext_hashing_twox_256`
+
+For the aforementioned functions, versions 2 are introduced, and the corresponding versions 1 are deprecated. The signature is:
+
+```wat
+(func $ext_hashing_{keccak|sha2|blake2|twox}_{64|128|256|512}_version_2
+    (param $data i64) (param $out i32))
+```
+
+##### Arguments
+
+* `data` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the data to be hashed.
+* `out` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to the output buffer of the respective size (depending on hash type) where the calculated hash will be written.
+
+##### Changes
+
+The logic of the functions is unchanged since the previous version. The signature has changed to align with the new memory allocation strategy.
+
+#### ext_offchain_submit_transaction
+
+The new version 2 is introduced, deprecating `ext_offchain_submit_transaction_version_1`. The signature is unchanged.
 
 ```wat
 (func $ext_offchain_submit_transaction_version_2
-    (param $data i64) (result i32))
-(func $ext_offchain_http_request_add_header_version_2
-    (param $request_id i32) (param $name i64) (param $value i64) (result i64))
+    (param $data i64) (result i64))
 ```
 
-Instead of allocating a buffer, writing `1` or `0` in it, and returning a pointer to it, the version 2 of these functions returns `0` or `-1`, where `0` indicates success and `-1` indicates failure.
+##### Arguments
+
+* `data` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the byte array storing the encoded extrinsic.
+
+##### Result
+
+The result is `0` for success or `-1` for failure.
+
+##### Changes
+
+The logic and the signature of the function are unchanged since the previous version. The only change is the interpretation of the result value to avoid an unneeded allocation and promote the unification of host function result reporting (zero and positive values are for success, and the negative values are for failure codes).
+
+#### ext_offchain_network_state
+
+The function is deprecated. Users are encouraged to use `ext_offchain_network_peer_id_version_1` instead.
+
+#### ext_offchain_network_peer_id
+
+A new function is introduced. The signature is
+
+```wat
+(func $ext_offchain_submit_transaction_version_2
+    (param $out i32) (result i64))
+```
+
+##### Arguments
+
+* `out` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to the output buffer, 38 bytes long, where the network peer ID will be written.
+
+##### Result
+
+The result is `0` for success or `-1` for failure.
+
+#### ext_offchain_random_seed
+
+The new version 2 is introduced, deprecating `ext_offchain_random_seed_version_1`. The signature is unchanged.
+
+```wat
+(func $ext_offchain_random_seed_version_2
+    (param $out i32))
+```
+
+##### Arguments
+
+* `out` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to the output buffer, 32 bytes long, where the random seed will be written.
+
+##### Changes
+
+The logic of the functions is unchanged since the previous version. The signature has changed to align with the new memory allocation strategy and promote the unification of host function result returning (zero and positive values are for success, and the negative values are for failure codes).
+
+#### ext_offchain_local_storage_get
+
+The function is deprecated. Users are encouraged to use `ext_offchain_local_storage_read_version_1` instead.
+
+#### ext_offchain_local_storage_read
+
+A new function is introduced. The signature is
 
 ```wat
 (func $ext_offchain_local_storage_read_version_1
     (param $kind i32) (param $key i64) (param $value_out i64) (param $offset i32) (result i64))
 ```
 
-This function supersedes the `ext_offchain_local_storage_get_version_1` host function, and uses an API and logic similar to `ext_storage_read_version_2`.
+##### Arguments
 
-It reads the offchain local storage key indicated by `kind` and `key` starting at the byte indicated by `offset`, and writes the value to the [pointer-size](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size) indicated by `value_out`.
+* `kind` is an offchain storage kind, where `0` denotes the persistent storage ([Definition 222](https://spec.polkadot.network/chap-host-api#defn-offchain-persistent-storage)), and `1` denotes the local storage ([Definition 223](https://spec.polkadot.network/chap-host-api#defn-offchain-persistent-storage));
+* `key` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the storage key being read;
+* `value_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the value read should be stored. If the buffer is not large enough to accommodate the value, the value is truncated to the length of the buffer;
+* `offset` is a 32-bit offset from which the value reading should start.
 
-The function returns the number of bytes written into the `value_out` buffer. If the entry doesn't exist, the `-1` value is returned. Given that the host must never write more bytes than the size of the buffer in `value_out`, and that the size of this buffer is expressed as a 32-bit number, a 64-bit value of `-1` is not ambiguous.
+##### Result
 
-```wat
-(func $ext_offchain_network_peer_id_version_1
-    (param $out i64) (result i64))
-```
+The result is an optional positive integer ([New Definition I](#new-def-i)), representing either the full length of the value in storage or the _absence_ of such a value in storage.
 
-This function writes [the `PeerId` of the local node](https://spec.polkadot.network/chap-networking#id-node-identities) to the memory location indicated by `out`. A `PeerId` is always 38 bytes long. This function returns `0` on success or `-1` if the network state is unavailable.
+#### ext_offchain_http_request_start
 
-```wat
-(func $ext_misc_runtime_version_version_2
-    (param $wasm i64) (param $out i64) (result i64))
-```
-
-The behaviour of this function is identical to its version 1 counterpart. Instead of allocating a buffer, writing the output to it, and returning a pointer to it, the new version of this function accepts an `out` parameter containing [pointer-size](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size) to the memory location where the host writes the output. If the output buffer is not large enough, the version information is truncated. Returns the length of the encoded version information, or `-1` in case of any failure.
+The new version 2 is introduced, deprecating `ext_offchain_http_request_start_version_1`. The signature is unchanged.
 
 ```wat
-(func $ext_offchain_random_seed_version_2 (param $out i32))
+(func $ext_offchain_http_request_start_version_2
+    (param $method i64) (param $uri i64) (param $meta i64) (result i64))
 ```
 
-The behaviour of this function is identical to its version 1 counterpart. Instead of allocating a buffer, writing the output to it, and returning a pointer to it, the new version of this function accepts an `out` parameter containing the address of the memory location where the host writes the output. The size is output is always 32 bytes.
+##### Arguments
+
+`method` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the HTTP method. Possible values are “GET” and “POST”;
+`uri` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the URI;
+`meta` is a future-reserved field containing additional, SCALE-encoded parameters. Currently, an empty array should be passed.
+
+##### Result
+
+On success, a positive request identifier is returned. On error, `-1` is returned.
+
+##### Changes
+
+The logic and the signature of the function are unchanged since the previous version. The only change is the interpretation of the result value to avoid an unneeded allocation and promote the unification of host function result returning (zero and positive values are for success, and the negative values are for failure codes).
+
+#### ext_offchain_http_request_add_header
+
+The new version 2 is introduced, deprecating `ext_offchain_http_request_add_header_version_1`. The signature is unchanged.
 
 ```wat
-(func $ext_misc_input_read_version_1
-    (param $offset i64) (param $out i64) (result i64))
+(func $ext_offchain_http_request_add_header_version_2
+    (param $request_id i32) (param $name i64) (param $value i64) (result i64))
 ```
 
-When a runtime function is called, the host uses the allocator to allocate memory within the runtime to write some input data. The new host function provides an alternative way to access the input that doesn't use the allocator.
+##### Arguments
 
-The function copies some data from the input data to the runtime's memory. The `offset` parameter indicates the offset within the input data from which to start copying, and must lie inside the output buffer provided. The `out` parameter is [a pointer-size](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size) and contains the buffer where to write.
+* `request_id` is an i32 integer indicating the ID of the started request, as returned by `ext_offchain_http_request_start`;
+* `name` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the HTTP header name;
+* `value` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the HTTP header value.
 
-The runtime execution stops with an error if `offset` is strictly greater than the input data size.
+##### Result
 
-The return value is the number of bytes written unless `out` has zero length, in which case the full length of input data in bytes is returned, and nothing is written into the output buffer.
+The result is `0` for success or `-1` for failure.
+
+##### Changes
+
+The logic and the signature of the function are unchanged since the previous version. The only change is the interpretation of the result value to avoid an unneeded allocation and promote the unification of host function result returning (zero and positive values are for success, and the negative values are for failure codes).
+
+#### ext_offchain_http_request_write_body
+
+The new version 2 is introduced, deprecating `ext_offchain_http_request_write_body_version_1`. The signature is unchanged.
+
+```wat
+(func $ext_offchain_http_request_write_body_version_2
+    (param $request_id i32) (param $chunk i64) (param $deadline i64) (result i64))
+```
+
+##### Arguments
+
+* `request_id` is an i32 integer indicating the ID of the started request, as returned by `ext_offchain_http_request_start`;
+* `chunk` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the chunk of bytes. Writing an empty chunk finalizes the request;
+* `deadline` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the SCALE-encoded Option value ([Definition 200](https://spec.polkadot.network/id-cryptography-encoding#defn-option-type)) containing the UNIX timestamp ([Definition 191](https://spec.polkadot.network/id-cryptography-encoding#defn-unix-time)). Passing `None` blocks indefinitely.
+
+##### Result
+
+On success, `0` is returned. On failure, a negative error code is returned, where `-1` denotes the deadline was reached, `-2` denotes that an I/O error occurred, and `-3` denotes that the request ID provided was invalid.
+
+##### Changes
+
+The logic and the signature of the function are unchanged since the previous version. The only change is the interpretation of the result value to avoid an unneeded allocation and promote the unification of host function result returning (zero and positive values are for success, and the negative values are for failure codes).
+
+#### ext_offchain_http_request_wait
+
+The new version 2 is introduced, deprecating `ext_offchain_http_request_wait_version_1`. The signature is:
+
+```wat
+(func $ext_offchain_http_request_wait_version_2
+    (param $ids i64) (param $deadline i64) (param $out i64))
+```
+
+##### Arguments
+
+* `ids` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the SCALE-encoded array of started request IDs, as returned by `ext_offchain_http_request_start`;
+* `deadline` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the SCALE-encoded Option value ([Definition 200](https://spec.polkadot.network/id-cryptography-encoding#defn-option-type)) containing the UNIX timestamp ([Definition 191](https://spec.polkadot.network/id-cryptography-encoding#defn-unix-time)). Passing `None` blocks indefinitely;
+* `out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the buffer of `i32` integers where the request statuses will be stored. The number of elements of the buffer must be strictly equal to the number of elements in the `ids` array; otherwise, the function panics.
+
+##### Changes
+
+The logic of the functions is unchanged since the previous version. The signature has changed to align with the new memory allocation strategy.
+
+#### ext_offchain_http_response_read_body
+
+The new version 2 is introduced, deprecating `ext_offchain_http_response_read_body_version_1`. The signature is unchanged.
+
+```wat
+(func $ext_offchain_http_response_read_body_version_2
+    (param $request_id i32) (param $buffer i64) (param $deadline i64) (result i64))
+```
+
+##### Arguments
+
+* `request_id` is an i32 integer indicating the ID of the started request, as returned by `ext_offchain_http_request_start`;
+* `buffer` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the buffer where the body is written;
+* `deadline` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the SCALE-encoded Option value ([Definition 200](https://spec.polkadot.network/id-cryptography-encoding#defn-option-type)) containing the UNIX timestamp ([Definition 191](https://spec.polkadot.network/id-cryptography-encoding#defn-unix-time)). Passing `None` blocks indefinitely.
+
+##### Result
+
+On success, the number of bytes written to the buffer is returned. A value of `0` means the entire response was consumed and no further calls to the function are needed for the provided request ID. On failure, a negative error code is returned, where `-1` denotes the deadline was reached, `-2` denotes that an I/O error occurred, and `-3` denotes that the request ID provided was invalid.
+
+##### Changes
+
+The logic and the signature of the function are unchanged since the previous version. The only change is the interpretation of the result value to avoid an unneeded allocation and promote the unification of host function result returning (zero and positive values are for success, and the negative values are for failure codes).
+
+#### ext_allocator_{malloc|free}
+
+The functions are deprecated and must not be used in new code.
+
+#### ext_input_read
+
+A new function is introduced. The signature is
+
+```wat
+(func $ext_input_read_version_1
+    (param $buffer i64))
+```
+
+##### Arguments
+
+* `buffer` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the buffer where the input data will be written. If the buffer is not large enough to accommodate the input data, the function will panic.
 
 ### Other changes
 
-In addition to the new host functions, this RFC proposes two changes to the runtime-host interface:
+Currently, all runtime entrypoints have the following identical Wasm function signatures:
 
-- The following function signature is now also accepted for runtime entry points: `(func (result i64))`.
-- Runtimes no longer need to expose a constant named `__heap_base`.
+```wat
+(func $runtime_entrypoint (param $data i32) (param $len i32) (result i64))
+```
 
-All the host functions superseded by new host functions are now considered deprecated and should no longer be used.
+After this RFC is implemented, such entrypoints are still supported, but considered deprecated. New entrypoints must have the following signature:
 
-The following other host functions are also considered deprecated:
+```wat
+(func $runtime_entrypoint (param $len i32) (result i64))
+```
 
-- `ext_storage_get_version_1`
-- `ext_storage_changes_root_version_1`
-- `ext_default_child_storage_get_version_1`
-- `ext_allocator_malloc_version_1`
-- `ext_allocator_free_version_1`
-- `ext_offchain_network_state_version_1`
-
-## Unresolved Questions
-
-The changes in this RFC would need to be benchmarked. That involves implementing the RFC and measuring the speed difference.
-
-It is expected that most host functions are faster or equal in speed to their deprecated counterparts, with the following exceptions:
-
-- `ext_misc_input_read_version_1` is inherently slower than obtaining a buffer with the entire data due to the two extra function calls and the extra copying. However, given that this only happens once per runtime call, the cost is expected to be negligible.
-
-- The `ext_crypto_*_public_keys`, `ext_offchain_network_state`, and `ext_offchain_http_*` host functions are likely slightly slower than their deprecated counterparts, but given that they are used only in offchain workers, that is acceptable.
-
-- It is unclear how replacing `ext_storage_get` with `ext_storage_read` and `ext_default_child_storage_get` with `ext_default_child_storage_read` will impact performance.
-
-- It is unclear how the changes to `ext_storage_next_key` and `ext_default_child_storage_next_key` will impact performance.
-
+A runtime function called through such an entrypoint gets the length of SCALE-encoded input data as its only argument. After that, the function must allocate exactly the amount of bytes it is requested, and call the `ext_input_read` host function to obtain the encoded input data.
