@@ -174,7 +174,7 @@ All validators could collect `ApprovalsTallyMessage`s and independently compute 
 
 We'd have the same in-core computation problem if we perform statistics like medians upon these opinions. We could however take an optimistic approach where each validator computes medians like above, but then shares their hash of the final rewards list.  If 2/3rds voted for the same hash, then we distribute rewards as above.  If not, then we distribute no rewards until governance selects the correct hash.
 
-We never validate in-core the signatures on `ApprovalsTallyMessage`s or the computation, so this approach permits more direct cheating by malicious 2/3rd majority, but if that occurs then we've broken our security assumptions anyways.  It's likely these hashes do diverge during some network disruptions though, which increases our "drama" factor considerably, which maybe unacceptable.
+We never validate in-core the signatures on `ApprovalsTallyMessage`s or the computation, so this approach permits more direct cheating by malicious 2/3rd majority, but if that occurs then we've broken our security assumptions anyways.  It's somewhat likely these hashes do diverge during some network disruptions though, which increases our "drama" factor considerably, which maybe unacceptable.
 
 
 ## Explanation
@@ -194,9 +194,11 @@ As always we require that backers' rewards covers their operational costs plus s
 
 ### Approvals
 
-In polkadot, all validators run an approval assignment loop for each candidate, in which the validator listens to other approval checkers assignments and approval statements/votes, with which it marks checkers no-show or done, and marks candidates approved.  Also, this loop determines and announces validators' own approval checker assignments.
+In polkadot, all validators run the elves approval loop for each candidate, in which the validator listens to other approval checkers assignments and approval statements/votes, and with which it marks checkers no-show or done, and marks candidates approved.  Also, this loop determines and announces validators' own approval checker assignments.
 
-Any validator should always conclude whatever approval checks it begins, but our approval assignment loop ignore some approval checks, either because they were announced too soon or because an earlier no-show delivered its approval vote before the final approval.  We say a validator $u$ *uses* an approval vote by a validator $v$ on a candidate $c$ if the approval assignments loop by $u$ counted the vote by $v$ towards approving the candidate $c$.  We should not rewards votes announced too soon, so we unavoidably omit rewards for some honest no-show replacements too.  We expect the 80% discount for backing covers these losses, so approval checks remain more profitable than backing.
+Any validator should always conclude whatever approval checks it begins, but our approval assignment loop ignore some approval checks, either because they were announced too soon or because an earlier no-show delivered its approval vote before the final approval.  We say a validator $u$ *uses* an approval vote by a validator $v$ on a candidate $c$ if the approval assignments loop by $u$ counted the vote by $v$ towards approving the candidate $c$.  We actually rerun the elves approval loop quite frequently, but only the final run that marks the candidate approved determines the *useful* approval votes.
+
+We should not rewards votes announced too soon, so by only counting the final run we unavoidably omit rewards for some honest no-show replacements too.  We expect the 80%-ish discount for backing covers these losses, so approval checks remain more profitable than backing.
 
 We propose a simple approximate solution based upon computing medians across validators for used votes.
 
