@@ -38,7 +38,7 @@ We've discussed roughly this rewards protocol in https://hackmd.io/@rgbPIkIdTwSI
 
 We alter the [current rewards scheme](https://wiki.polkadot.network/docs/maintain-guides-validator-payout) by reducing to roughly these proportions of total rewards:
 - 15-20% - Relay chain block production and uncle logic 
-- 5% - Rnything else related to relay chain finality, primarily beefy proving, but maybe other tasts exist.
+- 5% - Anything else related to relay chain finality, primarily beefy proving, but maybe other tastes exist.
 - Any existing rewards for on-chain validity statements would only cover backers, so those rewards must be removed.
 
 We add roughly these proportions of total rewards covering parachain work:
@@ -64,7 +64,9 @@ CandidateRewards {
 We no longer require this data during disputes.  
 <!-- You could optionally track a `downloaded_one: Option<AuthorityBitField>` too, for the nodes from whome we douwnloaded only one chunk, but this seems like premature optimization -->
 
-After we approve a relay chain block, then we collect all its `CandidateRewards` into an `ApprovalsTally`, with one `ApprovalTallyRecord` for each validator.  In this, we compute `approval_usages` from the final run of the approvals loop, plus `0.8` for each backer.
+After we approve a relay chain block, then we collect all its `CandidateRewards` into an `ApprovalsTally`, with one `ApprovalTallyLine` for each validator.  In this, we compute `approval_usages` from the final run of the approvals loop, plus `0.8` for each backer.
+
+We say a validator 𝑢 uses an approval vote by a validator 𝑣 on a candidate 𝑐 if the approval assignments loop by 𝑢 counted the vote by 𝑣 towards approving the candidate 𝑐.
 ```
 /// Our subjective record of what we used from, and provided to, all other validators on the finalized chain
 pub struct ApprovalsTally(Vec<ApprovalTallyLine>);
@@ -85,7 +87,7 @@ At finality we sum these `ApprovalsTally` for one for the whole epoch so far, in
 
 ### Messages
 
-After the epoch is finalized, we share the first two lines of its `ApprovalTally`.
+After the epoch is finalized, we share the first three field of each `ApprovalTallyLine` in its `ApprovalTally`.
 ```
 /// Our subjective record of what we used from some other validator on the finalized chain
 pub struct ApprovalTallyMessageLine {
@@ -104,7 +106,7 @@ pub struct ApprovalsTallyMessage(Vec<ApprovalTallyMessageLine>);
 Actual `ApprovalsTallyMessage`s sent over the wire must be signed of course, likely by the grandpa ed25519 key.
 
 
-### Rewards compoutation
+### Rewards computation
 
 We compute the approvals rewards for each validator by taking the median of the `approval_usages` fields for each validator across all validators `ApprovalsTallyMessage`s.  We compute some `noshows_percentiles` for each validator similarly, but using a 2/3 precentile instead of the median.
 ```
@@ -154,7 +156,7 @@ A dedicated rewards parachain could easily collect the `ApprovalsTallyMessage`s 
 
 Any in-core approach risks enough malicious collators biasing the rewards by censoring the `ApprovalsTallyMessage`s messages for some validators during the first phase.  After this first phase completes, our second phase proceeds deterministically.
 
-As an option, each validator could handle this second phase itself by creating siongle heavy transaction with `n` state accesses in this Merkle tree `M`, and this transaction sends the era points.
+As an option, each validator could handle this second phase itself by creating single heavy transaction with `n` state accesses in this Merkle tree `M`, and this transaction sends the era points.
 
 A remark for future developments..
 
