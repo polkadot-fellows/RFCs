@@ -48,19 +48,29 @@ One may ask, could a voter not just undelegate, vote, then delegate again? Could
 
 ### New Data & Runtime Logic
 
-The [Voting Enum](https://github.com/paritytech/polkadot-sdk/blob/939fc198daaf5e8ae319419f112dacbc1ea7aefe/substrate/frame/conviction-voting/src/vote.rs#L256-L264), which currently holds the user's vote data, would first be collapsed and it's underlying fields consolidated, as there would no longer be a distinction between the enum's variants. A `(poll index -> retracted votes count)` field would then be added to the resulting structure - It's role to keep track of the per poll balance that has been clawed back from the user by those delegating to them. See [here](https://github.com/PolkadotDom/polkadot-sdk/blob/f9af95133534c18dfde990cb9d775c325c2c6ebf/substrate/frame/conviction-voting/src/vote.rs#L227-L244) for a potential implementation.
+The new logic allows a delegator's vote on a specific poll to override their delegation for that poll only. When a delegator votes, their delegated voting power is temporarily "clawed back" from their delegate for that single referendum. This ensures a delegator's direct vote takes precedence.
 
-The implementation must allow for the `(poll index -> retracted votes)` data to exist even if the user does not currently have a vote for that poll. A simple example that highlights the necessity is as follows: A delegator votes first, then the delegate does. If the delegator is not allowed to create the retracted votes data on the delegate, the tally count would be corrupted when the delegate votes.
+The core of the algorithm is as follows:
 
-It follows then that the delegator must also handle clean up of that data when their vote is removed. Otherwise, the delegate has no immediate monetary incentive to clean the retracted vote's state.
+1.  **Calculating a User's Voting Power:** A user's total voting power on any given poll is their own balance plus the total balance delegated to them, minus the total amount retracted by any of their delegators who chose to vote directly on that poll.
 
-All changes to pallet-conviction-voting's STF would follow those simple changes. For example, when a user votes standard, the final amount added to the poll's tally would be `balance + (amount delegated to user - retracted votes)`. Then, if they are delegating, it will update their delegate's vote data with the newly retracted votes.
+2.  **Tracking Clawbacks:** When a delegator votes, the system records the full amount of their delegated stake as "retracted" on their delegate's account for that specific poll. This clawback is always for the delegator's full delegated amount, regardless of the amount they personally vote with. This is for simplicity and to avoid making assumptions about the delegator's intent. Crucially, clawbacks from multiple delegators can be accumulated, such that only one tracking entry per referendum is necessary.
 
-The retracted amount is always the full delegated amount. For example, if Alice delegates 10 UNITS to Bob and then votes with 5 UNITS, the full 10 UNITS is still added as a clawback to Bob for that poll. This is both for simplicity and to ensure we don't make unnecessary assumptions about what Alice wants.
+Here is how the logic plays out in different scenarios:
 
-Because you need to add the clawback, a delegator's vote can affect a delegate's voting data. If a delegator's vote or delegation makes the delegate's voting data exceed [MaxVotes](https://github.com/paritytech/polkadot-sdk/blob/939fc198daaf5e8ae319419f112dacbc1ea7aefe/substrate/frame/conviction-voting/src/lib.rs#L138), the transaction will fail. In practice, this means this new system is somewhere between the old and the ideal. However, this will incentivize delegates to stay on top of voting data clearance. And given our current referenda rates and MaxVotes set to [512](https://github.com/polkadot-fellows/runtimes/blob/34ecb949660704ccf139a06afb075c6a729b1295/relay/polkadot/src/governance/mod.rs#L43), it would be difficult to hit this limit.
+* **When a Delegator Votes:**
+    1.  Alice delegates 10 UNITS to Bob. She then votes 'Aye' on Referendum #5 with her own 5 UNITS.
+    2.  The system adds Alice's 5 UNITS to the 'Aye' tally for Referendum #5.
+    3.  Simultaneously, the system creates a "retracted votes" entry on *Bob's* account, specific to Referendum #5, for the full 10 UNITS. If he had already voted, the tally would be adjusted to remove Alice's 10 UNITS.
+    4.  If Bob now votes, or changes his previous vote, his voting power will be his own balance plus all delegations *except* for Alice's 10 UNITS for this specific poll.
 
-A new error is to be introduced that signals MaxVotes was reached specifically for the delegate's voting data.
+* **When a Delegator Removes Their Vote:**
+    1.  Following the above, Alice removes her vote from Referendum #5.
+    2.  The system removes her 5 UNITS from the 'Aye' tally.
+    3.  The system also removes the "retracted votes" entry from Bob's account. This action "returns" the 10 UNITS of voting power to Bob for Referendum #5. If Bob has a vote, the poll tally is updated accordingly.
+    4.  The cleanup of the delegate's state is handled by the delegator's transaction to ensure no orphaned data remains.
+
+A key consequence of this design is that a delegator's vote can alter their delegate's storage. If adding a "retracted votes" entry pushes the delegate's voting data beyond the [MaxVotes](https://github.com/paritytech/polkadot-sdk/blob/939fc198daaf5e8ae319419f112dacbc1ea7aefe/substrate/frame/conviction-voting/src/lib.rs#L138) limit, the delegator's transaction will fail. A new error will be introduced to signal this specific case. While a constraint, this will incentivize delegates to regularly clear their voting data for concluded referenda, and given our current referenda rates and MaxVotes set to [512](https://github.com/polkadot-fellows/runtimes/blob/34ecb949660704ccf139a06afb075c6a729b1295/relay/polkadot/src/governance/mod.rs#L43), this scenario is unlikely to occur.
 
 ### Locked Balance
 
@@ -68,7 +78,7 @@ A user's locked balance will be the greater of the delegation lock and the votin
 
 ### Migrations 
 
-A runtime migration is necessary, though simple considering voting and delegation are currently separate. It would iterate over the [VotingFor](https://github.com/paritytech/polkadot-sdk/blob/939fc198daaf5e8ae319419f112dacbc1ea7aefe/substrate/frame/conviction-voting/src/lib.rs#L165) storage item and convert the [old vote data structure](https://github.com/paritytech/polkadot-sdk/blob/939fc198daaf5e8ae319419f112dacbc1ea7aefe/substrate/frame/conviction-voting/src/vote.rs#L256-L264) to the [new structure](https://github.com/PolkadotDom/polkadot-sdk/blob/dom/vote-while-delegating/substrate/frame/conviction-voting/src/vote.rs#L227-L243).
+A multi-block runtime migration is necessary. It would iterate over the [VotingFor](https://github.com/paritytech/polkadot-sdk/blob/939fc198daaf5e8ae319419f112dacbc1ea7aefe/substrate/frame/conviction-voting/src/lib.rs#L165) storage item and convert the [old vote data structure](https://github.com/paritytech/polkadot-sdk/blob/939fc198daaf5e8ae319419f112dacbc1ea7aefe/substrate/frame/conviction-voting/src/vote.rs#L256-L264) to the [new structure](https://github.com/PolkadotDom/polkadot-sdk/blob/dom/vote-while-delegating/substrate/frame/conviction-voting/src/vote.rs#L227-L243).
 
 ## Drawbacks
 
