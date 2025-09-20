@@ -4743,17 +4743,42 @@ of this RFC.</p>
 <p><code>Technical Writers</code>: This change will require rewrites of documentation and tutorials. </p>
 <h2 id="explanation-24"><a class="header" href="#explanation-24">Explanation</a></h2>
 <h3 id="new-data--runtime-logic"><a class="header" href="#new-data--runtime-logic">New Data &amp; Runtime Logic</a></h3>
-<p>The <a href="https://github.com/paritytech/polkadot-sdk/blob/939fc198daaf5e8ae319419f112dacbc1ea7aefe/substrate/frame/conviction-voting/src/vote.rs#L256-L264">Voting Enum</a>, which currently holds the user's vote data, would first be collapsed and it's underlying fields consolidated, as there would no longer be a distinction between the enum's variants. A <code>(poll index -&gt; retracted votes count)</code> field would then be added to the resulting structure - It's role to keep track of the per poll balance that has been clawed back from the user by those delegating to them. See <a href="https://github.com/PolkadotDom/polkadot-sdk/blob/f9af95133534c18dfde990cb9d775c325c2c6ebf/substrate/frame/conviction-voting/src/vote.rs#L227-L244">here</a> for a potential implementation.</p>
-<p>The implementation must allow for the <code>(poll index -&gt; retracted votes)</code> data to exist even if the user does not currently have a vote for that poll. A simple example that highlights the necessity is as follows: A delegator votes first, then the delegate does. If the delegator is not allowed to create the retracted votes data on the delegate, the tally count would be corrupted when the delegate votes.</p>
-<p>It follows then that the delegator must also handle clean up of that data when their vote is removed. Otherwise, the delegate has no immediate monetary incentive to clean the retracted vote's state.</p>
-<p>All changes to pallet-conviction-voting's STF would follow those simple changes. For example, when a user votes standard, the final amount added to the poll's tally would be <code>balance + (amount delegated to user - retracted votes)</code>. Then, if they are delegating, it will update their delegate's vote data with the newly retracted votes.</p>
-<p>The retracted amount is always the full delegated amount. For example, if Alice delegates 10 UNITS to Bob and then votes with 5 UNITS, the full 10 UNITS is still added as a clawback to Bob for that poll. This is both for simplicity and to ensure we don't make unnecessary assumptions about what Alice wants.</p>
-<p>Because you need to add the clawback, a delegator's vote can affect a delegate's voting data. If a delegator's vote or delegation makes the delegate's voting data exceed <a href="https://github.com/paritytech/polkadot-sdk/blob/939fc198daaf5e8ae319419f112dacbc1ea7aefe/substrate/frame/conviction-voting/src/lib.rs#L138">MaxVotes</a>, the transaction will fail. In practice, this means this new system is somewhere between the old and the ideal. However, this will incentivize delegates to stay on top of voting data clearance. And given our current referenda rates and MaxVotes set to <a href="https://github.com/polkadot-fellows/runtimes/blob/34ecb949660704ccf139a06afb075c6a729b1295/relay/polkadot/src/governance/mod.rs#L43">512</a>, it would be difficult to hit this limit.</p>
-<p>A new error is to be introduced that signals MaxVotes was reached specifically for the delegate's voting data.</p>
+<p>The new logic allows a delegator's vote on a specific poll to override their delegation for that poll only. When a delegator votes, their delegated voting power is temporarily &quot;clawed back&quot; from their delegate for that single referendum. This ensures a delegator's direct vote takes precedence.</p>
+<p>The core of the algorithm is as follows:</p>
+<ol>
+<li>
+<p><strong>Calculating a User's Voting Power:</strong> A user's total voting power on any given poll is their own balance plus the total balance delegated to them, minus the total amount retracted by any of their delegators who chose to vote directly on that poll.</p>
+</li>
+<li>
+<p><strong>Tracking Clawbacks:</strong> When a delegator votes, the system records the full amount of their delegated stake as &quot;retracted&quot; on their delegate's account for that specific poll. This clawback is always for the delegator's full delegated amount, regardless of the amount they personally vote with. This is for simplicity and to avoid making assumptions about the delegator's intent. Crucially, clawbacks from multiple delegators can be accumulated, such that only one tracking entry per referendum is necessary.</p>
+</li>
+</ol>
+<p>Here is how the logic plays out in different scenarios:</p>
+<ul>
+<li>
+<p><strong>When a Delegator Votes:</strong></p>
+<ol>
+<li>Alice delegates 10 UNITS to Bob. She then votes 'Aye' on Referendum #5 with her own 5 UNITS.</li>
+<li>The system adds Alice's 5 UNITS to the 'Aye' tally for Referendum #5.</li>
+<li>Simultaneously, the system creates a &quot;retracted votes&quot; entry on <em>Bob's</em> account, specific to Referendum #5, for the full 10 UNITS. If he had already voted, the tally would be adjusted to remove Alice's 10 UNITS.</li>
+<li>If Bob now votes, or changes his previous vote, his voting power will be his own balance plus all delegations <em>except</em> for Alice's 10 UNITS for this specific poll.</li>
+</ol>
+</li>
+<li>
+<p><strong>When a Delegator Removes Their Vote:</strong></p>
+<ol>
+<li>Following the above, Alice removes her vote from Referendum #5.</li>
+<li>The system removes her 5 UNITS from the 'Aye' tally.</li>
+<li>The system also removes the &quot;retracted votes&quot; entry from Bob's account. This action &quot;returns&quot; the 10 UNITS of voting power to Bob for Referendum #5. If Bob has a vote, the poll tally is updated accordingly.</li>
+<li>The cleanup of the delegate's state is handled by the delegator's transaction to ensure no orphaned data remains.</li>
+</ol>
+</li>
+</ul>
+<p>A key consequence of this design is that a delegator's vote can alter their delegate's storage. If adding a &quot;retracted votes&quot; entry pushes the delegate's voting data beyond the <a href="https://github.com/paritytech/polkadot-sdk/blob/939fc198daaf5e8ae319419f112dacbc1ea7aefe/substrate/frame/conviction-voting/src/lib.rs#L138">MaxVotes</a> limit, the delegator's transaction will fail. A new error will be introduced to signal this specific case. While a constraint, this will incentivize delegates to regularly clear their voting data for concluded referenda, and given our current referenda rates and MaxVotes set to <a href="https://github.com/polkadot-fellows/runtimes/blob/34ecb949660704ccf139a06afb075c6a729b1295/relay/polkadot/src/governance/mod.rs#L43">512</a>, this scenario is unlikely to occur.</p>
 <h3 id="locked-balance"><a class="header" href="#locked-balance">Locked Balance</a></h3>
 <p>A user's locked balance will be the greater of the delegation lock and the voting lock.</p>
 <h3 id="migrations"><a class="header" href="#migrations">Migrations</a></h3>
-<p>A runtime migration is necessary, though simple considering voting and delegation are currently separate. It would iterate over the <a href="https://github.com/paritytech/polkadot-sdk/blob/939fc198daaf5e8ae319419f112dacbc1ea7aefe/substrate/frame/conviction-voting/src/lib.rs#L165">VotingFor</a> storage item and convert the <a href="https://github.com/paritytech/polkadot-sdk/blob/939fc198daaf5e8ae319419f112dacbc1ea7aefe/substrate/frame/conviction-voting/src/vote.rs#L256-L264">old vote data structure</a> to the <a href="https://github.com/PolkadotDom/polkadot-sdk/blob/dom/vote-while-delegating/substrate/frame/conviction-voting/src/vote.rs#L227-L243">new structure</a>.</p>
+<p>A multi-block runtime migration is necessary. It would iterate over the <a href="https://github.com/paritytech/polkadot-sdk/blob/939fc198daaf5e8ae319419f112dacbc1ea7aefe/substrate/frame/conviction-voting/src/lib.rs#L165">VotingFor</a> storage item and convert the <a href="https://github.com/paritytech/polkadot-sdk/blob/939fc198daaf5e8ae319419f112dacbc1ea7aefe/substrate/frame/conviction-voting/src/vote.rs#L256-L264">old vote data structure</a> to the <a href="https://github.com/PolkadotDom/polkadot-sdk/blob/dom/vote-while-delegating/substrate/frame/conviction-voting/src/vote.rs#L227-L243">new structure</a>.</p>
 <h2 id="drawbacks-22"><a class="header" href="#drawbacks-22">Drawbacks</a></h2>
 <p>There are two potential drawbacks to this system -</p>
 <h3 id="an-unbounded-rate-of-change-of-the-voter-preferences-function"><a class="header" href="#an-unbounded-rate-of-change-of-the-voter-preferences-function">An unbounded rate of change of the voter preferences function</a></h3>
