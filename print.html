@@ -4200,35 +4200,51 @@ of this RFC.</p>
 <p>The heap allocation of the runtime is currently controlled by the host using a memory allocator on the host side.</p>
 <p>The API of many host functions contains buffer allocations. For example, when calling <code>ext_hashing_twox_256_version_1</code>, the host allocates a 32-byte buffer using the host allocator, and returns a pointer to this buffer to the runtime. The runtime later has to call <code>ext_allocator_free_version_1</code> on this pointer to free the buffer.</p>
 <p>Even though no benchmark has been done, it is pretty obvious that this design is very inefficient. To continue with the example of <code>ext_hashing_twox_256_version_1</code>, it would be more efficient to instead write the output hash to a buffer allocated by the runtime on its stack and passed by pointer to the function. Allocating a buffer on the stack, in the worst case, consists simply of decreasing a number; in the best case, it is free. Doing so would save many VM memory reads and writes by the allocator, and would save a function call to <code>ext_allocator_free_version_1</code>.</p>
-<p>Furthermore, the existence of the host-side allocator has become questionable over time. It is implemented in a very naive way, and for determinism and backwards compatibility reasons, it needs to be implemented exactly identically in every client implementation. Runtimes make substantial use of heap memory allocations, and each allocation needs to go through the runtime &lt;-&gt; host boundary twice (once for allocating and once for freeing). Moving the allocator to the runtime side would be a good idea, although it would increase the runtime size. But before the host-side allocator can be deprecated, all the host functions that use it must be updated to avoid using it.</p>
+<p>Furthermore, the existence of the host-side allocator has become questionable over time. It is implemented in a very naive way: every allocation is rounded up to the next power of two, and once a piece of memory is allocated it can only be reused for allocations which also round up to the exactly the same size. So in theory it's possible to end up in a situation where we still technically have plenty of free memory, but our allocations will fail because all of that memory is reserved for differently sized buckets. That behavior is de-facto hardcoded into the current protocol and for determinism and backwards compatibility reasons, it needs to be implemented exactly identically in every client implementation. </p>
+<p>In addition to that, runtimes make substantial use of heap memory allocations, and each allocation needs to go through the runtime &lt;-&gt; host boundary twice (once for allocating and once for freeing). Moving the allocator to the runtime side would be a good idea, although it would increase the runtime size. But before the host-side allocator can be deprecated, all the host functions that use it must be updated to avoid using it.</p>
 <h2 id="stakeholders-23"><a class="header" href="#stakeholders-23">Stakeholders</a></h2>
-<p>No attempt was made to convince stakeholders.</p>
+<p>Runtime developers, who will benefit from the improved performance and more deterministic behavior of the runtime code.</p>
 <h2 id="explanation-23"><a class="header" href="#explanation-23">Explanation</a></h2>
 <h3 id="new-definitions"><a class="header" href="#new-definitions">New definitions</a></h3>
 <h4 id="new-definition-i-runtime-optional-positive-integer"><a class="header" href="#new-definition-i-runtime-optional-positive-integer"><a name="new-def-i"></a>New Definition I: Runtime Optional Positive Integer</a></h4>
 <p>The Runtime optional positive integer is a signed 64-bit value. Positive values in the range of [0..2³²) represent corresponding unsigned 32-bit values. The value of <code>-1</code> represents a non-existing value (an <em>absent</em> value). All other values are invalid.</p>
 <h4 id="new-definition-ii-runtime-optional-pointer-size"><a class="header" href="#new-definition-ii-runtime-optional-pointer-size"><a name="new-def-ii"></a>New Definition II: Runtime Optional Pointer-Size</a></h4>
-<p>The runtime optional pointer-size has exactly the same definition as runtime pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) with the value of 2⁶⁴-1 representing a non-existing value (an <em>absent</em> value).</p>
+<p>The Runtime optional pointer-size has exactly the same definition as Runtime pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) with the value of 2⁶⁴-1 representing a non-existing value (an <em>absent</em> value).</p>
 <h3 id="changes-to-host-functions"><a class="header" href="#changes-to-host-functions">Changes to host functions</a></h3>
 <h4 id="ext_storage_get"><a class="header" href="#ext_storage_get">ext_storage_get</a></h4>
-<p>The function is deprecated. Users are encouraged to use <code>ext_storage_read_version_2</code> instead.</p>
+<h5 id="existing-prototype"><a class="header" href="#existing-prototype">Existing prototype</a></h5>
+<pre><code class="language-wat">(func $ext_storage_get_version_1
+    (param $key i64) (result i64))
+</code></pre>
+<h5 id="changes"><a class="header" href="#changes">Changes</a></h5>
+<p>The function is considered obsolete, as it only implements a subset of functionality of <code>ext_storage_read</code> and uses host-allocated buffers. Users are encouraged to use <code>ext_storage_read_version_2</code> instead.</p>
 <h4 id="ext_storage_read"><a class="header" href="#ext_storage_read">ext_storage_read</a></h4>
-<p>The new version 2 is introduced, deprecating <code>ext_storage_read_version_1</code>. The new signature is</p>
+<h5 id="existing-prototype-1"><a class="header" href="#existing-prototype-1">Existing prototype</a></h5>
+<pre><code class="language-wat">(func $ext_storage_read_version_1
+    (param $key i64) (param $value_out i64) (param $offset i32) (result i64))
+</code></pre>
+<h5 id="changes-1"><a class="header" href="#changes-1">Changes</a></h5>
+<p>The function was returning a SCALE-encoded <code>Option</code>-wrapped 32-bit integer representing the number of bytes left at supplied <code>offset</code>. It was using a host-allocated buffer to return it. It is changed to always return the full length of the value directly as a primitive value.</p>
+<h5 id="new-prototype"><a class="header" href="#new-prototype">New prototype</a></h5>
 <pre><code class="language-wat">(func $ext_storage_read_version_2
     (param $key i64) (param $value_out i64) (param $value_offset i32) (result i64))
 </code></pre>
 <h5 id="arguments"><a class="header" href="#arguments">Arguments</a></h5>
 <ul>
 <li><code>key</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the storage key being read;</li>
-<li><code>value_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the value read should be stored. If the buffer is not long enough to accommodate the value, the value is truncated to the length of the buffer;</li>
+<li><code>value_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the value read should be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are undefined;</li>
 <li><code>value_offset</code> is a 32-bit offset from which the value reading should start.</li>
 </ul>
 <h5 id="result"><a class="header" href="#result">Result</a></h5>
 <p>The result is an optional positive integer (<a href="proposed/0145-remove-unnecessary-allocator-usage.html#new-def-i">New Definition I</a>), representing either the full length of the value in storage or the <em>absence</em> of such a value in storage.</p>
-<h5 id="changes"><a class="header" href="#changes">Changes</a></h5>
-<p>The logic of the function is unchanged since the previous version. Only the result representation has changed.</p>
 <h4 id="ext_storage_clear_prefix"><a class="header" href="#ext_storage_clear_prefix">ext_storage_clear_prefix</a></h4>
-<p>The new version 3 is introduced, deprecating <code>ext_storage_clear_prefix_version_2</code>. The new signature is</p>
+<h5 id="existing-prototype-2"><a class="header" href="#existing-prototype-2">Existing prototype</a></h5>
+<pre><code class="language-wat">(func $ext_storage_clear_prefix_version_2
+    (param $prefix i64) (param $limit i64) (result i64))
+</code></pre>
+<h5 id="changes-2"><a class="header" href="#changes-2">Changes</a></h5>
+<p>The function used to accept only a prefix and a limit and return a SCALE-encoded <code>enum</code> representing the number of iterations performed, wrapped into a discriminator to differentiate if all the keys were removed. It was using a host-allocated buffer to return the value. As <a href="https://github.com/w3f/polkadot-spec/issues/588">discussed</a>, such implementation was suboptimal, and a better implementation was proposed in <a href="https://github.com/w3f/PPPs/pull/7">PPP#7</a>, but the PPP has never been adopted. The new version adopts the PPP, providing a means of returning much more exhaustive information about the work performed, and also accepts an optional input cursor and makes the limit optional as well. It always returns the full length of the continuation cursor.</p>
+<h5 id="new-prototype-1"><a class="header" href="#new-prototype-1">New prototype</a></h5>
 <pre><code class="language-wat">(func $ext_storage_clear_prefix_version_3
     (param $maybe_prefix i64) (param $maybe_limit i64) (param $maybe_cursor_in i64)
     (param $maybe_cursor_out i64) (param $backend i32) (param $unique i32) (param $loops i32)
@@ -4239,47 +4255,65 @@ of this RFC.</p>
 <li><code>maybe_prefix</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) containing a (possibly empty) storage prefix being cleared;</li>
 <li><code>maybe_limit</code> is an optional positive integer (<a href="proposed/0145-remove-unnecessary-allocator-usage.html#new-def-i">New Definition I</a>) representing either the maximum number of backend deletions which may happen, or the <em>absence</em> of such a limit. The number of backend iterations may surpass this limit by no more than one;</li>
 <li><code>maybe_cursor_in</code> is an optional pointer-size (<a href="proposed/0145-remove-unnecessary-allocator-usage.html#new-def-ii">New Definition II</a>) representing the cursor returned by the previous (unfinished) call to this function. It should be <em>absent</em> on the first call;</li>
-<li><code>maybe_cursor_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the continuation cursor will optionally be written (see also the Result section);</li>
+<li><code>maybe_cursor_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the continuation cursor will optionally be written (see also the Result section). The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are undefined;</li>
 <li><code>backend</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a 4-byte buffer where a 32-bit integer representing the number of items removed from the backend database will be written;</li>
 <li><code>unique</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a 4-byte buffer where a 32-bit integer representing the number of unique keys removed, taking into account both the backend and the overlay;</li>
 <li><code>loops</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a 4-byte buffer where a 32-bit integer representing the number of iterations (each requiring a storage seek/read) which were done will be written.</li>
 </ul>
 <h5 id="result-1"><a class="header" href="#result-1">Result</a></h5>
-<p>The result represents the length of the continuation cursor which was written to the buffer provided in <code>maybe_cursor_out</code>. A zero value represents the absence of such a cursor and no need for continuation (the prefix has been completely cleared). If the buffer is not large enough to accommodate the cursor, the latter will be truncated, but the full length of the cursor will always be returned.</p>
-<h5 id="changes-1"><a class="header" href="#changes-1">Changes</a></h5>
-<p>The new version adopts <a href="https://github.com/w3f/PPPs/pull/7">PPP#7</a>, hence the significant change in the function interface with respect to the previous version. The reasoning for such a change was provided in the <a href="https://github.com/w3f/polkadot-spec/issues/588">original proposal discussion</a>.</p>
+<p>The result represents the length of the continuation cursor which might have been written to the buffer provided in <code>maybe_cursor_out</code>. A zero value represents the absence of such a cursor and no need for continuation (the prefix has been completely cleared).</p>
 <h4 id="ext_storage_root"><a class="header" href="#ext_storage_root">ext_storage_root</a></h4>
-<p>The new version 3 is introduced, deprecating <code>ext_storage_root_version_2</code>. The signature is</p>
+<h5 id="existing-prototype-3"><a class="header" href="#existing-prototype-3">Existing prototype</a></h5>
+<pre><code class="language-wat">(func $ext_storage_root_version_2
+    (param $version i32) (result i64))
+</code></pre>
+<h5 id="changes-3"><a class="header" href="#changes-3">Changes</a></h5>
+<p>The old version accepted the state version as an argument and returned a SCALE-encoded trie root hash through a host-allocated buffer. The new version adopts <a href="https://github.com/w3f/PPPs/pull/6">PPP#6</a> getting rid of the argument that used to represent the state version. It accepts a pointer to a runtime-allocated buffer and fills it with the output value. The length of the encoded result is returned.</p>
+<h5 id="new-prototype-2"><a class="header" href="#new-prototype-2">New prototype</a></h5>
 <pre><code class="language-wat">(func $ext_storage_root_version_3
     (param $out i64) (result i32))
 </code></pre>
 <h5 id="arguments-2"><a class="header" href="#arguments-2">Arguments</a></h5>
 <ul>
-<li><code>out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the SCALE-encoded storage root, calculated after committing all the existing operations, will be stored.</li>
+<li><code>out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the SCALE-encoded storage root, calculated after committing all the existing operations, will be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are undefined.</li>
 </ul>
 <h5 id="results"><a class="header" href="#results">Results</a></h5>
-<p>The result is the length of the output stored in the buffer provided in <code>out</code>. If the buffer is not large enough to accommodate the data, the latter will be truncated, but the full length of the output data will always be returned.</p>
-<h5 id="changes-2"><a class="header" href="#changes-2">Changes</a></h5>
-<p>The new version adopts <a href="https://github.com/w3f/PPPs/pull/6">PPP#6</a> deprecating the argument that used to represent the storage version.</p>
+<p>The result is the full length of the output that might have been stored in the buffer provided in <code>out</code>.</p>
 <h4 id="ext_storage_next_key"><a class="header" href="#ext_storage_next_key">ext_storage_next_key</a></h4>
-<p>The new version 2 is introduced, deprecating <code>ext_storage_next_key_version_1</code>. The signature is</p>
+<h5 id="existing-prototype-4"><a class="header" href="#existing-prototype-4">Existing prototype</a></h5>
+<pre><code class="language-wat">(func $ext_storage_next_key_version_1
+    (param $key i64) (result i64))
+</code></pre>
+<h5 id="changes-4"><a class="header" href="#changes-4">Changes</a></h5>
+<p>The old version accepted the key and returned the SCALE-encoded next key in a host-allocated buffer. The new version additionally accepts a runtime-allocated output buffer and returns full next key length.</p>
+<h5 id="new-prototype-3"><a class="header" href="#new-prototype-3">New prototype</a></h5>
 <pre><code class="language-wat">(func $ext_storage_next_key_version_2
     (param $key_in i64) (param $key_out i64) (result i32))
 </code></pre>
-<h5 id="changes-3"><a class="header" href="#changes-3">Changes</a></h5>
-<p>The logic of the function is unchanged since the previous version. The signature has changed to align with the new memory allocation strategy.</p>
 <h5 id="arguments-3"><a class="header" href="#arguments-3">Arguments</a></h5>
 <ul>
 <li><code>key_in</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer containing a storage key;</li>
-<li><code>key_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to an output buffer where the next key in the storage in the lexicographical order will be written.</li>
+<li><code>key_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to an output buffer where the next key in the storage in the lexicographical order will be written. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are undefined.</li>
 </ul>
 <h5 id="result-2"><a class="header" href="#result-2">Result</a></h5>
-<p>The result is the length of the output key, or zero if no next key was found. If the buffer provided in <code>key_out</code> is not large enough to accommodate the data, the latter will be truncated, but the full length of the output data will always be returned.</p>
+<p>The result is the full length of the output key that might have been stored in <code>key_out</code>, or zero if no next key was found.</p>
 <h4 id="ext_default_child_storage_get"><a class="header" href="#ext_default_child_storage_get">ext_default_child_storage_get</a></h4>
-<p>The function is deprecated. Users are encouraged to use <code>ext_default_child_storage_read_version_2</code> instead.</p>
+<h5 id="existing-prototype-5"><a class="header" href="#existing-prototype-5">Existing prototype</a></h5>
+<pre><code class="language-wat">(func $ext_default_child_storage_get_version_1
+    (param $child_storage_key i64) (param $key i64) (result i64))
+</code></pre>
+<h5 id="changes-5"><a class="header" href="#changes-5">Changes</a></h5>
+<p>The function is considered obsolete, as it only implements a subset of functionality of <code>ext_default_child_storage_read</code> and uses host-allocated buffers. Users are encouraged to use <code>ext_default_child_storage_read_version_2</code> instead.</p>
 <h4 id="ext_default_child_storage_read"><a class="header" href="#ext_default_child_storage_read">ext_default_child_storage_read</a></h4>
-<p>The new version 2 is introduced, deprecating <code>ext_default_child_storage_read_version_1</code>. The new signature is</p>
-<pre><code class="language-wat">(func $ext_storage_read_version_2
+<h5 id="existing-prototype-6"><a class="header" href="#existing-prototype-6">Existing prototype</a></h5>
+<pre><code class="language-wat">(func $ext_default_child_storage_read_version_1
+    (param $child_storage_key i64) (param $key i64) (param $value_out i64) (param $offset i32)
+    (result i64))
+</code></pre>
+<h5 id="changes-6"><a class="header" href="#changes-6">Changes</a></h5>
+<p>The function was returning a SCALE-encoded <code>Option</code>-wrapped 32-bit integer representing the number of bytes left at supplied <code>offset</code>. It was using a host-allocated buffer to return it. It is changed to always return the full length of the value directly as a primitive value.</p>
+<h5 id="new-prototype-4"><a class="header" href="#new-prototype-4">New prototype</a></h5>
+<pre><code class="language-wat">(func $ext_default_child_storage_read_version_2
     (param $storage_key i64) (param $key i64) (param $value_out i64) (param $value_offset i32)
     (result i64))
 </code></pre>
@@ -4287,15 +4321,20 @@ of this RFC.</p>
 <ul>
 <li><code>storage_key</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the child storage key (<a href="https://spec.polkadot.network/chap-host-api#defn-child-storage-type">Definition 219</a>);</li>
 <li><code>key</code> is the storage key being read;</li>
-<li><code>value_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the value read should be stored. If the buffer is not long enough to accommodate the value, the value is truncated to the length of the buffer;</li>
+<li><code>value_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the value read should be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are undefined;</li>
 <li><code>value_offset</code> is a 32-bit offset from which the value reading should start.</li>
 </ul>
 <h5 id="result-3"><a class="header" href="#result-3">Result</a></h5>
 <p>The result is an optional positive integer (<a href="proposed/0145-remove-unnecessary-allocator-usage.html#new-def-i">New Definition I</a>), representing either the full length of the value in storage or the <em>absence</em> of such a value in storage.</p>
-<h5 id="changes-4"><a class="header" href="#changes-4">Changes</a></h5>
-<p>The logic of the function is unchanged since the previous version. Only the result representation has changed.</p>
 <h4 id="ext_default_child_storage_storage_kill"><a class="header" href="#ext_default_child_storage_storage_kill">ext_default_child_storage_storage_kill</a></h4>
-<p>The new version 4 is introduced, deprecating <code>ext_default_child_storage_storage_kill_version_3</code>. The new signature is</p>
+<h5 id="existing-prototype-7"><a class="header" href="#existing-prototype-7">Existing prototype</a></h5>
+<pre><code class="language-wat">(func $ext_default_child_storage_storage_kill_version_3
+    (param $child_storage_key i64) (param $limit i64)
+    (result i64))
+</code></pre>
+<h5 id="changes-7"><a class="header" href="#changes-7">Changes</a></h5>
+<p>The function used to accept only a child storage key and a limit and return a SCALE-encoded <code>enum</code> representing the number of iterations performed, wrapped into a discriminator to differentiate if all the keys were removed. It was using a host-allocated buffer to return the value. As <a href="https://github.com/w3f/polkadot-spec/issues/588">discussed</a>, such implementation was suboptimal, and a better implementation was proposed in <a href="https://github.com/w3f/PPPs/pull/7">PPP#7</a>, but the PPP has never been adopted. The new version adopts the PPP, providing a means of returning much more exhaustive information about the work performed, and also accepts an optional input cursor and makes the limit optional as well. It always returns the full length of the continuation cursor.</p>
+<h5 id="new-prototype-5"><a class="header" href="#new-prototype-5">New prototype</a></h5>
 <pre><code class="language-wat">(func $ext_default_child_storage_storage_kill_version_4
     (param $storage_key i64) (param $maybe_limit i64) (param $maybe_cursor_in i64)
     (param $maybe_cursor_out i64) (param $backend i32) (param $unique i32) (param $loops i32)
@@ -4306,17 +4345,22 @@ of this RFC.</p>
 <li><code>storage_key</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the child storage key (<a href="https://spec.polkadot.network/chap-host-api#defn-child-storage-type">Definition 219</a>);</li>
 <li><code>maybe_limit</code> is an optional positive integer representing either the maximum number of backend deletions which may happen, or the absence of such a limit. The number of backend iterations may surpass this limit by no more than one;</li>
 <li><code>maybe_cursor_in</code> is an optional pointer-size representing the cursor returned by the previous (unfinished) call to this function. It should be <em>absent</em> on the first call;</li>
-<li><code>maybe_cursor_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the continuation cursor will optionally be written (see also the Result section);</li>
+<li><code>maybe_cursor_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the continuation cursor will optionally be written (see also the Result section). The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are undefined;</li>
 <li><code>backend</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a 4-byte buffer where a 32-bit integer representing the number of items removed from the backend database will be written;</li>
 <li><code>unique</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a 4-byte buffer where a 32-bit integer representing the number of unique keys removed, taking into account both the backend and the overlay;</li>
 <li><code>loops</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a 4-byte buffer where a 32-bit integer representing the number of iterations (each requiring a storage seek/read) which were done will be written.</li>
 </ul>
 <h5 id="result-4"><a class="header" href="#result-4">Result</a></h5>
-<p>The result represents the length of the continuation cursor which was written to the buffer provided in <code>maybe_cursor_out</code>. A zero value represents the absence of such a cursor and no need for continuation (the prefix has been completely cleared). If the buffer is not large enough to accommodate the cursor, the latter will be truncated, but the full length of the cursor will always be returned.</p>
-<h5 id="changes-5"><a class="header" href="#changes-5">Changes</a></h5>
-<p>The new version adopts <a href="https://github.com/w3f/PPPs/pull/7">PPP#7</a>, hence the significant change in the function interface with respect to the previous version. The reasoning for such a change was provided in the <a href="https://github.com/w3f/polkadot-spec/issues/588">original proposal discussion</a>.</p>
+<p>The result represents the length of the continuation cursor which might have been written to the buffer provided in <code>maybe_cursor_out</code>. A zero value represents the absence of such a cursor and no need for continuation (the prefix has been completely cleared).</p>
 <h4 id="ext_default_child_storage_clear_prefix"><a class="header" href="#ext_default_child_storage_clear_prefix">ext_default_child_storage_clear_prefix</a></h4>
-<p>The new version 3 is introduced, deprecating <code>ext_default_child_storage_clear_prefix_version_2</code>. The new signature is</p>
+<h5 id="existing-prototype-8"><a class="header" href="#existing-prototype-8">Existing prototype</a></h5>
+<pre><code class="language-wat">(func $ext_default_child_storage_clear_prefix_version_2
+    (param $child_storage_key i64) (param $prefix i64) (param $limit i64)
+    (result i64))
+</code></pre>
+<h5 id="changes-8"><a class="header" href="#changes-8">Changes</a></h5>
+<p>The function used to accept (along with the child storage key) only a prefix and a limit and return a SCALE-encoded <code>enum</code> representing the number of iterations performed, wrapped into a discriminator to differentiate if all the keys were removed. It was using a host-allocated buffer to return the value. As <a href="https://github.com/w3f/polkadot-spec/issues/588">discussed</a>, such implementation was suboptimal, and a better implementation was proposed in <a href="https://github.com/w3f/PPPs/pull/7">PPP#7</a>, but the PPP has never been adopted. The new version adopts the PPP, providing a means of returning much more exhaustive information about the work performed, and also accepts an optional input cursor and makes the limit optional as well. It always returns the full length of the continuation cursor.</p>
+<h5 id="new-prototype-6"><a class="header" href="#new-prototype-6">New prototype</a></h5>
 <pre><code class="language-wat">(func $ext_default_child_storage_clear_prefix_version_3
     (param $storage_key i64) (param $prefix i64) (param $maybe_limit i64)
     (param $maybe_cursor_in i64) (param $maybe_cursor_out i64) (param $backend i32)
@@ -4328,31 +4372,39 @@ of this RFC.</p>
 <li><code>prefix</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) containing a storage prefix being cleared;</li>
 <li><code>maybe_limit</code> is an optional positive integer representing either the maximum number of backend deletions which may happen, or the absence of such a limit. The number of backend iterations may surpass this limit by no more than one;</li>
 <li><code>maybe_cursor_in</code> is an optional pointer-size representing the cursor returned by the previous (unfinished) call to this function. It should be <em>absent</em> on the first call;</li>
-<li><code>maybe_cursor_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the continuation cursor will optionally be written (see also the Result section);</li>
+<li><code>maybe_cursor_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the continuation cursor will optionally be written (see also the Result section). The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are undefined;</li>
 <li><code>backend</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a 4-byte buffer where a 32-bit integer representing the number of items removed from the backend database will be written;</li>
 <li><code>unique</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a 4-byte buffer where a 32-bit integer representing the number of unique keys removed, taking into account both the backend and the overlay;</li>
 <li><code>loops</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a 4-byte buffer where a 32-bit integer representing the number of iterations (each requiring a storage seek/read) which were done will be written.</li>
 </ul>
 <h5 id="result-5"><a class="header" href="#result-5">Result</a></h5>
-<p>The result represents the length of the continuation cursor which was written to the buffer provided in <code>maybe_cursor_out</code>. A zero value represents the absence of such a cursor and no need for continuation (the prefix has been completely cleared). If the buffer is not large enough to accommodate the cursor, the latter will be truncated, but the full length of the cursor will always be returned.</p>
-<h5 id="changes-6"><a class="header" href="#changes-6">Changes</a></h5>
-<p>The new version adopts <a href="https://github.com/w3f/PPPs/pull/7">PPP#7</a>, hence the significant change in the function interface with respect to the previous version. The reasoning for such a change was provided in the <a href="https://github.com/w3f/polkadot-spec/issues/588">original proposal discussion</a>.</p>
+<p>The result represents the length of the continuation cursor which might have been written to the buffer provided in <code>maybe_cursor_out</code>. A zero value represents the absence of such a cursor and no need for continuation (the prefix has been completely cleared).</p>
 <h4 id="ext_default_child_storage_root"><a class="header" href="#ext_default_child_storage_root">ext_default_child_storage_root</a></h4>
-<p>The new version 3 is introduced, deprecating <code>ext_default_child_storage_root_version_2</code>. The signature is</p>
+<h5 id="existing-prototype-9"><a class="header" href="#existing-prototype-9">Existing prototype</a></h5>
+<pre><code class="language-wat">(func $ext_default_child_storage_root_version_2
+    (param $child_storage_key i64) (param $version i32) (result i64))
+</code></pre>
+<h5 id="changes-9"><a class="header" href="#changes-9">Changes</a></h5>
+<p>The old version accepted (along with the child storage key) the state version as an argument and returned a SCALE-encoded trie root hash through a host-allocated buffer. The new version adopts <a href="https://github.com/w3f/PPPs/pull/6">PPP#6</a> getting rid of the argument that used to represent the state version. It accepts a pointer to a runtime-allocated buffer and fills it with the output value. The length of the encoded result is returned.</p>
+<h5 id="new-prototype-7"><a class="header" href="#new-prototype-7">New prototype</a></h5>
 <pre><code class="language-wat">(func $ext_default_child_storage_root_version_3
     (param $storage_key i64) (param $out i64) (result i32))
 </code></pre>
 <h5 id="arguments-7"><a class="header" href="#arguments-7">Arguments</a></h5>
 <ul>
 <li><code>storage_key</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the child storage key (<a href="https://spec.polkadot.network/chap-host-api#defn-child-storage-type">Definition 219</a>);</li>
-<li><code>out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the SCALE-encoded storage root, calculated after committing all the existing operations, will be stored.</li>
+<li><code>out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the SCALE-encoded storage root, calculated after committing all the existing operations, will be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are undefined.</li>
 </ul>
 <h5 id="results-1"><a class="header" href="#results-1">Results</a></h5>
-<p>The result is the length of the output stored in the buffer provided in <code>out</code>. If the buffer is not large enough to accommodate the data, the latter will be truncated, but the full length of the output data will always be returned.</p>
-<h5 id="changes-7"><a class="header" href="#changes-7">Changes</a></h5>
-<p>The new version adopts <a href="https://github.com/w3f/PPPs/pull/6">PPP#6</a> deprecating the argument that used to represent the storage version.</p>
+<p>The result is the length of the output that mught have been stored in the buffer provided in <code>out</code>.</p>
 <h4 id="ext_default_child_storage_next_key"><a class="header" href="#ext_default_child_storage_next_key">ext_default_child_storage_next_key</a></h4>
-<p>The new version 2 is introduced, deprecating <code>ext_default_child_storage_next_key_version_1</code>. The signature is</p>
+<h5 id="existing-prototype-10"><a class="header" href="#existing-prototype-10">Existing prototype</a></h5>
+<pre><code class="language-wat">(func $ext_default_child_storage_next_key_version_1
+    (param $child_storage_key i64) (param $key i64) (result i64))
+</code></pre>
+<h5 id="changes-10"><a class="header" href="#changes-10">Changes</a></h5>
+<p>The old version accepted (along with the child storage key) the key and returned the SCALE-encoded next key in a host-allocated buffer. The new version additionally accepts a runtime-allocated output buffer and returns full next key length.</p>
+<h5 id="new-prototype-8"><a class="header" href="#new-prototype-8">New prototype</a></h5>
 <pre><code class="language-wat">(func $ext_default_child_storage_next_key_version_2
     (param $storage_key i64) (param $key_in i64) (param $key_out i64) (result i32))
 </code></pre>
@@ -4360,13 +4412,16 @@ of this RFC.</p>
 <ul>
 <li><code>storage_key</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the child storage key (<a href="https://spec.polkadot.network/chap-host-api#defn-child-storage-type">Definition 219</a>);</li>
 <li><code>key_in</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer containing a storage key;</li>
-<li><code>key_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to an output buffer where the next key in the storage in the lexicographical order will be written.</li>
+<li><code>key_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to an output buffer where the next key in the storage in the lexicographical order will be written. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are undefined.</li>
 </ul>
 <h5 id="result-6"><a class="header" href="#result-6">Result</a></h5>
-<p>The result is the length of the output key, or zero if no next key was found. If the buffer provided in <code>key_out</code> is not large enough to accommodate the data, the latter will be truncated, but the full length of the output data will always be returned.</p>
-<h5 id="changes-8"><a class="header" href="#changes-8">Changes</a></h5>
-<p>The logic of the function is unchanged since the previous version. The signature has changed to align with the new memory allocation strategy.</p>
+<p>The result is the length of the output key that might have been written into <code>key_out</code>, or zero if no next key was found.</p>
 <h4 id="ext_trie_blake2keccak_256_ordered_root"><a class="header" href="#ext_trie_blake2keccak_256_ordered_root">ext_trie_{blake2|keccak}_256_[ordered_]root</a></h4>
+<h5 id="existing-prototypes"><a class="header" href="#existing-prototypes">Existing prototypes</a></h5>
+<pre><code class="language-wat">(func $ext_trie_{blake2|keccak}_256_[ordered_]root_version_2
+    (param $data i64) (param $version i32) (result i32))
+</code></pre>
+<h5 id="changes-11"><a class="header" href="#changes-11">Changes</a></h5>
 <p>The following functions share the same signatures and set of changes:</p>
 <ul>
 <li><code>ext_trie_blake2_256_root</code></li>
@@ -4374,7 +4429,8 @@ of this RFC.</p>
 <li><code>ext_trie_keccak_256_root</code></li>
 <li><code>ext_trie_keccak_256_ordered_root</code></li>
 </ul>
-<p>For the aforementioned functions, versions 3 were introduced, and the corresponding versions 2 were deprecated. The signature is:</p>
+<p>The functions used to return the root in a 32-byte host-allocated buffer. They now accept a runtime-allocated output buffer as an argument, and doesn't return anything.</p>
+<h5 id="new-prototypes"><a class="header" href="#new-prototypes">New prototypes</a></h5>
 <pre><code class="language-wat">(func $ext_trie_{blake2|keccak}_256_[ordered_]root_version_3
     (param $input i64) (param $version i32) (param $out i32))
 </code></pre>
@@ -4384,38 +4440,51 @@ of this RFC.</p>
 <li><code>version</code> is the state version, where <code>0</code> denotes V0 and <code>1</code> denotes V1 state version. Other state versions may be introduced in the future;</li>
 <li><code>out</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a 32-byte buffer, where the calculated trie root will be stored.</li>
 </ul>
-<h5 id="changes-9"><a class="header" href="#changes-9">Changes</a></h5>
-<p>The logic of the function is unchanged since the previous version. The signature has changed to align with the new memory allocation strategy.</p>
 <h4 id="ext_misc_runtime_version"><a class="header" href="#ext_misc_runtime_version">ext_misc_runtime_version</a></h4>
-<p>The new version 2 is introduced, deprecating <code>ext_default_child_storage_next_key_version_1</code>. The signature is</p>
+<h5 id="existing-prototype-11"><a class="header" href="#existing-prototype-11">Existing prototype</a></h5>
+<pre><code class="language-wat">(func $ext_misc_runtime_version_version_1
+    (param $data i64) (result i64))
+</code></pre>
+<h5 id="changes-12"><a class="header" href="#changes-12">Changes</a></h5>
+<p>The function used to return the SCALE-encoded runtime version information in a host-allocated buffer. It is changed to accept a runtime-allocated buffer as an arguments and to return the length of the SCALE-encoded result.</p>
+<h5 id="new-prototype-9"><a class="header" href="#new-prototype-9">New prototype</a></h5>
 <pre><code class="language-wat">(func $ext_misc_runtime_version_version_2
     (param $wasm i64) (param $out i64) (result i64))
 </code></pre>
 <h5 id="arguments-10"><a class="header" href="#arguments-10">Arguments</a></h5>
 <ul>
 <li><code>wasm</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the Wasm blob from which the version information should be extracted;</li>
-<li><code>out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the buffer where the SCALE-encoded extracted version information will be stored.</li>
+<li><code>out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the buffer where the SCALE-encoded extracted version information will be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are undefined.</li>
 </ul>
 <h5 id="result-7"><a class="header" href="#result-7">Result</a></h5>
-<p>The result is an optional positive integer (<a href="proposed/0145-remove-unnecessary-allocator-usage.html#new-def-i">New Definition I</a>) representing the length of the output data. If the buffer is not large enough to accommodate the data, the latter will be truncated, but the full length of the output data will always be returned. An <em>absent</em> value represents the absence of the version information in the Wasm blob or a failure to read one.</p>
-<h5 id="changes-10"><a class="header" href="#changes-10">Changes</a></h5>
-<p>The logic of the function is unchanged since the previous version. The signature has changed to align with the new memory allocation strategy.</p>
+<p>The result is an optional positive integer (<a href="proposed/0145-remove-unnecessary-allocator-usage.html#new-def-i">New Definition I</a>) representing the length of the output data that might have been stored in <code>out</code>. An <em>absent</em> value represents the absence of the version information in the Wasm blob or a failure to read one.</p>
 <h4 id="ext_crypto_ed25519sr25519ecdsa_public_keys"><a class="header" href="#ext_crypto_ed25519sr25519ecdsa_public_keys">ext_crypto_{ed25519|sr25519|ecdsa}_public_keys</a></h4>
-<p>The following functions are deprecated:</p>
+<h5 id="existing-prototypes-1"><a class="header" href="#existing-prototypes-1">Existing prototypes</a></h5>
+<pre><code class="language-wat">(func $ext_crypto_ed25519_public_keys_version_1
+    (param $key_type_id i32) (result i64))
+(func $ext_crypto_sr25519_public_keys_version_1
+    (param $key_type_id i32) (result i64))
+(func $ext_crypto_ecdsa_public_keys_version_1
+    (param $key_type_id i32) (result i64))
+</code></pre>
+<h5 id="changes-13"><a class="header" href="#changes-13">Changes</a></h5>
+<p>The following functions are considered obsolete:</p>
 <ul>
 <li><code>ext_crypto_ed25519_public_keys_version_1</code></li>
 <li><code>ext_crypto_sr25519_public_keys_version_1</code></li>
 <li><code>ext_crypto_ecdsa_public_keys_version_1</code></li>
 </ul>
-<p>Users are encouraged to use the new <code>*_num_public_keys</code> and <code>*_public_key</code> counterparts.</p>
+<p>The functions used to return a host-allocated SCALE-encoded array of public keys of the corresponding type. As it is hard to predict the size of buffer needed to store such an array, new function <code>*_num_public_keys</code> and <code>*_public_key</code> were introduced to implement iterative approach.</p>
 <h4 id="ext_crypto_ed25519sr25519ecdsa_num_public_keys"><a class="header" href="#ext_crypto_ed25519sr25519ecdsa_num_public_keys">ext_crypto_{ed25519|sr25519|ecdsa}_num_public_keys</a></h4>
+<h5 id="changes-14"><a class="header" href="#changes-14">Changes</a></h5>
 <p>New functions, all sharing the same signature and logic, are introduced:</p>
 <ul>
 <li><code>ext_crypto_ed25519_num_public_keys_version_1</code></li>
 <li><code>ext_crypto_sr25519_num_public_keys_version_1</code></li>
 <li><code>ext_crypto_ecdsa_num_public_keys_version_1</code></li>
 </ul>
-<p>The signature is:</p>
+<p>They are intended to replace the obsolete <code>ext_crypto_{ed25519|sr25519|ecdsa}_public_keys</code> with a new iterative approach.</p>
+<h5 id="new-prototypes-1"><a class="header" href="#new-prototypes-1">New prototypes</a></h5>
 <pre><code class="language-wat">(func $ext_crypto_{ed25519|sr25519|ecdsa}_num_public_keys
     (param $id i32) (result i32))
 </code></pre>
@@ -4426,13 +4495,15 @@ of this RFC.</p>
 <h5 id="result-8"><a class="header" href="#result-8">Result</a></h5>
 <p>The result represents a (possibly zero) number of keys of the given type known to the keystore.</p>
 <h4 id="ext_crypto_ed25519sr25519ecdsa_public_key"><a class="header" href="#ext_crypto_ed25519sr25519ecdsa_public_key">ext_crypto_{ed25519|sr25519|ecdsa}_public_key</a></h4>
+<h5 id="changes-15"><a class="header" href="#changes-15">Changes</a></h5>
 <p>New functions, all sharing the same signature and logic, are introduced:</p>
 <ul>
 <li><code>ext_crypto_ed25519_public_key_version_1</code></li>
 <li><code>ext_crypto_sr25519_public_key_version_1</code></li>
 <li><code>ext_crypto_ecdsa_public_key_version_1</code></li>
 </ul>
-<p>The signature is:</p>
+<p>They are intended to replace the obsolete <code>ext_crypto_{ed25519|sr25519|ecdsa}_public_keys</code> with a new iterative approach.</p>
+<h5 id="new-prototypes-2"><a class="header" href="#new-prototypes-2">New prototypes</a></h5>
 <pre><code class="language-wat">(func $ext_crypto_{ed25519|sr25519|ecdsa}_public_key
     (param $id i32) (param $index i32) (param $out))
 </code></pre>
@@ -4443,13 +4514,19 @@ of this RFC.</p>
 <li><code>out</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to the output buffer of the respective size (depending on key type) where the key will be written.</li>
 </ul>
 <h4 id="ext_crypto_ed25519sr25519ecdsa_generate"><a class="header" href="#ext_crypto_ed25519sr25519ecdsa_generate">ext_crypto_{ed25519|sr25519|ecdsa}_generate</a></h4>
+<h5 id="existing-prototypes-2"><a class="header" href="#existing-prototypes-2">Existing prototypes</a></h5>
+<pre><code class="language-wat">(func $ext_crypto_{ed25519|sr25519|ecdsa}_generate_version_1
+    (param $key_type_id i32) (param $seed i64) (result i32))
+</code></pre>
+<h5 id="changes-16"><a class="header" href="#changes-16">Changes</a></h5>
 <p>The following functions share the same signatures and set of changes:</p>
 <ul>
 <li><code>ext_crypto_ed25519_generate</code></li>
 <li><code>ext_crypto_sr25519_generate</code></li>
 <li><code>ext_crypto_ecdsa_generate</code></li>
 </ul>
-<p>For the aforementioned functions, versions 2 are introduced, and the corresponding versions 1 are deprecated. The signature is:</p>
+<p>The functions used to return a host-allocated buffer containing the key of the corresponding type. They are changed to accept a runtime-allocated buffer as an argument and to return no value, as the length of keys is known and the operation cannot fail.</p>
+<h5 id="new-prototypes-3"><a class="header" href="#new-prototypes-3">New prototypes</a></h5>
 <pre><code class="language-wat">(func $ext_crypto_{ed25519|sr25519|ecdsa}_generate_version_2
     (param $id i32) (param $seed i64) (param $out i32))
 </code></pre>
@@ -4459,9 +4536,12 @@ of this RFC.</p>
 <li><code>seed</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the SCALE-encoded Option value (<a href="https://spec.polkadot.network/id-cryptography-encoding#defn-option-type">Definition 200</a>) containing the BIP-39 seed which must be valid UTF-8. The function will panic if the seed is not valid UTF-8;</li>
 <li><code>out</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to the output buffer of the respective size (depending on key type) where the generated key will be written.</li>
 </ul>
-<h5 id="changes-11"><a class="header" href="#changes-11">Changes</a></h5>
-<p>The logic of the functions is unchanged since the previous version. The signature has changed to align with the new memory allocation strategy.</p>
 <h4 id="ext_crypto_ed25519sr25519ecdsa_sign_prehashed"><a class="header" href="#ext_crypto_ed25519sr25519ecdsa_sign_prehashed">ext_crypto_{ed25519|sr25519|ecdsa}_sign[_prehashed]</a></h4>
+<h5 id="existing-prototypes-3"><a class="header" href="#existing-prototypes-3">Existing prototypes</a></h5>
+<pre><code class="language-wat">(func $ext_crypto_{ed25519|sr25519|ecdsa}_sign{_prehashed|}_version_1
+    (param $id i32) (param $pub_key i32) (param $msg i64) (result i64))
+</code></pre>
+<h5 id="changes-17"><a class="header" href="#changes-17">Changes</a></h5>
 <p>The following functions share the same signatures and set of changes:</p>
 <ul>
 <li><code>ext_crypto_ed25519_sign</code></li>
@@ -4469,7 +4549,8 @@ of this RFC.</p>
 <li><code>ext_crypto_ecdsa_sign</code></li>
 <li><code>ext_crypto_ecdsa_sign_prehashed</code></li>
 </ul>
-<p>For the aforementioned functions, versions 2 are introduced, and the corresponding versions 1 are deprecated. The signature is:</p>
+<p>The functions used to return a host-allocated SCALE-encoded value representing the result of signature application. They are changed to accept a pointer to a runtime-allocated buffer of a known size (dependent on the signature type) and to return a result code.</p>
+<h4 id="new-prototypes-4"><a class="header" href="#new-prototypes-4">New prototypes</a></h4>
 <pre><code class="language-wat">(func $ext_crypto_{ed25519|sr25519|ecdsa}_sign{_prehashed|}_version_2
     (param $id i32) (param $pub_key i32) (param $msg i64) (param $out i64) (result i64))
 </code></pre>
@@ -4482,15 +4563,19 @@ of this RFC.</p>
 </ul>
 <h5 id="result-9"><a class="header" href="#result-9">Result</a></h5>
 <p>The function returns <code>0</code> on success. On error, <code>-1</code> is returned and the output buffer should be considered uninitialized.</p>
-<h5 id="changes-12"><a class="header" href="#changes-12">Changes</a></h5>
-<p>The logic of the functions is unchanged since the previous version. The signature has changed to align with the new memory allocation strategy.</p>
 <h4 id="ext_crypto_secp256k1_ecdsa_recover_compressed"><a class="header" href="#ext_crypto_secp256k1_ecdsa_recover_compressed">ext_crypto_secp256k1_ecdsa_recover[_compressed]</a></h4>
+<h5 id="existing-prototypes-4"><a class="header" href="#existing-prototypes-4">Existing prototypes</a></h5>
+<pre><code class="language-wat">(func $ext_crypto_secp256k1_ecdsa_recover\[_compressed]_version_2
+    (param $sig i32) (param $msg i32) (result i64))
+</code></pre>
+<h5 id="changes-18"><a class="header" href="#changes-18">Changes</a></h5>
 <p>The following functions share the same signatures and set of changes:</p>
 <ul>
 <li><code>ext_crypto_secp256k1_ecdsa_recover</code></li>
 <li><code>ext_crypto_secp256k1_ecdsa_recover_compressed</code></li>
 </ul>
-<p>For the aforementioned functions, versions 3 are introduced, and the corresponding versions 2 are deprecated. The signature is:</p>
+<p>The functions used to return a host-allocated SCALE-encoded value representing the result of the key recovery. They are changed to accept a pointer to a runtime-allocated buffer of a known size and to return a result code. The return error encoding, defined under <a href="https://spec.polkadot.network/chap-host-api#defn-ecdsa-verify-error">Definition 221</a>, is changed to promote the unification of host function result reporting (zero and positive values are for success, and the negative values are for failure codes).</p>
+<h5 id="new-prototypes-5"><a class="header" href="#new-prototypes-5">New prototypes</a></h5>
 <pre><code class="language-wat">(func $ext_crypto_secp256k1_ecdsa_recover\[_compressed]_version_3
     (param $sig i32) (param $msg i32) (param $out i32) (result i64))
 </code></pre>
@@ -4502,9 +4587,12 @@ of this RFC.</p>
 </ul>
 <h5 id="result-10"><a class="header" href="#result-10">Result</a></h5>
 <p>The function returns <code>0</code> on success. On error, it returns a negative ECDSA verification error code, where <code>-1</code> stands for incorrect R or S, <code>-2</code> stands for invalid V, and <code>-3</code> stands for invalid signature.</p>
-<h5 id="changes-13"><a class="header" href="#changes-13">Changes</a></h5>
-<p>The signature has changed to align with the new memory allocation strategy. The return error encoding, defined under <a href="https://spec.polkadot.network/chap-host-api#defn-ecdsa-verify-error">Definition 221</a>, is changed to promote the unification of host function result reporting (zero and positive values are for success, and the negative values are for failure codes).</p>
 <h4 id="ext_hashing_keccaksha2blake2twox_"><a class="header" href="#ext_hashing_keccaksha2blake2twox_">ext_hashing_{keccak|sha2|blake2|twox}_</a></h4>
+<h5 id="existing-prototypes-5"><a class="header" href="#existing-prototypes-5">Existing prototypes</a></h5>
+<pre><code class="language-wat">(func $ext_hashing_{keccak|sha2|blake2|twox}_{64|128|256|512}_version_1
+    (param $data i64) (result i32))
+</code></pre>
+<h5 id="changes-19"><a class="header" href="#changes-19">Changes</a></h5>
 <p>The following functions share the same signatures and set of changes:</p>
 <ul>
 <li><code>ext_hashing_keccak_256</code></li>
@@ -4516,7 +4604,8 @@ of this RFC.</p>
 <li><code>ext_hashing_twox_128</code></li>
 <li><code>ext_hashing_twox_256</code></li>
 </ul>
-<p>For the aforementioned functions, versions 2 are introduced, and the corresponding versions 1 are deprecated. The signature is:</p>
+<p>The functions used to return a host-allocated buffer containing the hash. They are changed to accept a runtime-allocated buffer of a known size (depedent on the hash type) and to return no value, as the operation cannot fail.</p>
+<h5 id="new-prototypes-6"><a class="header" href="#new-prototypes-6">New prototypes</a></h5>
 <pre><code class="language-wat">(func $ext_hashing_{keccak|sha2|blake2|twox}_{64|128|256|512}_version_2
     (param $data i64) (param $out i32))
 </code></pre>
@@ -4525,10 +4614,14 @@ of this RFC.</p>
 <li><code>data</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the data to be hashed.</li>
 <li><code>out</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to the output buffer of the respective size (depending on hash type) where the calculated hash will be written.</li>
 </ul>
-<h5 id="changes-14"><a class="header" href="#changes-14">Changes</a></h5>
-<p>The logic of the functions is unchanged since the previous version. The signature has changed to align with the new memory allocation strategy.</p>
 <h4 id="ext_offchain_submit_transaction"><a class="header" href="#ext_offchain_submit_transaction">ext_offchain_submit_transaction</a></h4>
-<p>The new version 2 is introduced, deprecating <code>ext_offchain_submit_transaction_version_1</code>. The signature is unchanged.</p>
+<h5 id="existing-prototype-12"><a class="header" href="#existing-prototype-12">Existing prototype</a></h5>
+<pre><code class="language-wat">(func $ext_offchain_submit_transaction_version_1
+    (param $data i64) (result i64))
+</code></pre>
+<h5 id="changes-20"><a class="header" href="#changes-20">Changes</a></h5>
+<p>The old version returned a SCALE-encoded result in a host-allocated buffer. That is changed to return the result as a primitive value.</p>
+<h5 id="new-prototype-10"><a class="header" href="#new-prototype-10">New prototype</a></h5>
 <pre><code class="language-wat">(func $ext_offchain_submit_transaction_version_2
     (param $data i64) (result i64))
 </code></pre>
@@ -4538,12 +4631,17 @@ of this RFC.</p>
 </ul>
 <h5 id="result-11"><a class="header" href="#result-11">Result</a></h5>
 <p>The result is <code>0</code> for success or <code>-1</code> for failure.</p>
-<h5 id="changes-15"><a class="header" href="#changes-15">Changes</a></h5>
-<p>The logic and the signature of the function are unchanged since the previous version. The only change is the interpretation of the result value to avoid an unneeded allocation and promote the unification of host function result reporting (zero and positive values are for success, and the negative values are for failure codes).</p>
 <h4 id="ext_offchain_network_state"><a class="header" href="#ext_offchain_network_state">ext_offchain_network_state</a></h4>
-<p>The function is deprecated. Users are encouraged to use <code>ext_offchain_network_peer_id_version_1</code> instead.</p>
+<h5 id="existing-prototype-13"><a class="header" href="#existing-prototype-13">Existing prototype</a></h5>
+<pre><code class="language-wat">(func $ext_offchain_network_state_version_1
+    (result i64))
+</code></pre>
+<h5 id="changes-21"><a class="header" href="#changes-21">Changes</a></h5>
+<p>The function is considered obsolete. The function used to return a host-allocated value that was only used partially, with the part used being fixed-size. Users are encouraged to use <code>ext_offchain_network_peer_id_version_1</code> instead.</p>
 <h4 id="ext_offchain_network_peer_id"><a class="header" href="#ext_offchain_network_peer_id">ext_offchain_network_peer_id</a></h4>
-<p>A new function is introduced. The signature is</p>
+<h5 id="changes-22"><a class="header" href="#changes-22">Changes</a></h5>
+<p>A new function is introduced to replace <code>ext_offchain_network_state</code>. It fills the output buffer with an opaque peer id of a known size.</p>
+<h5 id="new-prototype-11"><a class="header" href="#new-prototype-11">New prototype</a></h5>
 <pre><code class="language-wat">(func $ext_offchain_submit_transaction_version_2
     (param $out i32) (result i64))
 </code></pre>
@@ -4554,7 +4652,13 @@ of this RFC.</p>
 <h5 id="result-12"><a class="header" href="#result-12">Result</a></h5>
 <p>The result is <code>0</code> for success or <code>-1</code> for failure.</p>
 <h4 id="ext_offchain_random_seed"><a class="header" href="#ext_offchain_random_seed">ext_offchain_random_seed</a></h4>
-<p>The new version 2 is introduced, deprecating <code>ext_offchain_random_seed_version_1</code>. The signature is unchanged.</p>
+<h5 id="existing-prototype-14"><a class="header" href="#existing-prototype-14">Existing prototype</a></h5>
+<pre><code class="language-wat">(func $ext_offchain_random_seed_version_1
+    (result i32))
+</code></pre>
+<h5 id="changes-23"><a class="header" href="#changes-23">Changes</a></h5>
+<p>The function used to return a host-allocated buffer containing the random seed. It is changed to accept a pointer to a runtime-allocated buffer where the random seed is written and to return no value as the operation cannot fail.</p>
+<h5 id="new-prototype-12"><a class="header" href="#new-prototype-12">New prototype</a></h5>
 <pre><code class="language-wat">(func $ext_offchain_random_seed_version_2
     (param $out i32))
 </code></pre>
@@ -4562,12 +4666,17 @@ of this RFC.</p>
 <ul>
 <li><code>out</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to the output buffer, 32 bytes long, where the random seed will be written.</li>
 </ul>
-<h5 id="changes-16"><a class="header" href="#changes-16">Changes</a></h5>
-<p>The logic of the functions is unchanged since the previous version. The signature has changed to align with the new memory allocation strategy and promote the unification of host function result returning (zero and positive values are for success, and the negative values are for failure codes).</p>
 <h4 id="ext_offchain_local_storage_get"><a class="header" href="#ext_offchain_local_storage_get">ext_offchain_local_storage_get</a></h4>
-<p>The function is deprecated. Users are encouraged to use <code>ext_offchain_local_storage_read_version_1</code> instead.</p>
+<h5 id="existing-prototype-15"><a class="header" href="#existing-prototype-15">Existing prototype</a></h5>
+<pre><code class="language-wat">(func $ext_offchain_local_storage_get_version_1
+    (param $kind i32) (param $key i64) (result i64))
+</code></pre>
+<h5 id="changes-24"><a class="header" href="#changes-24">Changes</a></h5>
+<p>The function is considered obsolete, as it only implements a subset of functionality of <code>ext_offchain_local_storage_read</code> and uses host-allocated buffers. Users are encouraged to use <code>ext_offchain_local_storage_read_version_1</code> instead.</p>
 <h4 id="ext_offchain_local_storage_read"><a class="header" href="#ext_offchain_local_storage_read">ext_offchain_local_storage_read</a></h4>
-<p>A new function is introduced. The signature is</p>
+<h5 id="changes-25"><a class="header" href="#changes-25">Changes</a></h5>
+<p>A new function is introduced to replace <code>ext_offchain_local_storage_get</code>. The name has been changed to better correspond to the family of the same-functionality functions in <code>ext_storage_*</code> group.</p>
+<h5 id="new-prototype-13"><a class="header" href="#new-prototype-13">New prototype</a></h5>
 <pre><code class="language-wat">(func $ext_offchain_local_storage_read_version_1
     (param $kind i32) (param $key i64) (param $value_out i64) (param $offset i32) (result i64))
 </code></pre>
@@ -4575,13 +4684,19 @@ of this RFC.</p>
 <ul>
 <li><code>kind</code> is an offchain storage kind, where <code>0</code> denotes the persistent storage (<a href="https://spec.polkadot.network/chap-host-api#defn-offchain-persistent-storage">Definition 222</a>), and <code>1</code> denotes the local storage (<a href="https://spec.polkadot.network/chap-host-api#defn-offchain-persistent-storage">Definition 223</a>);</li>
 <li><code>key</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the storage key being read;</li>
-<li><code>value_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the value read should be stored. If the buffer is not large enough to accommodate the value, the value is truncated to the length of the buffer;</li>
+<li><code>value_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the value read should be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are undefined;</li>
 <li><code>offset</code> is a 32-bit offset from which the value reading should start.</li>
 </ul>
 <h5 id="result-13"><a class="header" href="#result-13">Result</a></h5>
 <p>The result is an optional positive integer (<a href="proposed/0145-remove-unnecessary-allocator-usage.html#new-def-i">New Definition I</a>), representing either the full length of the value in storage or the <em>absence</em> of such a value in storage.</p>
 <h4 id="ext_offchain_http_request_start"><a class="header" href="#ext_offchain_http_request_start">ext_offchain_http_request_start</a></h4>
-<p>The new version 2 is introduced, deprecating <code>ext_offchain_http_request_start_version_1</code>. The signature is unchanged.</p>
+<h5 id="existing-prototype-16"><a class="header" href="#existing-prototype-16">Existing prototype</a></h5>
+<pre><code class="language-wat">(func $ext_offchain_http_request_start_version_1
+    (param $method i64) (param $uri i64) (param $meta i64) (result i64))
+</code></pre>
+<h5 id="changes-26"><a class="header" href="#changes-26">Changes</a></h5>
+<p>The function used to return a SCALE-encoded <code>Result</code> value in a host-allocated buffer. That is changed to return a primitive value denoting the operation result. The result interpretation has been changed to promote the unification of host function result returning (zero and positive values are for success, and the negative values are for failure codes).</p>
+<h5 id="new-prototype-14"><a class="header" href="#new-prototype-14">New prototype</a></h5>
 <pre><code class="language-wat">(func $ext_offchain_http_request_start_version_2
     (param $method i64) (param $uri i64) (param $meta i64) (result i64))
 </code></pre>
@@ -4591,10 +4706,14 @@ of this RFC.</p>
 <code>meta</code> is a future-reserved field containing additional, SCALE-encoded parameters. Currently, an empty array should be passed.</p>
 <h5 id="result-14"><a class="header" href="#result-14">Result</a></h5>
 <p>On success, a positive request identifier is returned. On error, <code>-1</code> is returned.</p>
-<h5 id="changes-17"><a class="header" href="#changes-17">Changes</a></h5>
-<p>The logic and the signature of the function are unchanged since the previous version. The only change is the interpretation of the result value to avoid an unneeded allocation and promote the unification of host function result returning (zero and positive values are for success, and the negative values are for failure codes).</p>
 <h4 id="ext_offchain_http_request_add_header"><a class="header" href="#ext_offchain_http_request_add_header">ext_offchain_http_request_add_header</a></h4>
-<p>The new version 2 is introduced, deprecating <code>ext_offchain_http_request_add_header_version_1</code>. The signature is unchanged.</p>
+<h5 id="existing-prototype-17"><a class="header" href="#existing-prototype-17">Existing prototype</a></h5>
+<pre><code class="language-wat">(func $ext_offchain_http_request_add_header_version_1
+    (param $request_id i32) (param $name i64) (param $value i64) (result i64))
+</code></pre>
+<h5 id="changes-27"><a class="header" href="#changes-27">Changes</a></h5>
+<p>The function used to return a SCALE-encoded <code>Result</code> value in a host-allocated buffer. That is changed to return a primitive value denoting the operation result. The result interpretation has been changed to promote the unification of host function result returning (zero and positive values are for success, and the negative values are for failure codes).</p>
+<h5 id="new-prototype-15"><a class="header" href="#new-prototype-15">New prototype</a></h5>
 <pre><code class="language-wat">(func $ext_offchain_http_request_add_header_version_2
     (param $request_id i32) (param $name i64) (param $value i64) (result i64))
 </code></pre>
@@ -4606,10 +4725,14 @@ of this RFC.</p>
 </ul>
 <h5 id="result-15"><a class="header" href="#result-15">Result</a></h5>
 <p>The result is <code>0</code> for success or <code>-1</code> for failure.</p>
-<h5 id="changes-18"><a class="header" href="#changes-18">Changes</a></h5>
-<p>The logic and the signature of the function are unchanged since the previous version. The only change is the interpretation of the result value to avoid an unneeded allocation and promote the unification of host function result returning (zero and positive values are for success, and the negative values are for failure codes).</p>
 <h4 id="ext_offchain_http_request_write_body"><a class="header" href="#ext_offchain_http_request_write_body">ext_offchain_http_request_write_body</a></h4>
-<p>The new version 2 is introduced, deprecating <code>ext_offchain_http_request_write_body_version_1</code>. The signature is unchanged.</p>
+<h5 id="existing-prototype-18"><a class="header" href="#existing-prototype-18">Existing prototype</a></h5>
+<pre><code class="language-wat">(func $ext_offchain_http_request_write_body_version_1
+    (param $request_id i32) (param $chunk i64) (param $deadline i64) (result i64))
+</code></pre>
+<h5 id="changes-28"><a class="header" href="#changes-28">Changes</a></h5>
+<p>The function used to return a SCALE-encoded <code>Result</code> value in a host-allocated buffer. That is changed to return a primitive value denoting the operation result. The result interpretation has been changed to promote the unification of host function result returning (zero and positive values are for success, and the negative values are for failure codes).</p>
+<h5 id="new-prototype-16"><a class="header" href="#new-prototype-16">New prototype</a></h5>
 <pre><code class="language-wat">(func $ext_offchain_http_request_write_body_version_2
     (param $request_id i32) (param $chunk i64) (param $deadline i64) (result i64))
 </code></pre>
@@ -4621,11 +4744,15 @@ of this RFC.</p>
 </ul>
 <h5 id="result-16"><a class="header" href="#result-16">Result</a></h5>
 <p>On success, <code>0</code> is returned. On failure, a negative error code is returned, where <code>-1</code> denotes the deadline was reached, <code>-2</code> denotes that an I/O error occurred, and <code>-3</code> denotes that the request ID provided was invalid.</p>
-<h5 id="changes-19"><a class="header" href="#changes-19">Changes</a></h5>
-<p>The logic and the signature of the function are unchanged since the previous version. The only change is the interpretation of the result value to avoid an unneeded allocation and promote the unification of host function result returning (zero and positive values are for success, and the negative values are for failure codes).</p>
-<h4 id="ext_offchain_http_request_wait"><a class="header" href="#ext_offchain_http_request_wait">ext_offchain_http_request_wait</a></h4>
-<p>The new version 2 is introduced, deprecating <code>ext_offchain_http_request_wait_version_1</code>. The signature is:</p>
-<pre><code class="language-wat">(func $ext_offchain_http_request_wait_version_2
+<h4 id="ext_offchain_http_response_wait"><a class="header" href="#ext_offchain_http_response_wait">ext_offchain_http_response_wait</a></h4>
+<h5 id="existing-prototype-19"><a class="header" href="#existing-prototype-19">Existing prototype</a></h5>
+<pre><code class="language-wat">(func $ext_offchain_http_response_wait_version_1
+    (param $ids i64) (param $deadline i64) (result i64))
+</code></pre>
+<h5 id="changes-29"><a class="header" href="#changes-29">Changes</a></h5>
+<p>The function used to return a SCALE-encoded array of request statuses in a host-allocated buffer. It is changed to accept the output buffer of a known size and fill it with request statuses.</p>
+<h5 id="new-prototype-17"><a class="header" href="#new-prototype-17">New prototype</a></h5>
+<pre><code class="language-wat">(func $ext_offchain_http_response_wait_version_2
     (param $ids i64) (param $deadline i64) (param $out i64))
 </code></pre>
 <h5 id="arguments-24"><a class="header" href="#arguments-24">Arguments</a></h5>
@@ -4634,31 +4761,76 @@ of this RFC.</p>
 <li><code>deadline</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the SCALE-encoded Option value (<a href="https://spec.polkadot.network/id-cryptography-encoding#defn-option-type">Definition 200</a>) containing the UNIX timestamp (<a href="https://spec.polkadot.network/id-cryptography-encoding#defn-unix-time">Definition 191</a>). Passing <code>None</code> blocks indefinitely;</li>
 <li><code>out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the buffer of <code>i32</code> integers where the request statuses will be stored. The number of elements of the buffer must be strictly equal to the number of elements in the <code>ids</code> array; otherwise, the function panics.</li>
 </ul>
-<h5 id="changes-20"><a class="header" href="#changes-20">Changes</a></h5>
-<p>The logic of the functions is unchanged since the previous version. The signature has changed to align with the new memory allocation strategy.</p>
+<h4 id="ext_offchain_http_response_headers"><a class="header" href="#ext_offchain_http_response_headers">ext_offchain_http_response_headers</a></h4>
+<h5 id="existing-prototype-20"><a class="header" href="#existing-prototype-20">Existing prototype</a></h5>
+<pre><code class="language-wat">(func $ext_offchain_http_response_headers_version_1
+    (param $request_id i32) (result i64))
+</code></pre>
+<h5 id="changes-30"><a class="header" href="#changes-30">Changes</a></h5>
+<p>The function is considered obsolete in favor of <code>ext_offchain_http_response_header_name</code> and <code>ext_offchain_http_response_header_value</code>. It used to return a host-allocated SCALE-encoded array of response header names and values. As it's hard to predict what buffer size is needed to accommodate such an array, new functions offer an iterative approach instead.</p>
+<h4 id="ext_offchain_http_response_header_name"><a class="header" href="#ext_offchain_http_response_header_name">ext_offchain_http_response_header_name</a></h4>
+<h5 id="changes-31"><a class="header" href="#changes-31">Changes</a></h5>
+<p>New function to replace functionality of <code>ext_offchain_http_response_headers</code> with iterative approach. Reads a header name at a given index into a runtime-allocated buffer provided.</p>
+<h5 id="new-prototype-18"><a class="header" href="#new-prototype-18">New prototype</a></h5>
+<pre><code class="language-wat">(func $ext_offchain_http_response_header_name_version_1
+    (param $request_id i32) (param $header_index i32) (param $out i64) (result i64))
+</code></pre>
+<h5 id="arguments-25"><a class="header" href="#arguments-25">Arguments</a></h5>
+<ul>
+<li><code>request_id</code> is an i32 integer indicating the ID of the started request, as returned by <code>ext_offchain_http_request_start</code>;</li>
+<li><code>header_index</code> is an i32 integer indicating the index of the header requested, starting from zero;</li>
+<li><code>out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the buffer where the header name will be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are undefined;</li>
+</ul>
+<h5 id="result-17"><a class="header" href="#result-17">Result</a></h5>
+<p>The result is an optional positive integer (<a href="proposed/0145-remove-unnecessary-allocator-usage.html#new-def-i">New Definition I</a>), representing either the full length of the header name or the <em>absence</em> of the header with such index.</p>
+<h4 id="ext_offchain_http_response_header_value"><a class="header" href="#ext_offchain_http_response_header_value">ext_offchain_http_response_header_value</a></h4>
+<h5 id="changes-32"><a class="header" href="#changes-32">Changes</a></h5>
+<p>New function to replace functionality of <code>ext_offchain_http_response_headers</code> with iterative approach. Reads a header value at a given index into a runtime-allocated buffer provided.</p>
+<h5 id="new-prototype-19"><a class="header" href="#new-prototype-19">New prototype</a></h5>
+<pre><code class="language-wat">(func $ext_offchain_http_response_header_value_version_1
+    (param $request_id i32) (param $header_index i32) (param $out i64) (result i64))
+</code></pre>
+<h5 id="arguments-26"><a class="header" href="#arguments-26">Arguments</a></h5>
+<ul>
+<li><code>request_id</code> is an i32 integer indicating the ID of the started request, as returned by <code>ext_offchain_http_request_start</code>;</li>
+<li><code>header_index</code> is an i32 integer indicating the index of the header requested, starting from zero;</li>
+<li><code>out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the buffer where the header value will be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are undefined;</li>
+</ul>
+<h5 id="result-18"><a class="header" href="#result-18">Result</a></h5>
+<p>The result is an optional positive integer (<a href="proposed/0145-remove-unnecessary-allocator-usage.html#new-def-i">New Definition I</a>), representing either the full length of the header value or the <em>absence</em> of the header with such index.</p>
 <h4 id="ext_offchain_http_response_read_body"><a class="header" href="#ext_offchain_http_response_read_body">ext_offchain_http_response_read_body</a></h4>
-<p>The new version 2 is introduced, deprecating <code>ext_offchain_http_response_read_body_version_1</code>. The signature is unchanged.</p>
+<h5 id="existing-prototype-21"><a class="header" href="#existing-prototype-21">Existing prototype</a></h5>
+<pre><code class="language-wat">(func $ext_offchain_http_response_read_body_version_1
+    (param $request_id i32) (param $buffer i64) (param $deadline i64) (result i64))
+</code></pre>
+<h5 id="changes-33"><a class="header" href="#changes-33">Changes</a></h5>
+<p>The function has already been using a runtime-allocated buffer to return its value. However, the result of the operation was returned as a host-allocated SCALE-encoded <code>Result</code>. It is changed to return a primitive indicating either the length written or an error.</p>
+<h5 id="new-prototype-20"><a class="header" href="#new-prototype-20">New prototype</a></h5>
 <pre><code class="language-wat">(func $ext_offchain_http_response_read_body_version_2
     (param $request_id i32) (param $buffer i64) (param $deadline i64) (result i64))
 </code></pre>
-<h5 id="arguments-25"><a class="header" href="#arguments-25">Arguments</a></h5>
+<h5 id="arguments-27"><a class="header" href="#arguments-27">Arguments</a></h5>
 <ul>
 <li><code>request_id</code> is an i32 integer indicating the ID of the started request, as returned by <code>ext_offchain_http_request_start</code>;</li>
 <li><code>buffer</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the buffer where the body is written;</li>
 <li><code>deadline</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the SCALE-encoded Option value (<a href="https://spec.polkadot.network/id-cryptography-encoding#defn-option-type">Definition 200</a>) containing the UNIX timestamp (<a href="https://spec.polkadot.network/id-cryptography-encoding#defn-unix-time">Definition 191</a>). Passing <code>None</code> blocks indefinitely.</li>
 </ul>
-<h5 id="result-17"><a class="header" href="#result-17">Result</a></h5>
+<h5 id="result-19"><a class="header" href="#result-19">Result</a></h5>
 <p>On success, the number of bytes written to the buffer is returned. A value of <code>0</code> means the entire response was consumed and no further calls to the function are needed for the provided request ID. On failure, a negative error code is returned, where <code>-1</code> denotes the deadline was reached, <code>-2</code> denotes that an I/O error occurred, and <code>-3</code> denotes that the request ID provided was invalid.</p>
-<h5 id="changes-21"><a class="header" href="#changes-21">Changes</a></h5>
-<p>The logic and the signature of the function are unchanged since the previous version. The only change is the interpretation of the result value to avoid an unneeded allocation and promote the unification of host function result returning (zero and positive values are for success, and the negative values are for failure codes).</p>
 <h4 id="ext_allocator_"><a class="header" href="#ext_allocator_">ext_allocator_</a></h4>
-<p>The functions are deprecated and must not be used in new code.</p>
+<h5 id="existing-prototype-22"><a class="header" href="#existing-prototype-22">Existing prototype</a></h5>
+<pre><code class="language-wat">(func $ext_allocator_malloc_version_1 (param $size i32) (result i32))
+(func $ext_allocator_free_version_1 (param $ptr i32))
+</code></pre>
+<p>The functions are considered obsolete and must not be used in new code.</p>
 <h4 id="ext_input_read"><a class="header" href="#ext_input_read">ext_input_read</a></h4>
-<p>A new function is introduced. The signature is</p>
+<h5 id="changes-34"><a class="header" href="#changes-34">Changes</a></h5>
+<p>A new function providing means of passing input data from the host to the runtime. Previously, the host allocated a buffer and passed a pointer to it to the runtime. With the runtime allocator, it's not possible anymore, so the input data passing protocol changed (see &quot;Other changes&quot; section below). This function is required to support that change.</p>
+<h5 id="new-prototype-21"><a class="header" href="#new-prototype-21">New prototype</a></h5>
 <pre><code class="language-wat">(func $ext_input_read_version_1
     (param $buffer i64))
 </code></pre>
-<h5 id="arguments-26"><a class="header" href="#arguments-26">Arguments</a></h5>
+<h5 id="arguments-28"><a class="header" href="#arguments-28">Arguments</a></h5>
 <ul>
 <li><code>buffer</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the buffer where the input data will be written. If the buffer is not large enough to accommodate the input data, the function will panic.</li>
 </ul>
