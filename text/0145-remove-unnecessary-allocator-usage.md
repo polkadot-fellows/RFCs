@@ -431,6 +431,28 @@ The function used to return the SCALE-encoded runtime version information in a h
 
 The result is an optional positive integer ([New Definition I](#new-def-i)) representing the length of the output data that might have been stored in `out`. An _absent_ value represents the absence of the version information in the Wasm blob or a failure to read one.
 
+#### ext_misc_last_cursor
+
+##### Changes
+
+A new function is introduced to make it possible to fetch a cursor produced by `ext_storage_clear_prefix`, `ext_default_child_storage_clear_prefix`, and `ext_default_child_storage_kill_prefix` even if a buffer initially provided to those functions wasn't large enough to accommodate the cursor.
+
+##### New prototype
+
+```wat
+(func $ext_misc_last_cursor_version_1
+    (param $out i64) (result i64))
+```
+##### Arguments
+
+* `out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the buffer where the last cached cursor will be stored, if one exists. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are undefined.
+
+##### Result
+
+The result is an optional positive integer ([New Definition I](#new-def-i)) representing the length of the cursor that might have been stored in `out`. An _absent_ value represents the absence of the cached cursor.
+
+If the buffer had enough capacity and the cursor was stored successfully, the cursor cache is cleared and the same cursor cannot be retrieved once again using this function.
+
 #### ext_crypto_{ed25519|sr25519|ecdsa}_public_keys
 
 ##### Existing prototypes
