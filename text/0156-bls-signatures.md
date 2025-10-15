@@ -3,7 +3,7 @@
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 2025-10-15                                                                                  |
-| **Description** | Introduce BLS12-381 host function                                                           |
+| **Description** | Introduce BLS12-381 host functions                                                          |
 | **Author**      | Someone Unknown                                                                             |
 
 ## Summary
