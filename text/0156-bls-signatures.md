@@ -1,8 +1,8 @@
-# RFC-0000: Add host functions to produce and verify BLS signatures
+# RFC-0156: Add host functions to produce and verify BLS signatures
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
-| **Start Date**  | 2025-10-14                                                                                  |
+| **Start Date**  | 2025-10-15                                                                                  |
 | **Description** | Introduce BLS12-381 host function                                                           |
 | **Author**      | Someone Unknown                                                                             |
 
