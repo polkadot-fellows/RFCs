@@ -1,4 +1,4 @@
-# RFC-0156: Add host functions to produce and verify BLS signatures
+# RFC-0156: Add BLS12-381 Host Functions
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
