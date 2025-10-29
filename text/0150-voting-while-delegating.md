@@ -94,7 +94,9 @@ If a delegate's voting power can be stripped from them at any point, then there 
 
 ## Testing, Security, and Privacy
 
-This change would mean a more complicated STF for voting, which would increase difficulty of hardening. Though sufficient unit testing should handle this with ease.
+The changes herein would allow for a cost-symmetric grief in which a delegator votes on every referendum, adding more votes to the delegate's record, then accepts the lock and waits until the delegate themselves pays to remove the vote from their record-- costing the delegate `cost_of_removal_per_ref * number_of_refs_not_voted_on`. This cost will inevitably be small and accepted by aspirational delegates, considering they'll be voting on most refs anyway. However, for those who don't want to incur the possibility of this cost, we introduce a per voting class flag that toggles delegator voting on/off.
+
+In addition, these changes would mean a more complicated STF, which would increase the difficulty of hardening. Though sufficient unit testing should handle this with ease.
 
 ## Performance, Ergonomics, and Compatibility
 
