@@ -92,7 +92,7 @@ The function was returning a SCALE-encoded `Option`-wrapped 32-bit integer repre
 
 * `key` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the storage key being read;
 * `value_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the value read should be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are unchanged;
-* `value_offset` is a 32-bit offset from which the value reading should start.
+* `value_offset` is an unsigned 32-bit offset from which the value reading should start.
 
 ##### Result
 
@@ -231,7 +231,7 @@ The function was returning a SCALE-encoded `Option`-wrapped 32-bit integer repre
 * `storage_key` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the child storage key ([Definition 219](https://spec.polkadot.network/chap-host-api#defn-child-storage-type));
 * `key` is the storage key being read;
 * `value_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the value read should be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are unchanged;
-* `value_offset` is a 32-bit offset from which the value reading should start.
+* `value_offset` is an unsigned 32-bit offset from which the value reading should start.
 
 ##### Result
 
@@ -810,7 +810,7 @@ The function used to return a SCALE-encoded `Result` value in a host-allocated b
 
 `method` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the HTTP method. Possible values are “GET” and “POST”;
 `uri` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the URI;
-`meta` is a future-reserved field containing additional, SCALE-encoded parameters. Currently, an empty array should be passed.
+`meta` is a future-reserved field containing additional, SCALE-encoded parameters. Currently, its value is ignored.
 
 ##### Result
 
@@ -1027,10 +1027,12 @@ Currently, all runtime entrypoints have the following identical Wasm function si
 (func $runtime_entrypoint (param $data i32) (param $len i32) (result i64))
 ```
 
-After this RFC is implemented, such entrypoints are still supported, but considered deprecated. New entrypoints must have the following signature:
+After this RFC is implemented, such entrypoints are only supported for the legacy runtimes using the host-side allocator. All the new runtimes, using runtime-side allocator, must use new entry point signature:
 
 ```wat
 (func $runtime_entrypoint (param $len i32) (result i64))
 ```
 
 A runtime function called through such an entrypoint gets the length of SCALE-encoded input data as its only argument. After that, the function must allocate exactly the amount of bytes it is requested, and call the `ext_input_read` host function to obtain the encoded input data.
+
+If a runtime happens to import both functions that allocate on the host side and functions that allocate on the runtime side, the host must not proceed with execution of such a runtime, aborting before the execution takes place.
