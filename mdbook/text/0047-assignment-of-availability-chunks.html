@@ -1,0 +1,478 @@
+
+<!DOCTYPE HTML>
+<html lang="en" class="polkadot" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>0047 - Polkadot Fellowship RFCs</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="An online book of RFCs approved or proposed within the Polkadot Fellowship.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/polkadot.css">
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "polkadot" : "polkadot";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('polkadot')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../../../text/0001-agile-coretime.html">0001</a></li><li class="chapter-item expanded "><a href="../../../text/0005-coretime-interface.html">0005</a></li><li class="chapter-item expanded "><a href="../../../text/0007-system-collator-selection.html">0007</a></li><li class="chapter-item expanded "><a href="../../../text/0008-parachain-bootnodes-dht.html">0008</a></li><li class="chapter-item expanded "><a href="../../../text/0010-burn-coretime-revenue.html">0010</a></li><li class="chapter-item expanded "><a href="../../../text/0012-process-for-adding-new-collectives.html">0012</a></li><li class="chapter-item expanded "><a href="../../../text/0013-prepare-blockbuilder-and-core-runtime-apis-for-mbms.html">0013</a></li><li class="chapter-item expanded "><a href="../../../text/0014-improve-locking-mechanism-for-parachains.html">0014</a></li><li class="chapter-item expanded "><a href="../../../text/0022-adopt-encointer-runtime.html">0022</a></li><li class="chapter-item expanded "><a href="../../../text/0032-minimal-relay.html">0032</a></li><li class="chapter-item expanded "><a href="../../../text/0042-extrinsics-state-version.html">0042</a></li><li class="chapter-item expanded "><a href="../../../text/0043-storage-proof-size-hostfunction.html">0043</a></li><li class="chapter-item expanded "><a href="../../../text/0045-nft-deposits-asset-hub.html">0045</a></li><li class="chapter-item expanded "><a href="../../../text/0047-assignment-of-availability-chunks.html" class="active">0047</a></li><li class="chapter-item expanded "><a href="../../../text/0048-session-keys-runtime-api.html">0048</a></li><li class="chapter-item expanded "><a href="../../../text/0050-fellowship-salaries.html">0050</a></li><li class="chapter-item expanded "><a href="../../../text/0056-one-transaction-per-notification.html">0056</a></li><li class="chapter-item expanded "><a href="../../../text/0059-nodes-capabilities-discovery.html">0059</a></li><li class="chapter-item expanded "><a href="../../../text/0078-merkleized-metadata.html">0078</a></li><li class="chapter-item expanded "><a href="../../../text/0084-general-transaction-extrinsic-format.html">0084</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="polkadot">Polkadot</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Polkadot Fellowship RFCs</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="rfc-0047-assignment-of-availability-chunks-to-validators"><a class="header" href="#rfc-0047-assignment-of-availability-chunks-to-validators">RFC-0047: Assignment of availability chunks to validators</a></h1>
+<div class="table-wrapper"><table><thead><tr><th></th><th></th></tr></thead><tbody>
+<tr><td><strong>Start Date</strong></td><td>03 November 2023</td></tr>
+<tr><td><strong>Description</strong></td><td>An evenly-distributing indirection layer between availability chunks and validators.</td></tr>
+<tr><td><strong>Authors</strong></td><td>Alin Dima</td></tr>
+</tbody></table>
+</div>
+<h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
+<p>Propose a way of permuting the availability chunk indices assigned to validators, in the context of
+<a href="https://github.com/paritytech/polkadot-sdk/issues/598">recovering available data from systematic chunks</a>, with the
+purpose of fairly distributing network bandwidth usage.</p>
+<h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
+<p>Currently, the ValidatorIndex is always identical to the ChunkIndex. Since the validator array is only shuffled once
+per session, naively using the ValidatorIndex as the ChunkIndex would pose an unreasonable stress on the first N/3
+validators during an entire session, when favouring availability recovery from systematic chunks.</p>
+<p>Therefore, the relay chain node needs a deterministic way of evenly distributing the first ~(N_VALIDATORS / 3)
+systematic availability chunks to different validators, based on the relay chain block and core.
+The main purpose is to ensure fair distribution of network bandwidth usage for availability recovery in general and in
+particular for systematic chunk holders.</p>
+<h2 id="stakeholders"><a class="header" href="#stakeholders">Stakeholders</a></h2>
+<p>Relay chain node core developers.</p>
+<h2 id="explanation"><a class="header" href="#explanation">Explanation</a></h2>
+<h3 id="systematic-erasure-codes"><a class="header" href="#systematic-erasure-codes">Systematic erasure codes</a></h3>
+<p>An erasure coding algorithm is considered systematic if it preserves the original unencoded data as part of the
+resulting code.
+<a href="https://github.com/paritytech/reed-solomon-novelpoly">The implementation of the erasure coding algorithm used for polkadot's availability data</a> is systematic.
+Roughly speaking, the first N_VALIDATORS/3 chunks of data can be cheaply concatenated to retrieve the original data,
+without running the resource-intensive and time-consuming reconstruction algorithm.</p>
+<p>You can find the concatenation procedure of systematic chunks for polkadot's erasure coding algorithm
+<a href="https://github.com/paritytech/reed-solomon-novelpoly/blob/be3751093e60adc20c19967f5443158552829011/reed-solomon-novelpoly/src/novel_poly_basis/mod.rs#L247">here</a></p>
+<p>In a nutshell, it performs a column-wise concatenation with 2-byte chunks.
+The output could be zero-padded at the end, so scale decoding must be aware of the expected length in bytes and ignore
+trailing zeros (this assertion is already being made for regular reconstruction).</p>
+<h3 id="availability-recovery-at-present"><a class="header" href="#availability-recovery-at-present">Availability recovery at present</a></h3>
+<p>According to the <a href="https://spec.polkadot.network/chapter-anv#sect-candidate-recovery">polkadot protocol spec</a>:</p>
+<blockquote>
+<p>A validator should request chunks by picking peers randomly and must recover at least <code>f+1</code> chunks, where
+<code>n=3f+k</code> and <code>k in {1,2,3}</code>.</p>
+</blockquote>
+<p>For parity's polkadot node implementation, the process was further optimised. At this moment, it works differently based
+on the estimated size of the available data:</p>
+<p>(a) for small PoVs (up to 128 Kib), sequentially try requesting the unencoded data from the backing group, in a random
+order. If this fails, fallback to option (b).</p>
+<p>(b) for large PoVs (over 128 Kib), launch N parallel requests for the erasure coded chunks (currently, N has an upper
+limit of 50), until enough chunks were recovered. Validators are tried in a random order. Then, reconstruct the
+original data.</p>
+<p>All options require that after reconstruction, validators then re-encode the data and re-create the erasure chunks trie
+in order to check the erasure root.</p>
+<h3 id="availability-recovery-from-systematic-chunks"><a class="header" href="#availability-recovery-from-systematic-chunks">Availability recovery from systematic chunks</a></h3>
+<p>As part of the effort of
+<a href="https://github.com/paritytech/roadmap/issues/26">increasing polkadot's resource efficiency, scalability and performance</a>,
+work is under way to modify the Availability Recovery protocol by leveraging systematic chunks. See
+<a href="https://github.com/paritytech/polkadot-sdk/issues/598#issuecomment-1792007099">this comment</a> for preliminary
+performance results.</p>
+<p>In this scheme, the relay chain node will first attempt to retrieve the ~N/3 systematic chunks from the validators that
+should hold them, before falling back to recovering from regular chunks, as before.</p>
+<p>A re-encoding step is still needed for verifying the erasure root, so the erasure coding overhead cannot be completely
+brought down to 0.</p>
+<p>Not being able to retrieve even one systematic chunk would make systematic reconstruction impossible. Therefore, backers
+can be used as a backup to retrieve a couple of missing systematic chunks, before falling back to retrieving regular
+chunks.</p>
+<h3 id="chunk-assignment-function"><a class="header" href="#chunk-assignment-function">Chunk assignment function</a></h3>
+<h4 id="properties"><a class="header" href="#properties">Properties</a></h4>
+<p>The function that decides the chunk index for a validator will be parameterized by at least
+<code>(validator_index, core_index)</code>
+and have the following properties:</p>
+<ol>
+<li>deterministic</li>
+<li>relatively quick to compute and resource-efficient.</li>
+<li>when considering a fixed <code>core_index</code>, the function should describe a permutation of the chunk indices</li>
+<li>the validators that map to the first N/3 chunk indices should have as little overlap as possible for different cores.</li>
+</ol>
+<p>In other words, we want a uniformly distributed, deterministic mapping from <code>ValidatorIndex</code> to <code>ChunkIndex</code> per core.</p>
+<p>It's desirable to not embed this function in the runtime, for performance and complexity reasons.
+However, this means that the function needs to be kept very simple and with minimal or no external dependencies.
+Any change to this function could result in parachains being stalled and needs to be coordinated via a runtime upgrade
+or governance call.</p>
+<h4 id="proposed-function"><a class="header" href="#proposed-function">Proposed function</a></h4>
+<p>Pseudocode:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub fn get_chunk_index(
+  n_validators: u32,
+  validator_index: ValidatorIndex,
+  core_index: CoreIndex
+) -&gt; ChunkIndex {
+  let threshold = systematic_threshold(n_validators); // Roughly n_validators/3
+  let core_start_pos = core_index * threshold;
+
+  (core_start_pos + validator_index) % n_validators
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="network-protocol"><a class="header" href="#network-protocol">Network protocol</a></h3>
+<p>The request-response <code>/req_chunk</code> protocol will be bumped to a new version (from v1 to v2).
+For v1, the request and response payloads are:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>/// Request an availability chunk.
+pub struct ChunkFetchingRequest {
+	/// Hash of candidate we want a chunk for.
+	pub candidate_hash: CandidateHash,
+	/// The index of the chunk to fetch.
+	pub index: ValidatorIndex,
+}
+
+/// Receive a requested erasure chunk.
+pub enum ChunkFetchingResponse {
+	/// The requested chunk data.
+	Chunk(ChunkResponse),
+	/// Node was not in possession of the requested chunk.
+	NoSuchChunk,
+}
+
+/// This omits the chunk's index because it is already known by
+/// the requester and by not transmitting it, we ensure the requester is going to use his index
+/// value for validating the response, thus making sure he got what he requested.
+pub struct ChunkResponse {
+	/// The erasure-encoded chunk of data belonging to the candidate block.
+	pub chunk: Vec&lt;u8&gt;,
+	/// Proof for this chunk's branch in the Merkle tree.
+	pub proof: Proof,
+}
+<span class="boring">}</span></code></pre></pre>
+<p>Version 2 will add an <code>index</code> field to <code>ChunkResponse</code>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Debug, Clone, Encode, Decode)]
+pub struct ChunkResponse {
+	/// The erasure-encoded chunk of data belonging to the candidate block.
+	pub chunk: Vec&lt;u8&gt;,
+	/// Proof for this chunk's branch in the Merkle tree.
+	pub proof: Proof,
+	/// Chunk index.
+	pub index: ChunkIndex
+}
+<span class="boring">}</span></code></pre></pre>
+<p>An important thing to note is that in version 1, the <code>ValidatorIndex</code> value is always equal to the <code>ChunkIndex</code>.
+Until the chunk rotation feature is enabled, this will also be true for version 2. However, after the feature is
+enabled, this will generally not be true.</p>
+<p>The requester will send the request to validator with index <code>V</code>. The responder will map the <code>V</code> validator index to the
+<code>C</code> chunk index and respond with the <code>C</code>-th chunk. This mapping can be seamless, by having each validator store their
+chunk by <code>ValidatorIndex</code> (just as before).</p>
+<p>The protocol implementation MAY check the returned <code>ChunkIndex</code> against the expected mapping to ensure that
+it received the right chunk.
+In practice, this is desirable during availability-distribution and systematic chunk recovery. However, regular
+recovery may not check this index, which is particularly useful when participating in disputes that don't allow
+for easy access to the validator-&gt;chunk mapping. See <a href="#appendix-a">Appendix A</a> for more details.</p>
+<p>In any case, the requester MUST verify the chunk's proof using the provided index.</p>
+<p>During availability-recovery, given that the requester may not know (if the mapping is not available) whether the
+received chunk corresponds to the requested validator index, it has to keep track of received chunk indices and ignore
+duplicates. Such duplicates should be considered the same as an invalid/garbage response (drop it and move on to the
+next validator - we can't punish via reputation changes, because we don't know which validator misbehaved).</p>
+<h3 id="upgrade-path"><a class="header" href="#upgrade-path">Upgrade path</a></h3>
+<h4 id="step-1-enabling-new-network-protocol"><a class="header" href="#step-1-enabling-new-network-protocol">Step 1: Enabling new network protocol</a></h4>
+<p>In the beginning, both <code>/req_chunk/1</code> and <code>/req_chunk/2</code> will be supported, until all validators and
+collators have upgraded to use the new version. V1 will be considered deprecated. During this step, the mapping will
+still be 1:1 (<code>ValidatorIndex</code> == <code>ChunkIndex</code>), regardless of protocol.
+Once all nodes are upgraded, a new release will be cut that removes the v1 protocol. Only once all nodes have upgraded
+to this version will step 2 commence.</p>
+<h4 id="step-2-enabling-the-new-validator-chunk-mapping"><a class="header" href="#step-2-enabling-the-new-validator-chunk-mapping">Step 2: Enabling the new validator-&gt;chunk mapping</a></h4>
+<p>Considering that the Validator-&gt;Chunk mapping is critical to para consensus, the change needs to be enacted atomically
+via governance, only after all validators have upgraded the node to a version that is aware of this mapping,
+functionality-wise.
+It needs to be explicitly stated that after the governance enactment, validators that run older client versions that
+don't support this mapping will not be able to participate in parachain consensus.</p>
+<p>Additionally, an error will be logged when starting a validator with an older version, after the feature was enabled.</p>
+<p>On the other hand, collators will not be required to upgrade in this step (but are still require to upgrade for step 1),
+as regular chunk recovery will work as before, granted that version 1 of the networking protocol has been removed.
+Note that collators only perform availability-recovery in rare, adversarial scenarios, so it is fine to not optimise for
+this case and let them upgrade at their own pace.</p>
+<p>To support enabling this feature via the runtime, we will use the <code>NodeFeatures</code> bitfield of the <code>HostConfiguration</code>
+struct (added in <code>https://github.com/paritytech/polkadot-sdk/pull/2177</code>). Adding and enabling a feature
+with this scheme does not require a runtime upgrade, but only a referendum that issues a
+<code>Configuration::set_node_feature</code> extrinsic. Once the feature is enabled and new configuration is live, the
+validator-&gt;chunk mapping ceases to be a 1:1 mapping and systematic recovery may begin.</p>
+<h2 id="drawbacks"><a class="header" href="#drawbacks">Drawbacks</a></h2>
+<ul>
+<li>Getting access to the <code>core_index</code> that used to be occupied by a candidate in some parts of the dispute protocol is
+very complicated (See <a href="#appendix-a">appendix A</a>). This RFC assumes that availability-recovery processes initiated during
+disputes will only use regular recovery, as before. This is acceptable since disputes are rare occurrences in practice
+and is something that can be optimised later, if need be. Adding the <code>core_index</code> to the <code>CandidateReceipt</code> would
+mitigate this problem and will likely be needed in the future for CoreJam and/or Elastic scaling.
+<a href="https://forum.polkadot.network/t/pre-rfc-discussion-candidate-receipt-format-v2/3738">Related discussion about updating <code>CandidateReceipt</code></a></li>
+<li>It's a breaking change that requires all validators and collators to upgrade their node version at least once.</li>
+</ul>
+<h2 id="testing-security-and-privacy"><a class="header" href="#testing-security-and-privacy">Testing, Security, and Privacy</a></h2>
+<p>Extensive testing will be conducted - both automated and manual.
+This proposal doesn't affect security or privacy.</p>
+<h2 id="performance-ergonomics-and-compatibility"><a class="header" href="#performance-ergonomics-and-compatibility">Performance, Ergonomics, and Compatibility</a></h2>
+<h3 id="performance"><a class="header" href="#performance">Performance</a></h3>
+<p>This is a necessary data availability optimisation, as reed-solomon erasure coding has proven to be a top consumer of
+CPU time in polkadot as we scale up the parachain block size and number of availability cores.</p>
+<p>With this optimisation, preliminary performance results show that CPU time used for reed-solomon coding/decoding can be
+halved and total POV recovery time decrease by 80% for large POVs. See more
+<a href="https://github.com/paritytech/polkadot-sdk/issues/598#issuecomment-1792007099">here</a>.</p>
+<h3 id="ergonomics"><a class="header" href="#ergonomics">Ergonomics</a></h3>
+<p>Not applicable.</p>
+<h3 id="compatibility"><a class="header" href="#compatibility">Compatibility</a></h3>
+<p>This is a breaking change. See <a href="#upgrade-path">upgrade path</a> section above.
+All validators and collators need to have upgraded their node versions before the feature will be enabled via a
+governance call.</p>
+<h2 id="prior-art-and-references"><a class="header" href="#prior-art-and-references">Prior Art and References</a></h2>
+<p>See comments on the <a href="https://github.com/paritytech/polkadot-sdk/issues/598">tracking issue</a> and the
+<a href="https://github.com/paritytech/polkadot-sdk/pull/1644">in-progress PR</a></p>
+<h2 id="unresolved-questions"><a class="header" href="#unresolved-questions">Unresolved Questions</a></h2>
+<p>Not applicable.</p>
+<h2 id="future-directions-and-related-material"><a class="header" href="#future-directions-and-related-material">Future Directions and Related Material</a></h2>
+<p>This enables future optimisations for the performance of availability recovery, such as retrieving batched systematic
+chunks from backers/approval-checkers.</p>
+<h2 id="appendix-a"><a class="header" href="#appendix-a">Appendix A</a></h2>
+<p>This appendix details the intricacies of getting access to the core index of a candidate in parity's polkadot node.</p>
+<p>Here, <code>core_index</code> refers to the index of the core that a candidate was occupying while it was pending availability
+(from backing to inclusion).</p>
+<p>Availability-recovery can currently be triggered by the following phases in the polkadot protocol:</p>
+<ol>
+<li>During the approval voting process.</li>
+<li>By other collators of the same parachain.</li>
+<li>During disputes.</li>
+</ol>
+<p>Getting the right core index for a candidate can be troublesome. Here's a breakdown of how different parts of the
+node implementation can get access to it:</p>
+<ol>
+<li>
+<p>The approval-voting process for a candidate begins after observing that the candidate was included. Therefore, the
+node has easy access to the block where the candidate got included (and also the core that it occupied).</p>
+</li>
+<li>
+<p>The <code>pov_recovery</code> task of the collators starts availability recovery in response to noticing a candidate getting
+backed, which enables easy access to the core index the candidate started occupying.</p>
+</li>
+<li>
+<p>Disputes may be initiated on a number of occasions:</p>
+<p>3.a. is initiated by the validator as a result of finding an invalid candidate while participating in the
+approval-voting protocol. In this case, availability-recovery is not needed, since the validator already issued their
+vote.</p>
+<p>3.b is initiated by the validator noticing dispute votes recorded on-chain. In this case, we can safely
+assume that the backing event for that candidate has been recorded and kept in memory.</p>
+<p>3.c is initiated as a result of getting a dispute statement from another validator. It is possible that the dispute
+is happening on a fork that was not yet imported by this validator, so the subsystem may not have seen this candidate
+being backed.</p>
+</li>
+</ol>
+<p>A naive attempt of solving 3.c would be to add a new version for the disputes request-response networking protocol.
+Blindly passing the core index in the network payload would not work, since there is no way of validating that
+the reported core_index was indeed the one occupied by the candidate at the respective relay parent.</p>
+<p>Another attempt could be to include in the message the relay block hash where the candidate was included.
+This information would be used in order to query the runtime API and retrieve the core index that the candidate was
+occupying. However, considering it's part of an unimported fork, the validator cannot call a runtime API on that block.</p>
+<p>Adding the <code>core_index</code> to the <code>CandidateReceipt</code> would solve this problem and would enable systematic recovery for all
+dispute scenarios.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../../text/0045-nft-deposits-asset-hub.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../../text/0048-session-keys-runtime-api.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../../text/0045-nft-deposits-asset-hub.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../../text/0048-session-keys-runtime-api.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

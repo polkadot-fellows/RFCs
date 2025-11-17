@@ -1,0 +1,271 @@
+
+<!DOCTYPE HTML>
+<html lang="en" class="polkadot" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>0084 - Polkadot Fellowship RFCs</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="An online book of RFCs approved or proposed within the Polkadot Fellowship.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/polkadot.css">
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "polkadot" : "polkadot";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('polkadot')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../../../text/0001-agile-coretime.html">0001</a></li><li class="chapter-item expanded "><a href="../../../text/0005-coretime-interface.html">0005</a></li><li class="chapter-item expanded "><a href="../../../text/0007-system-collator-selection.html">0007</a></li><li class="chapter-item expanded "><a href="../../../text/0008-parachain-bootnodes-dht.html">0008</a></li><li class="chapter-item expanded "><a href="../../../text/0010-burn-coretime-revenue.html">0010</a></li><li class="chapter-item expanded "><a href="../../../text/0012-process-for-adding-new-collectives.html">0012</a></li><li class="chapter-item expanded "><a href="../../../text/0013-prepare-blockbuilder-and-core-runtime-apis-for-mbms.html">0013</a></li><li class="chapter-item expanded "><a href="../../../text/0014-improve-locking-mechanism-for-parachains.html">0014</a></li><li class="chapter-item expanded "><a href="../../../text/0022-adopt-encointer-runtime.html">0022</a></li><li class="chapter-item expanded "><a href="../../../text/0032-minimal-relay.html">0032</a></li><li class="chapter-item expanded "><a href="../../../text/0042-extrinsics-state-version.html">0042</a></li><li class="chapter-item expanded "><a href="../../../text/0043-storage-proof-size-hostfunction.html">0043</a></li><li class="chapter-item expanded "><a href="../../../text/0045-nft-deposits-asset-hub.html">0045</a></li><li class="chapter-item expanded "><a href="../../../text/0047-assignment-of-availability-chunks.html">0047</a></li><li class="chapter-item expanded "><a href="../../../text/0048-session-keys-runtime-api.html">0048</a></li><li class="chapter-item expanded "><a href="../../../text/0050-fellowship-salaries.html">0050</a></li><li class="chapter-item expanded "><a href="../../../text/0056-one-transaction-per-notification.html">0056</a></li><li class="chapter-item expanded "><a href="../../../text/0059-nodes-capabilities-discovery.html">0059</a></li><li class="chapter-item expanded "><a href="../../../text/0078-merkleized-metadata.html">0078</a></li><li class="chapter-item expanded "><a href="../../../text/0084-general-transaction-extrinsic-format.html" class="active">0084</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="polkadot">Polkadot</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Polkadot Fellowship RFCs</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="rfc-0084-general-transactions-in-extrinsic-format"><a class="header" href="#rfc-0084-general-transactions-in-extrinsic-format">RFC-0084: General transactions in extrinsic format</a></h1>
+<div class="table-wrapper"><table><thead><tr><th></th><th></th></tr></thead><tbody>
+<tr><td><strong>Start Date</strong></td><td>12 March 2024</td></tr>
+<tr><td><strong>Description</strong></td><td>Support more extrinsic types by updating the extrinsic format</td></tr>
+<tr><td><strong>Authors</strong></td><td>George Pisaltu</td></tr>
+</tbody></table>
+</div>
+<h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
+<p>This RFC proposes a change to the extrinsic format to incorporate a new transaction type, the "general" transaction.</p>
+<h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
+<p>"General" transactions, a new type of transaction that this RFC aims to support, are transactions which obey the runtime's extensions and have according extension data yet do not have hard-coded signatures. They are first described in <a href="https://github.com/paritytech/polkadot-sdk/issues/2415">Extrinsic Horizon</a> and supported in <a href="https://github.com/paritytech/polkadot-sdk/pull/3685">3685</a>. They enable users to authorize origins in new, more flexible ways (e.g. ZK proofs, mutations over pre-authenticated origins). As of now, all transactions are limited to the account signing model for origin authorization and any additional origin changes happen in extrinsic logic, which cannot leverage the validation process of extensions.</p>
+<p>An example of a use case for such an extension would be sponsoring the transaction fee for some other user. A new extension would be put in place to verify that a part of the initial payload was signed by the author under who the extrinsic should run and change the origin, but the payment for the whole transaction should be handled under a sponsor's account. A POC for this can be found in <a href="https://github.com/paritytech/polkadot-sdk/pull/3712">3712</a>.</p>
+<p>The new "general" transaction type would coexist with both current transaction types for a while and, therefore, the current number of supported transaction types, capped at 2, is insufficient. A new extrinsic type must be introduced alongside the current signed and unsigned types. Currently, an encoded extrinsic's first byte indicate the type of extrinsic using the most significant bit - <code>0</code> for unsigned, <code>1</code> for signed - and the 7 following bits indicate the <a href="https://spec.polkadot.network/id-extrinsics#id-extrinsics-body">extrinsic format version</a>, which has been equal to <code>4</code> for a long time.</p>
+<p>By taking one bit from the extrinsic format version encoding, we can support 2 additional extrinsic types while also having a minimal impact on our capability to extend and change the extrinsic format in the future.</p>
+<h2 id="stakeholders"><a class="header" href="#stakeholders">Stakeholders</a></h2>
+<ul>
+<li>Runtime users</li>
+<li>Runtime devs</li>
+<li>Wallet devs</li>
+</ul>
+<h2 id="explanation"><a class="header" href="#explanation">Explanation</a></h2>
+<p>An extrinsic is currently encoded as one byte to identify the extrinsic type and version. This RFC aims to change the interpretation of this byte regarding the reserved bits for the extrinsic type and version. In the following explanation, bits represented using <code>T</code> make up the extrinsic type and bits represented using <code>V</code> make up the extrinsic version.</p>
+<p>Currently, the bit allocation within the leading encoded byte is <code>0bTVVV_VVVV</code>. In practice in the Polkadot ecosystem, the leading byte would be <code>0bT000_0100</code> as the version has been equal to <code>4</code> for a long time.</p>
+<p>This RFC proposes for the bit allocation to change to <code>0bTTVV_VVVV</code>. As a result, the extrinsic format version will be bumped to <code>5</code> and the extrinsic type bit representation would change as follows:</p>
+<div class="table-wrapper"><table><thead><tr><th>bits</th><th>type</th></tr></thead><tbody>
+<tr><td>00</td><td>unsigned</td></tr>
+<tr><td>10</td><td>signed</td></tr>
+<tr><td>01</td><td>reserved</td></tr>
+<tr><td>11</td><td>reserved</td></tr>
+</tbody></table>
+</div>
+<h2 id="drawbacks"><a class="header" href="#drawbacks">Drawbacks</a></h2>
+<p>This change would reduce the maximum possible transaction version from the current <code>127</code> to <code>63</code>. In order to bypass the new, lower limit, the extrinsic format would have to change again.</p>
+<h2 id="testing-security-and-privacy"><a class="header" href="#testing-security-and-privacy">Testing, Security, and Privacy</a></h2>
+<p>There is no impact on testing, security or privacy.</p>
+<h2 id="performance-ergonomics-and-compatibility"><a class="header" href="#performance-ergonomics-and-compatibility">Performance, Ergonomics, and Compatibility</a></h2>
+<p>This change would allow Polkadot to support new types of transactions, with the specific "general" transaction type in mind at the time of writing this proposal.</p>
+<h3 id="performance"><a class="header" href="#performance">Performance</a></h3>
+<p>There is no performance impact.</p>
+<h3 id="ergonomics"><a class="header" href="#ergonomics">Ergonomics</a></h3>
+<p>The impact to developers and end-users is minimal as it would just be a bitmask update on their part for parsing the extrinsic type along with the version.</p>
+<h3 id="compatibility"><a class="header" href="#compatibility">Compatibility</a></h3>
+<p>This change breaks backwards compatiblity because any transaction that is neither signed nor unsigned, but a new transaction type, would be interpreted as having a future extrinsic format version.</p>
+<h2 id="prior-art-and-references"><a class="header" href="#prior-art-and-references">Prior Art and References</a></h2>
+<p>The original design was originally proposed in the <a href="https://github.com/paritytech/polkadot-sdk/pull/2280"><code>TransactionExtension</code> PR</a>, which is also the motivation behind this effort.</p>
+<h2 id="unresolved-questions"><a class="header" href="#unresolved-questions">Unresolved Questions</a></h2>
+<p>None.</p>
+<h2 id="future-directions-and-related-material"><a class="header" href="#future-directions-and-related-material">Future Directions and Related Material</a></h2>
+<p>Following this change, the "general" transaction type will be introduced as part of the <a href="https://github.com/paritytech/polkadot-sdk/issues/2415">Extrinsic Horizon</a> effort, which will shape future work.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../../text/0078-merkleized-metadata.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../../text/0078-merkleized-metadata.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

@@ -1,0 +1,313 @@
+
+<!DOCTYPE HTML>
+<html lang="en" class="polkadot" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>0012 - Polkadot Fellowship RFCs</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="An online book of RFCs approved or proposed within the Polkadot Fellowship.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/polkadot.css">
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "polkadot" : "polkadot";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('polkadot')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../../../text/0001-agile-coretime.html">0001</a></li><li class="chapter-item expanded "><a href="../../../text/0005-coretime-interface.html">0005</a></li><li class="chapter-item expanded "><a href="../../../text/0007-system-collator-selection.html">0007</a></li><li class="chapter-item expanded "><a href="../../../text/0008-parachain-bootnodes-dht.html">0008</a></li><li class="chapter-item expanded "><a href="../../../text/0010-burn-coretime-revenue.html">0010</a></li><li class="chapter-item expanded "><a href="../../../text/0012-process-for-adding-new-collectives.html" class="active">0012</a></li><li class="chapter-item expanded "><a href="../../../text/0013-prepare-blockbuilder-and-core-runtime-apis-for-mbms.html">0013</a></li><li class="chapter-item expanded "><a href="../../../text/0014-improve-locking-mechanism-for-parachains.html">0014</a></li><li class="chapter-item expanded "><a href="../../../text/0022-adopt-encointer-runtime.html">0022</a></li><li class="chapter-item expanded "><a href="../../../text/0032-minimal-relay.html">0032</a></li><li class="chapter-item expanded "><a href="../../../text/0042-extrinsics-state-version.html">0042</a></li><li class="chapter-item expanded "><a href="../../../text/0043-storage-proof-size-hostfunction.html">0043</a></li><li class="chapter-item expanded "><a href="../../../text/0045-nft-deposits-asset-hub.html">0045</a></li><li class="chapter-item expanded "><a href="../../../text/0047-assignment-of-availability-chunks.html">0047</a></li><li class="chapter-item expanded "><a href="../../../text/0048-session-keys-runtime-api.html">0048</a></li><li class="chapter-item expanded "><a href="../../../text/0050-fellowship-salaries.html">0050</a></li><li class="chapter-item expanded "><a href="../../../text/0056-one-transaction-per-notification.html">0056</a></li><li class="chapter-item expanded "><a href="../../../text/0059-nodes-capabilities-discovery.html">0059</a></li><li class="chapter-item expanded "><a href="../../../text/0078-merkleized-metadata.html">0078</a></li><li class="chapter-item expanded "><a href="../../../text/0084-general-transaction-extrinsic-format.html">0084</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="polkadot">Polkadot</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Polkadot Fellowship RFCs</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="rfc-0012-process-for-adding-new-system-collectives"><a class="header" href="#rfc-0012-process-for-adding-new-system-collectives">RFC-0012: Process for Adding New System Collectives</a></h1>
+<div class="table-wrapper"><table><thead><tr><th></th><th></th></tr></thead><tbody>
+<tr><td><strong>Start Date</strong></td><td>24 July 2023</td></tr>
+<tr><td><strong>Description</strong></td><td>A process for adding new (and removing existing) system collectives.</td></tr>
+<tr><td><strong>Authors</strong></td><td>Joe Petrowski</td></tr>
+</tbody></table>
+</div>
+<h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
+<p>Since the introduction of the Collectives parachain, many groups have expressed interest in forming
+new -- or migrating existing groups into -- on-chain collectives. While adding a new collective is
+relatively simple from a technical standpoint, the Fellowship will need to merge new pallets into
+the Collectives parachain for each new collective. This RFC proposes a means for the network to
+ratify a new collective, thus instructing the Fellowship to instate it in the runtime.</p>
+<h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
+<p>Many groups have expressed interest in representing collectives on-chain. Some of these include:</p>
+<ul>
+<li>Parachain technical fellowship (new)</li>
+<li>Fellowship(s) for media, education, and evangelism (new)</li>
+<li>Polkadot Ambassador Program (existing)</li>
+<li>Anti-Scam Team (existing)</li>
+</ul>
+<p>Collectives that form part of the core Polkadot protocol should have a mandate to serve the
+Polkadot network. However, as part of the Polkadot protocol, the Fellowship, in its capacity of
+maintaining system runtimes, will need to include modules and configurations for each collective.</p>
+<p>Once a group has developed a value proposition for the Polkadot network, it should have a clear
+path to having its collective accepted on-chain as part of the protocol. Acceptance should direct
+the Fellowship to include the new collective with a given initial configuration into the runtime.
+However, the network, not the Fellowship, should ultimately decide which collectives are in the
+interest of the network.</p>
+<h2 id="stakeholders"><a class="header" href="#stakeholders">Stakeholders</a></h2>
+<ul>
+<li>Polkadot stakeholders who would like to organize on-chain.</li>
+<li>Technical Fellowship, in its role of maintaining system runtimes.</li>
+</ul>
+<h2 id="explanation"><a class="header" href="#explanation">Explanation</a></h2>
+<p>The group that wishes to operate an on-chain collective should publish the following information:</p>
+<ul>
+<li>Charter, including the collective's mandate and how it benefits Polkadot. This would be similar
+to the
+<a href="https://github.com/polkadot-fellows/manifesto/blob/0c3df46/manifesto.pdf">Fellowship Manifesto</a>.</li>
+<li>Seeding recommendation.</li>
+<li>Member types, i.e. should members be individuals or organizations.</li>
+<li>Member management strategy, i.e. how do members join and get promoted, if applicable.</li>
+<li>How much, if at all, members should get paid in salary.</li>
+<li>Any special origins this Collective should have outside its self. For example, the Fellowship
+can whitelist calls for referenda via the <code>WhitelistOrigin</code>.</li>
+</ul>
+<p>This information could all be in a single document or, for example, a GitHub repository.</p>
+<p>After publication, members should seek feedback from the community and Technical Fellowship, and
+make any revisions needed. When the collective believes the proposal is ready, they should bring a
+remark with the text <code>APPROVE_COLLECTIVE("{collective name}, {commitment}")</code> to a Root origin
+referendum. The proposer should provide instructions for generating <code>commitment</code>. The passing of
+this referendum would be unequivocal direction to the Fellowship that this collective should be
+part of the Polkadot runtime.</p>
+<p>Note: There is no need for a <code>REJECT</code> referendum. Proposals that have not been approved are simply
+not included in the runtime.</p>
+<h3 id="removing-collectives"><a class="header" href="#removing-collectives">Removing Collectives</a></h3>
+<p>If someone believes that an existing collective is not acting in the interest of the network or in
+accordance with its charter, they should likewise have a means to instruct the Fellowship to
+<em>remove</em> that collective from Polkadot.</p>
+<p>An on-chain remark from the Root origin with the text
+<code>REMOVE_COLLECTIVE("{collective name}, {para ID}, [{pallet indices}]")</code> would instruct the
+Fellowship to remove the collective via the listed pallet indices on <code>paraId</code>. Should someone want
+to construct such a remark, they should have a reasonable expectation that a member of the
+Fellowship would help them identify the pallet indices associated with a given collective, whether
+or not the Fellowship member agrees with removal.</p>
+<p>Collective removal may also come with other governance calls, for example voiding any scheduled
+Treasury spends that would fund the given collective.</p>
+<h2 id="drawbacks"><a class="header" href="#drawbacks">Drawbacks</a></h2>
+<p>Passing a Root origin referendum is slow. However, given the network's investment (in terms of code
+maintenance and salaries) in a new collective, this is an appropriate step.</p>
+<h2 id="testing-security-and-privacy"><a class="header" href="#testing-security-and-privacy">Testing, Security, and Privacy</a></h2>
+<p>No impacts.</p>
+<h2 id="performance-ergonomics-and-compatibility"><a class="header" href="#performance-ergonomics-and-compatibility">Performance, Ergonomics, and Compatibility</a></h2>
+<p>Generally all new collectives will be in the Collectives parachain. Thus, performance impacts
+should strictly be limited to this parachain and not affect others. As the majority of logic for
+collectives is generalized and reusable, we expect most collectives to be instances of similar
+subsets of modules. That is, new collectives should generally be compatible with UIs and other
+services that provide collective-related functionality, with little modifications to support new
+ones.</p>
+<h2 id="prior-art-and-references"><a class="header" href="#prior-art-and-references">Prior Art and References</a></h2>
+<p>The launch of the Technical Fellowship, see the
+<a href="https://forum.polkadot.network/t/calling-polkadot-core-developers/506">initial forum post</a>.</p>
+<h2 id="unresolved-questions"><a class="header" href="#unresolved-questions">Unresolved Questions</a></h2>
+<p>None at this time.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../../text/0010-burn-coretime-revenue.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../../text/0013-prepare-blockbuilder-and-core-runtime-apis-for-mbms.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../../text/0010-burn-coretime-revenue.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../../text/0013-prepare-blockbuilder-and-core-runtime-apis-for-mbms.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

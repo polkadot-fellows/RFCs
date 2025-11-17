@@ -4,7 +4,7 @@ description = "An online book of RFCs approved or proposed within the Polkadot F
 src = "src"
 
 [build]
-create-missing = false
+create-missing = true
 
 [output.html]
 additional-css = ["theme/polkadot.css"]
@@ -16,6 +16,15 @@ no-section-label = true
 [output.html.font]
 enable = true
 woff = true
+
+[output.pdf]
+print-background=false
+margin-top=0.5
+margin-left=0.5
+margin-bottom=0.5
+margin-right=0.5
+paper-width=8.3
+paper-height=11.7
 
 [preprocessor.toc]
 command = "mdbook-toc"

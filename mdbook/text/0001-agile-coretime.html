@@ -1,0 +1,720 @@
+
+<!DOCTYPE HTML>
+<html lang="en" class="polkadot" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>0001 - Polkadot Fellowship RFCs</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="An online book of RFCs approved or proposed within the Polkadot Fellowship.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/polkadot.css">
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "polkadot" : "polkadot";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('polkadot')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../../../text/0001-agile-coretime.html" class="active">0001</a></li><li class="chapter-item expanded "><a href="../../../text/0005-coretime-interface.html">0005</a></li><li class="chapter-item expanded "><a href="../../../text/0007-system-collator-selection.html">0007</a></li><li class="chapter-item expanded "><a href="../../../text/0008-parachain-bootnodes-dht.html">0008</a></li><li class="chapter-item expanded "><a href="../../../text/0010-burn-coretime-revenue.html">0010</a></li><li class="chapter-item expanded "><a href="../../../text/0012-process-for-adding-new-collectives.html">0012</a></li><li class="chapter-item expanded "><a href="../../../text/0013-prepare-blockbuilder-and-core-runtime-apis-for-mbms.html">0013</a></li><li class="chapter-item expanded "><a href="../../../text/0014-improve-locking-mechanism-for-parachains.html">0014</a></li><li class="chapter-item expanded "><a href="../../../text/0022-adopt-encointer-runtime.html">0022</a></li><li class="chapter-item expanded "><a href="../../../text/0032-minimal-relay.html">0032</a></li><li class="chapter-item expanded "><a href="../../../text/0042-extrinsics-state-version.html">0042</a></li><li class="chapter-item expanded "><a href="../../../text/0043-storage-proof-size-hostfunction.html">0043</a></li><li class="chapter-item expanded "><a href="../../../text/0045-nft-deposits-asset-hub.html">0045</a></li><li class="chapter-item expanded "><a href="../../../text/0047-assignment-of-availability-chunks.html">0047</a></li><li class="chapter-item expanded "><a href="../../../text/0048-session-keys-runtime-api.html">0048</a></li><li class="chapter-item expanded "><a href="../../../text/0050-fellowship-salaries.html">0050</a></li><li class="chapter-item expanded "><a href="../../../text/0056-one-transaction-per-notification.html">0056</a></li><li class="chapter-item expanded "><a href="../../../text/0059-nodes-capabilities-discovery.html">0059</a></li><li class="chapter-item expanded "><a href="../../../text/0078-merkleized-metadata.html">0078</a></li><li class="chapter-item expanded "><a href="../../../text/0084-general-transaction-extrinsic-format.html">0084</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="polkadot">Polkadot</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Polkadot Fellowship RFCs</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="rfc-1-agile-coretime"><a class="header" href="#rfc-1-agile-coretime">RFC-1: Agile Coretime</a></h1>
+<div class="table-wrapper"><table><thead><tr><th></th><th></th></tr></thead><tbody>
+<tr><td><strong>Start Date</strong></td><td>30 June 2023</td></tr>
+<tr><td><strong>Description</strong></td><td>Agile periodic-sale-based model for assigning Coretime on the Polkadot Ubiquitous Computer.</td></tr>
+<tr><td><strong>Authors</strong></td><td>Gavin Wood</td></tr>
+</tbody></table>
+</div>
+<h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
+<p>This proposes a periodic, sale-based method for assigning Polkadot Coretime, the analogue of "block space" within the Polkadot Network. The method takes into account the need for long-term capital expenditure planning for teams building on Polkadot, yet also provides a means to allow Polkadot to capture long-term value in the resource which it sells. It supports the possibility of building rich and dynamic secondary markets to optimize resource allocation and largely avoids the need for parameterization.</p>
+<h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
+<h3 id="present-system"><a class="header" href="#present-system">Present System</a></h3>
+<p>The <em>Polkadot Ubiquitous Computer</em>, or just <em>Polkadot UC</em>, represents the public service provided by the Polkadot Network. It is a trust-free, WebAssembly-based, multicore, internet-native omnipresent virtual machine which is highly resilient to interference and corruption.</p>
+<p>The present system of allocating the limited resources of the Polkadot Ubiquitous Computer is through a process known as <em>parachain slot auctions</em>. This is a parachain-centric paradigm whereby a single core is long-term allocated to a single parachain which itself implies a Substrate/Cumulus-based chain secured and connected via the Relay-chain. Slot auctions are on-chain candle auctions which proceed for several days and result in the core being assigned to the parachain for six months at a time up to 24 months in advance. Practically speaking, we only see two year periods being bid upon and leased.</p>
+<p>Funds behind the bids made in the slot auctions are merely locked, they are not consumed or paid and become unlocked and returned to the bidder on expiry of the lease period. A means of sharing the deposit trustlessly known as a <em>crowdloan</em> is available allowing token holders to contribute to the overall deposit of a chain without any counterparty risk.</p>
+<h3 id="problems"><a class="header" href="#problems">Problems</a></h3>
+<p>The present system is based on a model of one-core-per-parachain. This is a legacy interpretation of the Polkadot platform and is not a reflection of its present capabilities. By restricting ownership and usage to this model, more dynamic and resource-efficient means of utilizing the Polkadot Ubiquitous Computer are lost.</p>
+<p>More specifically, it is impossible to lease out cores at anything less than six months, and apparently unrealistic to do so at anything less than two years. This removes the ability to dynamically manage the underlying resource, and generally experimentation, iteration and innovation suffer. It bakes into the platform an assumption of permanence for anything deployed into it and restricts the market's ability to find a more optimal allocation of the finite resource.</p>
+<p>There is no ability to determine capital requirements for hosting a parachain beyond two years from the point of its initial deployment onto Polkadot. While it would be unreasonable to have perfect and indefinite cost predictions for any real-world platform, not having any clarity whatsoever beyond "market rates" two years hence can be a very off-putting prospect for teams to buy into.</p>
+<p>However, quite possibly the most substantial problem is both a perceived and often real high barrier to entry of the Polkadot ecosystem. By forcing innovators to either raise seven-figure sums through investors or appeal to the wider token-holding community, Polkadot makes it difficult for a small band of innovators to deploy their technology into Polkadot. While not being actually permissioned, it is also far from the barrierless, permissionless ideal which an innovation platform such as Polkadot should be striving for.</p>
+<h2 id="requirements"><a class="header" href="#requirements">Requirements</a></h2>
+<ol>
+<li>The solution SHOULD provide an acceptable value-capture mechanism for the Polkadot network.</li>
+<li>The solution SHOULD allow parachains and other projects deployed on to the Polkadot UC to make long-term capital expenditure predictions for the cost of ongoing deployment.</li>
+<li>The solution SHOULD minimize the barriers to entry in the ecosystem.</li>
+<li>The solution SHOULD work well when the Polkadot UC has up to 1,000 cores.</li>
+<li>The solution SHOULD work when the number of cores which the Polkadot UC can support changes over time.</li>
+<li>The solution SHOULD facilitate the optimal allocation of work to cores of the Polkadot UC, including by facilitating the trade of regular core assignment at various intervals and for various spans.</li>
+<li>The solution SHOULD avoid creating additional dependencies on functionality which the Relay-chain need not strictly provide for the delivery of the Polkadot UC.</li>
+</ol>
+<p>Furthermore, the design SHOULD be implementable and deployable in a timely fashion; three months from the acceptance of this RFC should not be unreasonable.</p>
+<h2 id="stakeholders"><a class="header" href="#stakeholders">Stakeholders</a></h2>
+<p>Primary stakeholder sets are:</p>
+<ul>
+<li>Protocol researchers and developers, largely represented by the Polkadot Fellowship and Parity Technologies' Engineering division.</li>
+<li>Polkadot Parachain teams both present and future, and their users.</li>
+<li>Polkadot DOT token holders.</li>
+</ul>
+<p><em>Socialization:</em></p>
+<p>The essensials of this proposal were presented at Polkadot Decoded 2023 Copenhagen on the Main Stage. A small amount of socialization at the Parachain Summit preceeded it and some substantial discussion followed it. Parity Ecosystem team is currently soliciting views from ecosystem teams who would be key stakeholders.</p>
+<h2 id="explanation"><a class="header" href="#explanation">Explanation</a></h2>
+<h3 id="overview"><a class="header" href="#overview">Overview</a></h3>
+<p>Upon implementation of this proposal, the parachain-centric slot auctions and associated crowdloans cease. Instead, Coretime on the Polkadot UC is sold by the Polkadot System in two separate formats: <em>Bulk Coretime</em> and <em>Instantaneous Coretime</em>.</p>
+<p>When a Polkadot Core is utilized, we say it is dedicated to a <em>Task</em> rather than a "parachain". The Task to which a Core is dedicated may change at every Relay-chain block and while one predominant type of Task is to secure a Cumulus-based blockchain (i.e. a parachain), other types of Tasks are envisioned.</p>
+<p>Bulk Coretime is sold periodically on a specialised system chain known as the <em>Coretime-chain</em> and allocated in advance of its usage, whereas Instantaneous Coretime is sold on the Relay-chain immediately prior to usage on a block-by-block basis.</p>
+<p>This proposal does not fix what should be done with revenue from sales of Coretime and leaves it for a further RFC process.</p>
+<p>Owners of Bulk Coretime are tracked on the Coretime-chain and the ownership status and properties of the owned Coretime are exposed over XCM as a non-fungible asset.</p>
+<p>At the request of the owner, the Coretime-chain allows a single Bulk Coretime asset, known as a <em>Region</em>, to be used in various ways including transferal to another owner, allocated to a particular task (e.g. a parachain) or placed in the Instantaneous Coretime Pool. Regions can also be split out, either into non-overlapping sub-spans or exactly-overlapping spans with less regularity.</p>
+<p>The Coretime-Chain periodically instructs the Relay-chain to assign its cores to alternative tasks as and when Core allocations change due to new Regions coming into effect.</p>
+<h4 id="renewal-and-migration"><a class="header" href="#renewal-and-migration">Renewal and Migration</a></h4>
+<p>There is a renewal system which allows a Bulk Coretime assignment of a single core to be renewed unchanged with a known price increase from month to month. Renewals are processed in a period prior to regular purchases, effectively giving them precedence over a fixed number of cores available.</p>
+<p>Renewals are only enabled when a core's assignment does not include an Instantaneous Coretime allocation and has not been split into shorter segments.</p>
+<p>Thus, renewals are designed to ensure only that committed parachains get some guarantees about price for predicting future costs. This price-capped renewal system only allows cores to be reused for their same tasks from month to month. In any other context, Bulk Coretime would need to be purchased regularly.</p>
+<p>As a migration mechanism, pre-existing leases (from the legacy lease/slots/crowdloan framework) are initialized into the Coretime-chain and cores assigned to them prior to Bulk Coretime sales. In the sale where the lease expires, the system offers a renewal, as above, to allow a priority sale of Bulk Coretime and ensure that the Parachain suffers no downtime when transitioning from the legacy framework.</p>
+<h4 id="instantaneous-coretime"><a class="header" href="#instantaneous-coretime">Instantaneous Coretime</a></h4>
+<p>Processing of Instantaneous Coretime happens in part on the Polkadot Relay-chain. Credit is purchased on the Coretime-chain for regular DOT tokens, and this results in a DOT-denominated Instantaneous Coretime Credit account on the Relay-chain being credited for the same amount.</p>
+<p>Though the Instantaneous Coretime Credit account records a balance for an account identifier (very likely controlled by a collator), it is <em>non-transferable</em> and <em>non-refundable</em>. It can only be consumed in order to purchase some Instantaneous Coretime with immediate availability.</p>
+<p>The Relay-chain reports this usage back to the Coretime-chain in order to allow it to reward the providers of the underlying Coretime, either the Polkadot System or owners of Bulk Coretime who contributed to the Instantaneous Coretime Pool.</p>
+<p>Specifically the Relay-chain is expected to be responsible for:</p>
+<ul>
+<li>holding non-transferable, non-refundable DOT-denominated Instantaneous Coretime Credit balance information.</li>
+<li>setting and adjusting the price of Instantaneous Coretime based on usage.</li>
+<li>allowing collators to consume their Instantaneous Coretime Credit at the current pricing in exchange for the ability to schedule one PoV for near-immediate usage.</li>
+<li>ensuring the Coretime-Chain has timely accounting information on Instantaneous Coretime Sales revenue.</li>
+</ul>
+<h4 id="coretime-chain"><a class="header" href="#coretime-chain">Coretime-chain</a></h4>
+<p>The <em>Coretime-chain</em> is a new system parachain. It has the responsibility of providing the Relay-chain via UMP with information of:</p>
+<ul>
+<li>The number of cores which should be made available.</li>
+<li>Which tasks should be running on which cores and in what ratios.</li>
+<li>Accounting information for Instantaneous Coretime Credit.</li>
+</ul>
+<p>It also expects information from the Relay-chain via DMP:</p>
+<ul>
+<li>The number of cores available to be scheduled.</li>
+<li>Account information on Instantaneous Coretime Sales.</li>
+</ul>
+<p>The specific interface is properly described in RFC-5.</p>
+<h3 id="detail"><a class="header" href="#detail">Detail</a></h3>
+<h4 id="parameters"><a class="header" href="#parameters">Parameters</a></h4>
+<p>This proposal includes a number of parameters which need not necessarily be fixed. Their usage is explained below, but their values are suggested or specified in the later section <em>Parameter Values</em>.</p>
+<h4 id="reservations-and-leases"><a class="header" href="#reservations-and-leases">Reservations and Leases</a></h4>
+<p>The Coretime-chain includes some governance-set reservations of Coretime; these cover every System-chain. Additionally, governance is expected to initialize details of the pre-existing leased chains.</p>
+<h4 id="regions"><a class="header" href="#regions">Regions</a></h4>
+<p>A <em>Region</em> is an assignable period of Coretime with a known regularity.</p>
+<p>All Regions are associated with a unique <em>Core Index</em>, to identify which core the assignment of which ownership of the Region controls.</p>
+<p>All Regions are also associated with a <em>Core Mask</em>, an 80-bit bitmap, to denote the regularity at which it may be scheduled on the core. If all bits are set in the Core Mask value, it is said to be <em>Complete</em>. 80 is selected since this results in the size of the datatype used to identify any Region of Polkadot Coretime to be a very convenient 128-bit. Additionally, if <code>TIMESLICE</code> (the number of Relay-chain blocks in a Timeslice) is 80, then a single bit in the Core Mask bitmap represents exactly one Core for one Relay-chain block in one Timeslice.</p>
+<p>All Regions have a span. Region spans are quantized into periods of <code>TIMESLICE</code> blocks; <code>BULK_PERIOD</code> divides into <code>TIMESLICE</code> a whole number of times.</p>
+<p>The <code>Timeslice</code> type is a <code>u32</code> which can be multiplied by <code>TIMESLICE</code> to give a <code>BlockNumber</code> value representing the same quantity in terms of Relay-chain blocks.</p>
+<p>Regions can be tasked to a <code>TaskId</code> (aka <code>ParaId</code>) or pooled into the Instantaneous Coretime Pool. This process can be <em>Provisional</em> or <em>Final</em>. If done only provisionally or not at all then they are fresh and have an <em>Owner</em> which is able to manipulate them further including reassignment. Once <em>Final</em>, then all ownership information is discarded and they cannot be manipulated further. Renewal is not possible when only provisionally tasked/pooled.</p>
+<h4 id="bulk-sales"><a class="header" href="#bulk-sales">Bulk Sales</a></h4>
+<p>A sale of Bulk Coretime occurs on the Coretime-chain every <code>BULK_PERIOD</code> blocks.</p>
+<p>In every sale, a <code>BULK_LIMIT</code> of individual <em>Regions</em> are offered for sale.</p>
+<p>Each Region offered for sale has a different Core Index, ensuring that they each represent an independently allocatable resource on the Polkadot UC.</p>
+<p>The Regions offered for sale have the same span: they last exactly <code>BULK_PERIOD</code> blocks, and begin immediately following the span of the previous Sale's Regions. The Regions offered for sale also have the complete, non-interlaced, Core Mask.</p>
+<p>The Sale Period ends immediately as soon as span of the Coretime Regions that are being sold begins. At this point, the next Sale Price is set according to the previous Sale Price together with the number of Regions sold compared to the desired and maximum amount of Regions to be sold. See Price Setting for additional detail on this point.</p>
+<p>Following the end of the previous Sale Period, there is an <em>Interlude Period</em> lasting <code>INTERLUDE_PERIOD</code> of blocks. After this period is elapsed, regular purchasing begins with the <em>Purchasing Period</em>.</p>
+<p>This is designed to give at least two weeks worth of time for the purchased regions to be partitioned, interlaced, traded and allocated.</p>
+<h4 id="the-interlude"><a class="header" href="#the-interlude">The Interlude</a></h4>
+<p>The Interlude period is a period prior to Regular Purchasing where renewals are allowed to happen. This has the effect of ensuring existing long-term tasks/parachains have a chance to secure their Bulk Coretime for a well-known price prior to general sales.</p>
+<h4 id="regular-purchasing"><a class="header" href="#regular-purchasing">Regular Purchasing</a></h4>
+<p>Any account may purchase Regions of Bulk Coretime if they have the appropriate funds in place during the Purchasing Period, which is from <code>INTERLUDE_PERIOD</code> blocks after the end of the previous sale until the beginning of the Region of the Bulk Coretime which is for sale as long as there are Regions of Bulk Coretime left for sale (i.e. no more than <code>BULK_LIMIT</code> have already been sold in the Bulk Coretime Sale). The Purchasing Period is thus roughly <code>BULK_PERIOD - INTERLUDE_PERIOD</code> blocks in length.</p>
+<p>The Sale Price varies during an initial portion of the Purchasing Period called the <em>Leadin Period</em> and then stays stable for the remainder. This initial portion is <code>LEADIN_PERIOD</code> blocks in duration. During the Leadin Period the price decreases towards the Sale Price, which it lands at by the end of the Leadin Period. The actual curve by which the price starts and descends to the Sale Price is outside the scope of this RFC, though a basic suggestion is provided in the Price Setting Notes, below.</p>
+<h4 id="renewals"><a class="header" href="#renewals">Renewals</a></h4>
+<p>At any time when there are remaining Regions of Bulk Coretime to be sold, <em>including during the Interlude Period</em>, then certain Bulk Coretime assignmnents may be <em>Renewed</em>. This is similar to a purchase in that funds must be paid and it consumes one of the Regions of Bulk Coretime which would otherwise be placed for purchase. However there are two key differences.</p>
+<p>Firstly, the price paid is the minimum of <code>RENEWAL_PRICE_CAP</code> more than what the purchase/renewal price was in the previous renewal and the current (or initial, if yet to begin) regular Sale Price.</p>
+<p>Secondly, the purchased Region comes preassigned with exactly the same workload as before. It cannot be traded, repartitioned, interlaced or exchanged. As such unlike regular purchasing the Region never has an owner.</p>
+<p>Renewal is only possible for either cores which have been assigned as a result of a previous renewal, which are migrating from legacy slot leases, or which fill their Bulk Coretime with an unsegmented, fully and finally assigned workload which does not include placement in the Instantaneous Coretime Pool. The renewed workload will be the same as this initial workload.</p>
+<h4 id="manipulation"><a class="header" href="#manipulation">Manipulation</a></h4>
+<p>Regions may be manipulated in various ways by its owner:</p>
+<ol>
+<li><em>Transferred</em> in ownership.</li>
+<li><em>Partitioned</em> into quantized, non-overlapping segments of Bulk Coretime with the same ownership.</li>
+<li><em>Interlaced</em> into multiple Regions over the same period whose eventual assignments take turns to be scheduled.</li>
+<li><em>Assigned</em> to a single, specific task (identified by <code>TaskId</code> aka <code>ParaId</code>). This may be either <em>provisional</em> or <em>final</em>.</li>
+<li><em>Pooled</em> into the Instantaneous Coretime Pool, in return for a pro-rata amount of the revenue from the Instantaneous Coretime Sales over its period.</li>
+</ol>
+<h4 id="enactment"><a class="header" href="#enactment">Enactment</a></h4>
+<h3 id="specific-functions-of-the-coretime-chain"><a class="header" href="#specific-functions-of-the-coretime-chain">Specific functions of the Coretime-chain</a></h3>
+<p>Several functions of the Coretime-chain SHALL be exposed through dispatchables and/or a <code>nonfungible</code> trait implementation integrated into XCM:</p>
+<h4 id="1-transfer"><a class="header" href="#1-transfer">1. <code>transfer</code></a></h4>
+<p>Regions may have their ownership transferred.</p>
+<p>A <code>transfer(region: RegionId, new_owner: AccountId)</code> dispatchable shall have the effect of altering the current owner of the Region identified by <code>region</code> from the signed origin to <code>new_owner</code>.</p>
+<p>An implementation of the <code>nonfungible</code> trait SHOULD include equivalent functionality. <code>RegionId</code> SHOULD be used for the <code>AssetInstance</code> value.</p>
+<h4 id="2-partition"><a class="header" href="#2-partition">2. <code>partition</code></a></h4>
+<p>Regions may be split apart into two non-overlapping interior Regions of the same Core Mask which together concatenate to the original Region.</p>
+<p>A <code>partition(region: RegionId, pivot: Timeslice)</code> dispatchable SHALL have the effect of removing the Region identified by <code>region</code> and adding two new Regions of the same owner and Core Mask. One new Region will begin at the same point of the old Region but end at <code>pivot</code> timeslices into the Region, whereas the other will begin at this point and end at the end point of the original Region.</p>
+<p>Also:</p>
+<ul>
+<li><code>owner</code> field of <code>region</code> must the equal to the Signed origin.</li>
+<li><code>pivot</code> must equal neither the <code>begin</code> nor <code>end</code> fields of the <code>region</code>.</li>
+</ul>
+<h4 id="3-interlace"><a class="header" href="#3-interlace">3. <code>interlace</code></a></h4>
+<p>Regions may be decomposed into two Regions of the same span whose eventual assignments take turns on the core by virtue of having complementary Core Masks.</p>
+<p>An <code>interlace(region: RegionId, mask: CoreMask)</code> dispatchable shall have the effect of removing the Region identified by <code>region</code> and creating two new Regions. The new Regions will each have the same span and owner of the original Region, but one Region will have a Core Mask equal to <code>mask</code> and the other will have Core Mask equal to the XOR of <code>mask</code> and the Core Mask of the original Region.</p>
+<p>Also:</p>
+<ul>
+<li><code>owner</code> field of <code>region</code> must the equal to the Signed origin.</li>
+<li><code>mask</code> must have some bits set AND must not equal the Core Mask of the old Region AND must only have bits set which are also set in the old Region's' Core Mask.</li>
+</ul>
+<h4 id="4-assign"><a class="header" href="#4-assign">4. <code>assign</code></a></h4>
+<p>Regions may be assigned to a core.</p>
+<p>A <code>assign(region: RegionId, target: TaskId, finality: Finality)</code> dispatchable shall have the effect of placing an item in the workplan corresponding to the region's properties and assigned to the <code>target</code> task.</p>
+<p>If the region's end has already passed (taking into account any advance notice requirements) then this operation is a no-op. If the region's begining has already passed, then it is effectively altered to become the next schedulable timeslice.</p>
+<p><code>finality</code> may have the value of either <code>Final</code> or <code>Provisional</code>. If <code>Final</code>, then the operation is free, the <code>region</code> record is removed entirely from storage and renewal may be possible: if the Region's span is the entire <code>BULK_PERIOD</code>, then the Coretime-chain records in storage that the allocation happened during this period in order to facilitate the possibility for a renewal. (Renewal only becomes possible when the full Core Mask of a core is finally assigned for the full <code>BULK_PERIOD</code>.)</p>
+<p>Also:</p>
+<ul>
+<li><code>owner</code> field of <code>region</code> must the equal to the Signed origin.</li>
+</ul>
+<h4 id="5-pool"><a class="header" href="#5-pool">5. <code>pool</code></a></h4>
+<p>Regions may be consumed in exchange for a pro rata portion of the Instantaneous Coretime Sales Revenue from its period and regularity.</p>
+<p>A <code>pool(region: RegionId, beneficiary: AccountId, finality: Finality)</code> dispatchable shall have the effect of placing an item in the workplan corresponding to the region's properties and assigned to the Instantaneous Coretime Pool. The details of the region will be recorded in order to allow for a pro rata share of the Instantaneous Coretime Sales Revenue at the time of the Region relative to any other providers in the Pool.</p>
+<p>If the region's end has already passed (taking into account any advance notice requirements) then this operation is a no-op. If the region's begining has already passed, then it is effectively altered to become the next schedulable timeslice.</p>
+<p><code>finality</code> may have the value of either <code>Final</code> or <code>Provisional</code>. If <code>Final</code>, then the operation is free and the <code>region</code> record is removed entirely from storage.</p>
+<p>Also:</p>
+<ul>
+<li><code>owner</code> field of <code>region</code> must the equal to the Signed origin.</li>
+</ul>
+<h4 id="6-purchases"><a class="header" href="#6-purchases">6. Purchases</a></h4>
+<p>A dispatchable <code>purchase(price_limit: Balance)</code> shall be provided. Any account may call <code>purchase</code> to purchase Bulk Coretime at the maximum price of <code>price_limit</code>.</p>
+<p>This may be called successfully only:</p>
+<ol>
+<li>during the regular Purchasing Period;</li>
+<li>when the caller is a Signed origin and their account balance is reducible by the current sale price;</li>
+<li>when the current sale price is no greater than <code>price_limit</code>; and</li>
+<li>when the number of cores already sold is less than <code>BULK_LIMIT</code>.</li>
+</ol>
+<p>If successful, the caller's account balance is reduced by the current sale price and a new Region item for the following Bulk Coretime span is issued with the owner equal to the caller's account.</p>
+<h4 id="7-renewals"><a class="header" href="#7-renewals">7. Renewals</a></h4>
+<p>A dispatchable <code>renew(core: CoreIndex)</code> shall be provided. Any account may call <code>renew</code> to purchase Bulk Coretime and renew an active allocation for the given <code>core</code>.</p>
+<p>This may be called during the Interlude Period as well as the regular Purchasing Period and has the same effect as <code>purchase</code> followed by <code>assign</code>, except that:</p>
+<ol>
+<li>The price of the sale is the Renewal Price (see next).</li>
+<li>The Region is allocated exactly the given <code>core</code> is currently allocated for the present Region.</li>
+</ol>
+<p>Renewal is only valid where a Region's span is assigned to Tasks (not placed in the Instantaneous Coretime Pool) for the entire unsplit <code>BULK_PERIOD</code> over all of the Core Mask and with Finality. There are thus three possibilities of a renewal being allowed:</p>
+<ol>
+<li>Purchased unsplit Coretime with final assignment to tasks over the full Core Mask.</li>
+<li>Renewed Coretime.</li>
+<li>A legacy lease which is ending.</li>
+</ol>
+<p><strong>Renewal Price</strong></p>
+<p>The Renewal Price is the minimum of the current regular Sale Price (or the initial Sale Price if in the Interlude Period) and:</p>
+<ul>
+<li>If the workload being renewed came to be through the <em>Purchase and Assignment</em> of Bulk Coretime, then the price paid during that Purchase operation.</li>
+<li>If the workload being renewed was previously renewed, then the price paid during this previous Renewal operation plus <code>RENEWAL_PRICE_CAP</code>.</li>
+<li>If the workload being renewed is a migation from a legacy slot auction lease, then the nominal price for a Regular Purchase (outside of the Lead-in Period) of the Sale during which the legacy lease expires.</li>
+</ul>
+<h4 id="8-instantaneous-coretime-credits"><a class="header" href="#8-instantaneous-coretime-credits">8. Instantaneous Coretime Credits</a></h4>
+<p>A dispatchable <code>purchase_credit(amount: Balance, beneficiary: RelayChainAccountId)</code> shall be provided. Any account with at least <code>amount</code> spendable funds may call this. This increases the Instantaneous Coretime Credit balance on the Relay-chain of the <code>beneficiary</code> by the given <code>amount</code>.</p>
+<p>This Credit is consumable on the Relay-chain as part of the Task scheduling system and its specifics are out of the scope of this proposal. When consumed, revenue is recorded and provided to the Coretime-chain for proper distribution. The API for doing this is specified in RFC-5.</p>
+<h3 id="notes-on-the-instantaneous-coretime-market"><a class="header" href="#notes-on-the-instantaneous-coretime-market">Notes on the Instantaneous Coretime Market</a></h3>
+<p>For an efficient market to form around the provision of Bulk-purchased Cores into the pool of cores available for Instantaneous Coretime purchase, it is crucial to ensure that price changes for the purchase of Instantaneous Coretime are reflected well in the revenues of private Coretime providers during the same period.</p>
+<p>In order to ensure this, then it is crucial that Instantaneous Coretime, once purchased, cannot be held indefinitely prior to eventual use since, if this were the case, a nefarious collator could purchase Coretime when cheap and utilize it some time later when expensive and deprive private Coretime providers of their revenue.</p>
+<p>It must therefore be assumed that Instantaneous Coretime, once purchased, has a definite and short "shelf-life", after which it becomes unusable. This incentivizes collators to avoid purchasing Coretime unless they expect to utilize it imminently and thus helps create an efficient market-feedback mechanism whereby a higher price will actually result in material revenues for private Coretime providers who contribute to the pool of Cores available to service Instantaneous Coretime purchases.</p>
+<h3 id="notes-on-economics"><a class="header" href="#notes-on-economics">Notes on Economics</a></h3>
+<p>The specific pricing mechanisms are out of scope for the present proposal. Proposals on economics should be properly described and discussed in another RFC. However, for the sake of completeness, I provide some basic illustration of how price setting could potentially work.</p>
+<h4 id="bulk-price-progression"><a class="header" href="#bulk-price-progression">Bulk Price Progression</a></h4>
+<p>The present proposal assumes the existence of a price-setting mechanism which takes into account several parameters:</p>
+<ul>
+<li><code>OLD_PRICE</code>: The price of the previous sale.</li>
+<li><code>BULK_TARGET</code>: the target number of cores to be purchased as Bulk Coretime Regions or renewed during the previous sale.</li>
+<li><code>BULK_LIMIT</code>: the maximum number of cores which could have been purchased/renewed during the previous sale.</li>
+<li><code>CORES_SOLD</code>: the actual number of cores purchased/renewed in the previous sale.</li>
+<li><code>SELLOUT_PRICE</code>: the price at which the most recent Bulk Coretime was purchased (<em>not</em> renewed) prior to selling more cores than <code>BULK_TARGET</code> (or immediately after, if none were purchased before). This may not have a value if no Bulk Coretime was purchased.</li>
+</ul>
+<p>In general we would expect the price to increase the closer <code>CORES_SOLD</code> gets to <code>BULK_LIMIT</code> and to decrease the closer it gets to zero. If it is exactly equal to <code>BULK_TARGET</code>, then we would expect the price to remain the same.</p>
+<p>In the edge case that no cores were purchased yet more cores were sold (through renewals) than the target, then we would also avoid altering the price.</p>
+<p>A simple example of this would be the formula:</p>
+<pre><code>IF SELLOUT_PRICE == NULL AND CORES_SOLD &gt; BULK_TARGET THEN
+    RETURN OLD_PRICE
+END IF
+EFFECTIVE_PRICE := IF CORES_SOLD &gt; BULK_TARGET THEN
+    SELLOUT_PRICE
+ELSE
+    OLD_PRICE
+END IF
+NEW_PRICE := IF CORES_SOLD &lt; BULK_TARGET THEN
+    EFFECTIVE_PRICE * MAX(CORES_SOLD, 1) / BULK_TARGET
+ELSE
+    EFFECTIVE_PRICE + EFFECTIVE_PRICE *
+        (CORES_SOLD - BULK_TARGET) / (BULK_LIMIT - BULK_TARGET)
+END IF
+</code></pre>
+<p>This exists only as a trivial example to demonstrate a basic solution exists, and should not be intended as a concrete proposal.</p>
+<h4 id="intra-leadin-price-decrease"><a class="header" href="#intra-leadin-price-decrease">Intra-Leadin Price-decrease</a></h4>
+<p>During the Leadin Period of a sale, the effective price starts higher than the Sale Price and falls to end at the Sale Price at the end of the Leadin Period. The price can thus be defined as a simple factor above one on which the Sale Price is multiplied. A function which returns this factor would accept a factor between zero and one specifying the portion of the Leadin Period which has passed.</p>
+<p>Thus we assume <code>SALE_PRICE</code>, then we can define <code>PRICE</code> as:</p>
+<pre><code>PRICE := SALE_PRICE * FACTOR((NOW - LEADIN_BEGIN) / LEADIN_PERIOD)
+</code></pre>
+<p>We can define a very simple progression where the price decreases monotonically from double the Sale Price at the beginning of the Leadin Period.</p>
+<pre><code>FACTOR(T) := 2 - T
+</code></pre>
+<h4 id="parameter-values"><a class="header" href="#parameter-values">Parameter Values</a></h4>
+<p>Parameters are either <em>suggested</em> or <em>specified</em>. If <em>suggested</em>, it is non-binding and the proposal should not be judged on the value since other RFCs and/or the governance mechanism of Polkadot is expected to specify/maintain it. If <em>specified</em>, then the proposal should be judged on the merit of the value as-is.</p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Value</th><th></th></tr></thead><tbody>
+<tr><td><code>BULK_PERIOD</code></td><td><code>28 * DAYS</code></td><td>specified</td></tr>
+<tr><td><code>INTERLUDE_PERIOD</code></td><td><code>7 * DAYS</code></td><td>specified</td></tr>
+<tr><td><code>LEADIN_PERIOD</code></td><td><code>7 * DAYS</code></td><td>specified</td></tr>
+<tr><td><code>TIMESLICE</code></td><td><code>8 * MINUTES</code></td><td>specified</td></tr>
+<tr><td><code>BULK_TARGET</code></td><td><code>30</code></td><td>suggested</td></tr>
+<tr><td><code>BULK_LIMIT</code></td><td><code>45</code></td><td>suggested</td></tr>
+<tr><td><code>RENEWAL_PRICE_CAP</code></td><td><code>Perbill::from_percent(2)</code></td><td>suggested</td></tr>
+</tbody></table>
+</div>
+<h4 id="instantaneous-price-progression"><a class="header" href="#instantaneous-price-progression">Instantaneous Price Progression</a></h4>
+<p>This proposal assumes the existence of a Relay-chain-based price-setting mechanism for the Instantaneous Coretime Market which alters from block to block, taking into account several parameters: the last price, the size of the Instantaneous Coretime Pool (in terms of cores per Relay-chain block) and the amount of Instantaneous Coretime waiting for processing (in terms of Core-blocks queued).</p>
+<p>The ideal situation is to have the size of the Instantaneous Coretime Pool be equal to some factor of the Instantaneous Coretime waiting. This allows all Instantaneous Coretime sales to be processed with some limited latency while giving limited flexibility over ordering to the Relay-chain apparatus which is needed for efficient operation.</p>
+<p>If we set a factor of three, and thus aim to retain a queue of Instantaneous Coretime Sales which can be processed within three Relay-chain blocks, then we would increase the price if the queue goes above three times the amount of cores available, and decrease if it goes under.</p>
+<p>Let us assume the values <code>OLD_PRICE</code>, <code>FACTOR</code>, <code>QUEUE_SIZE</code> and <code>POOL_SIZE</code>. A simple definition of the <code>NEW_PRICE</code> would be thus:</p>
+<pre><code>NEW_PRICE := IF QUEUE_SIZE &lt; POOL_SIZE * FACTOR THEN
+    OLD_PRICE * 0.95
+ELSE
+    OLD_PRICE / 0.95
+END IF
+</code></pre>
+<p>This exists only as a trivial example to demonstrate a basic solution exists, and should not be intended as a concrete proposal.</p>
+<h3 id="notes-on-types"><a class="header" href="#notes-on-types">Notes on Types</a></h3>
+<p>This exists only as a short illustration of a potential technical implementation and should not be treated as anything more.</p>
+<h4 id="regions-1"><a class="header" href="#regions-1">Regions</a></h4>
+<p>This data schema achieves a number of goals:</p>
+<ul>
+<li>Coretime can be individually traded at a level of a single usage of a single core.</li>
+<li>Coretime Regions, of arbitrary span and up to 1/80th interlacing can be exposed as NFTs and exchanged.</li>
+<li>Any Coretime Region can be contributed to the Instantaneous Coretime Pool.</li>
+<li>Unlimited number of individual Coretime contributors to the Instantaneous Coretime Pool. (Effectively limited only in number of cores and interlacing level; with current values this would allow 80,000 individual payees per timeslice).</li>
+<li>All keys are self-describing.</li>
+<li>Workload to communicate core (re-)assignments is well-bounded and low in weight.</li>
+<li>All mandatory bookkeeping workload is well-bounded in weight.</li>
+</ul>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>type Timeslice = u32; // 80 block amounts.
+type CoreIndex = u16;
+type CoreMask = [u8; 10]; // 80-bit bitmap.
+
+// 128-bit (16 bytes)
+struct RegionId {
+    begin: Timeslice,
+    core: CoreIndex,
+    mask: CoreMask,
+}
+// 296-bit (37 bytes)
+struct RegionRecord {
+    end: Timeslice,
+    owner: AccountId,
+}
+
+map Regions = Map&lt;RegionId, RegionRecord&gt;;
+
+// 40-bit (5 bytes). Could be 32-bit with a more specialised type.
+enum CoreTask {
+    Off,
+    Assigned { target: TaskId },
+    InstaPool,
+}
+// 120-bit (15 bytes). Could be 14 bytes with a specialised 32-bit `CoreTask`.
+struct ScheduleItem {
+    mask: CoreMask, // 80 bit
+    task: CoreTask, // 40 bit
+}
+
+/// The work we plan on having each core do at a particular time in the future.
+type Workplan = Map&lt;(Timeslice, CoreIndex), BoundedVec&lt;ScheduleItem, 80&gt;&gt;;
+/// The current workload of each core. This gets updated with workplan as timeslices pass.
+type Workload = Map&lt;CoreIndex, BoundedVec&lt;ScheduleItem, 80&gt;&gt;;
+
+enum Contributor {
+    System,
+    Private(AccountId),
+}
+
+struct ContributionRecord {
+    begin: Timeslice,
+    end: Timeslice,
+    core: CoreIndex,
+    mask: CoreMask,
+    payee: Contributor,
+}
+type InstaPoolContribution = Map&lt;ContributionRecord, ()&gt;;
+
+type SignedTotalMaskBits = u32;
+type InstaPoolIo = Map&lt;Timeslice, SignedTotalMaskBits&gt;;
+
+type PoolSize = Value&lt;TotalMaskBits&gt;;
+
+/// Counter for the total CoreMask which could be dedicated to a pool. `u32` so we don't ever get
+/// an overflow.
+type TotalMaskBits = u32;
+struct InstaPoolHistoryRecord {
+    total_contributions: TotalMaskBits,
+    maybe_payout: Option&lt;Balance&gt;,
+}
+/// Total InstaPool rewards for each Timeslice and the number of core Mask which contributed.
+type InstaPoolHistory = Map&lt;Timeslice, InstaPoolHistoryRecord&gt;;
+<span class="boring">}</span></code></pre></pre>
+<p><code>CoreMask</code> tracks unique "parts" of a single core. It is used with interlacing in order to give a unique identifier to each component of any possible interlacing configuration of a core, allowing for simple self-describing keys for all core ownership and allocation information. It also allows for each core's workload to be tracked and updated progressively, keeping ongoing compute costs well-bounded and low.</p>
+<p>Regions are issued into the <code>Regions</code> map and can be transferred, partitioned and interlaced as the owner desires. Regions can only be tasked if they begin after the current scheduling deadline (if they have missed this, then the region can be auto-trimmed until it is).</p>
+<p>Once tasked, they are removed from there and a record is placed in <code>Workplan</code>. In addition, if they are contributed to the Instantaneous Coretime Pool, then an entry is placing in <code>InstaPoolContribution</code> and <code>InstaPoolIo</code>.</p>
+<p>Each timeslice, <code>InstaPoolIo</code> is used to update the current value of <code>PoolSize</code>. A new entry in <code>InstaPoolHistory</code> is inserted, with the <code>total_contributions</code> field of <code>InstaPoolHistoryRecord</code> being informed by the <code>PoolSize</code> value. Each core's has its <code>Workload</code> mutated according to its <code>Workplan</code> for the upcoming timeslice.</p>
+<p>When Instantaneous Coretime Market Revenues are reported for a particular timeslice from the Relay-chain, this information gets placed in the <code>maybe_payout</code> field of the relevant record of <code>InstaPoolHistory</code>.</p>
+<p>Payments can be requested made for any records in <code>InstaPoolContribution</code> whose <code>begin</code> is the key for a value in <code>InstaPoolHistory</code> whose <code>maybe_payout</code> is <code>Some</code>. In this case, the <code>total_contributions</code> is reduced by the <code>ContributionRecord</code>'s <code>mask</code> and a pro rata amount paid. The <code>ContributionRecord</code> is mutated by incrementing <code>begin</code>, or removed if <code>begin</code> becomes equal to <code>end</code>.</p>
+<p>Example:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Simple example with a `u16` `CoreMask` and bulk sold in 100 timeslices.
+Regions:
+{ core: 0u16, begin: 100, mask: 0b1111_1111_1111_1111u16 } =&gt; { end: 200u32, owner: Alice };
+// First split @ 50
+Regions:
+{ core: 0u16, begin: 100, mask: 0b1111_1111_1111_1111u16 } =&gt; { end: 150u32, owner: Alice };
+{ core: 0u16, begin: 150, mask: 0b1111_1111_1111_1111u16 } =&gt; { end: 200u32, owner: Alice };
+// Share half of first 50 blocks
+Regions:
+{ core: 0u16, begin: 100, mask: 0b1111_1111_0000_0000u16 } =&gt; { end: 150u32, owner: Alice };
+{ core: 0u16, begin: 100, mask: 0b0000_0000_1111_1111u16 } =&gt; { end: 150u32, owner: Alice };
+{ core: 0u16, begin: 150, mask: 0b1111_1111_1111_1111u16 } =&gt; { end: 200u32, owner: Alice };
+// Sell half of them to Bob
+Regions:
+{ core: 0u16, begin: 100, mask: 0b1111_1111_0000_0000u16 } =&gt; { end: 150u32, owner: Alice };
+{ core: 0u16, begin: 100, mask: 0b0000_0000_1111_1111u16 } =&gt; { end: 150u32, owner: Bob };
+{ core: 0u16, begin: 150, mask: 0b1111_1111_1111_1111u16 } =&gt; { end: 200u32, owner: Alice };
+// Bob splits first 10 and assigns them to himself.
+Regions:
+{ core: 0u16, begin: 100, mask: 0b1111_1111_0000_0000u16 } =&gt; { end: 150u32, owner: Alice };
+{ core: 0u16, begin: 100, mask: 0b0000_0000_1111_1111u16 } =&gt; { end: 110u32, owner: Bob };
+{ core: 0u16, begin: 110, mask: 0b0000_0000_1111_1111u16 } =&gt; { end: 150u32, owner: Bob };
+{ core: 0u16, begin: 150, mask: 0b1111_1111_1111_1111u16 } =&gt; { end: 200u32, owner: Alice };
+// Bob shares first 10 3 ways and sells smaller shares to Charlie and Dave
+Regions:
+{ core: 0u16, begin: 100, mask: 0b1111_1111_0000_0000u16 } =&gt; { end: 150u32, owner: Alice };
+{ core: 0u16, begin: 100, mask: 0b0000_0000_1100_0000u16 } =&gt; { end: 110u32, owner: Charlie };
+{ core: 0u16, begin: 100, mask: 0b0000_0000_0011_0000u16 } =&gt; { end: 110u32, owner: Dave };
+{ core: 0u16, begin: 100, mask: 0b0000_0000_0000_1111u16 } =&gt; { end: 110u32, owner: Bob };
+{ core: 0u16, begin: 110, mask: 0b0000_0000_1111_1111u16 } =&gt; { end: 150u32, owner: Bob };
+{ core: 0u16, begin: 150, mask: 0b1111_1111_1111_1111u16 } =&gt; { end: 200u32, owner: Alice };
+// Bob assigns to his para B, Charlie and Dave assign to their paras C and D; Alice assigns first 50 to A
+Regions:
+{ core: 0u16, begin: 150, mask: 0b1111_1111_1111_1111u16 } =&gt; { end: 200u32, owner: Alice };
+Workplan:
+(100, 0) =&gt; vec![
+    { mask: 0b1111_1111_0000_0000u16, task: Assigned(A) },
+    { mask: 0b0000_0000_1100_0000u16, task: Assigned(C) },
+    { mask: 0b0000_0000_0011_0000u16, task: Assigned(D) },
+    { mask: 0b0000_0000_0000_1111u16, task: Assigned(B) },
+]
+(110, 0) =&gt; vec![{ mask: 0b0000_0000_1111_1111u16, task: Assigned(B) }]
+// Alice assigns her remaining 50 timeslices to the InstaPool paying herself:
+Regions: (empty)
+Workplan:
+(100, 0) =&gt; vec![
+    { mask: 0b1111_1111_0000_0000u16, task: Assigned(A) },
+    { mask: 0b0000_0000_1100_0000u16, task: Assigned(C) },
+    { mask: 0b0000_0000_0011_0000u16, task: Assigned(D) },
+    { mask: 0b0000_0000_0000_1111u16, task: Assigned(B) },
+]
+(110, 0) =&gt; vec![{ mask: 0b0000_0000_1111_1111u16, task: Assigned(B) }]
+(150, 0) =&gt; vec![{ mask: 0b1111_1111_1111_1111u16, task: InstaPool }]
+InstaPoolContribution:
+{ begin: 150, end: 200, core: 0, mask: 0b1111_1111_1111_1111u16, payee: Alice }
+InstaPoolIo:
+150 =&gt; 16
+200 =&gt; -16
+// Actual notifications to relay chain.
+// Assumes:
+// - Timeslice is 10 blocks.
+// - Timeslice 0 begins at block #1000.
+// - Relay needs 10 blocks notice of change.
+//
+Workload: 0 =&gt; vec![]
+PoolSize: 0
+
+// Block 990:
+Relay &lt;= assign_core(core: 0u16, begin: 1000, assignment: vec![(A, 8), (C, 2), (D, 2), (B, 4)])
+Workload: 0 =&gt; vec![
+    { mask: 0b1111_1111_0000_0000u16, task: Assigned(A) },
+    { mask: 0b0000_0000_1100_0000u16, task: Assigned(C) },
+    { mask: 0b0000_0000_0011_0000u16, task: Assigned(D) },
+    { mask: 0b0000_0000_0000_1111u16, task: Assigned(B) },
+]
+PoolSize: 0
+
+// Block 1090:
+Relay &lt;= assign_core(core: 0u16, begin: 1100, assignment: vec![(A, 8), (B, 8)])
+Workload: 0 =&gt; vec![
+    { mask: 0b1111_1111_0000_0000u16, task: Assigned(A) },
+    { mask: 0b0000_0000_1111_1111u16, task: Assigned(B) },
+]
+PoolSize: 0
+
+// Block 1490:
+Relay &lt;= assign_core(core: 0u16, begin: 1500, assignment: vec![(Pool, 16)])
+Workload: 0 =&gt; vec![
+    { mask: 0b1111_1111_1111_1111u16, task: InstaPool },
+]
+PoolSize: 16
+InstaPoolIo:
+200 =&gt; -16
+InstaPoolHistory:
+150 =&gt; { total_contributions: 16, maybe_payout: None }
+
+// Sometime after block 1500:
+InstaPoolHistory:
+150 =&gt; { total_contributions: 16, maybe_payout: Some(P) }
+
+// Sometime after block 1990:
+InstaPoolIo: (empty)
+PoolSize: 0
+InstaPoolHistory:
+150 =&gt; { total_contributions: 16, maybe_payout: Some(P0) }
+151 =&gt; { total_contributions: 16, maybe_payout: Some(P1) }
+152 =&gt; { total_contributions: 16, maybe_payout: Some(P2) }
+...
+199 =&gt; { total_contributions: 16, maybe_payout: Some(P49) }
+
+// Sometime later still Alice calls for a payout
+InstaPoolContribution: (empty)
+InstaPoolHistory: (empty)
+// Alice gets rewarded P0 + P1 + ... P49.
+<span class="boring">}</span></code></pre></pre>
+<h3 id="rollout"><a class="header" href="#rollout">Rollout</a></h3>
+<p>Rollout of this proposal comes in several phases:</p>
+<ol>
+<li>Finalise the specifics of implementation; this may be done through a design document or through a well-documented prototype implementation.</li>
+<li>Implement the design, including all associated aspects such as unit tests, benchmarks and any support software needed.</li>
+<li>If any new parachain is required, launch of this.</li>
+<li>Formal audit of the implementation and any manual testing.</li>
+<li>Announcement to the various stakeholders of the imminent changes.</li>
+<li>Software integration and release.</li>
+<li>Governance upgrade proposal(s).</li>
+<li>Monitoring of the upgrade process.</li>
+</ol>
+<h2 id="performance-ergonomics-and-compatibility"><a class="header" href="#performance-ergonomics-and-compatibility">Performance, Ergonomics and Compatibility</a></h2>
+<p>No specific considerations.</p>
+<p>Parachains already deployed into the Polkadot UC must have a clear plan of action to migrate to an agile Coretime market.</p>
+<p>While this proposal does not introduce documentable features per se, adequate documentation must be provided to potential purchasers of Polkadot Coretime. This SHOULD include any alterations to the Polkadot-SDK software collection.</p>
+<h2 id="testing-security-and-privacy"><a class="header" href="#testing-security-and-privacy">Testing, Security and Privacy</a></h2>
+<p>Regular testing through unit tests, integration tests, manual testnet tests, zombie-net tests and fuzzing SHOULD be conducted.</p>
+<p>A regular security review SHOULD be conducted prior to deployment through a review by the Web3 Foundation economic research group.</p>
+<p>Any final implementation MUST pass a professional external security audit.</p>
+<p>The proposal introduces no new privacy concerns.</p>
+<h2 id="future-directions-and-related-material"><a class="header" href="#future-directions-and-related-material">Future Directions and Related Material</a></h2>
+<p>RFC-3 proposes a means of implementing the high-level allocations within the Relay-chain.</p>
+<p>RFC-5 proposes the API for interacting with Relay-chain.</p>
+<p>Additional work should specify the interface for the instantaneous market revenue so that the Coretime-chain can ensure Bulk Coretime placed in the instantaneous market is properly compensated.</p>
+<h2 id="drawbacks-alternatives-and-unknowns"><a class="header" href="#drawbacks-alternatives-and-unknowns">Drawbacks, Alternatives and Unknowns</a></h2>
+<p>Unknowns include the economic and resource parameterisations:</p>
+<ul>
+<li>The initial price of Bulk Coretime.</li>
+<li>The price-change algorithm between Bulk Coretime sales.</li>
+<li>The price increase per Bulk Coretime period for renewals.</li>
+<li>The price decrease graph in the Leadin period for Bulk Coretime sales.</li>
+<li>The initial price of Instantaneous Coretime.</li>
+<li>The price-change algorithm for Instantaneous Coretime sales.</li>
+<li>The percentage of cores to be sold as Bulk Coretime.</li>
+<li>The fate of revenue collected.</li>
+</ul>
+<h2 id="prior-art-and-references"><a class="header" href="#prior-art-and-references">Prior Art and References</a></h2>
+<p>Robert Habermeier initially wrote on the subject of Polkadot blockspace-centric in the article <a href="https://www.rob.tech/polkadot-blockspace-over-blockchains/">Polkadot Blockspace over Blockchains</a>. While not going into details, the article served as an early reframing piece for moving beyond one-slot-per-chain models and building out secondary market infrastructure for resource allocation.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+
+                            <a rel="next prefetch" href="../../../text/0005-coretime-interface.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
+                    <a rel="next prefetch" href="../../../text/0005-coretime-interface.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>
