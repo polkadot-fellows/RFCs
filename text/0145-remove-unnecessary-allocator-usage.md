@@ -145,7 +145,8 @@ The function used to accept only a prefix and a limit and return a SCALE-encoded
 ```wat
 (func $ext_storage_clear_prefix_version_3
     (param $maybe_prefix i64) (param $maybe_limit i64) (param $maybe_cursor_in i64)
-    (param $maybe_cursor_out i64) (param $counters i32) (result i32))
+    (param $maybe_cursor_out i64) (param $backend i32) (param $unique i32) (param $loops i32)
+    (result i32))
 ```
 
 ##### Arguments
@@ -153,11 +154,10 @@ The function used to accept only a prefix and a limit and return a SCALE-encoded
 * `maybe_prefix` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) containing a (possibly empty) storage prefix being cleared;
 * `maybe_limit` is an optional positive integer ([New Definition I](#new-def-i)) representing either the maximum number of backend deletions which may happen, or the _absence_ of such a limit. The number of backend iterations may surpass this limit by no more than one;
 * `maybe_cursor_in` is an optional pointer-size ([New Definition II](#new-def-ii)) representing the cursor returned by the previous (unfinished) call to this function. It should be _absent_ on the first call;
-* `maybe_cursor_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the continuation cursor will optionally be written (see also the Result section). The value is actually stored only if the buffer is large enough. Whenever the value is not written into the buffer, the buffer contents are unmodified;
-* `counters` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a 12-byte buffer where three low-endian 32-bit integers will be stored one after another, representing the counters, respectively:
-  * Of items removed from the backend database will be written;
-  * Of unique keys removed, taking into account both the backend and the overlay;
-  * Of iterations (each requiring a storage seek/read) which were done.
+* `maybe_cursor_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the continuation cursor will optionally be written (see also the Result section). The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are undefined;
+* `backend` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a 4-byte buffer where a 32-bit integer representing the number of items removed from the backend database will be written;
+* `unique` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a 4-byte buffer where a 32-bit integer representing the number of unique keys removed, taking into account both the backend and the overlay;
+* `loops` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a 4-byte buffer where a 32-bit integer representing the number of iterations (each requiring a storage seek/read) which were done will be written.
 
 ##### Result
 
@@ -285,7 +285,8 @@ The function used to accept only a child storage key and a limit and return a SC
 ```wat
 (func $ext_default_child_storage_storage_kill_version_4
     (param $storage_key i64) (param $maybe_limit i64) (param $maybe_cursor_in i64)
-    (param $maybe_cursor_out i64) (param $counters i32) (result i32))
+    (param $maybe_cursor_out i64) (param $backend i32) (param $unique i32) (param $loops i32)
+    (result i32))
 ```
 
 ##### Arguments
@@ -293,11 +294,10 @@ The function used to accept only a child storage key and a limit and return a SC
 * `storage_key` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the child storage key ([Definition 219](https://spec.polkadot.network/chap-host-api#defn-child-storage-type));
 * `maybe_limit` is an optional positive integer representing either the maximum number of backend deletions which may happen, or the absence of such a limit. The number of backend iterations may surpass this limit by no more than one;
 * `maybe_cursor_in` is an optional pointer-size representing the cursor returned by the previous (unfinished) call to this function. It should be _absent_ on the first call;
-* `maybe_cursor_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the continuation cursor will optionally be written (see also the Result section). The value is actually stored only if the buffer is large enough. Whenever the value is not written into the buffer, the buffer contents are unmodified;
-* `counters` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a 12-byte buffer where three low-endian 32-bit integers will be stored one after another, representing the counters, respectively:
-  * Of items removed from the backend database will be written;
-  * Of unique keys removed, taking into account both the backend and the overlay;
-  * Of iterations (each requiring a storage seek/read) which were done.
+* `maybe_cursor_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the continuation cursor will optionally be written (see also the Result section). The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are undefined;
+* `backend` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a 4-byte buffer where a 32-bit integer representing the number of items removed from the backend database will be written;
+* `unique` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a 4-byte buffer where a 32-bit integer representing the number of unique keys removed, taking into account both the backend and the overlay;
+* `loops` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a 4-byte buffer where a 32-bit integer representing the number of iterations (each requiring a storage seek/read) which were done will be written.
 
 ##### Result
 
@@ -322,8 +322,8 @@ The function used to accept (along with the child storage key) only a prefix and
 ```wat
 (func $ext_default_child_storage_clear_prefix_version_3
     (param $storage_key i64) (param $prefix i64) (param $maybe_limit i64)
-    (param $maybe_cursor_in i64) (param $maybe_cursor_out i64) (param $counters i32)
-    (result i32))
+    (param $maybe_cursor_in i64) (param $maybe_cursor_out i64) (param $backend i32)
+    (param $unique i32) (param $loops i32) (result i32))
 ```
 
 ##### Arguments
@@ -332,11 +332,10 @@ The function used to accept (along with the child storage key) only a prefix and
 * `prefix` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) containing a storage prefix being cleared;
 * `maybe_limit` is an optional positive integer representing either the maximum number of backend deletions which may happen, or the absence of such a limit. The number of backend iterations may surpass this limit by no more than one;
 * `maybe_cursor_in` is an optional pointer-size representing the cursor returned by the previous (unfinished) call to this function. It should be _absent_ on the first call;
-* `maybe_cursor_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the continuation cursor will optionally be written (see also the Result section). The value is actually stored only if the buffer is large enough. Whenever the value is not written into the buffer, the buffer contents are unmodified;
-* `counters` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a 12-byte buffer where three low-endian 32-bit integers will be stored one after another, representing the counters, respectively:
-  * Of items removed from the backend database will be written;
-  * Of unique keys removed, taking into account both the backend and the overlay;
-  * Of iterations (each requiring a storage seek/read) which were done.
+* `maybe_cursor_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the continuation cursor will optionally be written (see also the Result section). The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are undefined;
+* `backend` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a 4-byte buffer where a 32-bit integer representing the number of items removed from the backend database will be written;
+* `unique` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a 4-byte buffer where a 32-bit integer representing the number of unique keys removed, taking into account both the backend and the overlay;
+* `loops` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a 4-byte buffer where a 32-bit integer representing the number of iterations (each requiring a storage seek/read) which were done will be written.
 
 ##### Result
 
