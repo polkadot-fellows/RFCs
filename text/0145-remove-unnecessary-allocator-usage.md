@@ -66,7 +66,7 @@ The Runtime optional pointer-size has exactly the same definition as Runtime poi
 
 ##### Changes
 
-The function is considered obsolete, as it only implements a subset of functionality of `ext_storage_read` and uses host-allocated buffers. Users are encouraged to use `ext_storage_read_version_2` instead.
+Considered obsolete in favor of `ext_storage_read_version_2`. Cannot be used in a runtime using the new-style of entry-point.
 
 #### ext_storage_read
 
@@ -202,7 +202,7 @@ The result is the full length of the output key that might have been stored in `
 
 ##### Changes
 
-The function is considered obsolete, as it only implements a subset of functionality of `ext_default_child_storage_read` and uses host-allocated buffers. Users are encouraged to use `ext_default_child_storage_read_version_2` instead.
+Considered obsolete in favor of `ext_default_child_storage_read_version_2`. Cannot be used in a runtime using the new-style of entry-point.
 
 #### ext_default_child_storage_read
 
@@ -469,12 +469,12 @@ If the buffer had enough capacity and the cursor was stored successfully, the cu
 
 ##### Changes
 
-The following functions are considered obsolete:
+The following functions are considered obsolete in favor of the new `*_num_public_keys` and `*_public_key` counterparts:
 * `ext_crypto_ed25519_public_keys_version_1`
 * `ext_crypto_sr25519_public_keys_version_1`
 * `ext_crypto_ecdsa_public_keys_version_1`
 
-The functions used to return a host-allocated SCALE-encoded array of public keys of the corresponding type. As it is hard to predict the size of buffer needed to store such an array, new function `*_num_public_keys` and `*_public_key` were introduced to implement iterative approach.
+They cannot be used in a runtime using the new-style of entry-point.
 
 #### ext_crypto_{ed25519|sr25519|ecdsa}_num_public_keys
 
@@ -702,7 +702,7 @@ The result is `0` for success or `-1` for failure.
 
 ##### Changes
 
-The function is considered obsolete. The function used to return a host-allocated value that was only used partially, with the part used being fixed-size. Users are encouraged to use `ext_offchain_network_peer_id_version_1` instead.
+Considered obsolete in favor of `ext_offchain_network_peer_id_version_1`. Cannot be used in a runtime using the new-style of entry-point.
 
 #### ext_offchain_network_peer_id
 
@@ -760,7 +760,7 @@ The function used to return a host-allocated buffer containing the random seed. 
 
 ##### Changes
 
-The function is considered obsolete, as it only implements a subset of functionality of `ext_offchain_local_storage_read` and uses host-allocated buffers. Users are encouraged to use `ext_offchain_local_storage_read_version_1` instead.
+Considered obsolete in favor of `ext_offchain_local_storage_read_version_1`. Cannot be used in a runtime using the new-style of entry-point.
 
 #### ext_offchain_local_storage_read
 
@@ -913,7 +913,7 @@ The function used to return a SCALE-encoded array of request statuses in a host-
 
 ##### Changes
 
-The function is considered obsolete in favor of `ext_offchain_http_response_header_name` and `ext_offchain_http_response_header_value`. It used to return a host-allocated SCALE-encoded array of response header names and values. As it's hard to predict what buffer size is needed to accommodate such an array, new functions offer an iterative approach instead.
+Considered obsolete in favor of `ext_offchain_http_response_header_name` and `ext_offchain_http_response_header_value`. Cannot be used in a runtime using the new-style of entry-point.
 
 #### ext_offchain_http_response_header_name
 
@@ -1000,7 +1000,7 @@ On success, the number of bytes written to the buffer is returned. A value of `0
 (func $ext_allocator_free_version_1 (param $ptr i32))
 ```
 
-The functions are considered obsolete and must not be used in new code.
+The functions are considered obsolete and cannot be used in a runtime using the new-style of entry-point.
 
 #### ext_input_read
 
