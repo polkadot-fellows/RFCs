@@ -47,7 +47,36 @@ Runtime developers, who will benefit from the improved performance and more dete
 
 #### <a name="new-def-i"></a>New Definition I: Runtime Optional Positive Integer
 
-The Runtime optional positive integer is a signed 64-bit value. Positive values in the range of [0..2³²) represent corresponding unsigned 32-bit values. The value of `-1` represents a non-existing value (an _absent_ value). All other values are invalid.
+By a Runtime Optional Positive Integer we refer to an abstract value $r \in \mathcal{R}$ where $\mathcal{R} := \{\bot\} \cup \{0, 1, \dots, 2^{32} - 1\},$ and where $\bot$ denotes the _absent_ value.
+
+At the Host-Runtime interface this type is represented by a signed 64-bit integer $x \in \mathbb{Z}$ (thus $\mathbb{Z} \in \{-2^{63}, \dots, 2^{63} - 1\}$).
+
+We define the encoding function $\mathrm{Enc}_{\mathrm{ROP}} : \mathcal{R} \to \mathbb{Z}$ and decoding function $\mathrm{Dec}_{\mathrm{ROP}} : \mathbb{Z} \to \mathcal{R} \cup \{\mathrm{error}\}$ as follows.
+
+For $r \in \mathcal{R}$,
+
+$$
+\mathrm{Enc}_{\mathrm{ROP}}(r) :=
+\begin{cases}
+-1 & \text{if } r = \bot, \\
+r  & \text{if } r \in \{0, 1, \dots, 2^{32} - 1\}.
+\end{cases}
+$$
+
+For a signed 64-bit integer $x$,
+
+$$
+\mathrm{Dec}_{\mathrm{ROP}}(x) :=
+\begin{cases}
+\bot & \text{if } x = -1, \\
+x   & \text{if } 0 \le x < 2^{32}, \\
+\mathrm{error} & \text{otherwise.}
+\end{cases}
+$$
+
+A valid Runtime Optional Positive Integer at the Host-Runtime boundary is any 64-bit signed integer $x$ such that $x \in \{-1\} \cup \{0, 1, \dots, 2^{32} - 1\}$. All other 64-bit integer values are invalid for this type.
+
+Conforming implementations must not produce invalid values when encoding. Receivers must abort execution if decoding results in $\mathrm{error}$.
 
 #### <a name="new-def-ii"></a>New Definition II: Runtime Optional Pointer-Size
 
