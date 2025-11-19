@@ -49,7 +49,7 @@ Runtime developers, who will benefit from the improved performance and more dete
 
 By a Runtime Optional Positive Integer we refer to an abstract value $r \in \mathcal{R}$ where $\mathcal{R} := \{\bot\} \cup \{0, 1, \dots, 2^{32} - 1\},$ and where $\bot$ denotes the _absent_ value.
 
-At the Host-Runtime interface this type is represented by a signed 64-bit integer $x \in \mathbb{Z}$ (thus $\mathbb{Z} \in \{-2^{63}, \dots, 2^{63} - 1\}$).
+At the Host-Runtime interface this type is represented by a signed 64-bit integer $x \in \mathbb{Z}$ (thus $\mathbb{Z} := \{-2^{63}, \dots, 2^{63} - 1\}$).
 
 We define the encoding function $\mathrm{Enc}_{\mathrm{ROP}} : \mathcal{R} \to \mathbb{Z}$ and decoding function $\mathrm{Dec}_{\mathrm{ROP}} : \mathbb{Z} \to \mathcal{R} \cup \{\mathrm{error}\}$ as follows.
 
