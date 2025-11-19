@@ -82,6 +82,12 @@ Conforming implementations must not produce invalid values when encoding. Receiv
 
 The Runtime optional pointer-size has exactly the same definition as Runtime pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) with the value of 2⁶⁴-1 representing a non-existing value (an _absent_ value).
 
+### Memory safety
+
+Pointers to input parameters passed to the host must reference readable memory regions. The host must abort execution if the memory region referenced by the pointer cannot be read, unless explicitly stated otherwise.
+
+Pointers to output parameters passed to the host must reference writeable memory regions. The host must abort execution if the memory region referenced by the pointer cannot be written, in case it is performing the actual write, unless explicitly stated otherwise.
+
 ### Changes to host functions
 
 #### ext_storage_get
@@ -120,7 +126,7 @@ The function was returning a SCALE-encoded `Option`-wrapped 32-bit integer repre
 ##### Arguments
 
 * `key` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the storage key being read;
-* `value_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the value read should be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are unchanged;
+* `value_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the value read should be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into and its contents are unchanged;
 * `value_offset` is an unsigned 32-bit offset from which the value reading should start.
 
 ##### Result
@@ -185,7 +191,7 @@ The old version accepted the state version as an argument and returned a SCALE-e
 
 ##### Arguments
 
-* `out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the SCALE-encoded storage root, calculated after committing all the existing operations, will be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are unchanged.
+* `out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the SCALE-encoded storage root, calculated after committing all the existing operations, will be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into and its contents are unchanged.
 
 ##### Results
 
@@ -214,7 +220,7 @@ The old version accepted the key and returned the SCALE-encoded next key in a ho
 ##### Arguments
 
 * `key_in` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer containing a storage key;
-* `key_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to an output buffer where the next key in the storage in the lexicographical order will be written. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are unchanged.
+* `key_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to an output buffer where the next key in the storage in the lexicographical order will be written. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into and its contents are unchanged.
 
 ##### Result
 
@@ -259,7 +265,7 @@ The function was returning a SCALE-encoded `Option`-wrapped 32-bit integer repre
 
 * `storage_key` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the child storage key ([Definition 219](https://spec.polkadot.network/chap-host-api#defn-child-storage-type));
 * `key` is the storage key being read;
-* `value_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the value read should be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are unchanged;
+* `value_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the value read should be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into and its contents are unchanged;
 * `value_offset` is an unsigned 32-bit offset from which the value reading should start.
 
 ##### Result
@@ -365,7 +371,7 @@ The old version accepted (along with the child storage key) the state version as
 ##### Arguments
 
 * `storage_key` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the child storage key ([Definition 219](https://spec.polkadot.network/chap-host-api#defn-child-storage-type));
-* `out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the SCALE-encoded storage root, calculated after committing all the existing operations, will be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are unchanged.
+* `out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the SCALE-encoded storage root, calculated after committing all the existing operations, will be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into and its contents are unchanged.
 
 ##### Results
 
@@ -395,7 +401,7 @@ The old version accepted (along with the child storage key) the key and returned
 
 * `storage_key` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the child storage key ([Definition 219](https://spec.polkadot.network/chap-host-api#defn-child-storage-type));
 * `key_in` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer containing a storage key;
-* `key_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to an output buffer where the next key in the storage in the lexicographical order will be written. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are unchanged.
+* `key_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to an output buffer where the next key in the storage in the lexicographical order will be written. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into and its contents are unchanged.
 
 ##### Result
 
@@ -455,7 +461,7 @@ The function used to return the SCALE-encoded runtime version information in a h
 ##### Arguments
 
 * `wasm` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the Wasm blob from which the version information should be extracted;
-* `out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the buffer where the SCALE-encoded extracted version information will be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are unchanged.
+* `out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the buffer where the SCALE-encoded extracted version information will be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into and its contents are unchanged.
 
 ##### Result
 
@@ -475,7 +481,7 @@ A new function is introduced to make it possible to fetch a cursor produced by `
 ```
 ##### Arguments
 
-* `out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the buffer where the last cached cursor will be stored, if one exists. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are unchanged.
+* `out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the buffer where the last cached cursor will be stored, if one exists. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into and its contents are unchanged.
 
 ##### Result
 
@@ -808,7 +814,7 @@ A new function is introduced to replace `ext_offchain_local_storage_get`. The na
 
 * `kind` is an offchain storage kind, where `0` denotes the persistent storage ([Definition 222](https://spec.polkadot.network/chap-host-api#defn-offchain-persistent-storage)), and `1` denotes the local storage ([Definition 223](https://spec.polkadot.network/chap-host-api#defn-offchain-persistent-storage));
 * `key` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the storage key being read;
-* `value_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the value read should be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are unchanged;
+* `value_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the value read should be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into and its contents are unchanged;
 * `offset` is a 32-bit offset from which the value reading should start.
 
 ##### Result
@@ -839,7 +845,7 @@ The function used to return a SCALE-encoded `Result` value in a host-allocated b
 
 `method` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the HTTP method. Possible values are “GET” and “POST”;
 `uri` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the URI;
-`meta` is a future-reserved field containing additional, SCALE-encoded parameters. Currently, its value is ignored.
+`meta` is a future-reserved field containing additional, SCALE-encoded parameters. Currently, its value is ignored. Passing a pointer to non-readable memory shall not result in execution abortion.
 
 ##### Result
 
@@ -961,7 +967,7 @@ New function to replace functionality of `ext_offchain_http_response_headers` wi
 
 * `request_id` is an i32 integer indicating the ID of the started request, as returned by `ext_offchain_http_request_start`;
 * `header_index` is an i32 integer indicating the index of the header requested, starting from zero;
-* `out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the buffer where the header name will be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are unchanged;
+* `out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the buffer where the header name will be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into and its contents are unchanged.
 
 ##### Result
 
@@ -984,7 +990,7 @@ New function to replace functionality of `ext_offchain_http_response_headers` wi
 
 * `request_id` is an i32 integer indicating the ID of the started request, as returned by `ext_offchain_http_request_start`;
 * `header_index` is an i32 integer indicating the index of the header requested, starting from zero;
-* `out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the buffer where the header value will be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are unchanged;
+* `out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the buffer where the header value will be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into and its contents are unchanged.
 
 ##### Result
 
