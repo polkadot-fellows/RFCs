@@ -190,6 +190,7 @@
 <li><a href="#explanation">Explanation</a>
 <ul>
 <li><a href="#new-definitions">New definitions</a></li>
+<li><a href="#memory-safety">Memory safety</a></li>
 <li><a href="#changes-to-host-functions">Changes to host functions</a></li>
 <li><a href="#other-changes">Other changes</a></li>
 </ul>
@@ -231,7 +232,7 @@
 <h3 id="new-definitions"><a class="header" href="#new-definitions">New definitions</a></h3>
 <h4 id="new-definition-i-runtime-optional-positive-integer"><a class="header" href="#new-definition-i-runtime-optional-positive-integer"><a name="new-def-i"></a>New Definition I: Runtime Optional Positive Integer</a></h4>
 <p>By a Runtime Optional Positive Integer we refer to an abstract value $r \in \mathcal{R}$ where $\mathcal{R} := {\bot} \cup {0, 1, \dots, 2^{32} - 1},$ and where $\bot$ denotes the <em>absent</em> value.</p>
-<p>At the Host-Runtime interface this type is represented by a signed 64-bit integer $x \in \mathbb{Z}$ (thus $\mathbb{Z} \in {-2^{63}, \dots, 2^{63} - 1}$).</p>
+<p>At the Host-Runtime interface this type is represented by a signed 64-bit integer $x \in \mathbb{Z}$ (thus $\mathbb{Z} := {-2^{63}, \dots, 2^{63} - 1}$).</p>
 <p>We define the encoding function $\mathrm{Enc}<em>{\mathrm{ROP}} : \mathcal{R} \to \mathbb{Z}$ and decoding function $\mathrm{Dec}</em>{\mathrm{ROP}} : \mathbb{Z} \to \mathcal{R} \cup {\mathrm{error}}$ as follows.</p>
 <p>For $r \in \mathcal{R}$,</p>
 <p>$$
@@ -254,6 +255,9 @@ $$</p>
 <p>Conforming implementations must not produce invalid values when encoding. Receivers must abort execution if decoding results in $\mathrm{error}$.</p>
 <h4 id="new-definition-ii-runtime-optional-pointer-size"><a class="header" href="#new-definition-ii-runtime-optional-pointer-size"><a name="new-def-ii"></a>New Definition II: Runtime Optional Pointer-Size</a></h4>
 <p>The Runtime optional pointer-size has exactly the same definition as Runtime pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) with the value of 2⁶⁴-1 representing a non-existing value (an <em>absent</em> value).</p>
+<h3 id="memory-safety"><a class="header" href="#memory-safety">Memory safety</a></h3>
+<p>Pointers to input parameters passed to the host must reference readable memory regions. The host must abort execution if the memory region referenced by the pointer cannot be read, unless explicitly stated otherwise.</p>
+<p>Pointers to output parameters passed to the host must reference writeable memory regions. The host must abort execution if the memory region referenced by the pointer cannot be written, in case it is performing the actual write, unless explicitly stated otherwise.</p>
 <h3 id="changes-to-host-functions"><a class="header" href="#changes-to-host-functions">Changes to host functions</a></h3>
 <h4 id="ext_storage_get"><a class="header" href="#ext_storage_get">ext_storage_get</a></h4>
 <h5 id="existing-prototype"><a class="header" href="#existing-prototype">Existing prototype</a></h5>
@@ -276,7 +280,7 @@ $$</p>
 <h5 id="arguments"><a class="header" href="#arguments">Arguments</a></h5>
 <ul>
 <li><code>key</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the storage key being read;</li>
-<li><code>value_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the value read should be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are unchanged;</li>
+<li><code>value_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the value read should be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into and its contents are unchanged;</li>
 <li><code>value_offset</code> is an unsigned 32-bit offset from which the value reading should start.</li>
 </ul>
 <h5 id="result"><a class="header" href="#result">Result</a></h5>
@@ -322,7 +326,7 @@ $$</p>
 </code></pre>
 <h5 id="arguments-2"><a class="header" href="#arguments-2">Arguments</a></h5>
 <ul>
-<li><code>out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the SCALE-encoded storage root, calculated after committing all the existing operations, will be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are unchanged.</li>
+<li><code>out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the SCALE-encoded storage root, calculated after committing all the existing operations, will be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into and its contents are unchanged.</li>
 </ul>
 <h5 id="results"><a class="header" href="#results">Results</a></h5>
 <p>The result is the full length of the output that might have been stored in the buffer provided in <code>out</code>.</p>
@@ -340,7 +344,7 @@ $$</p>
 <h5 id="arguments-3"><a class="header" href="#arguments-3">Arguments</a></h5>
 <ul>
 <li><code>key_in</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer containing a storage key;</li>
-<li><code>key_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to an output buffer where the next key in the storage in the lexicographical order will be written. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are unchanged.</li>
+<li><code>key_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to an output buffer where the next key in the storage in the lexicographical order will be written. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into and its contents are unchanged.</li>
 </ul>
 <h5 id="result-2"><a class="header" href="#result-2">Result</a></h5>
 <p>The result is the full length of the output key that might have been stored in <code>key_out</code>, or zero if no next key was found.</p>
@@ -368,7 +372,7 @@ $$</p>
 <ul>
 <li><code>storage_key</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the child storage key (<a href="https://spec.polkadot.network/chap-host-api#defn-child-storage-type">Definition 219</a>);</li>
 <li><code>key</code> is the storage key being read;</li>
-<li><code>value_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the value read should be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are unchanged;</li>
+<li><code>value_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the value read should be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into and its contents are unchanged;</li>
 <li><code>value_offset</code> is an unsigned 32-bit offset from which the value reading should start.</li>
 </ul>
 <h5 id="result-3"><a class="header" href="#result-3">Result</a></h5>
@@ -447,7 +451,7 @@ $$</p>
 <h5 id="arguments-7"><a class="header" href="#arguments-7">Arguments</a></h5>
 <ul>
 <li><code>storage_key</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the child storage key (<a href="https://spec.polkadot.network/chap-host-api#defn-child-storage-type">Definition 219</a>);</li>
-<li><code>out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the SCALE-encoded storage root, calculated after committing all the existing operations, will be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are unchanged.</li>
+<li><code>out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the SCALE-encoded storage root, calculated after committing all the existing operations, will be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into and its contents are unchanged.</li>
 </ul>
 <h5 id="results-1"><a class="header" href="#results-1">Results</a></h5>
 <p>The result is the length of the output that mught have been stored in the buffer provided in <code>out</code>.</p>
@@ -466,7 +470,7 @@ $$</p>
 <ul>
 <li><code>storage_key</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the child storage key (<a href="https://spec.polkadot.network/chap-host-api#defn-child-storage-type">Definition 219</a>);</li>
 <li><code>key_in</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer containing a storage key;</li>
-<li><code>key_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to an output buffer where the next key in the storage in the lexicographical order will be written. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are unchanged.</li>
+<li><code>key_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to an output buffer where the next key in the storage in the lexicographical order will be written. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into and its contents are unchanged.</li>
 </ul>
 <h5 id="result-6"><a class="header" href="#result-6">Result</a></h5>
 <p>The result is the length of the output key that might have been written into <code>key_out</code>, or zero if no next key was found.</p>
@@ -508,7 +512,7 @@ $$</p>
 <h5 id="arguments-10"><a class="header" href="#arguments-10">Arguments</a></h5>
 <ul>
 <li><code>wasm</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the Wasm blob from which the version information should be extracted;</li>
-<li><code>out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the buffer where the SCALE-encoded extracted version information will be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are unchanged.</li>
+<li><code>out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the buffer where the SCALE-encoded extracted version information will be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into and its contents are unchanged.</li>
 </ul>
 <h5 id="result-7"><a class="header" href="#result-7">Result</a></h5>
 <p>The result is an optional positive integer (<a href="#new-def-i">New Definition I</a>) representing the length of the output data that might have been stored in <code>out</code>. An <em>absent</em> value represents the absence of the version information in the Wasm blob or a failure to read one.</p>
@@ -521,7 +525,7 @@ $$</p>
 </code></pre>
 <h5 id="arguments-11"><a class="header" href="#arguments-11">Arguments</a></h5>
 <ul>
-<li><code>out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the buffer where the last cached cursor will be stored, if one exists. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are unchanged.</li>
+<li><code>out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the buffer where the last cached cursor will be stored, if one exists. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into and its contents are unchanged.</li>
 </ul>
 <h5 id="result-8"><a class="header" href="#result-8">Result</a></h5>
 <p>The result is an optional positive integer (<a href="#new-def-i">New Definition I</a>) representing the length of the cursor that might have been stored in <code>out</code>. An <em>absent</em> value represents the absence of the cached cursor.</p>
@@ -752,7 +756,7 @@ $$</p>
 <ul>
 <li><code>kind</code> is an offchain storage kind, where <code>0</code> denotes the persistent storage (<a href="https://spec.polkadot.network/chap-host-api#defn-offchain-persistent-storage">Definition 222</a>), and <code>1</code> denotes the local storage (<a href="https://spec.polkadot.network/chap-host-api#defn-offchain-persistent-storage">Definition 223</a>);</li>
 <li><code>key</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the storage key being read;</li>
-<li><code>value_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the value read should be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are unchanged;</li>
+<li><code>value_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the value read should be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into and its contents are unchanged;</li>
 <li><code>offset</code> is a 32-bit offset from which the value reading should start.</li>
 </ul>
 <h5 id="result-14"><a class="header" href="#result-14">Result</a></h5>
@@ -771,7 +775,7 @@ $$</p>
 <h5 id="arguments-22"><a class="header" href="#arguments-22">Arguments</a></h5>
 <p><code>method</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the HTTP method. Possible values are “GET” and “POST”;
 <code>uri</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the URI;
-<code>meta</code> is a future-reserved field containing additional, SCALE-encoded parameters. Currently, its value is ignored.</p>
+<code>meta</code> is a future-reserved field containing additional, SCALE-encoded parameters. Currently, its value is ignored. Passing a pointer to non-readable memory shall not result in execution abortion.</p>
 <h5 id="result-15"><a class="header" href="#result-15">Result</a></h5>
 <p>On success, a positive request identifier is returned. On error, <code>-1</code> is returned.</p>
 <h4 id="ext_offchain_http_request_add_header"><a class="header" href="#ext_offchain_http_request_add_header">ext_offchain_http_request_add_header</a></h4>
@@ -847,7 +851,7 @@ $$</p>
 <ul>
 <li><code>request_id</code> is an i32 integer indicating the ID of the started request, as returned by <code>ext_offchain_http_request_start</code>;</li>
 <li><code>header_index</code> is an i32 integer indicating the index of the header requested, starting from zero;</li>
-<li><code>out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the buffer where the header name will be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are unchanged;</li>
+<li><code>out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the buffer where the header name will be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into and its contents are unchanged.</li>
 </ul>
 <h5 id="result-18"><a class="header" href="#result-18">Result</a></h5>
 <p>The result is an optional positive integer (<a href="#new-def-i">New Definition I</a>), representing either the full length of the header name or the <em>absence</em> of the header with such index.</p>
@@ -862,7 +866,7 @@ $$</p>
 <ul>
 <li><code>request_id</code> is an i32 integer indicating the ID of the started request, as returned by <code>ext_offchain_http_request_start</code>;</li>
 <li><code>header_index</code> is an i32 integer indicating the index of the header requested, starting from zero;</li>
-<li><code>out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the buffer where the header value will be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer contents are unchanged;</li>
+<li><code>out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the buffer where the header value will be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into and its contents are unchanged.</li>
 </ul>
 <h5 id="result-19"><a class="header" href="#result-19">Result</a></h5>
 <p>The result is an optional positive integer (<a href="#new-def-i">New Definition I</a>), representing either the full length of the header value or the <em>absence</em> of the header with such index.</p>
