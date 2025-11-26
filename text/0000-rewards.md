@@ -66,7 +66,7 @@ We no longer require this data during disputes.
 
 After we approve a relay chain block, then we collect all its `CandidateRewards` into an `ApprovalsTally`, with one `ApprovalTallyLine` for each validator.  In this, we compute `approval_usages` from the final run of the approvals loop, plus `0.8` for each backer.
 
-As discussed [below](#approvals), we say a validator 𝑢 *uses* an approval vote by a validator 𝑣 on a candidate 𝑐 if the the final approving run of the elves approval loop by 𝑢 counted the vote by 𝑣 towards approving the candidate 𝑐.  We only count these *useful* votes that actually gets *used*.
+As discussed [below](#approvals), we say a validator 𝑢 *uses* an approval vote by a validator 𝑣 on a candidate 𝑐 if the the final approving run of the ELVES approval loop by 𝑢 counted the vote by 𝑣 towards approving the candidate 𝑐.  We only count these *useful* votes that actually gets *used*.
 ```
 /// Our subjective record of what we used from, and provided to, all other validators on the finalized chain
 pub struct ApprovalsTally(Vec<ApprovalTallyLine>);
@@ -123,6 +123,8 @@ for i in 0..num_validators {
 ```
 Assuming more than 50% honesty, these median tell us how many approval votes form each validator. 
 
+> NOTE: We are not going to calculating missed uploads on-chain as of yet.  We have to discuss remove this from the RFC?
+
 We re-weight the `used_downloads` from the `i`th validator by their median times their expected `f+1` chunks and divided by how many chunks downloads they claimed, and sum them 
 ```
 #[cfg(offchain)]
@@ -151,6 +153,8 @@ In theory, validators could adopt whatever strategy they like to penalize valida
 We avoid placing rewards logic on the relay chain now, so we must either collect the signed `ApprovalsTallyMessage`s and do the above computations somewhere sufficiently trusted, like a parachain, or via some distributed protocol with its own assumptions.
 
 #### In-core
+
+> NOTE: we are not populating a merkle tree, but rather just posting the tallies on-chain
 
 A dedicated rewards parachain could easily collect the `ApprovalsTallyMessage`s and do the above computations.  In this, we logically have two phases, first we build the on-chain Merkle tree `M` of `ApprovalsTallyMessage`s, and second we process those into the rewards data.
 
@@ -196,9 +200,9 @@ As always we require that backers' rewards covers their operational costs plus s
 
 ### Approvals
 
-In polkadot, all validators run the elves approval loop for each candidate, in which the validator listens to other approval checkers assignments and approval statements/votes, and with which it marks checkers no-show or done, and marks candidates approved.  Also, this loop determines and announces validators' own approval checker assignments.
+In Polkadot, all validators run the ELVES approval loop for each candidate, in which the validator listens to other approval checkers assignments and approval statements/votes, and with which it marks checkers no-show or done, and marks candidates approved.  Also, this loop determines and announces validators' own approval checker assignments.
 
-Any validator should always conclude whatever approval checks it begins, but our approval assignment loop ignore some approval checks, either because they were announced too soon or because an earlier no-show delivered its approval vote before the final approval.  We say a validator $u$ *uses* an approval vote by a validator $v$ on a candidate $c$ if the approval assignments loop by $u$ counted the vote by $v$ towards approving the candidate $c$.  We actually rerun the elves approval loop quite frequently, but only the final run that marks the candidate approved determines the *useful* approval votes.
+Any validator should always conclude whatever approval checks it begins, but our approval assignment loop ignore some approval checks, either because they were announced too soon or because an earlier no-show delivered its approval vote before the final approval.  We say a validator $u$ *uses* an approval vote by a validator $v$ on a candidate $c$ if the approval assignments loop by $u$ counted the vote by $v$ towards approving the candidate $c$.  We actually rerun the ELVES approval loop quite frequently, but only the final run that marks the candidate approved determines the *useful* approval votes.
 
 We should not rewards votes announced too soon, so by only counting the final run we unavoidably omit rewards for some honest no-show replacements too.  We expect the 80%-ish discount for backing covers these losses, so approval checks remain more profitable than backing.
 
