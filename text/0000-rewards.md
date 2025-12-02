@@ -123,8 +123,6 @@ for i in 0..num_validators {
 ```
 Assuming more than 50% honesty, these median tell us how many approval votes form each validator. 
 
-> NOTE: We are not going to calculating missed uploads on-chain as of yet.  We have to discuss remove this from the RFC?
-
 We re-weight the `used_downloads` from the `i`th validator by their median times their expected `f+1` chunks and divided by how many chunks downloads they claimed, and sum them 
 ```
 #[cfg(offchain)]
@@ -153,8 +151,6 @@ In theory, validators could adopt whatever strategy they like to penalize valida
 We avoid placing rewards logic on the relay chain now, so we must either collect the signed `ApprovalsTallyMessage`s and do the above computations somewhere sufficiently trusted, like a parachain, or via some distributed protocol with its own assumptions.
 
 #### In-core
-
-> NOTE: we are not populating a merkle tree, but rather just posting the tallies on-chain
 
 A dedicated rewards parachain could easily collect the `ApprovalsTallyMessage`s and do the above computations.  In this, we logically have two phases, first we build the on-chain Merkle tree `M` of `ApprovalsTallyMessage`s, and second we process those into the rewards data.
 
