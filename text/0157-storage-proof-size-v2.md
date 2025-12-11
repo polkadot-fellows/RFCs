@@ -29,8 +29,7 @@ This discrepancy can cause the block builder to overshoot the PoV budget when us
 This RFC proposes version 2 of the `storage_proof_size` host function:
 
 ```rust
-#[version(2)]
-fn ext_storage_proof_size_version_2(state_version: u8) -> u64;
+fn ext_storage_proof_size_version_2() -> u64;
 ```
 
 Version 2 returns the proof size comprising:
