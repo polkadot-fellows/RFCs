@@ -1,4 +1,4 @@
-# RFC-0151: Storage Proof Size Host Function Version 2
+# RFC-0157: Storage Proof Size Host Function Version 2
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
