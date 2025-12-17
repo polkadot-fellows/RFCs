@@ -3,13 +3,12 @@
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 17 December 2025                                                                            |
-| **Description** | Introduce a new OpenGov track for cancelling scheduled treasury spends with a maximum 21-day timeline |
+| **Description** | Introduce a new OpenGov track for cancelling scheduled treasury spends with a maximum 15-day timeline |
 | **Authors**     | Tommi Enenkel                                                                               |
 
 ## Summary
 
-This RFC proposes a new OpenGov track called Spend Canceller (Track ID 22) that provides a dedicated, expedited governance pathway for cancelling scheduled treasury spends via `treasury.void_spend()`. The current mechanism requires using the Treasurer track, which takes approximately 36 days due to its conservative parameters designed for approving large expenditures. This proposal introduces a track with a maximum 21-day timeline, enabling the network to respond more swiftly to problematic or erroneous spend approvals while maintaining appropriate governance safeguards.
-The proposed track features a 10,000 DOT decision deposit, curves calibrated so that 10% support enables passage within 1 day, and at the end of the decision period, a simple 50% approval majority with 0% minimum support is sufficient for passage.
+This RFC proposes a new OpenGov track called Spend Canceller (Track ID 22) that provides a dedicated, expedited governance pathway for cancelling scheduled treasury spends via `treasury.void_spend()`. The current mechanism requires using the Treasurer track, which takes approximately 36 days due to its conservative parameters designed for approving large expenditures. This proposal introduces a track with a maximum 15-day timeline, enabling the network to respond more swiftly to problematic or erroneous spend approvals while maintaining appropriate governance safeguards.
 
 ## Motivation
 
