@@ -1,0 +1,384 @@
+
+<!DOCTYPE HTML>
+<html lang="en" class="polkadot" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>RFC-0160: PubSub Mechanism - Polkadot Fellowship RFCs</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="An online book of RFCs approved or proposed within the Polkadot Fellowship.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/polkadot.css">
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "polkadot" : "polkadot";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('polkadot')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../introduction.html">Introduction</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Newly Proposed</li><li class="chapter-item expanded "><a href="../new/0159-spend-canceller-track.html">RFC-0000: Spend Canceller Track</a></li><li class="chapter-item expanded "><a href="../new/0160-pub-sub-mechanism.html" class="active">RFC-0160: PubSub Mechanism</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Proposed</li><li class="chapter-item expanded "><a href="../proposed/0145-remove-unnecessary-allocator-usage.html">RFC-0145: Remove the host-side runtime memory allocator</a></li><li class="chapter-item expanded "><a href="../proposed/0154-multi-slot-aura.html">RFC-0154: AURA Multi-Slot Collation </a></li><li class="chapter-item expanded "><a href="../proposed/0156-bls-signatures.html">RFC-0156: Add BLS12-381 Host Functions</a></li><li class="chapter-item expanded "><a href="../proposed/0158-storage-proof-size-v2.html">RFC-0158: Storage Proof Size Host Function Version 2</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Approved</li><li class="chapter-item expanded "><a href="../approved/0001-agile-coretime.html">RFC-1: Agile Coretime</a></li><li class="chapter-item expanded "><a href="../approved/0005-coretime-interface.html">RFC-5: Coretime Interface</a></li><li class="chapter-item expanded "><a href="../approved/0007-system-collator-selection.html">RFC-0007: System Collator Selection</a></li><li class="chapter-item expanded "><a href="../approved/0008-parachain-bootnodes-dht.html">RFC-0008: Store parachain bootnodes in relay chain DHT</a></li><li class="chapter-item expanded "><a href="../approved/0009-improved-net-light-client-requests.html">RFC-0009: Improved light client requests networking protocol</a></li><li class="chapter-item expanded "><a href="../approved/0010-burn-coretime-revenue.html">RFC-0010: Burn Coretime Revenue</a></li><li class="chapter-item expanded "><a href="../approved/0012-process-for-adding-new-collectives.html">RFC-0012: Process for Adding New System Collectives</a></li><li class="chapter-item expanded "><a href="../approved/0013-prepare-blockbuilder-and-core-runtime-apis-for-mbms.html">RFC-0013: Prepare Core runtime API for MBMs</a></li><li class="chapter-item expanded "><a href="../approved/0014-improve-locking-mechanism-for-parachains.html">RFC-0014: Improve locking mechanism for parachains</a></li><li class="chapter-item expanded "><a href="../approved/0017-coretime-market-redesign.html">RFC-0017: Coretime Market Redesign</a></li><li class="chapter-item expanded "><a href="../approved/0022-adopt-encointer-runtime.html">RFC-0022: Adopt Encointer Runtime</a></li><li class="chapter-item expanded "><a href="../approved/0026-sassafras-consensus.html">RFC-0026: Sassafras Consensus Protocol</a></li><li class="chapter-item expanded "><a href="../approved/0032-minimal-relay.html">RFC-0032: Minimal Relay</a></li><li class="chapter-item expanded "><a href="../approved/0042-extrinsics-state-version.html">RFC-0042: Add System version that replaces StateVersion on RuntimeVersion</a></li><li class="chapter-item expanded "><a href="../approved/0043-storage-proof-size-hostfunction.html">RFC-0043: Introduce storage_proof_size Host Function for Improved Parachain Block Utilization</a></li><li class="chapter-item expanded "><a href="../approved/0045-nft-deposits-asset-hub.html">RFC-0045: Lowering NFT Deposits on Asset Hub</a></li><li class="chapter-item expanded "><a href="../approved/0047-assignment-of-availability-chunks.html">RFC-0047: Assignment of availability chunks to validators</a></li><li class="chapter-item expanded "><a href="../approved/0048-session-keys-runtime-api.html">RFC-0048: Generate ownership proof for SessionKeys</a></li><li class="chapter-item expanded "><a href="../approved/0050-fellowship-salaries.html">RFC-0050: Fellowship Salaries</a></li><li class="chapter-item expanded "><a href="../approved/0056-one-transaction-per-notification.html">RFC-0056: Enforce only one transaction per notification</a></li><li class="chapter-item expanded "><a href="../approved/0059-nodes-capabilities-discovery.html">RFC-0059: Add a discovery mechanism for nodes based on their capabilities</a></li><li class="chapter-item expanded "><a href="../approved/0078-merkleized-metadata.html">RFC-0078: Merkleized Metadata</a></li><li class="chapter-item expanded "><a href="../approved/0084-general-transaction-extrinsic-format.html">RFC-0084: General transactions in extrinsic format</a></li><li class="chapter-item expanded "><a href="../approved/0091-dht-record-creation-time.html">RFC-0091: DHT Authority discovery record creation time</a></li><li class="chapter-item expanded "><a href="../approved/0097-unbonding_queue.html">RFC-0097: Unbonding Queue</a></li><li class="chapter-item expanded "><a href="../approved/0099-transaction-extension-version.html">RFC-0099: Introduce a transaction extension version</a></li><li class="chapter-item expanded "><a href="../approved/0100-xcm-multi-type-asset-transfer.html">RFC-0100: New XCM instruction: InitiateAssetsTransfer</a></li><li class="chapter-item expanded "><a href="../approved/0101-xcm-transact-remove-max-weight-param.html">RFC-0101: XCM Transact remove require_weight_at_most parameter</a></li><li class="chapter-item expanded "><a href="../approved/0103-introduce-core-index-commitment.html">RFC-0103:  Introduce a CoreIndex commitment and a SessionIndex field in candidate receipts</a></li><li class="chapter-item expanded "><a href="../approved/0105-xcm-improved-fee-mechanism.html">RFC-0105: XCM improved fee mechanism</a></li><li class="chapter-item expanded "><a href="../approved/0107-xcm-execution-hints.html">RFC-0107: XCM Execution hints</a></li><li class="chapter-item expanded "><a href="../approved/0108-xcm-remove-testnet-ids.html">RFC-0108: Remove XCM testnet NetworkIds</a></li><li class="chapter-item expanded "><a href="../approved/0122-alias-origin-on-asset-transfers.html">RFC-0122: Asset transfers can alias XCM origin on destination to original origin</a></li><li class="chapter-item expanded "><a href="../approved/0123-pending-code-as-storage-location-for-runtime-upgrades.html">RFC-0123: Introduce :pending_code as intermediate storage key for the runtime code</a></li><li class="chapter-item expanded "><a href="../approved/0125-xcm-asset-metadata.html">RFC-0125: XCM Asset Metadata</a></li><li class="chapter-item expanded "><a href="../approved/0126-introduce-pvq.html">RFC-0126: Introduce PVQ (PolkaVM Query)</a></li><li class="chapter-item expanded "><a href="../approved/0135-compressed-blob-prefixes.html">RFC-0135: Compressed Blob Prefixes</a></li><li class="chapter-item expanded "><a href="../approved/0139-faster-erasure-coding.html">RFC-0139: Faster Erasure Coding</a></li><li class="chapter-item expanded "><a href="../approved/0146-deflationary-fee-proposal.html">RFC-0146: Deflationary Transaction Fee Model for the Relay Chain and its System Parachains</a></li><li class="chapter-item expanded "><a href="../approved/0149-rfc-1-renewal-adjustment.html">RFC-0149: Renewal Adjustment</a></li><li class="chapter-item expanded "><a href="../approved/0150-voting-while-delegating.html">RFC-150: Allow Voting While Delegating</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Stale</li><li class="chapter-item expanded "><a href="../stale/0000-pre-elves_soft.html">RFC-0000: Pre-ELVES soft concensus</a></li><li class="chapter-item expanded "><a href="../stale/0000-rewards.html">RFC-0000: Validator Rewards</a></li><li class="chapter-item expanded "><a href="../stale/0004-remove-unnecessary-allocator-usage.html">RFC-0004: Remove the host-side runtime memory allocator</a></li><li class="chapter-item expanded "><a href="../stale/0006-dynamic-pricing-for-bulk-coretime-sales.html">RFC-0006: Dynamic Pricing for Bulk Coretime Sales</a></li><li class="chapter-item expanded "><a href="../stale/0034-xcm-absolute-location-account-derivation.html">RFC-34: XCM Absolute Location Account Derivation</a></li><li class="chapter-item expanded "><a href="../stale/0035-conviction-voting-delegation-modifications.html"> RFC-0035: Conviction Voting Delegation Modifications</a></li><li class="chapter-item expanded "><a href="../stale/0044-rent-based-registration.html">RFC-0044: Rent based registration model</a></li><li class="chapter-item expanded "><a href="../stale/0054-remove-heap-pages.html">RFC-0054: Remove the concept of "heap pages" from the client</a></li><li class="chapter-item expanded "><a href="../stale/0070-x-track-kusamanetwork.html">RFC-0070: X Track for @kusamanetwork</a></li><li class="chapter-item expanded "><a href="../stale/0073-referedum-deposit-track.html">RFC-0073: Decision Deposit Referendum Track</a></li><li class="chapter-item expanded "><a href="../stale/0074-stateful-multisig-pallet.html">RFC-0074: Stateful Multisig Pallet</a></li><li class="chapter-item expanded "><a href="../stale/0077-increase-max-length-of-identity-pgp-fingerprint-value.html">RFC-0077: Increase maximum length of identity PGP fingerprint values from 20 bytes</a></li><li class="chapter-item expanded "><a href="../stale/0088-broker-pallet-slashable-deposit-purchaser-reputation-reserved-cores.html">RFC-0088: Add slashable locked deposit, purchaser reputation, and reserved cores for on-chain identities to broker pallet</a></li><li class="chapter-item expanded "><a href="../stale/00xx-secondary-marketplace-for-regions.html">RFC-0001: Secondary Market for Regions</a></li><li class="chapter-item expanded "><a href="../stale/00xx-smart-contracts-coretime-chain.html">RFC-0002: Smart Contracts on the Coretime Chain</a></li><li class="chapter-item expanded "><a href="../stale/0102-offchain-parachain-runtime-upgrades.html">RFC-0000: Feature Name Here</a></li><li class="chapter-item expanded "><a href="../stale/0106-xcm-remove-fees-mode.html">RFC-0106: Remove XCM fees mode</a></li><li class="chapter-item expanded "><a href="../stale/0111-pure-proxy-replication.html">RFC-0111: Pure Proxy Replication</a></li><li class="chapter-item expanded "><a href="../stale/0112-compress-state-response-message-in-state-sync.html">RFC-0112: Compress the State Response Message in State Sync</a></li><li class="chapter-item expanded "><a href="../stale/0114-secp256r1-hostfunction.html">RFC-0114: Introduce secp256r1_ecdsa_verify_prehashed Host Function to verify NIST-P256 elliptic curve signatures</a></li><li class="chapter-item expanded "><a href="../stale/0117-unbrick-collective.html">RFC-0117: The Unbrick Collective</a></li><li class="chapter-item expanded "><a href="../stale/0120-referenda-confirmation-by-candle-mechanism.html">RFC-0120: Referenda Confirmation by Candle Mechanism</a></li><li class="chapter-item expanded "><a href="../stale/0124-extrinsic-version-5.html">RFC-0124: Extrinsic version 5</a></li><li class="chapter-item expanded "><a href="../stale/0138-invulnerable-collator-election.html">RFC-0138: Election mechanism for invulnerable collators on system chains</a></li><li class="chapter-item expanded "><a href="../stale/0152-decentralized-convex-preference-coretime-market-for-polkadot.html">RFC-0152: Decentralized Convex-Preference Coretime Market for Polkadot</a></li><li class="chapter-item expanded "><a href="../stale/0155-pUSD.html">RFC-0155: pUSD (Polkadot USD over-collateralised debt token)</a></li><li class="chapter-item expanded "><a href="../stale/RFC-114 Adjust Tipper Track Confirmation Periods.html">RFC-114: Adjust Tipper Track Confirmation Periods</a></li><li class="chapter-item expanded "><a href="../stale/TODO-stale-nomination-reward-curve.html">RFC-TODO: Stale Nomination Reward Curve</a></li><li class="chapter-item expanded "><a href="../stale/xxxx-improve-the-security-of-proof-of-possession.html">RFC-XXXX: Adding customized mandatory context to proof of possession statement</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="polkadot">Polkadot</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Polkadot Fellowship RFCs</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <p><a href="https://github.com/polkadot-fellows/RFCs/pull/160">(source)</a></p>
+<p><strong>Table of Contents</strong></p>
+<ul>
+<li><a href="#rfc-0160-pubsub-mechanism">RFC-0160: PubSub Mechanism</a>
+<ul>
+<li><a href="#summary">Summary</a></li>
+<li><a href="#motivation">Motivation</a></li>
+<li><a href="#stakeholders">Stakeholders</a></li>
+<li><a href="#explanation">Explanation</a></li>
+<li><a href="#drawbacks">Drawbacks</a></li>
+<li><a href="#testing-security-and-privacy">Testing, Security, and Privacy</a>
+<ul>
+<li><a href="#testing">Testing</a></li>
+<li><a href="#security">Security</a></li>
+<li><a href="#privacy">Privacy</a></li>
+<li><a href="#implementation-pitfalls">Implementation pitfalls.</a></li>
+</ul>
+</li>
+<li><a href="#performance-ergonomics-and-compatibility">Performance, Ergonomics, and Compatibility</a>
+<ul>
+<li><a href="#performance">Performance</a></li>
+<li><a href="#ergonomics">Ergonomics</a></li>
+<li><a href="#compatibility">Compatibility</a></li>
+</ul>
+</li>
+<li><a href="#future-directions-and-related-material">Future Directions and Related Material</a></li>
+</ul>
+</li>
+</ul>
+<h1 id="rfc-0160-pubsub-mechanism"><a class="header" href="#rfc-0160-pubsub-mechanism">RFC-0160: PubSub Mechanism</a></h1>
+<div class="table-wrapper"><table><thead><tr><th></th><th></th></tr></thead><tbody>
+<tr><td><strong>Start Date</strong></td><td>18 - 12 - 2025</td></tr>
+<tr><td><strong>Description</strong></td><td>PubSub mechanism via XCM data publishing and relay state proof propagation.</td></tr>
+<tr><td><strong>Authors</strong></td><td>metricaez</td></tr>
+</tbody></table>
+</div>
+<h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
+<p>Add a publish/subscribe mechanism that allows parachains to publish data to the relay chain and other parachains to consume it via verified relay chain storage proofs. </p>
+<h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
+<p>As pointed out in issue #606, when parachains need to exchange information, the only available options are repeated point-to-point XCM messages or ad-hoc off-chain infrastructure. This RFC is motivated by the desire to propose an alternative based on a relay-assisted publish/subscribe mechanism that enables one-to-many, verifiable, cross-parachain data distribution.</p>
+<h2 id="stakeholders"><a class="header" href="#stakeholders">Stakeholders</a></h2>
+<p>Runtime developers, oracles, bridges, and general rollup product and application builders.</p>
+<h2 id="explanation"><a class="header" href="#explanation">Explanation</a></h2>
+<p>This RFC defines a relay-assisted publish/subscribe mechanism that enables parachains to share arbitrary key-value data through the relay chain without relying on repeated XCM messages or off-chain protocols. The core idea is to use the relay chain as a common, verifiable distribution layer, allowing data to be published once and consumed by many parachains with bounded and predictable costs.
+Parachains publish data via a new XCM v5 <code>Publish</code> instruction. Published entries are stored on the relay chain in a per-publisher child trie managed by the broadcaster pallet. Publishers must be registered, and both the number of keys and their sizes are bounded to prevent unbounded state growth. Each published item is addressed by a fixed-size key. The suggestion is to backport the new instruction to v5 as v6 discussion advances.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>Publish { data: PublishData } 
+PublishData = BoundedVec&lt;(PublishKey, BoundedVec&lt;u8, MaxPublishValueLength&gt;), MaxPublishItems&gt;
+<span class="boring">}</span></code></pre></pre>
+<p>On the consumer side, subscribing parachains declare their interests at the runtime level by specifying which publishers and keys they want to subscribe to. This information is exposed to the collator through a new dedicated runtime API (<code>KeyToIncludeInRelayProofApi</code>), allowing the collator to know which relay-chain storage keys must be proven for a given block. During block production, the collator fetches relay-chain state proofs for those keys, including child-trie entries, and embeds them in the ParachainInherentData.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>/// A relay chain storage key to be included in the storage proof.
+#[derive(Clone, Debug, Encode, Decode, TypeInfo, PartialEq, Eq)]
+pub enum RelayStorageKey {
+	/// Top-level relay chain storage key.
+	Top(Vec&lt;u8&gt;),
+	/// Child trie storage key.
+	Child {
+		/// Unprefixed storage key identifying the child trie root location.
+		/// Prefix `:child_storage:default:` is added when accessing storage.
+		/// Used to derive `ChildInfo` for reading child trie data.
+		storage_key: Vec&lt;u8&gt;,
+		/// Key within the child trie.
+		key: Vec&lt;u8&gt;,
+	},
+}
+
+/// Request for proving relay chain storage data.
+///
+/// Contains a list of storage keys (either top-level or child trie keys)
+/// to be included in the relay chain state proof.
+#[derive(Clone, Debug, Encode, Decode, TypeInfo, PartialEq, Eq, Default)]
+pub struct RelayProofRequest {
+	/// Storage keys to include in the relay chain state proof.
+	pub keys: Vec&lt;RelayStorageKey&gt;,
+}
+
+/// API for specifying which relay chain storage data to include in storage proofs.
+///
+/// This API allows parachains to request both top-level relay chain storage keys
+/// and child trie storage keys to be included in the relay chain state proof.
+pub trait KeyToIncludeInRelayProofApi {
+    /// Returns relay chain storage proof requests.
+    ///
+    /// The returned `RelayProofRequest` contains a list of storage keys where each key
+    /// can be either:
+    /// - `RelayStorageKey::Top`: Top-level relay chain storage key
+    /// - `RelayStorageKey::Child`: Child trie storage, containing the child trie identifier
+    ///   and the key to prove from that child trie
+    ///
+    /// The collator generates proofs for these and includes them in the relay chain state proof.
+    fn keys_to_prove() -&gt; RelayProofRequest;
+}
+<span class="boring">}</span></code></pre></pre>
+<p>The parachain verifies the relay-chain state proofs as part of <code>set_validation_data</code> of <code>parachain-system</code>. A processing hook extracts the relevant key–value pairs from the proofs and only triggers updates when the corresponding child-trie root has changed since the previous block, avoiding redundant child trie data extractions which are the most significant computation-demanding process of the feature. Verified updates are then delivered to the runtime through a subscription handler, enabling consumption of cross-chain data.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>/// Processor for relay chain proof keys.
+///
+/// This allows parachains to process data from the relay chain state proof,
+/// including both child trie keys and main trie keys that were requested
+/// via `KeyToIncludeInRelayProofApi`.
+type RelayProofKeysProcessor: ProcessRelayProofKeys;
+
+/// Process keys from verified relay chain state proofs.
+///
+/// This trait allows processing of relay chain storage data from the verified proof.
+pub trait ProcessRelayProofKeys {
+	/// Process keys from a verified relay state proof.
+	fn process_relay_proof_keys(verified_proof: &amp;RelayChainStateProof) -&gt; Weight;
+}
+
+<span class="boring">}</span></code></pre></pre>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>/// Define subscriptions and handle received data.
+pub trait SubscriptionHandler {
+	/// List of subscriptions as (ParaId, keys) tuples.
+	/// Returns (subscriptions, weight) where weight is the cost of computing the subscriptions.
+	fn subscriptions() -&gt; (Vec&lt;(ParaId, Vec&lt;Vec&lt;u8&gt;&gt;)&gt;, Weight);
+
+	/// Called when subscribed data is updated.
+	/// Returns the weight consumed by processing the data.
+	fn on_data_updated(publisher: ParaId, key: Vec&lt;u8&gt;, value: Vec&lt;u8&gt;) -&gt; Weight;
+}
+<span class="boring">}</span></code></pre></pre>
+<p>This design intents to address the issue #606 by reusing existing <code>cumulus</code> and relay-chain infrastructure.</p>
+<h2 id="drawbacks"><a class="header" href="#drawbacks">Drawbacks</a></h2>
+<ul>
+<li>The relay-chain state passed during collator block construction increases, and its size and impact must be carefully monitored.</li>
+<li>Processing relay state proofs introduces additional overhead for data extraction and verification in the runtime.</li>
+<li><code>KeyToIncludeInRelayProofApi</code> currently works for child tries using the default route; making it fully generic would require extending <code>ChildInfo</code> with <code>TypeInfo</code> or a workaround, which should be evaluated separately.</li>
+</ul>
+<h2 id="testing-security-and-privacy"><a class="header" href="#testing-security-and-privacy">Testing, Security, and Privacy</a></h2>
+<h3 id="testing"><a class="header" href="#testing">Testing</a></h3>
+<p>The implementation is covered by unit tests that exercise the publish instruction and handler, broadcaster pallet, subscription handling, and relay-state proof processing logic. In addition, a dedicated testing branch provides a full end-to-end reference implementation based on Rococo Relay and testing Parachain, with publisher and subscriber parachains interacting through the relay chain, which can be run locally using Zombienet - https://github.com/blockdeep/polkadot-sdk/tree/feat/pubsub-rev1225-dev</p>
+<h3 id="security"><a class="header" href="#security">Security</a></h3>
+<p>Data consumed by parachains is verified against relay-chain state and validators proof, preventing forgery by collators.</p>
+<h3 id="privacy"><a class="header" href="#privacy">Privacy</a></h3>
+<p>Published data is stored in relay-chain child tries and is therefore publicly observable.</p>
+<h3 id="implementation-pitfalls"><a class="header" href="#implementation-pitfalls">Implementation pitfalls.</a></h3>
+<p>Care must be taken to avoid requesting keys unnecessarily, as this directly impacts proof size, building and runtime execution cost.</p>
+<h2 id="performance-ergonomics-and-compatibility"><a class="header" href="#performance-ergonomics-and-compatibility">Performance, Ergonomics, and Compatibility</a></h2>
+<h3 id="performance"><a class="header" href="#performance">Performance</a></h3>
+<p>This proposal is a necessary trade-off rather than a pure optimization, adding relay-chain state proofs and runtime verification to avoid repeated point-to-point XCM requests and off-chain systems. Overhead is limited by proving only explicitly subscribed keys and enforcing strict bounds, while update handling based on child-trie root changes is managed by the Subscriber.</p>
+<p>Does not present any overhead when not implemented. Runtimes can decide simply not to implement the API and pallet broadcaster rr subscriber and there will be no performance impact. </p>
+<h3 id="ergonomics"><a class="header" href="#ergonomics">Ergonomics</a></h3>
+<p>Runtime developers interact with the mechanism through explicit runtime configuration.</p>
+<h3 id="compatibility"><a class="header" href="#compatibility">Compatibility</a></h3>
+<p>The proposal does not break existing XCM semantics or runtime interfaces. All changes are additive and opt-in, allowing parachains to adopt the mechanism incrementally.</p>
+<h2 id="future-directions-and-related-material"><a class="header" href="#future-directions-and-related-material">Future Directions and Related Material</a></h2>
+<p>This RFC enables a range of follow-up work around scalable cross-parachain data distribution. A straightforward application is price oracles, and there has also been interest in using the mechanism for broader state propagation patterns, including bridging-related operations.</p>
+<p>At the same time, this RFC represents an initial design. Additional use cases, optimal configurations, limitations, and alternative patterns are expected to emerge as the mechanism is adopted and tested in practice.</p>
+<p>Future RFCs may refine the API surface, extend child-trie handling, introduce additional safeguards or ergonomics, storage management,  optimize proof generation and processing, or specialize the mechanism for particular use cases.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../new/0159-spend-canceller-track.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../proposed/0145-remove-unnecessary-allocator-usage.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../new/0159-spend-canceller-track.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../proposed/0145-remove-unnecessary-allocator-usage.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>
