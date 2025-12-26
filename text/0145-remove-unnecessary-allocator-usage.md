@@ -151,7 +151,7 @@ The function used to accept only a prefix and a limit and return a SCALE-encoded
 ```wat
 (func $ext_storage_clear_prefix_version_3
     (param $maybe_prefix i64) (param $maybe_limit i64) (param $maybe_cursor_in i64)
-    (param $maybe_cursor_out i64) (param $counters i32) (result i32))
+    (param $maybe_cursor_out i64) (param $counters_out i32) (result i32))
 ```
 
 ##### Arguments
@@ -291,7 +291,7 @@ The function used to accept only a child storage key and a limit and return a SC
 ```wat
 (func $ext_default_child_storage_storage_kill_version_4
     (param $storage_key i64) (param $maybe_limit i64) (param $maybe_cursor_in i64)
-    (param $maybe_cursor_out i64) (param $counters i32) (result i32))
+    (param $maybe_cursor_out i64) (param $counters_out i32) (result i32))
 ```
 
 ##### Arguments
@@ -328,7 +328,7 @@ The function used to accept (along with the child storage key) only a prefix and
 ```wat
 (func $ext_default_child_storage_clear_prefix_version_3
     (param $storage_key i64) (param $prefix i64) (param $maybe_limit i64)
-    (param $maybe_cursor_in i64) (param $maybe_cursor_out i64) (param $counters i32)
+    (param $maybe_cursor_in i64) (param $maybe_cursor_out i64) (param $counters_out i32)
     (result i32))
 ```
 
@@ -1013,7 +1013,7 @@ The function has already been using a runtime-allocated buffer to return its val
 
 ```wat
 (func $ext_offchain_http_response_read_body_version_2
-    (param $request_id i32) (param $buffer i64) (param $deadline i64) (result i64))
+    (param $request_id i32) (param $buffer_out i64) (param $deadline i64) (result i64))
 ```
 
 ##### Arguments
@@ -1047,7 +1047,7 @@ A new function providing means of passing input data from the host to the runtim
 
 ```wat
 (func $ext_input_read_version_1
-    (param $buffer i64))
+    (param $buffer_out i64))
 ```
 
 ##### Arguments
