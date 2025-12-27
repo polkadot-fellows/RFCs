@@ -295,7 +295,7 @@ $$</p>
 <h5 id="new-prototype-1"><a class="header" href="#new-prototype-1">New prototype</a></h5>
 <pre><code class="language-wat">(func $ext_storage_clear_prefix_version_3
     (param $maybe_prefix i64) (param $maybe_limit i64) (param $maybe_cursor_in i64)
-    (param $maybe_cursor_out i64) (param $counters i32) (result i32))
+    (param $maybe_cursor_out i64) (param $counters_out i32) (result i32))
 </code></pre>
 <h5 id="arguments-1"><a class="header" href="#arguments-1">Arguments</a></h5>
 <ul>
@@ -388,7 +388,7 @@ $$</p>
 <h5 id="new-prototype-5"><a class="header" href="#new-prototype-5">New prototype</a></h5>
 <pre><code class="language-wat">(func $ext_default_child_storage_storage_kill_version_4
     (param $storage_key i64) (param $maybe_limit i64) (param $maybe_cursor_in i64)
-    (param $maybe_cursor_out i64) (param $counters i32) (result i32))
+    (param $maybe_cursor_out i64) (param $counters_out i32) (result i32))
 </code></pre>
 <h5 id="arguments-5"><a class="header" href="#arguments-5">Arguments</a></h5>
 <ul>
@@ -417,7 +417,7 @@ $$</p>
 <h5 id="new-prototype-6"><a class="header" href="#new-prototype-6">New prototype</a></h5>
 <pre><code class="language-wat">(func $ext_default_child_storage_clear_prefix_version_3
     (param $storage_key i64) (param $prefix i64) (param $maybe_limit i64)
-    (param $maybe_cursor_in i64) (param $maybe_cursor_out i64) (param $counters i32)
+    (param $maybe_cursor_in i64) (param $maybe_cursor_out i64) (param $counters_out i32)
     (result i32))
 </code></pre>
 <h5 id="arguments-6"><a class="header" href="#arguments-6">Arguments</a></h5>
@@ -879,7 +879,7 @@ $$</p>
 <p>The function has already been using a runtime-allocated buffer to return its value. However, the result of the operation was returned as a host-allocated SCALE-encoded <code>Result</code>. It is changed to return a primitive indicating either the length written or an error.</p>
 <h5 id="new-prototype-21"><a class="header" href="#new-prototype-21">New prototype</a></h5>
 <pre><code class="language-wat">(func $ext_offchain_http_response_read_body_version_2
-    (param $request_id i32) (param $buffer i64) (param $deadline i64) (result i64))
+    (param $request_id i32) (param $buffer_out i64) (param $deadline i64) (result i64))
 </code></pre>
 <h5 id="arguments-28"><a class="header" href="#arguments-28">Arguments</a></h5>
 <ul>
@@ -900,7 +900,7 @@ $$</p>
 <p>A new function providing means of passing input data from the host to the runtime. Previously, the host allocated a buffer and passed a pointer to it to the runtime. With the runtime allocator, it's not possible anymore, so the input data passing protocol changed (see &quot;Other changes&quot; section below). This function is required to support that change.</p>
 <h5 id="new-prototype-22"><a class="header" href="#new-prototype-22">New prototype</a></h5>
 <pre><code class="language-wat">(func $ext_input_read_version_1
-    (param $buffer i64))
+    (param $buffer_out i64))
 </code></pre>
 <h5 id="arguments-29"><a class="header" href="#arguments-29">Arguments</a></h5>
 <ul>
