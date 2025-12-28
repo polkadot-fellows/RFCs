@@ -88,6 +88,28 @@ Pointers to input parameters passed to the host must reference readable memory r
 
 Pointers to output parameters passed to the host must reference writeable memory regions. The host must abort execution if the memory region referenced by the pointer cannot be written, in case it is performing the actual write, unless explicitly stated otherwise.
 
+### Runtime entry points
+
+Currently, all runtime entry points have the following identical Wasm function signatures:
+
+```wat
+(func $runtime_entrypoint (param $data i32) (param $len i32) (result i64))
+```
+
+After this RFC is implemented, such entry points are only supported for the legacy runtimes using the host-side allocator. All the new runtimes, using runtime-side allocator, must use new entry point signature:
+
+```wat
+(func $runtime_entrypoint (param $len i32) (result i64))
+```
+
+A runtime function called through such an entry point gets the length of SCALE-encoded input data as its only argument. After that, the function must allocate exactly the amount of bytes it is requested, and call the `ext_input_read` host function to obtain the encoded input data.
+
+The new entry point and the legacy entry point styles must not be used in a single runtime.
+
+If a runtime has the new-style entry point defined in this RFC, but happens to import functions that allocate on the host side, the host must not proceed with execution of such a runtime, aborting before the execution takes place.
+
+If a runtime has the legacy-style entry point, but happens to import functions that allocate on the runtime side, which are defined in this RFC, the host must not proceed with execution of such a runtime, aborting before the execution takes place.
+
 ### Changes to host functions
 
 #### ext_storage_get
@@ -160,7 +182,7 @@ The function used to accept only a prefix and a limit and return a SCALE-encoded
 * `maybe_limit` is an optional positive integer ([New Definition I](#new-def-i)) representing either the maximum number of backend deletions which may happen, or the _absence_ of such a limit. The number of backend iterations may surpass this limit by no more than one;
 * `maybe_cursor_in` is an optional pointer-size ([New Definition II](#new-def-ii)) representing the cursor returned by the previous (unfinished) call to this function. It should be _absent_ on the first call;
 * `maybe_cursor_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the continuation cursor will optionally be written (see also the Result section). The value is actually stored only if the buffer is large enough. Whenever the value is not written into the buffer, the buffer contents are unmodified;
-* `counters` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a 12-byte buffer where three low-endian 32-bit integers will be stored one after another, representing the counters, respectively:
+* `counters_out` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a 12-byte buffer where three low-endian 32-bit integers will be stored one after another, representing the counters, respectively:
   * Of items removed from the backend database will be written;
   * Of unique keys removed, taking into account both the backend and the overlay;
   * Of iterations (each requiring a storage seek/read) which were done.
@@ -300,7 +322,7 @@ The function used to accept only a child storage key and a limit and return a SC
 * `maybe_limit` is an optional positive integer representing either the maximum number of backend deletions which may happen, or the absence of such a limit. The number of backend iterations may surpass this limit by no more than one;
 * `maybe_cursor_in` is an optional pointer-size representing the cursor returned by the previous (unfinished) call to this function. It should be _absent_ on the first call;
 * `maybe_cursor_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the continuation cursor will optionally be written (see also the Result section). The value is actually stored only if the buffer is large enough. Whenever the value is not written into the buffer, the buffer contents are unmodified;
-* `counters` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a 12-byte buffer where three low-endian 32-bit integers will be stored one after another, representing the counters, respectively:
+* `counters_out` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a 12-byte buffer where three low-endian 32-bit integers will be stored one after another, representing the counters, respectively:
   * Of items removed from the backend database will be written;
   * Of unique keys removed, taking into account both the backend and the overlay;
   * Of iterations (each requiring a storage seek/read) which were done.
@@ -339,7 +361,7 @@ The function used to accept (along with the child storage key) only a prefix and
 * `maybe_limit` is an optional positive integer representing either the maximum number of backend deletions which may happen, or the absence of such a limit. The number of backend iterations may surpass this limit by no more than one;
 * `maybe_cursor_in` is an optional pointer-size representing the cursor returned by the previous (unfinished) call to this function. It should be _absent_ on the first call;
 * `maybe_cursor_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the continuation cursor will optionally be written (see also the Result section). The value is actually stored only if the buffer is large enough. Whenever the value is not written into the buffer, the buffer contents are unmodified;
-* `counters` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a 12-byte buffer where three low-endian 32-bit integers will be stored one after another, representing the counters, respectively:
+* `counters_out` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a 12-byte buffer where three low-endian 32-bit integers will be stored one after another, representing the counters, respectively:
   * Of items removed from the backend database will be written;
   * Of unique keys removed, taking into account both the backend and the overlay;
   * Of iterations (each requiring a storage seek/read) which were done.
@@ -845,7 +867,7 @@ The function used to return a SCALE-encoded `Result` value in a host-allocated b
 
 `method` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the HTTP method. Possible values are “GET” and “POST”;
 `uri` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the URI;
-`meta` is a future-reserved field containing additional, SCALE-encoded parameters. Currently, its value is ignored. Passing a pointer to non-readable memory shall not result in execution abortion.
+`meta` is a future-reserved field containing additional, SCALE-encoded parameters. Currently, its value is ignored. Passing a pointer to non-readable memory shall not result in execution abortion. However, an empty array must be passed by the caller. Failure to do so may result in consensus breakage later when the spec is updated with this field's handling logic.
 
 ##### Result
 
@@ -1019,7 +1041,7 @@ The function has already been using a runtime-allocated buffer to return its val
 ##### Arguments
 
 * `request_id` is an i32 integer indicating the ID of the started request, as returned by `ext_offchain_http_request_start`;
-* `buffer` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the buffer where the body is written;
+* `buffer_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the buffer where the body is written;
 * `deadline` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the SCALE-encoded Option value ([Definition 200](https://spec.polkadot.network/id-cryptography-encoding#defn-option-type)) containing the UNIX timestamp ([Definition 191](https://spec.polkadot.network/id-cryptography-encoding#defn-unix-time)). Passing `None` blocks indefinitely.
 
 ##### Result
@@ -1052,22 +1074,4 @@ A new function providing means of passing input data from the host to the runtim
 
 ##### Arguments
 
-* `buffer` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the buffer where the input data will be written. If the buffer is not large enough to accommodate the input data, the function will panic.
-
-### Other changes
-
-Currently, all runtime entrypoints have the following identical Wasm function signatures:
-
-```wat
-(func $runtime_entrypoint (param $data i32) (param $len i32) (result i64))
-```
-
-After this RFC is implemented, such entrypoints are only supported for the legacy runtimes using the host-side allocator. All the new runtimes, using runtime-side allocator, must use new entry point signature:
-
-```wat
-(func $runtime_entrypoint (param $len i32) (result i64))
-```
-
-A runtime function called through such an entrypoint gets the length of SCALE-encoded input data as its only argument. After that, the function must allocate exactly the amount of bytes it is requested, and call the `ext_input_read` host function to obtain the encoded input data.
-
-If a runtime happens to import both functions that allocate on the host side and functions that allocate on the runtime side, the host must not proceed with execution of such a runtime, aborting before the execution takes place.
+* `buffer_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the buffer where the input data will be written. If the buffer is not large enough to accommodate the input data, the function will panic.
