@@ -482,8 +482,8 @@ detailing proposed changes to the technical implementation of the Polkadot netwo
 <ul>
 <li><a href="proposed/0145-remove-unnecessary-allocator-usage.html#new-definitions">New definitions</a></li>
 <li><a href="proposed/0145-remove-unnecessary-allocator-usage.html#memory-safety">Memory safety</a></li>
+<li><a href="proposed/0145-remove-unnecessary-allocator-usage.html#runtime-entry-points">Runtime entry points</a></li>
 <li><a href="proposed/0145-remove-unnecessary-allocator-usage.html#changes-to-host-functions">Changes to host functions</a></li>
-<li><a href="proposed/0145-remove-unnecessary-allocator-usage.html#other-changes">Other changes</a></li>
 </ul>
 </li>
 </ul>
@@ -549,6 +549,17 @@ $$</p>
 <h3 id="memory-safety"><a class="header" href="#memory-safety">Memory safety</a></h3>
 <p>Pointers to input parameters passed to the host must reference readable memory regions. The host must abort execution if the memory region referenced by the pointer cannot be read, unless explicitly stated otherwise.</p>
 <p>Pointers to output parameters passed to the host must reference writeable memory regions. The host must abort execution if the memory region referenced by the pointer cannot be written, in case it is performing the actual write, unless explicitly stated otherwise.</p>
+<h3 id="runtime-entry-points"><a class="header" href="#runtime-entry-points">Runtime entry points</a></h3>
+<p>Currently, all runtime entry points have the following identical Wasm function signatures:</p>
+<pre><code class="language-wat">(func $runtime_entrypoint (param $data i32) (param $len i32) (result i64))
+</code></pre>
+<p>After this RFC is implemented, such entry points are only supported for the legacy runtimes using the host-side allocator. All the new runtimes, using runtime-side allocator, must use new entry point signature:</p>
+<pre><code class="language-wat">(func $runtime_entrypoint (param $len i32) (result i64))
+</code></pre>
+<p>A runtime function called through such an entry point gets the length of SCALE-encoded input data as its only argument. After that, the function must allocate exactly the amount of bytes it is requested, and call the <code>ext_input_read</code> host function to obtain the encoded input data.</p>
+<p>The new entry point and the legacy entry point styles must not be used in a single runtime.</p>
+<p>If a runtime has the new-style entry point defined in this RFC, but happens to import functions that allocate on the host side, the host must not proceed with execution of such a runtime, aborting before the execution takes place.</p>
+<p>If a runtime has the legacy-style entry point, but happens to import functions that allocate on the runtime side, which are defined in this RFC, the host must not proceed with execution of such a runtime, aborting before the execution takes place.</p>
 <h3 id="changes-to-host-functions"><a class="header" href="#changes-to-host-functions">Changes to host functions</a></h3>
 <h4 id="ext_storage_get"><a class="header" href="#ext_storage_get">ext_storage_get</a></h4>
 <h5 id="existing-prototype"><a class="header" href="#existing-prototype">Existing prototype</a></h5>
@@ -594,7 +605,7 @@ $$</p>
 <li><code>maybe_limit</code> is an optional positive integer (<a href="proposed/0145-remove-unnecessary-allocator-usage.html#new-def-i">New Definition I</a>) representing either the maximum number of backend deletions which may happen, or the <em>absence</em> of such a limit. The number of backend iterations may surpass this limit by no more than one;</li>
 <li><code>maybe_cursor_in</code> is an optional pointer-size (<a href="proposed/0145-remove-unnecessary-allocator-usage.html#new-def-ii">New Definition II</a>) representing the cursor returned by the previous (unfinished) call to this function. It should be <em>absent</em> on the first call;</li>
 <li><code>maybe_cursor_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the continuation cursor will optionally be written (see also the Result section). The value is actually stored only if the buffer is large enough. Whenever the value is not written into the buffer, the buffer contents are unmodified;</li>
-<li><code>counters</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a 12-byte buffer where three low-endian 32-bit integers will be stored one after another, representing the counters, respectively:
+<li><code>counters_out</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a 12-byte buffer where three low-endian 32-bit integers will be stored one after another, representing the counters, respectively:
 <ul>
 <li>Of items removed from the backend database will be written;</li>
 <li>Of unique keys removed, taking into account both the backend and the overlay;</li>
@@ -687,7 +698,7 @@ $$</p>
 <li><code>maybe_limit</code> is an optional positive integer representing either the maximum number of backend deletions which may happen, or the absence of such a limit. The number of backend iterations may surpass this limit by no more than one;</li>
 <li><code>maybe_cursor_in</code> is an optional pointer-size representing the cursor returned by the previous (unfinished) call to this function. It should be <em>absent</em> on the first call;</li>
 <li><code>maybe_cursor_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the continuation cursor will optionally be written (see also the Result section). The value is actually stored only if the buffer is large enough. Whenever the value is not written into the buffer, the buffer contents are unmodified;</li>
-<li><code>counters</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a 12-byte buffer where three low-endian 32-bit integers will be stored one after another, representing the counters, respectively:
+<li><code>counters_out</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a 12-byte buffer where three low-endian 32-bit integers will be stored one after another, representing the counters, respectively:
 <ul>
 <li>Of items removed from the backend database will be written;</li>
 <li>Of unique keys removed, taking into account both the backend and the overlay;</li>
@@ -718,7 +729,7 @@ $$</p>
 <li><code>maybe_limit</code> is an optional positive integer representing either the maximum number of backend deletions which may happen, or the absence of such a limit. The number of backend iterations may surpass this limit by no more than one;</li>
 <li><code>maybe_cursor_in</code> is an optional pointer-size representing the cursor returned by the previous (unfinished) call to this function. It should be <em>absent</em> on the first call;</li>
 <li><code>maybe_cursor_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the continuation cursor will optionally be written (see also the Result section). The value is actually stored only if the buffer is large enough. Whenever the value is not written into the buffer, the buffer contents are unmodified;</li>
-<li><code>counters</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a 12-byte buffer where three low-endian 32-bit integers will be stored one after another, representing the counters, respectively:
+<li><code>counters_out</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a 12-byte buffer where three low-endian 32-bit integers will be stored one after another, representing the counters, respectively:
 <ul>
 <li>Of items removed from the backend database will be written;</li>
 <li>Of unique keys removed, taking into account both the backend and the overlay;</li>
@@ -1066,7 +1077,7 @@ $$</p>
 <h5 id="arguments-22"><a class="header" href="#arguments-22">Arguments</a></h5>
 <p><code>method</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the HTTP method. Possible values are “GET” and “POST”;
 <code>uri</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the URI;
-<code>meta</code> is a future-reserved field containing additional, SCALE-encoded parameters. Currently, its value is ignored. Passing a pointer to non-readable memory shall not result in execution abortion.</p>
+<code>meta</code> is a future-reserved field containing additional, SCALE-encoded parameters. Currently, its value is ignored. Passing a pointer to non-readable memory shall not result in execution abortion. However, an empty array must be passed by the caller. Failure to do so may result in consensus breakage later when the spec is updated with this field's handling logic.</p>
 <h5 id="result-15"><a class="header" href="#result-15">Result</a></h5>
 <p>On success, a positive request identifier is returned. On error, <code>-1</code> is returned.</p>
 <h4 id="ext_offchain_http_request_add_header"><a class="header" href="#ext_offchain_http_request_add_header">ext_offchain_http_request_add_header</a></h4>
@@ -1175,7 +1186,7 @@ $$</p>
 <h5 id="arguments-28"><a class="header" href="#arguments-28">Arguments</a></h5>
 <ul>
 <li><code>request_id</code> is an i32 integer indicating the ID of the started request, as returned by <code>ext_offchain_http_request_start</code>;</li>
-<li><code>buffer</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the buffer where the body is written;</li>
+<li><code>buffer_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the buffer where the body is written;</li>
 <li><code>deadline</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the SCALE-encoded Option value (<a href="https://spec.polkadot.network/id-cryptography-encoding#defn-option-type">Definition 200</a>) containing the UNIX timestamp (<a href="https://spec.polkadot.network/id-cryptography-encoding#defn-unix-time">Definition 191</a>). Passing <code>None</code> blocks indefinitely.</li>
 </ul>
 <h5 id="result-20"><a class="header" href="#result-20">Result</a></h5>
@@ -1195,17 +1206,8 @@ $$</p>
 </code></pre>
 <h5 id="arguments-29"><a class="header" href="#arguments-29">Arguments</a></h5>
 <ul>
-<li><code>buffer</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the buffer where the input data will be written. If the buffer is not large enough to accommodate the input data, the function will panic.</li>
+<li><code>buffer_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the buffer where the input data will be written. If the buffer is not large enough to accommodate the input data, the function will panic.</li>
 </ul>
-<h3 id="other-changes"><a class="header" href="#other-changes">Other changes</a></h3>
-<p>Currently, all runtime entrypoints have the following identical Wasm function signatures:</p>
-<pre><code class="language-wat">(func $runtime_entrypoint (param $data i32) (param $len i32) (result i64))
-</code></pre>
-<p>After this RFC is implemented, such entrypoints are only supported for the legacy runtimes using the host-side allocator. All the new runtimes, using runtime-side allocator, must use new entry point signature:</p>
-<pre><code class="language-wat">(func $runtime_entrypoint (param $len i32) (result i64))
-</code></pre>
-<p>A runtime function called through such an entrypoint gets the length of SCALE-encoded input data as its only argument. After that, the function must allocate exactly the amount of bytes it is requested, and call the <code>ext_input_read</code> host function to obtain the encoded input data.</p>
-<p>If a runtime happens to import both functions that allocate on the host side and functions that allocate on the runtime side, the host must not proceed with execution of such a runtime, aborting before the execution takes place.</p>
 <div style="break-before: page; page-break-before: always;"></div><p><a href="https://github.com/polkadot-fellows/RFCs/pull/154">(source)</a></p>
 <p><strong>Table of Contents</strong></p>
 <ul>
@@ -9284,7 +9286,7 @@ The runtime execution stops with an error if <code>out</code> is outside of the 
 <p>The <code>ext_input_size_version_1</code> host function returns the size in bytes of the input data.</p>
 <p>The <code>ext_input_read_version_1</code> host function copies some data from the input data to the memory of the runtime. The <code>offset</code> parameter indicates the offset within the input data where to start copying, and must be inferior or equal to the value returned by <code>ext_input_size_version_1</code>. The <code>out</code> parameter is <a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">a pointer-size</a> containing the buffer where to write to.
 The runtime execution stops with an error if <code>offset</code> is strictly superior to the size of the input data, or if <code>out</code> is outside of the range of the memory of the virtual machine, even if the amount of data to copy would be 0 bytes.</p>
-<h3 id="other-changes-1"><a class="header" href="#other-changes-1">Other changes</a></h3>
+<h3 id="other-changes"><a class="header" href="#other-changes">Other changes</a></h3>
 <p>In addition to the new host functions, this RFC proposes two changes to the runtime-host interface:</p>
 <ul>
 <li>The following function signature is now also accepted for runtime entry points: <code>(func (result i64))</code>.</li>
