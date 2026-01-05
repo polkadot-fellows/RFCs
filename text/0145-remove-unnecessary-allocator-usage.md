@@ -867,7 +867,7 @@ The function used to return a SCALE-encoded `Result` value in a host-allocated b
 
 `method` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the HTTP method. Possible values are “GET” and “POST”;
 `uri` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the URI;
-`meta` is a future-reserved field containing additional, SCALE-encoded parameters. Currently, its value is ignored. Passing a pointer to non-readable memory shall not result in execution abortion. However, an empty array must be passed by the caller. Failure to do so may result in consensus breakage later when the spec is updated with this field's handling logic.
+`meta` is a future-reserved field containing a SCALE-encoded array with additional parameters. Currently, passing anything but a readable pointer to an empty array shall result in execution abort. This is to ensure backwards compatibility in case future versions start interpreting the contents of the array. 
 
 ##### Result
 
