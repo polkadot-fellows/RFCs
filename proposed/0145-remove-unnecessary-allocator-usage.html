@@ -786,7 +786,7 @@ $$</p>
 <h5 id="arguments-22"><a class="header" href="#arguments-22">Arguments</a></h5>
 <p><code>method</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the HTTP method. Possible values are “GET” and “POST”;
 <code>uri</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the URI;
-<code>meta</code> is a future-reserved field containing additional, SCALE-encoded parameters. Currently, its value is ignored. Passing a pointer to non-readable memory shall not result in execution abortion. However, an empty array must be passed by the caller. Failure to do so may result in consensus breakage later when the spec is updated with this field's handling logic.</p>
+<code>meta</code> is a future-reserved field containing a SCALE-encoded array with additional parameters. Currently, passing anything but a readable pointer to an empty array shall result in execution abort. This is to ensure backwards compatibility in case future versions start interpreting the contents of the array. </p>
 <h5 id="result-15"><a class="header" href="#result-15">Result</a></h5>
 <p>On success, a positive request identifier is returned. On error, <code>-1</code> is returned.</p>
 <h4 id="ext_offchain_http_request_add_header"><a class="header" href="#ext_offchain_http_request_add_header">ext_offchain_http_request_add_header</a></h4>
