@@ -142,14 +142,15 @@ The function was returning a SCALE-encoded `Option`-wrapped 32-bit integer repre
 
 ```wat
 (func $ext_storage_read_version_2
-    (param $key i64) (param $value_out i64) (param $value_offset i32) (result i64))
+    (param $key i64) (param $value_out i64) (param $value_offset i32) (param $allow_partial i32) (result i64))
 ```
 
 ##### Arguments
 
 * `key` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the storage key being read;
-* `value_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the value read should be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into and its contents are unchanged;
-* `value_offset` is an unsigned 32-bit offset from which the value reading should start.
+* `value_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the value read should be stored. The implementation must write $\mathrm{min}(\mathcal{value\_len}, \mathcal{out\_len})$ bytes of the value to `value_out` only if $(\mathcal{out\_len} \geq \mathcal{value\_len}) \lor (\mathcal{allow\_partial} = \mathrm{true})$. If $(\mathcal{out\_len} < \mathcal{value\_len}) \land (\mathcal{allow\_partial} = false)$, the implementation must not write any bytes to value_out and must leave the buffer unchanged;
+* `value_offset` is an unsigned 32-bit offset from which the value reading should start;
+* `allow_partial` is a boolean value, where `0` represents `false` and any other value represents `true`, denoting if the output buffer must be partially written even if its length is not enough to accommodate the whole value.
 
 ##### Result
 
@@ -280,15 +281,16 @@ The function was returning a SCALE-encoded `Option`-wrapped 32-bit integer repre
 ```wat
 (func $ext_default_child_storage_read_version_2
     (param $storage_key i64) (param $key i64) (param $value_out i64) (param $value_offset i32)
-    (result i64))
+    (param $allow_partial i32) (result i64))
 ```
 
 ##### Arguments
 
 * `storage_key` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the child storage key ([Definition 219](https://spec.polkadot.network/chap-host-api#defn-child-storage-type));
-* `key` is the storage key being read;
-* `value_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the value read should be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into and its contents are unchanged;
-* `value_offset` is an unsigned 32-bit offset from which the value reading should start.
+* `key` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the storage key being read;
+* `value_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the value read should be stored. The implementation must write $\mathrm{min}(\mathcal{value\_len}, \mathcal{out\_len})$ bytes of the value to `value_out` only if $(\mathcal{out\_len} \geq \mathcal{value\_len}) \lor (\mathcal{allow\_partial} = \mathrm{true})$. If $(\mathcal{out\_len} < \mathcal{value\_len}) \land (\mathcal{allow\_partial} = false)$, the implementation must not write any bytes to value_out and must leave the buffer unchanged;
+* `value_offset` is an unsigned 32-bit offset from which the value reading should start;
+* `allow_partial` is a boolean value, where `0` represents `false` and any other value represents `true`, denoting if the output buffer must be partially written even if its length is not enough to accommodate the whole value.
 
 ##### Result
 
