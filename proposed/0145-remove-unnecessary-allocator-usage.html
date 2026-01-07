@@ -286,13 +286,14 @@ $$</p>
 <p>The function was returning a SCALE-encoded <code>Option</code>-wrapped 32-bit integer representing the number of bytes left at supplied <code>offset</code>. It was using a host-allocated buffer to return it. It is changed to always return the full length of the value directly as a primitive value.</p>
 <h5 id="new-prototype"><a class="header" href="#new-prototype">New prototype</a></h5>
 <pre><code class="language-wat">(func $ext_storage_read_version_2
-    (param $key i64) (param $value_out i64) (param $value_offset i32) (result i64))
+    (param $key i64) (param $value_out i64) (param $value_offset i32) (param $allow_partial i32) (result i64))
 </code></pre>
 <h5 id="arguments"><a class="header" href="#arguments">Arguments</a></h5>
 <ul>
 <li><code>key</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the storage key being read;</li>
-<li><code>value_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the value read should be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into and its contents are unchanged;</li>
-<li><code>value_offset</code> is an unsigned 32-bit offset from which the value reading should start.</li>
+<li><code>value_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the value read should be stored. The implementation must write $\mathrm{min}(\mathcal{value_len}, \mathcal{out_len})$ bytes of the value to <code>value_out</code> only if $(\mathcal{out_len} \geq \mathcal{value_len}) \lor (\mathcal{allow_partial} = \mathrm{true})$. If $(\mathcal{out_len} &lt; \mathcal{value_len}) \land (\mathcal{allow_partial} = false)$, the implementation must not write any bytes to value_out and must leave the buffer unchanged;</li>
+<li><code>value_offset</code> is an unsigned 32-bit offset from which the value reading should start;</li>
+<li><code>allow_partial</code> is a boolean value, where <code>0</code> represents <code>false</code> and any other value represents <code>true</code>, denoting if the output buffer must be partially written even if its length is not enough to accommodate the whole value.</li>
 </ul>
 <h5 id="result"><a class="header" href="#result">Result</a></h5>
 <p>The result is an optional positive integer (<a href="#new-def-i">New Definition I</a>), representing either the full length of the value in storage or the <em>absence</em> of such a value in storage.</p>
@@ -377,14 +378,15 @@ $$</p>
 <h5 id="new-prototype-4"><a class="header" href="#new-prototype-4">New prototype</a></h5>
 <pre><code class="language-wat">(func $ext_default_child_storage_read_version_2
     (param $storage_key i64) (param $key i64) (param $value_out i64) (param $value_offset i32)
-    (result i64))
+    (param $allow_partial i32) (result i64))
 </code></pre>
 <h5 id="arguments-4"><a class="header" href="#arguments-4">Arguments</a></h5>
 <ul>
 <li><code>storage_key</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the child storage key (<a href="https://spec.polkadot.network/chap-host-api#defn-child-storage-type">Definition 219</a>);</li>
-<li><code>key</code> is the storage key being read;</li>
-<li><code>value_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the value read should be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into and its contents are unchanged;</li>
-<li><code>value_offset</code> is an unsigned 32-bit offset from which the value reading should start.</li>
+<li><code>key</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to the storage key being read;</li>
+<li><code>value_out</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the value read should be stored. The implementation must write $\mathrm{min}(\mathcal{value_len}, \mathcal{out_len})$ bytes of the value to <code>value_out</code> only if $(\mathcal{out_len} \geq \mathcal{value_len}) \lor (\mathcal{allow_partial} = \mathrm{true})$. If $(\mathcal{out_len} &lt; \mathcal{value_len}) \land (\mathcal{allow_partial} = false)$, the implementation must not write any bytes to value_out and must leave the buffer unchanged;</li>
+<li><code>value_offset</code> is an unsigned 32-bit offset from which the value reading should start;</li>
+<li><code>allow_partial</code> is a boolean value, where <code>0</code> represents <code>false</code> and any other value represents <code>true</code>, denoting if the output buffer must be partially written even if its length is not enough to accommodate the whole value.</li>
 </ul>
 <h5 id="result-3"><a class="header" href="#result-3">Result</a></h5>
 <p>The result is an optional positive integer (<a href="#new-def-i">New Definition I</a>), representing either the full length of the value in storage or the <em>absence</em> of such a value in storage.</p>
