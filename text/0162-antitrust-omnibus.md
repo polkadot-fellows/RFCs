@@ -1,6 +1,6 @@
-# RFC-0XXX: The Ecosystem Anti-Trust & Market Structure Omnibus
+# RFC-0162: The Ecosystem Anti-Trust & Market Structure Omnibus
 
-- **RFC ID:** 0xxx-antitrust-omnibus  
+- **RFC ID:** 0162-antitrust-omnibus  
 - **Created:** 2026-01-13  
 - **Authors:** [Diego Correa Tristain / algoritmia@labormedia.cl]  
 - **License:** CC0-1.0  
