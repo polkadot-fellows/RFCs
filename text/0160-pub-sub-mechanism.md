@@ -8,11 +8,11 @@
 
 ## Summary
 
-Add a publish/subscribe mechanism that allows parachains to publish data to the relay chain and other parachains to consume it via verified relay chain storage proofs. 
+Add a publish/subscribe mechanism that allows parachains to publish data to the relay chain and other parachains to consume it via relay chain storage proofs. 
 
 ## Motivation
 
-As pointed out in issue #606, when parachains need to exchange information, the only available options are repeated point-to-point XCM messages or ad-hoc off-chain infrastructure. This RFC is motivated by the desire to propose an alternative based on a relay-assisted publish/subscribe mechanism that enables one-to-many, verifiable, cross-parachain data distribution.
+As pointed out in issue #606 (https://github.com/paritytech/polkadot-sdk/issues/606), when parachains need to exchange information, the only available options are repeated point-to-point XCM messages or ad-hoc off-chain infrastructure. This RFC is motivated by the desire to propose an alternative based on a relay-assisted publish/subscribe mechanism that enables one-to-many, verifiable, cross-parachain data distribution.
 
 ## Stakeholders
 
@@ -24,8 +24,7 @@ This RFC defines a relay-assisted publish/subscribe mechanism that enables parac
 Parachains publish data via a new XCM v5 `Publish` instruction. Published entries are stored on the relay chain in a per-publisher child trie managed by the broadcaster pallet. Publishers must be registered, and both the number of keys and their sizes are bounded to prevent unbounded state growth. Each published item is addressed by a fixed-size key. The suggestion is to backport the new instruction to v5 as v6 discussion advances.
 
 ```rust
-Publish { data: PublishData } 
-PublishData = BoundedVec<(PublishKey, BoundedVec<u8, MaxPublishValueLength>), MaxPublishItems>
+Publish { key: PublishKey, data: BoundedVec<u8, MaxPublishValueLength>, ttl: u32 } 
 ```
 
 On the consumer side, subscribing parachains declare their interests at the runtime level by specifying which publishers and keys they want to subscribe to. This information is exposed to the collator through a new dedicated runtime API (`KeyToIncludeInRelayProofApi`), allowing the collator to know which relay-chain storage keys must be proven for a given block. During block production, the collator fetches relay-chain state proofs for those keys, including child-trie entries, and embeds them in the ParachainInherentData.
@@ -42,9 +41,9 @@ pub enum RelayStorageKey {
 		/// Prefix `:child_storage:default:` is added when accessing storage.
 		/// Used to derive `ChildInfo` for reading child trie data.
 		storage_key: Vec<u8>,
-		/// Key within the child trie.
+		trie_key: Vec<u8>,
 		key: Vec<u8>,
-	},
+		item_key: Vec<u8>,
 }
 
 /// Request for proving relay chain storage data.
@@ -58,7 +57,7 @@ pub struct RelayProofRequest {
 }
 
 /// API for specifying which relay chain storage data to include in storage proofs.
-///
+/// Runtime API for specifying which relay chain storage data to include in storage proofs.
 /// This API allows parachains to request both top-level relay chain storage keys
 /// and child trie storage keys to be included in the relay chain state proof.
 pub trait KeyToIncludeInRelayProofApi {
@@ -160,3 +159,4 @@ This RFC enables a range of follow-up work around scalable cross-parachain data 
 At the same time, this RFC represents an initial design. Additional use cases, optimal configurations, limitations, and alternative patterns are expected to emerge as the mechanism is adopted and tested in practice.
 
 Future RFCs may refine the API surface, extend child-trie handling, introduce additional safeguards or ergonomics, storage management,  optimize proof generation and processing, or specialize the mechanism for particular use cases.
+Future RFCs may refine the API surface, extend child-trie handling, introduce additional safeguards or ergonomics, storage management, optimize proof generation and processing, or specialize the mechanism for particular use cases.
