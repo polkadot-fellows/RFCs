@@ -1330,9 +1330,9 @@ $$</p>
 </tbody></table>
 </div>
 <h2 id="summary-2"><a class="header" href="#summary-2">Summary</a></h2>
-<p>Add a publish/subscribe mechanism that allows parachains to publish data to the relay chain and other parachains to consume it via verified relay chain storage proofs. </p>
+<p>Add a publish/subscribe mechanism that allows parachains to publish data to the relay chain and other parachains to consume it via relay chain storage proofs. </p>
 <h2 id="motivation-2"><a class="header" href="#motivation-2">Motivation</a></h2>
-<p>As pointed out in issue #606, when parachains need to exchange information, the only available options are repeated point-to-point XCM messages or ad-hoc off-chain infrastructure. This RFC is motivated by the desire to propose an alternative based on a relay-assisted publish/subscribe mechanism that enables one-to-many, verifiable, cross-parachain data distribution.</p>
+<p>As pointed out in issue #606 (https://github.com/paritytech/polkadot-sdk/issues/606), when parachains need to exchange information, the only available options are repeated point-to-point XCM messages or ad-hoc off-chain infrastructure. This RFC is motivated by the desire to propose an alternative based on a relay-assisted publish/subscribe mechanism that enables one-to-many, verifiable, cross-parachain data distribution.</p>
 <h2 id="stakeholders-2"><a class="header" href="#stakeholders-2">Stakeholders</a></h2>
 <p>Runtime developers, oracles, bridges, and general rollup product and application builders.</p>
 <h2 id="explanation-2"><a class="header" href="#explanation-2">Explanation</a></h2>
@@ -1340,8 +1340,7 @@ $$</p>
 Parachains publish data via a new XCM v5 <code>Publish</code> instruction. Published entries are stored on the relay chain in a per-publisher child trie managed by the broadcaster pallet. Publishers must be registered, and both the number of keys and their sizes are bounded to prevent unbounded state growth. Each published item is addressed by a fixed-size key. The suggestion is to backport the new instruction to v5 as v6 discussion advances.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>Publish { data: PublishData } 
-PublishData = BoundedVec&lt;(PublishKey, BoundedVec&lt;u8, MaxPublishValueLength&gt;), MaxPublishItems&gt;
+</span>Publish { key: PublishKey, data: BoundedVec&lt;u8, MaxPublishValueLength&gt;, ttl: u32 } 
 <span class="boring">}</span></code></pre></pre>
 <p>On the consumer side, subscribing parachains declare their interests at the runtime level by specifying which publishers and keys they want to subscribe to. This information is exposed to the collator through a new dedicated runtime API (<code>KeyToIncludeInRelayProofApi</code>), allowing the collator to know which relay-chain storage keys must be proven for a given block. During block production, the collator fetches relay-chain state proofs for those keys, including child-trie entries, and embeds them in the ParachainInherentData.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -1357,9 +1356,9 @@ pub enum RelayStorageKey {
 		/// Prefix `:child_storage:default:` is added when accessing storage.
 		/// Used to derive `ChildInfo` for reading child trie data.
 		storage_key: Vec&lt;u8&gt;,
-		/// Key within the child trie.
+		trie_key: Vec&lt;u8&gt;,
 		key: Vec&lt;u8&gt;,
-	},
+		item_key: Vec&lt;u8&gt;,
 }
 
 /// Request for proving relay chain storage data.
@@ -1373,7 +1372,7 @@ pub struct RelayProofRequest {
 }
 
 /// API for specifying which relay chain storage data to include in storage proofs.
-///
+/// Runtime API for specifying which relay chain storage data to include in storage proofs.
 /// This API allows parachains to request both top-level relay chain storage keys
 /// and child trie storage keys to be included in the relay chain state proof.
 pub trait KeyToIncludeInRelayProofApi {
@@ -1448,7 +1447,8 @@ pub trait SubscriptionHandler {
 <h2 id="future-directions-and-related-material-1"><a class="header" href="#future-directions-and-related-material-1">Future Directions and Related Material</a></h2>
 <p>This RFC enables a range of follow-up work around scalable cross-parachain data distribution. A straightforward application is price oracles, and there has also been interest in using the mechanism for broader state propagation patterns, including bridging-related operations.</p>
 <p>At the same time, this RFC represents an initial design. Additional use cases, optimal configurations, limitations, and alternative patterns are expected to emerge as the mechanism is adopted and tested in practice.</p>
-<p>Future RFCs may refine the API surface, extend child-trie handling, introduce additional safeguards or ergonomics, storage management,  optimize proof generation and processing, or specialize the mechanism for particular use cases.</p>
+<p>Future RFCs may refine the API surface, extend child-trie handling, introduce additional safeguards or ergonomics, storage management,  optimize proof generation and processing, or specialize the mechanism for particular use cases.
+Future RFCs may refine the API surface, extend child-trie handling, introduce additional safeguards or ergonomics, storage management, optimize proof generation and processing, or specialize the mechanism for particular use cases.</p>
 <div style="break-before: page; page-break-before: always;"></div><p><a href="https://github.com/polkadot-fellows/RFCs/pull/161">(source)</a></p>
 <p><strong>Table of Contents</strong></p>
 <ul>
