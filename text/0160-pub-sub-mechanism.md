@@ -114,7 +114,6 @@ This design intents to address the issue #606 by reusing existing `cumulus` and 
 
 - The relay-chain state passed during collator block construction increases, and its size and impact must be carefully monitored.
 - Processing relay state proofs introduces additional overhead for data extraction and verification in the runtime.
-- `KeyToIncludeInRelayProofApi` currently works for child tries using the default route; making it fully generic would require extending `ChildInfo` with `TypeInfo` or a workaround, which should be evaluated separately.
 
 
 ## Testing, Security, and Privacy
