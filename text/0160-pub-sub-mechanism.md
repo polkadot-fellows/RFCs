@@ -40,10 +40,9 @@ pub enum RelayStorageKey {
 		/// Unprefixed storage key identifying the child trie root location.
 		/// Prefix `:child_storage:default:` is added when accessing storage.
 		/// Used to derive `ChildInfo` for reading child trie data.
-		storage_key: Vec<u8>,
 		trie_key: Vec<u8>,
-		key: Vec<u8>,
 		item_key: Vec<u8>,
+	}
 }
 
 /// Request for proving relay chain storage data.
