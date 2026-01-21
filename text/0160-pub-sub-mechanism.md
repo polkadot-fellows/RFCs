@@ -56,7 +56,7 @@ pub struct RelayProofRequest {
 	pub keys: Vec<RelayStorageKey>,
 }
 
-/// API for specifying which relay chain storage data to include in storage proofs.
+/// Runtime API for specifying which relay chain storage data to include in storage proofs.
 /// Runtime API for specifying which relay chain storage data to include in storage proofs.
 /// This API allows parachains to request both top-level relay chain storage keys
 /// and child trie storage keys to be included in the relay chain state proof.
@@ -158,5 +158,5 @@ This RFC enables a range of follow-up work around scalable cross-parachain data 
 
 At the same time, this RFC represents an initial design. Additional use cases, optimal configurations, limitations, and alternative patterns are expected to emerge as the mechanism is adopted and tested in practice.
 
-Future RFCs may refine the API surface, extend child-trie handling, introduce additional safeguards or ergonomics, storage management,  optimize proof generation and processing, or specialize the mechanism for particular use cases.
+Future RFCs may refine the API surface, extend child-trie handling, introduce additional safeguards or ergonomics, storage management, optimize proof generation and processing, or specialize the mechanism for particular use cases.
 Future RFCs may refine the API surface, extend child-trie handling, introduce additional safeguards or ergonomics, storage management, optimize proof generation and processing, or specialize the mechanism for particular use cases.
