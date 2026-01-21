@@ -142,7 +142,7 @@ Care must be taken to avoid requesting keys unnecessarily, as this directly impa
 
 This proposal is a necessary trade-off rather than a pure optimization, adding relay-chain state proofs and runtime verification to avoid repeated point-to-point XCM requests and off-chain systems. Overhead is limited by proving only explicitly subscribed keys and enforcing strict bounds, while update handling based on child-trie root changes is managed by the Subscriber.
 
-Does not present any overhead when not implemented. Runtimes can decide simply not to implement the API and pallet broadcaster rr subscriber and there will be no performance impact. 
+Does not present any overhead when not implemented. Runtimes can decide simply not to implement the API and pallet broadcaster nor subscriber and there will be no performance impact. 
 
 ### Ergonomics
 
