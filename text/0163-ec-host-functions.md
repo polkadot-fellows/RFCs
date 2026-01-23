@@ -249,31 +249,6 @@ Production deployments should consider independent security review.
 
 This proposal does not introduce new privacy concerns.
 
-## Drawbacks
-
-1. **Maintenance Overhead**: Each curve adds multiple host functions, increasing the maintenance
-   burden and expanding the attack surface.
-2. **Upgrade Coordination**: Changes to host functions require coordinated runtime and node upgrades.
-3. **Library Dependency**: The implementation relies on Arkworks, which has not undergone formal
-   security audits.
-4. **Curve Selection**: Future cryptographic advances may deprecate some curves or require new ones,
-   potentially leading to API churn.
-
-## Testing, Security and Privacy
-
-### Testing
-
-Unit tests for all host functions for comparison against upstream Arkworks implementation.
-
-### Security Considerations
-
-The Arkworks libraries have not undergone formal security audits.
-Production deployments should consider independent security review.
-
-### Privacy
-
-This proposal does not introduce new privacy concerns.
-
 ## Performance, Ergonomics and Compatibility
 
 ### Performance
