@@ -223,3 +223,97 @@ fn verify_bls_signature(
     pairing_result == Gt::one()
 }
 ```
+
+## Drawbacks
+
+1. **Maintenance Overhead**: Each curve adds multiple host functions, increasing the maintenance
+   burden and expanding the attack surface.
+2. **Upgrade Coordination**: Changes to host functions require coordinated runtime and node upgrades.
+3. **Library Dependency**: The implementation relies on Arkworks, which has not undergone formal
+   security audits.
+4. **Curve Selection**: Future cryptographic advances may deprecate some curves or require new ones,
+   potentially leading to API churn.
+
+## Testing, Security and Privacy
+
+### Testing
+
+Unit tests for all host functions for comparison against upstream Arkworks implementation.
+
+### Security Considerations
+
+The Arkworks libraries have not undergone formal security audits.
+Production deployments should consider independent security review.
+
+### Privacy
+
+This proposal does not introduce new privacy concerns.
+
+## Drawbacks
+
+1. **Maintenance Overhead**: Each curve adds multiple host functions, increasing the maintenance
+   burden and expanding the attack surface.
+2. **Upgrade Coordination**: Changes to host functions require coordinated runtime and node upgrades.
+3. **Library Dependency**: The implementation relies on Arkworks, which has not undergone formal
+   security audits.
+4. **Curve Selection**: Future cryptographic advances may deprecate some curves or require new ones,
+   potentially leading to API churn.
+
+## Testing, Security and Privacy
+
+### Testing
+
+Unit tests for all host functions for comparison against upstream Arkworks implementation.
+
+### Security Considerations
+
+The Arkworks libraries have not undergone formal security audits.
+Production deployments should consider independent security review.
+
+### Privacy
+
+This proposal does not introduce new privacy concerns.
+
+## Performance, Ergonomics and Compatibility
+
+### Performance
+
+Host functions provide good performance improvement over pure runtime execution for elliptic
+curve operations. This enables practical on-chain verification of:
+- zkSNARK proofs (Groth16, PLONK, etc)
+- Aggregated BLS signatures
+- Complex cryptographic protocols
+
+Detailed benchmark results comparing native host function execution versus pure runtime execution,
+along with practical integration examples (Groth16 verification, Bandersnatch ring-VRF),
+are available in the [Polkadot Arkworks Extensions](https://github.com/davxy/polkadot-arkworks-extensions)
+repository.
+
+### Compatibility
+
+The implementation is based on the Arkworks library ecosystem, which is widely used.
+The serialization format is designed for compatibility with other Arkworks-based implementations.
+
+### Migration
+
+Existing custom elliptic curve implementations should migrate to these standardized host functions
+to benefit from:
+- Improved performance
+- Reduced maintenance burden
+- Better interoperability
+
+## Prior Art and References
+
+- [Arkworks Library](https://github.com/arkworks-rs)
+- [Arkworks Extensions](https://github.com/paritytech/arkworks-extensions) - Arkworks curve extensions with hooks for host function offloading
+- [Polkadot Arkworks Extensions](https://github.com/davxy/polkadot-arkworks-extensions) - Integration examples, benchmarks, Groth16 and ring-VRF demos
+
+## Unresolved Questions
+
+- Which curves should be included in this initial proposal?
+- Should Polkadot and Kusama have different curve availability?
+
+## Future Directions and Related Material
+
+**Additional Curves**: Future RFCs may propose host functions for additional curves as
+ecosystem needs evolve (e.g., Pasta curves for Halo2-based systems).
