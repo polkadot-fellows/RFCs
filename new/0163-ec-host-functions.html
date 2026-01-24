@@ -1,0 +1,547 @@
+
+<!DOCTYPE HTML>
+<html lang="en" class="polkadot" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>RFC-0163: Elliptic Curves Host Functions - Polkadot Fellowship RFCs</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="An online book of RFCs approved or proposed within the Polkadot Fellowship.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/polkadot.css">
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "polkadot" : "polkadot";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('polkadot')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../introduction.html">Introduction</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Newly Proposed</li><li class="chapter-item expanded "><a href="../new/0163-ec-host-functions.html" class="active">RFC-0163: Elliptic Curves Host Functions</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Proposed</li><li class="chapter-item expanded "><a href="../proposed/00xx-secondary-marketplace-for-regions.html">RFC-0001: Secondary Market for Regions</a></li><li class="chapter-item expanded "><a href="../proposed/00xx-smart-contracts-coretime-chain.html">RFC-0002: Smart Contracts on the Coretime Chain</a></li><li class="chapter-item expanded "><a href="../proposed/0114-secp256r1-hostfunction.html">RFC-0114: Introduce secp256r1_ecdsa_verify_prehashed Host Function to verify NIST-P256 elliptic curve signatures</a></li><li class="chapter-item expanded "><a href="../proposed/0145-remove-unnecessary-allocator-usage.html">RFC-0145: Remove the host-side runtime memory allocator</a></li><li class="chapter-item expanded "><a href="../proposed/0156-bls-signatures.html">RFC-0156: Add BLS12-381 Host Functions</a></li><li class="chapter-item expanded "><a href="../proposed/0160-pub-sub-mechanism.html">RFC-0160: PubSub Mechanism</a></li><li class="chapter-item expanded "><a href="../proposed/0161-discussion-phase-for-opengov-referenda.html">RFC-0161: Discussion Period for OpenGov Referenda</a></li><li class="chapter-item expanded "><a href="../proposed/0162-antitrust-omnibus.html">RFC-0162: The Ecosystem Anti-Trust & Market Structure Omnibus</a></li><li class="chapter-item expanded "><a href="../proposed/TODO-stale-nomination-reward-curve.html">RFC-TODO: Stale Nomination Reward Curve</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Approved</li><li class="chapter-item expanded "><a href="../approved/0001-agile-coretime.html">RFC-1: Agile Coretime</a></li><li class="chapter-item expanded "><a href="../approved/0005-coretime-interface.html">RFC-5: Coretime Interface</a></li><li class="chapter-item expanded "><a href="../approved/0007-system-collator-selection.html">RFC-0007: System Collator Selection</a></li><li class="chapter-item expanded "><a href="../approved/0008-parachain-bootnodes-dht.html">RFC-0008: Store parachain bootnodes in relay chain DHT</a></li><li class="chapter-item expanded "><a href="../approved/0009-improved-net-light-client-requests.html">RFC-0009: Improved light client requests networking protocol</a></li><li class="chapter-item expanded "><a href="../approved/0010-burn-coretime-revenue.html">RFC-0010: Burn Coretime Revenue</a></li><li class="chapter-item expanded "><a href="../approved/0012-process-for-adding-new-collectives.html">RFC-0012: Process for Adding New System Collectives</a></li><li class="chapter-item expanded "><a href="../approved/0013-prepare-blockbuilder-and-core-runtime-apis-for-mbms.html">RFC-0013: Prepare Core runtime API for MBMs</a></li><li class="chapter-item expanded "><a href="../approved/0014-improve-locking-mechanism-for-parachains.html">RFC-0014: Improve locking mechanism for parachains</a></li><li class="chapter-item expanded "><a href="../approved/0017-coretime-market-redesign.html">RFC-0017: Coretime Market Redesign</a></li><li class="chapter-item expanded "><a href="../approved/0022-adopt-encointer-runtime.html">RFC-0022: Adopt Encointer Runtime</a></li><li class="chapter-item expanded "><a href="../approved/0026-sassafras-consensus.html">RFC-0026: Sassafras Consensus Protocol</a></li><li class="chapter-item expanded "><a href="../approved/0032-minimal-relay.html">RFC-0032: Minimal Relay</a></li><li class="chapter-item expanded "><a href="../approved/0042-extrinsics-state-version.html">RFC-0042: Add System version that replaces StateVersion on RuntimeVersion</a></li><li class="chapter-item expanded "><a href="../approved/0043-storage-proof-size-hostfunction.html">RFC-0043: Introduce storage_proof_size Host Function for Improved Parachain Block Utilization</a></li><li class="chapter-item expanded "><a href="../approved/0045-nft-deposits-asset-hub.html">RFC-0045: Lowering NFT Deposits on Asset Hub</a></li><li class="chapter-item expanded "><a href="../approved/0047-assignment-of-availability-chunks.html">RFC-0047: Assignment of availability chunks to validators</a></li><li class="chapter-item expanded "><a href="../approved/0048-session-keys-runtime-api.html">RFC-0048: Generate ownership proof for SessionKeys</a></li><li class="chapter-item expanded "><a href="../approved/0050-fellowship-salaries.html">RFC-0050: Fellowship Salaries</a></li><li class="chapter-item expanded "><a href="../approved/0056-one-transaction-per-notification.html">RFC-0056: Enforce only one transaction per notification</a></li><li class="chapter-item expanded "><a href="../approved/0059-nodes-capabilities-discovery.html">RFC-0059: Add a discovery mechanism for nodes based on their capabilities</a></li><li class="chapter-item expanded "><a href="../approved/0078-merkleized-metadata.html">RFC-0078: Merkleized Metadata</a></li><li class="chapter-item expanded "><a href="../approved/0084-general-transaction-extrinsic-format.html">RFC-0084: General transactions in extrinsic format</a></li><li class="chapter-item expanded "><a href="../approved/0091-dht-record-creation-time.html">RFC-0091: DHT Authority discovery record creation time</a></li><li class="chapter-item expanded "><a href="../approved/0097-unbonding_queue.html">RFC-0097: Unbonding Queue</a></li><li class="chapter-item expanded "><a href="../approved/0099-transaction-extension-version.html">RFC-0099: Introduce a transaction extension version</a></li><li class="chapter-item expanded "><a href="../approved/0100-xcm-multi-type-asset-transfer.html">RFC-0100: New XCM instruction: InitiateAssetsTransfer</a></li><li class="chapter-item expanded "><a href="../approved/0101-xcm-transact-remove-max-weight-param.html">RFC-0101: XCM Transact remove require_weight_at_most parameter</a></li><li class="chapter-item expanded "><a href="../approved/0103-introduce-core-index-commitment.html">RFC-0103:  Introduce a CoreIndex commitment and a SessionIndex field in candidate receipts</a></li><li class="chapter-item expanded "><a href="../approved/0105-xcm-improved-fee-mechanism.html">RFC-0105: XCM improved fee mechanism</a></li><li class="chapter-item expanded "><a href="../approved/0107-xcm-execution-hints.html">RFC-0107: XCM Execution hints</a></li><li class="chapter-item expanded "><a href="../approved/0108-xcm-remove-testnet-ids.html">RFC-0108: Remove XCM testnet NetworkIds</a></li><li class="chapter-item expanded "><a href="../approved/0122-alias-origin-on-asset-transfers.html">RFC-0122: Asset transfers can alias XCM origin on destination to original origin</a></li><li class="chapter-item expanded "><a href="../approved/0123-pending-code-as-storage-location-for-runtime-upgrades.html">RFC-0123: Introduce :pending_code as intermediate storage key for the runtime code</a></li><li class="chapter-item expanded "><a href="../approved/0125-xcm-asset-metadata.html">RFC-0125: XCM Asset Metadata</a></li><li class="chapter-item expanded "><a href="../approved/0126-introduce-pvq.html">RFC-0126: Introduce PVQ (PolkaVM Query)</a></li><li class="chapter-item expanded "><a href="../approved/0135-compressed-blob-prefixes.html">RFC-0135: Compressed Blob Prefixes</a></li><li class="chapter-item expanded "><a href="../approved/0139-faster-erasure-coding.html">RFC-0139: Faster Erasure Coding</a></li><li class="chapter-item expanded "><a href="../approved/0146-deflationary-fee-proposal.html">RFC-0146: Deflationary Transaction Fee Model for the Relay Chain and its System Parachains</a></li><li class="chapter-item expanded "><a href="../approved/0149-rfc-1-renewal-adjustment.html">RFC-0149: Renewal Adjustment</a></li><li class="chapter-item expanded "><a href="../approved/0150-voting-while-delegating.html">RFC-150: Allow Voting While Delegating</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Stale</li><li class="chapter-item expanded "><a href="../stale/0000-pre-elves_soft.html">RFC-0000: Pre-ELVES soft concensus</a></li><li class="chapter-item expanded "><a href="../stale/0000-rewards.html">RFC-0000: Validator Rewards</a></li><li class="chapter-item expanded "><a href="../stale/0004-remove-unnecessary-allocator-usage.html">RFC-0004: Remove the host-side runtime memory allocator</a></li><li class="chapter-item expanded "><a href="../stale/0006-dynamic-pricing-for-bulk-coretime-sales.html">RFC-0006: Dynamic Pricing for Bulk Coretime Sales</a></li><li class="chapter-item expanded "><a href="../stale/0034-xcm-absolute-location-account-derivation.html">RFC-34: XCM Absolute Location Account Derivation</a></li><li class="chapter-item expanded "><a href="../stale/0035-conviction-voting-delegation-modifications.html"> RFC-0035: Conviction Voting Delegation Modifications</a></li><li class="chapter-item expanded "><a href="../stale/0044-rent-based-registration.html">RFC-0044: Rent based registration model</a></li><li class="chapter-item expanded "><a href="../stale/0054-remove-heap-pages.html">RFC-0054: Remove the concept of "heap pages" from the client</a></li><li class="chapter-item expanded "><a href="../stale/0070-x-track-kusamanetwork.html">RFC-0070: X Track for @kusamanetwork</a></li><li class="chapter-item expanded "><a href="../stale/0073-referedum-deposit-track.html">RFC-0073: Decision Deposit Referendum Track</a></li><li class="chapter-item expanded "><a href="../stale/0074-stateful-multisig-pallet.html">RFC-0074: Stateful Multisig Pallet</a></li><li class="chapter-item expanded "><a href="../stale/0077-increase-max-length-of-identity-pgp-fingerprint-value.html">RFC-0077: Increase maximum length of identity PGP fingerprint values from 20 bytes</a></li><li class="chapter-item expanded "><a href="../stale/0088-broker-pallet-slashable-deposit-purchaser-reputation-reserved-cores.html">RFC-0088: Add slashable locked deposit, purchaser reputation, and reserved cores for on-chain identities to broker pallet</a></li><li class="chapter-item expanded "><a href="../stale/0102-offchain-parachain-runtime-upgrades.html">RFC-0000: Feature Name Here</a></li><li class="chapter-item expanded "><a href="../stale/0106-xcm-remove-fees-mode.html">RFC-0106: Remove XCM fees mode</a></li><li class="chapter-item expanded "><a href="../stale/0111-pure-proxy-replication.html">RFC-0111: Pure Proxy Replication</a></li><li class="chapter-item expanded "><a href="../stale/0112-compress-state-response-message-in-state-sync.html">RFC-0112: Compress the State Response Message in State Sync</a></li><li class="chapter-item expanded "><a href="../stale/0117-unbrick-collective.html">RFC-0117: The Unbrick Collective</a></li><li class="chapter-item expanded "><a href="../stale/0120-referenda-confirmation-by-candle-mechanism.html">RFC-0120: Referenda Confirmation by Candle Mechanism</a></li><li class="chapter-item expanded "><a href="../stale/0124-extrinsic-version-5.html">RFC-0124: Extrinsic version 5</a></li><li class="chapter-item expanded "><a href="../stale/0138-invulnerable-collator-election.html">RFC-0138: Election mechanism for invulnerable collators on system chains</a></li><li class="chapter-item expanded "><a href="../stale/0154-multi-slot-aura.html">RFC-0154: AURA Multi-Slot Collation </a></li><li class="chapter-item expanded "><a href="../stale/0155-pUSD.html">RFC-0155: pUSD (Polkadot USD over-collateralised debt token)</a></li><li class="chapter-item expanded "><a href="../stale/0158-storage-proof-size-v2.html">RFC-0158: Storage Proof Size Host Function Version 2</a></li><li class="chapter-item expanded "><a href="../stale/0159-spend-canceller-track.html">RFC-0000: Spend Canceller Track</a></li><li class="chapter-item expanded "><a href="../stale/RFC-114 Adjust Tipper Track Confirmation Periods.html">RFC-114: Adjust Tipper Track Confirmation Periods</a></li><li class="chapter-item expanded "><a href="../stale/xxxx-improve-the-security-of-proof-of-possession.html">RFC-XXXX: Adding customized mandatory context to proof of possession statement</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="polkadot">Polkadot</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Polkadot Fellowship RFCs</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <p><a href="https://github.com/polkadot-fellows/RFCs/pull/163">(source)</a></p>
+<p><strong>Table of Contents</strong></p>
+<ul>
+<li><a href="#rfc-0163-elliptic-curves-host-functions">RFC-0163: Elliptic Curves Host Functions</a>
+<ul>
+<li><a href="#summary">Summary</a></li>
+<li><a href="#motivation">Motivation</a>
+<ul>
+<li><a href="#present-system">Present System</a></li>
+<li><a href="#problems">Problems</a></li>
+<li><a href="#requirements">Requirements</a></li>
+</ul>
+</li>
+<li><a href="#stakeholders">Stakeholders</a></li>
+<li><a href="#explanation">Explanation</a>
+<ul>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#common-operations">Common Operations</a></li>
+<li><a href="#curve-specifications">Curve Specifications</a></li>
+<li><a href="#implementation-details">Implementation Details</a></li>
+<li><a href="#usage-example-runtime">Usage Example (Runtime)</a></li>
+</ul>
+</li>
+<li><a href="#drawbacks">Drawbacks</a></li>
+<li><a href="#testing-security-and-privacy">Testing, Security and Privacy</a>
+<ul>
+<li><a href="#testing">Testing</a></li>
+<li><a href="#security-considerations">Security Considerations</a></li>
+<li><a href="#privacy">Privacy</a></li>
+</ul>
+</li>
+<li><a href="#performance-ergonomics-and-compatibility">Performance, Ergonomics and Compatibility</a>
+<ul>
+<li><a href="#performance">Performance</a></li>
+<li><a href="#compatibility">Compatibility</a></li>
+<li><a href="#migration">Migration</a></li>
+</ul>
+</li>
+<li><a href="#prior-art-and-references">Prior Art and References</a></li>
+<li><a href="#unresolved-questions">Unresolved Questions</a></li>
+<li><a href="#future-directions-and-related-material">Future Directions and Related Material</a></li>
+</ul>
+</li>
+</ul>
+<h1 id="rfc-0163-elliptic-curves-host-functions"><a class="header" href="#rfc-0163-elliptic-curves-host-functions">RFC-0163: Elliptic Curves Host Functions</a></h1>
+<div class="table-wrapper"><table><thead><tr><th></th><th></th></tr></thead><tbody>
+<tr><td><strong>Start Date</strong></td><td>21 January 2026</td></tr>
+<tr><td><strong>Description</strong></td><td>Host functions for elliptic curve operations in Polkadot runtimes</td></tr>
+<tr><td><strong>Authors</strong></td><td>Davide Galassi</td></tr>
+</tbody></table>
+</div>
+<h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
+<p>This RFC proposes a set of host functions for performing computationally intensive elliptic curve
+operations in Polkadot runtimes. These host functions enable efficient execution of cryptographic
+primitives that would otherwise be significantly expensive when executed in the runtime.</p>
+<p>The proposal covers the following elliptic curves:</p>
+<ul>
+<li><strong>BLS12-381</strong>: Pairing-friendly curve widely used for BLS signatures and zkSNARKs</li>
+<li><strong>Ed-on-BLS12-381-Bandersnatch</strong>: Twisted Edwards curve for in-circuit operations within BLS12-381 zkSNARKs</li>
+</ul>
+<p><strong>TODO</strong>: Which additional curves should be included in this first iteration (e.g. Ed25519, BLS12-377, etc)?</p>
+<h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
+<h3 id="present-system"><a class="header" href="#present-system">Present System</a></h3>
+<p>Currently, Polkadot runtimes that need to perform elliptic curve operations must either:</p>
+<ol>
+<li>Execute these operations entirely within the runtime VM, which is quite slow for complex
+cryptographic computations like pairings and multi-scalar multiplications.</li>
+<li>Rely on specific host functions that the Polkadot Fellowship has decided to expose, which
+are often highly opinionated and application-specific (e.g. a dedicated signature verification
+host function for a particular curve).</li>
+</ol>
+<p>This limitation significantly restricts the types of cryptographic protocols that can be efficiently
+implemented in Polkadot runtimes and experimentation, particularly:</p>
+<ul>
+<li>Zero-knowledge proof verification (e.g. Groth16, PLONK with KZG commitments, etc.)</li>
+<li>BLS aggregated signature verification</li>
+<li>Verifiable Random Functions (VRFs) and Ring VRFs</li>
+<li>Threshold signatures and distributed key generation</li>
+<li>KZG polynomial commitments (Data Availability Sampling, Verkle trees)</li>
+<li>Any other advanced cryptographic protocols requiring pairings</li>
+</ul>
+<h3 id="problems"><a class="header" href="#problems">Problems</a></h3>
+<ol>
+<li><strong>Performance</strong>: Elliptic curve operations in the runtime can be significantly slower than native
+execution, making many cryptographic protocols impractical for on-chain verification.</li>
+<li><strong>Standardization</strong>: Without standardized host functions, each team ends up implementing its own
+solutions, leading to fragmentation and potential security vulnerabilities.</li>
+<li><strong>Interoperability</strong>: Different runtimes using incompatible curve implementations cannot
+efficiently verify each other's cryptographic proofs.</li>
+</ol>
+<h3 id="requirements"><a class="header" href="#requirements">Requirements</a></h3>
+<ol>
+<li>The host functions MUST provide tangible performance improvements over pure runtime execution.</li>
+<li>The host functions MUST use standardized serialization formats for interoperability.</li>
+<li>The implementation MUST be based on well-audited or at least battle-tested cryptographic libraries.</li>
+<li>The API SHOULD minimize the number of host calls required for common operations.</li>
+<li>The API SHOULD support batched operations where applicable (e.g., multi-scalar multiplication).</li>
+</ol>
+<h2 id="stakeholders"><a class="header" href="#stakeholders">Stakeholders</a></h2>
+<ul>
+<li><strong>Runtime developers</strong>: Teams building runtimes that require efficient cryptographic operations.
+Benefit from standardized and performant primitives.</li>
+<li><strong>zkSNARK projects</strong>: Teams implementing zero-knowledge proof verification. Benefit from
+efficient pairing and MSM operations essential for proof verification.</li>
+<li><strong>Bridge developers</strong>: Projects building trustless bridges. Benefit from BLS signature
+verification for validating cross-chain consensus proofs.</li>
+<li><strong>Privacy protocol developers</strong>: Teams building anonymous credentials, ring signatures, or
+confidential transactions. Benefit from efficient curve operations for privacy-preserving constructions.</li>
+<li><strong>Polkadot Fellowship</strong>: Responsible for maintaining and securing the host function implementations.</li>
+</ul>
+<h2 id="explanation"><a class="header" href="#explanation">Explanation</a></h2>
+<h3 id="overview"><a class="header" href="#overview">Overview</a></h3>
+<p>This proposal introduces host functions for a selected set of elliptic curves, each serving specific
+use cases in the broader cryptographic ecosystem. The functions are implemented in the <code>sp-crypto-ec-utils</code>
+crate or the Polkadot-SDK and exposed via Substrate's runtime interface mechanism.</p>
+<h3 id="common-operations"><a class="header" href="#common-operations">Common Operations</a></h3>
+<p>The following operations are provided for the supported curves. Not all operations are available
+for all curves (e.g., pairing operations are only available for pairing-friendly curves).</p>
+<ul>
+<li>
+<p><code>multi_miller_loop(g1_points: Vec&lt;G1&gt;, g2_points: Vec&lt;G2&gt;) -&gt; T</code></p>
+<ul>
+<li>Computes the multi-Miller loop for pairing operations.</li>
+<li>Takes vectors of G1 and G2 affine points.</li>
+<li>The two input vectors are expected to have the same length.</li>
+<li>Returns target field element.</li>
+</ul>
+</li>
+<li>
+<p><code>final_exponentiation(target: T) -&gt; T</code></p>
+<ul>
+<li>Completes the pairing computation by performing final exponentiation on a target field element.</li>
+<li>Returns target field element.</li>
+</ul>
+</li>
+<li>
+<p><code>msm(bases: Vec&lt;G&gt;, scalars: Vec&lt;F&gt;) -&gt; G</code></p>
+<ul>
+<li>Multi-scalar multiplication.</li>
+<li>Takes vectors of affine points G and elements of the group's prime order scalar field F.</li>
+<li>Returns an element of G.</li>
+<li>Efficiently computes <code>sum(scalar_i * base_i)</code>.</li>
+<li>The two input vectors are expected to have the same length.</li>
+</ul>
+</li>
+<li>
+<p><code>mul(base: G, scalar: I) -&gt; G</code></p>
+<ul>
+<li>Single point multiplication.</li>
+<li>Computes <code>scalar * base</code>.</li>
+<li>Takes an affine point G and an unbounded big integer scalar I.</li>
+<li>Returns an element of G.</li>
+</ul>
+</li>
+</ul>
+<p>For pairing-friendly curves with distinct G1 and G2 groups, <code>msm</code> and <code>mul</code> are provided separately
+for each group (e.g., <code>msm_g1</code>, <code>msm_g2</code>).</p>
+<h3 id="curve-specifications"><a class="header" href="#curve-specifications">Curve Specifications</a></h3>
+<p><strong>TODO</strong>: Finalize the set of curves to include based on ecosystem needs.
+<strong>TODO</strong>: Should Polkadot and Kusama expose different curve sets? Consider exposing a broader set on Kusama for experimentation.</p>
+<h4 id="bls12-381"><a class="header" href="#bls12-381">BLS12-381</a></h4>
+<p>BLS12-381 is a pairing-friendly elliptic curve that has become the de facto standard for BLS
+signatures and many zkSNARK systems. It offers approximately 128 bits of security.</p>
+<p><strong>Typical Applications:</strong></p>
+<ul>
+<li><strong>BLS Signatures</strong>: BLS signatures support efficient aggregation, allowing thousands of
+signatures to be verified as one.</li>
+<li><strong>zkSNARK Verification</strong>: Groth16 and other pairing-based proof systems use BLS12-381 for
+proof verification.</li>
+<li><strong>Cross-chain bridges</strong>: Enables verification of consensus proofs from other chains using
+BLS12-381 for trustless bridging.</li>
+</ul>
+<p><strong>Host Functions:</strong></p>
+<ul>
+<li><code>bls12_381_multi_miller_loop</code></li>
+<li><code>bls12_381_final_exponentiation</code></li>
+<li><code>bls12_381_msm_g1</code></li>
+<li><code>bls12_381_msm_g2</code></li>
+<li><code>bls12_381_mul_g1</code></li>
+<li><code>bls12_381_mul_g2</code></li>
+</ul>
+<h4 id="ed-on-bls12-381-bandersnatch"><a class="header" href="#ed-on-bls12-381-bandersnatch">Ed-on-BLS12-381-Bandersnatch</a></h4>
+<p>Bandersnatch is a twisted Edwards curve defined over the scalar field of BLS12-381. It supports
+both twisted Edwards and short Weierstrass representations, offering flexibility for different
+use cases.</p>
+<p><strong>Typical Applications:</strong></p>
+<ul>
+<li><strong>Verifiable Random Functions</strong>: Efficient VRF constructions for randomness generation.</li>
+<li><strong>Ring VRFs</strong>: Anonymous VRF outputs with ring signature properties.</li>
+<li><strong>Ring Signatures</strong>: Efficient ring signature schemes enabling anonymous group membership proofs.</li>
+</ul>
+<p><strong>Host Functions (Twisted Edwards form):</strong></p>
+<ul>
+<li><code>ed_on_bls12_381_bandersnatch_msm</code></li>
+<li><code>ed_on_bls12_381_bandersnatch_mul</code></li>
+</ul>
+<p><strong>Host Functions (Short Weierstrass form):</strong></p>
+<ul>
+<li><code>ed_on_bls12_381_bandersnatch_msm_sw</code></li>
+<li><code>ed_on_bls12_381_bandersnatch_mul_sw</code></li>
+</ul>
+<h3 id="implementation-details"><a class="header" href="#implementation-details">Implementation Details</a></h3>
+<h4 id="conventions"><a class="header" href="#conventions">Conventions</a></h4>
+<h5 id="serialization-codec"><a class="header" href="#serialization-codec">Serialization Codec</a></h5>
+<p>All <a href="https://github.com/arkworks-rs">Arkworks</a> types passed on the runtime/host boundary are serialized
+using <a href="https://github.com/parity-tech/ark-scale">ArkScale</a>, a SCALE encoding wrapper for Arkworks types.
+ArkScale internally uses Arkworks' <code>CanonicalSerialize</code>/<code>CanonicalDeserialize</code> traits, ensuring
+compatibility with the broader Arkworks ecosystem.</p>
+<p>The codec is configured with the following settings:</p>
+<ul>
+<li><strong>Not validated</strong>: Points are not validated on deserialization for performance (caller responsibility)</li>
+<li><strong>Not compressed</strong>: Uncompressed point representation for faster deserialization</li>
+</ul>
+<h5 id="scalar-encoding"><a class="header" href="#scalar-encoding">Scalar Encoding</a></h5>
+<p>Scalars are encoded in little endian. This is the encoding used by Arkworks and has been maintained for simplicity.</p>
+<h5 id="point-encoding"><a class="header" href="#point-encoding">Point Encoding</a></h5>
+<p>All elliptic curve points are encoded in <strong>affine form</strong> as coordinate pairs <code>(x, y)</code>.
+Coordinates are scalars representing elements of the curve's base field.
+This applies to both input and output parameters across all host functions.
+Affine representation has been chosen for:</p>
+<ul>
+<li>Simplicity and interoperability with external systems and other libraries</li>
+<li>Reduced serialization overhead compared to projective coordinates</li>
+<li>Direct usability without requiring coordinate conversion after the operation</li>
+</ul>
+<h5 id="return-values"><a class="header" href="#return-values">Return Values</a></h5>
+<p>All host functions return <code>Result&lt;Vec&lt;u8&gt;, ()&gt;</code>, where:</p>
+<ul>
+<li>On success, the <code>Ok</code> variant contains the result encoded using the ArkScale codec as described above</li>
+<li>On error, the <code>Err</code> variant contains an empty unit type <code>()</code></li>
+</ul>
+<h4 id="feature-flags"><a class="header" href="#feature-flags">Feature Flags</a></h4>
+<p>Each curve is gated behind a feature flag to allow selective compilation:</p>
+<pre><code class="language-toml">[features]
+bls12-381 = [...]
+ed-on-bls12-381-bandersnatch = [...]
+all-curves = [&quot;bls12-381&quot;, &quot;ed-on-bls12-381-bandersnatch&quot;, ...]
+</code></pre>
+<h3 id="usage-example-runtime"><a class="header" href="#usage-example-runtime">Usage Example (Runtime)</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use sp_crypto_ec_utils::bls12_381::{G1Affine, G2Affine};
+
+// Verify a BLS signature (simplified)
+//
+// Compute e(signature, G2_generator) == e(public_key, message_hash)
+// Using the pairing check: e(sig, G2) * e(-pk, H(m)) == 1
+fn verify_bls_signature(
+    public_key: G1Affine,  // G1 point
+    message_hash: G2Affine, // G2 point (hashed to curve)
+    signature: G1Affine,   // G1 point
+) -&gt; bool {
+
+    let miller_result = bls12_381::multi_miller_loop(
+        &amp;[signature.encode(), negate(public_key).encode()],
+        &amp;[G2_GENERATOR.encode(), message_hash.encode()],
+    );
+
+    let pairing_result = bls12_381::final_exponentiation(&amp;miller_result).decode();
+
+    pairing_result == Gt::one()
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="drawbacks"><a class="header" href="#drawbacks">Drawbacks</a></h2>
+<ol>
+<li><strong>Maintenance Overhead</strong>: Each curve adds multiple host functions, increasing the maintenance
+burden and expanding the attack surface.</li>
+<li><strong>Upgrade Coordination</strong>: Changes to host functions require coordinated runtime and node upgrades.</li>
+<li><strong>Library Dependency</strong>: The implementation relies on Arkworks, which has not undergone formal
+security audits.</li>
+<li><strong>Curve Selection</strong>: Future cryptographic advances may deprecate some curves or require new ones,
+potentially leading to API churn.</li>
+</ol>
+<h2 id="testing-security-and-privacy"><a class="header" href="#testing-security-and-privacy">Testing, Security and Privacy</a></h2>
+<h3 id="testing"><a class="header" href="#testing">Testing</a></h3>
+<p>Unit tests for all host functions for comparison against upstream Arkworks implementation.</p>
+<h3 id="security-considerations"><a class="header" href="#security-considerations">Security Considerations</a></h3>
+<p>The Arkworks libraries have not undergone formal security audits.
+Production deployments should consider independent security review.</p>
+<h3 id="privacy"><a class="header" href="#privacy">Privacy</a></h3>
+<p>This proposal does not introduce new privacy concerns.</p>
+<h2 id="performance-ergonomics-and-compatibility"><a class="header" href="#performance-ergonomics-and-compatibility">Performance, Ergonomics and Compatibility</a></h2>
+<h3 id="performance"><a class="header" href="#performance">Performance</a></h3>
+<p>Host functions provide good performance improvement over pure runtime execution for elliptic
+curve operations. This enables practical on-chain verification of:</p>
+<ul>
+<li>zkSNARK proofs (Groth16, PLONK, etc)</li>
+<li>Aggregated BLS signatures</li>
+<li>Complex cryptographic protocols</li>
+</ul>
+<p>Detailed benchmark results comparing native host function execution versus pure runtime execution,
+along with practical integration examples (Groth16 verification, Bandersnatch ring-VRF),
+are available in the <a href="https://github.com/davxy/polkadot-arkworks-extensions">Polkadot Arkworks Extensions</a>
+repository.</p>
+<h3 id="compatibility"><a class="header" href="#compatibility">Compatibility</a></h3>
+<p>The implementation is based on the Arkworks library ecosystem, which is widely used.
+The serialization format is designed for compatibility with other Arkworks-based implementations.</p>
+<h3 id="migration"><a class="header" href="#migration">Migration</a></h3>
+<p>Existing custom elliptic curve implementations should migrate to these standardized host functions
+to benefit from:</p>
+<ul>
+<li>Improved performance</li>
+<li>Reduced maintenance burden</li>
+<li>Better interoperability</li>
+</ul>
+<h2 id="prior-art-and-references"><a class="header" href="#prior-art-and-references">Prior Art and References</a></h2>
+<ul>
+<li><a href="https://github.com/arkworks-rs">Arkworks Library</a></li>
+<li><a href="https://github.com/paritytech/arkworks-extensions">Arkworks Extensions</a> - Arkworks curve extensions with hooks for host function offloading</li>
+<li><a href="https://github.com/davxy/polkadot-arkworks-extensions">Polkadot Arkworks Extensions</a> - Integration examples, benchmarks, Groth16 and ring-VRF demos</li>
+</ul>
+<h2 id="unresolved-questions"><a class="header" href="#unresolved-questions">Unresolved Questions</a></h2>
+<ul>
+<li>Which curves should be included in this initial proposal?</li>
+<li>Should Polkadot and Kusama have different curve availability?</li>
+</ul>
+<h2 id="future-directions-and-related-material"><a class="header" href="#future-directions-and-related-material">Future Directions and Related Material</a></h2>
+<p><strong>Additional Curves</strong>: Future RFCs may propose host functions for additional curves as
+ecosystem needs evolve (e.g., Pasta curves for Halo2-based systems).</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../introduction.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../proposed/00xx-secondary-marketplace-for-regions.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../introduction.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../proposed/00xx-secondary-marketplace-for-regions.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>
