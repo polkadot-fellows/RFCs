@@ -529,62 +529,32 @@ If the buffer had enough capacity and the cursor was stored successfully, the cu
 
 ##### Changes
 
-The following functions are considered obsolete in favor of the new `*_num_public_keys` and `*_public_key` counterparts:
-* `ext_crypto_ed25519_public_keys_version_1`
-* `ext_crypto_sr25519_public_keys_version_1`
-* `ext_crypto_ecdsa_public_keys_version_1`
+The following functions share the same signatures and set of changes:
+* `ext_crypto_ed25519_public_keys`
+* `ext_crypto_sr25519_public_keys`
+* `ext_crypto_ecdsa_public_keys`
 
-They cannot be used in a runtime using the new-style of entry-point.
-
-#### ext_crypto_{ed25519|sr25519|ecdsa}_num_public_keys
-
-##### Changes
-
-New functions, all sharing the same signature and logic, are introduced:
-* `ext_crypto_ed25519_num_public_keys_version_1`
-* `ext_crypto_sr25519_num_public_keys_version_1`
-* `ext_crypto_ecdsa_num_public_keys_version_1`
-
-They are intended to replace the obsolete `ext_crypto_{ed25519|sr25519|ecdsa}_public_keys` with a new iterative approach.
+The functions used to return a SCALE-encoded array of public keys in a host-allocated buffer. They are changed to accept a runtime-allocated output buffer as an argument and to return the total size in bytes required to store all public keys. The keys are written consecutively without any encoding. The value is only written to the buffer if it is large enough to accommodate the entire result.
 
 ##### New prototypes
 
 ```wat
-(func $ext_crypto_{ed25519|sr25519|ecdsa}_num_public_keys
-    (param $id i32) (result i32))
+(func $ext_crypto_ed25519_public_keys_version_2
+    (param $id i32) (param $out i64) (result i32))
+(func $ext_crypto_sr25519_public_keys_version_2
+    (param $id i32) (param $out i64) (result i32))
+(func $ext_crypto_ecdsa_public_keys_version_2
+    (param $id i32) (param $out i64) (result i32))
 ```
 
 ##### Arguments
 
-* `id` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to the key type identifier ([Definition 220](https://spec.polkadot.network/chap-host-api#defn-key-type-id)).
+* `id` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to the key type identifier ([Definition 220](https://spec.polkadot.network/chap-host-api#defn-key-type-id));
+* `out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the public keys of the given type known to the keystore will be stored consecutively. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into and its contents are unchanged.
 
 ##### Result
 
-The result represents a (possibly zero) number of keys of the given type known to the keystore.
-
-#### ext_crypto_{ed25519|sr25519|ecdsa}_public_key
-
-##### Changes
-
-New functions, all sharing the same signature and logic, are introduced:
-* `ext_crypto_ed25519_public_key_version_1`
-* `ext_crypto_sr25519_public_key_version_1`
-* `ext_crypto_ecdsa_public_key_version_1`
-
-They are intended to replace the obsolete `ext_crypto_{ed25519|sr25519|ecdsa}_public_keys` with a new iterative approach.
-
-##### New prototypes
-
-```wat
-(func $ext_crypto_{ed25519|sr25519|ecdsa}_public_key
-    (param $id i32) (param $index i32) (param $out))
-```
-
-##### Arguments
-
-* `id` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to the key type identifier ([Definition 220](https://spec.polkadot.network/chap-host-api#defn-key-type-id)).
-* `index` is the index of the key in the keystore. If the index is out of bounds (determined by the value returned by the respective `_num_public_keys` function) the function will panic;
-* `out` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to the output buffer of the respective size (depending on key type) where the key will be written.
+The result is an unsigned 32-bit integer representing the total size in bytes required to store all public keys of the given type. The number of keys can be determined by dividing this value by the known key size for the respective key type. A value of `0` indicates that no keys of the given type are known to the keystore.
 
 #### ext_crypto_{ed25519|sr25519|ecdsa}_generate
 
