@@ -400,7 +400,7 @@ The old version accepted (along with the child storage key) the state version as
 
 ##### Results
 
-The result is the length of the output that mught have been stored in the buffer provided in `out`.
+The result is the length of the output that might have been stored in the buffer provided in `out`.
 
 #### ext_default_child_storage_next_key
 
