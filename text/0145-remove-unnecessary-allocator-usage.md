@@ -47,7 +47,7 @@ Runtime developers, who will benefit from the improved performance and more dete
 
 #### <a name="new-def-i"></a>New Definition I: Runtime Optional Positive Integer
 
-By a Runtime Optional Positive Integer we refer to an abstract value $r \in \mathcal{R}$ where $\mathcal{R} := \{\bot\} \cup \{0, 1, \dots, 2^{32} - 1\},$ and where $\bot$ denotes the _absent_ value.
+By a Runtime Optional Positive Integer we refer to a value of type $R \equiv \\{\bot\\} \cup \\{0, 1, \dots, 2^{32} - 1\\}$, where $\bot$ denotes the _absent_ value.
 
 At the Host-Runtime interface this type is represented by a signed 64-bit integer $x \in \mathbb{Z}$ (thus $\mathbb{Z} := \{-2^{63}, \dots, 2^{63} - 1\}$).
 
@@ -60,7 +60,7 @@ $$
 \mathrm{Enc}_{\mathrm{ROP}}(r) :=
 \begin{cases}
 -1 & \text{if } r = \bot, \\
-r  & \text{if } r \in \{0, 1, \dots, 2^{32} - 1\}.
+r  & \text{otherwise}
 \end{cases}
 $$
 
@@ -191,7 +191,9 @@ The function used to accept only a prefix and a limit and return a SCALE-encoded
 
 ##### Result
 
-The result represents the length of the continuation cursor which might have been written to the buffer provided in `maybe_cursor_out`. A zero value represents the absence of such a cursor and no need for continuation (the prefix has been completely cleared).
+The result represents the length of the continuation cursor, which might have been written to the buffer provided in `maybe_cursor_out`. A zero value represents the absence of such a cursor and no need for continuation (the prefix has been completely cleared).
+
+The runtime must only pass an obtained continuation cursor to a directly successive call of this function. It is not permitted to use cursors more than once. All cursors must be deemed invalid as soon as another storage-modifying function has been called. Different usage may result in remaining storage keys or undefined behaviour.
 
 #### ext_storage_root
 
@@ -244,7 +246,7 @@ The old version accepted the key and returned the SCALE-encoded next key in a ho
 ##### Arguments
 
 * `key_in` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer containing a storage key;
-* `key_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to an output buffer where the next key in the storage in the lexicographical order will be written. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into and its contents are unchanged.
+* `key_out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to an output buffer where the next key in the storage in the lexicographical order will be written. The value is actually stored only if the next key exists and the buffer is large enough. Otherwise, the buffer is not written into, and its contents are unchanged.
 
 ##### Result
 
@@ -502,17 +504,13 @@ A new function is introduced to make it possible to fetch a cursor produced by `
 
 ```wat
 (func $ext_misc_last_cursor_version_1
-    (param $out i64) (result i64))
+    (param $out i32))
 ```
 ##### Arguments
 
-* `out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the buffer where the last cached cursor will be stored, if one exists. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into and its contents are unchanged.
+* `out` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to the buffer where the last cached cursor will be stored, if one exists. The caller must provide a buffer large enough to accommodate the entire cursor; the exact length of the cursor is known to the caller from the result of the preceding call to one of the storage prefix clearing functions. If the buffer provided is not large enough, execution is aborted.
 
-##### Result
-
-The result is an optional positive integer ([New Definition I](#new-def-i)) representing the length of the cursor that might have been stored in `out`. An _absent_ value represents the absence of the cached cursor.
-
-If the buffer had enough capacity and the cursor was stored successfully, the cursor cache is cleared and the same cursor cannot be retrieved once again using this function.
+After this function is called, the cursor cache is cleared, and the same cursor cannot be retrieved again using this function.
 
 #### ext_crypto_{ed25519|sr25519|ecdsa}_public_keys
 
@@ -578,13 +576,13 @@ The functions used to return a host-allocated buffer containing the key of the c
 
 ```wat
 (func $ext_crypto_{ed25519|sr25519|ecdsa}_generate_version_2
-    (param $id i32) (param $seed i64) (param $out i32))
+    (param $id i32) (param $seed i32) (param $out i32))
 ```
 
 ##### Arguments
 
-* `id` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to the key type identifier ([Definition 220](https://spec.polkadot.network/chap-host-api#defn-key-type-id)). The function will panic if the identifier is invalid;
-* `seed` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the SCALE-encoded Option value ([Definition 200](https://spec.polkadot.network/id-cryptography-encoding#defn-option-type)) containing the BIP-39 seed which must be valid UTF-8. The function will panic if the seed is not valid UTF-8;
+* `id` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to the key type identifier ([Definition 220](https://spec.polkadot.network/chap-host-api#defn-key-type-id)). Execution will be aborted if the identifier is invalid;
+* `seed` is an optional pointer-size ([New Definition II](#new-def-ii)) to the BIP-39 seed which must be valid UTF-8. Execution will be aborted if the seed is not a valid UTF-8 string;
 * `out` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to the output buffer of the respective size (depending on key type) where the generated key will be written.
 
 #### ext_crypto_{ed25519|sr25519|ecdsa}_sign\[_prehashed]
