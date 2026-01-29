@@ -206,22 +206,18 @@ The runtime must only pass an obtained continuation cursor to a directly success
 
 ##### Changes
 
-The old version accepted the state version as an argument and returned a SCALE-encoded trie root hash through a host-allocated buffer. The new version adopts [PPP#6](https://github.com/w3f/PPPs/pull/6), getting rid of the argument that used to represent the state version. It accepts a pointer to a runtime-allocated buffer and fills it with the output value. The length of the encoded result is returned.
+The old version accepted the state version as an argument and returned a SCALE-encoded trie root hash through a host-allocated buffer. The new version adopts [PPP#6](https://github.com/w3f/PPPs/pull/6), getting rid of the argument that used to represent the state version. It accepts a pointer to a runtime-allocated buffer and fills it with the output value.
 
 ##### New prototype
 
 ```wat
 (func $ext_storage_root_version_3
-    (param $out i64) (result i32))
+    (param $out i64))
 ```
 
 ##### Arguments
 
-* `out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the SCALE-encoded storage root, calculated after committing all the existing operations, will be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into, and its contents are unchanged.
-
-##### Results
-
-The result is the full length of the output that might have been stored in the buffer provided in `out`.
+* `out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the SCALE-encoded storage root, calculated after committing all the existing operations, will be stored. Since the size of the resulting value is known to the caller, this function requires the provided buffer to be large enough to store the entire value; providing a buffer that is too small will result in execution being aborted.
 
 #### ext_storage_next_key
 
@@ -386,19 +382,19 @@ The result represents the length of the continuation cursor, which might have be
 
 ##### Changes
 
-The old version accepted (along with the child storage key) the state version as an argument and returned a SCALE-encoded trie root hash through a host-allocated buffer. The new version adopts [PPP#6](https://github.com/w3f/PPPs/pull/6), getting rid of the argument that used to represent the state version. It accepts a pointer to a runtime-allocated buffer and fills it with the output value. The length of the encoded result is returned.
+The old version accepted (along with the child storage key) the state version as an argument and returned a SCALE-encoded trie root hash through a host-allocated buffer. The new version adopts [PPP#6](https://github.com/w3f/PPPs/pull/6), getting rid of the argument that used to represent the state version. It accepts a pointer to a runtime-allocated buffer and fills it with the output value.
 
 ##### New prototype
 
 ```wat
 (func $ext_default_child_storage_root_version_3
-    (param $storage_key i64) (param $out i64) (result i32))
+    (param $storage_key i64) (param $out i64))
 ```
 
 ##### Arguments
 
 * `storage_key` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to the child storage key ([Definition 219](https://spec.polkadot.network/chap-host-api#defn-child-storage-type));
-* `out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the SCALE-encoded storage root, calculated after committing all the existing operations, will be stored. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into, and its contents are unchanged.
+* `out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the SCALE-encoded storage root, calculated after committing all the existing operations, will be stored. Since the size of the resulting value is known to the caller, this function requires the provided buffer to be large enough to store the entire value; providing a buffer that is too small will result in execution being aborted.
 
 ##### Results
 
@@ -608,7 +604,7 @@ The functions used to return a host-allocated SCALE-encoded value representing t
 
 ```wat
 (func $ext_crypto_{ed25519|sr25519|ecdsa}_sign{_prehashed|}_version_2
-    (param $id i32) (param $pub_key i32) (param $msg i64) (param $out i64) (result i64))
+    (param $id i32) (param $pub_key i32) (param $msg i64) (param $out i64) (result i32))
 ```
 
 ##### Arguments
@@ -643,7 +639,7 @@ The functions used to return a host-allocated SCALE-encoded value representing t
 
 ```wat
 (func $ext_crypto_secp256k1_ecdsa_recover\[_compressed]_version_3
-    (param $sig i32) (param $msg i32) (param $out i32) (result i64))
+    (param $sig i32) (param $msg i32) (param $out i32) (result i32))
 ```
 
 ##### Arguments
@@ -708,7 +704,7 @@ The old version returned a SCALE-encoded result in a host-allocated buffer. That
 
 ```wat
 (func $ext_offchain_submit_transaction_version_2
-    (param $data i64) (result i64))
+    (param $data i64) (result i32))
 ```
 
 ##### Arguments
@@ -742,7 +738,7 @@ A new function is introduced to replace `ext_offchain_network_state`. It fills t
 
 ```wat
 (func $ext_offchain_submit_transaction_version_2
-    (param $out i32) (result i64))
+    (param $out i32) (result i32))
 ```
 
 ##### Arguments
