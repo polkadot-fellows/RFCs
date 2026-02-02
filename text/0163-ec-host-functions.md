@@ -152,6 +152,33 @@ use cases.
 - `ed_on_bls12_381_bandersnatch_msm_sw`
 - `ed_on_bls12_381_bandersnatch_mul_sw`
 
+#### Pallas
+
+Pallas is an elliptic curve that forms a 2-cycle with Vesta, meaning Pallas's base field equals
+Vesta's scalar field and vice versa. This property enables efficient recursive proof composition.
+
+**Typical Applications:**
+- **Recursive SNARKs**: The Pallas/Vesta 2-cycle enables efficient proof recursion without pairings.
+  Pallas serves as the "inner" curve when Vesta is the "outer" curve in recursive constructions.
+- **Halo2 Compatibility**: Verification of proofs from [Zcash](https://zcash.github.io/halo2/) and other Halo2-based systems.
+- **Kimchi Compatibility**: Verification of proofs from [Mina](https://o1-labs.github.io/proof-systems/specs/pasta) and other Kimchi-based systems.
+
+**Host Functions:**
+- `pallas_msm`
+- `pallas_mul`
+
+#### Vesta
+
+Vesta is the companion curve to Pallas, completing the 2-cycle. Together they enable recursive
+SNARK constructions where proofs over one curve can efficiently verify proofs from the other.
+
+**Typical Applications:**
+- See Pallas
+
+**Host Functions:**
+- `vesta_msm`
+- `vesta_mul`
+
 ### Implementation Details
 
 #### Conventions
@@ -195,7 +222,9 @@ Each curve is gated behind a feature flag to allow selective compilation:
 [features]
 bls12-381 = [...]
 ed-on-bls12-381-bandersnatch = [...]
-all-curves = ["bls12-381", "ed-on-bls12-381-bandersnatch", ...]
+pallas = [...]
+vesta = [...]
+all-curves = ["bls12-381", "ed-on-bls12-381-bandersnatch", "pallas", "vesta", ...]
 ```
 
 ### Usage Example (Runtime)
