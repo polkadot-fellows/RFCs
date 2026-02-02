@@ -15,8 +15,7 @@ primitives that would otherwise be significantly expensive when executed in the 
 The proposal covers the following elliptic curves:
 - **BLS12-381**: Pairing-friendly curve widely used for BLS signatures and zkSNARKs
 - **Ed-on-BLS12-381-Bandersnatch**: Twisted Edwards curve for in-circuit operations within BLS12-381 zkSNARKs
-
-**TODO**: Which additional curves should be included in this first iteration (e.g. Ed25519, BLS12-377, etc)?
+- **Pallas/Vesta**: The Pasta curves, a 2-cycle enabling efficient recursive SNARK constructions
 
 ## Motivation
 
@@ -108,9 +107,6 @@ For pairing-friendly curves with distinct G1 and G2 groups, `msm` and `mul` are 
 for each group (e.g., `msm_g1`, `msm_g2`).
 
 ### Curve Specifications
-
-**TODO**: Finalize the set of curves to include based on ecosystem needs.
-**TODO**: Should Polkadot and Kusama expose different curve sets? Consider exposing a broader set on Kusama for experimentation.
 
 #### BLS12-381
 
@@ -327,6 +323,7 @@ to benefit from:
 
 ## Unresolved Questions
 
+TODO
 - Which curves should be included in this initial proposal?
 - Should Polkadot and Kusama have different curve availability?
 
