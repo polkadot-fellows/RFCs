@@ -233,6 +233,9 @@ fn verify_bls_signature(
    security audits.
 4. **Curve Selection**: Future cryptographic advances may deprecate some curves or require new ones,
    potentially leading to API churn.
+5. **Performance Trade-off**: Granular host functions require multiple host-runtime boundary crossings,
+   which introduces overhead compared to *fat* host functions (e.g., a single `verify_bls_signature`)
+   that complete the entire operation in one call and can possibly leverage internal parallelization.
 
 ## Testing, Security and Privacy
 
