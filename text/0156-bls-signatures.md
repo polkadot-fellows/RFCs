@@ -169,25 +169,3 @@ Signs an input message using a given ECDSA & BLS12-381 key.
 #### Result
 
 The function returns `0` on success. On error, `-1` is returned, and the output buffer should be considered uninitialized.
-
-### ext_crypto_ecdsa_bls381_sign_with_keccak256
-
-Hashes a message using Keccak256 and then signs it using the ECDSA algorithm. It does not affect the behavior of the BLS12-381 component. Generates a BLS12-381 signature according to the IETF standard.
-
-#### Prototype
-
-```wat
-(func $ext_crypto_ecdsa_bls381_sign_with_keccak256_version_1
- (param $id i32) (param $pub_key i32) (param $msg i64) (param $out i64) (result i64))
-```
-
-#### Arguments
-
-* `id` is a pointer ([Definition 215](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer)) to a key type identifier ([Definition 220](https://polkadotspec.dev/chap-host-api#defn-key-type-id)). The function will panic if the identifier is invalid;
-* `pub_key` is a pointer ([Definition 215](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer)) to public key bytes (as returned by `ext_crypto_ecdsa_bls381_public_keys` function);
-* `msg` is a pointer-size ([Definition 216](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer-size)) to a message that is to be signed;
-* `out` is a pointer ([Definition 215](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer)) to an output buffer, 177 bytes long, where the signature will be written.
-
-#### Result
-
-The function returns `0` on success. On error, `-1` is returned, and the output buffer should be considered uninitialized.
