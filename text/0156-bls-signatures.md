@@ -43,9 +43,9 @@ Generates a BLS12-381 key for the given key type using an optional `seed`, store
 
 #### Arguments
 
-* `id` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a key type identifier ([Definition 220](https://spec.polkadot.network/chap-host-api#defn-key-type-id)). The function will panic if the identifier is invalid;
-* `seed` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a SCALE-encoded Option value ([Definition 200](https://spec.polkadot.network/id-cryptography-encoding#defn-option-type)) containing a BIP-39 seed which must be valid UTF-8. The function will panic if the seed is not a valid UTF-8;
-* `out` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to an output buffer, 144 bytes long, where the public key will be written.
+* `id` is a pointer ([Definition 215](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer)) to a key type identifier ([Definition 220](https://polkadotspec.dev/chap-host-api#defn-key-type-id)). The function will panic if the identifier is invalid;
+* `seed` is a pointer-size ([Definition 216](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer-size)) to a SCALE-encoded Option value ([Definition 200](https://polkadotspec.dev/id-cryptography-encoding#defn-option-type)) containing a BIP-39 seed which must be valid UTF-8. The function will panic if the seed is not a valid UTF-8;
+* `out` is a pointer ([Definition 215](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer)) to an output buffer, 144 bytes long, where the public key will be written.
 
 ### ext_crypto_bls381_generate_proof_of_possession
 
@@ -60,10 +60,10 @@ Generates a BLS12-381 Proof Of Possession for a given public key and owner ident
 
 #### Arguments
 
-* `id` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a key type identifier ([Definition 220](https://spec.polkadot.network/chap-host-api#defn-key-type-id)). The function will panic if the identifier is invalid;
-* `pub_key` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a public key, 144 bytes long;
-* `owner` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to an opaque owner identifier;
-* `out` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to an output buffer, 224 bytes long, where the proof of possession will be written.
+* `id` is a pointer ([Definition 215](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer)) to a key type identifier ([Definition 220](https://polkadotspec.dev/chap-host-api#defn-key-type-id)). The function will panic if the identifier is invalid;
+* `pub_key` is a pointer ([Definition 215](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer)) to a public key, 144 bytes long;
+* `owner` is a pointer-size ([Definition 216](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer-size)) to an opaque owner identifier;
+* `out` is a pointer ([Definition 215](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer)) to an output buffer, 224 bytes long, where the proof of possession will be written.
 
 #### Result
 
@@ -82,8 +82,8 @@ Retrieves all BLS12-381 public keys of a given type from the keystore.
 
 #### Arguments
 
-* `id` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a key type identifier ([Definition 220](https://spec.polkadot.network/chap-host-api#defn-key-type-id)). The function will panic if the identifier is invalid;
-* `out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the public keys of the given type known to the keystore will be stored consecutively. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into, and its contents are unchanged.
+* `id` is a pointer ([Definition 215](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer)) to a key type identifier ([Definition 220](https://polkadotspec.dev/chap-host-api#defn-key-type-id)). The function will panic if the identifier is invalid;
+* `out` is a pointer-size ([Definition 216](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer-size)) to a buffer where the public keys of the given type known to the keystore will be stored consecutively. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into, and its contents are unchanged.
 
 #### Result
 
@@ -102,10 +102,10 @@ Signs an input message using a given BLS12-381 key.
 
 #### Arguments
 
-* `id` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a key type identifier ([Definition 220](https://spec.polkadot.network/chap-host-api#defn-key-type-id)). The function will panic if the identifier is invalid;
-* `pub_key` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to public key bytes (as returned by `ext_crypto_bls381_public_keys` function);
-* `msg` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a message that is to be signed;
-* `out` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to an output buffer, 112 bytes long, where the signature will be written.
+* `id` is a pointer ([Definition 215](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer)) to a key type identifier ([Definition 220](https://polkadotspec.dev/chap-host-api#defn-key-type-id)). The function will panic if the identifier is invalid;
+* `pub_key` is a pointer ([Definition 215](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer)) to public key bytes (as returned by `ext_crypto_bls381_public_keys` function);
+* `msg` is a pointer-size ([Definition 216](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer-size)) to a message that is to be signed;
+* `out` is a pointer ([Definition 215](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer)) to an output buffer, 112 bytes long, where the signature will be written.
 
 #### Result
 
@@ -124,9 +124,9 @@ Generates a combination ECDSA & BLS12-381 key for a given key type using an opti
 
 #### Arguments
 
-* `id` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a key type identifier ([Definition 220](https://spec.polkadot.network/chap-host-api#defn-key-type-id)). The function will panic if the identifier is invalid;
-* `seed` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a SCALE-encoded Option value ([Definition 200](https://spec.polkadot.network/id-cryptography-encoding#defn-option-type)) containing a BIP-39 seed which must be valid UTF-8. The function will panic if the seed is not a valid UTF-8;
-* `out` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to an output buffer, 177 bytes long, where the public key will be written.
+* `id` is a pointer ([Definition 215](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer)) to a key type identifier ([Definition 220](https://polkadotspec.dev/chap-host-api#defn-key-type-id)). The function will panic if the identifier is invalid;
+* `seed` is a pointer-size ([Definition 216](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer-size)) to a SCALE-encoded Option value ([Definition 200](https://polkadotspec.dev/id-cryptography-encoding#defn-option-type)) containing a BIP-39 seed which must be valid UTF-8. The function will panic if the seed is not a valid UTF-8;
+* `out` is a pointer ([Definition 215](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer)) to an output buffer, 177 bytes long, where the public key will be written.
 
 ### ext_crypto_ecdsa_bls381_public_keys
 
@@ -141,8 +141,8 @@ Retrieves all ECDSA & BLS12-381 public keys of a given type from the keystore.
 
 #### Arguments
 
-* `id` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a key type identifier ([Definition 220](https://spec.polkadot.network/chap-host-api#defn-key-type-id)). The function will panic if the identifier is invalid;
-* `out` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a buffer where the public keys of the given type known to the keystore will be stored consecutively. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into, and its contents are unchanged.
+* `id` is a pointer ([Definition 215](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer)) to a key type identifier ([Definition 220](https://polkadotspec.dev/chap-host-api#defn-key-type-id)). The function will panic if the identifier is invalid;
+* `out` is a pointer-size ([Definition 216](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer-size)) to a buffer where the public keys of the given type known to the keystore will be stored consecutively. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into, and its contents are unchanged.
 
 #### Result
 
@@ -161,10 +161,10 @@ Signs an input message using a given ECDSA & BLS12-381 key.
 
 #### Arguments
 
-* `id` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a key type identifier ([Definition 220](https://spec.polkadot.network/chap-host-api#defn-key-type-id)). The function will panic if the identifier is invalid;
-* `pub_key` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to public key bytes (as returned by `ext_crypto_ecdsa_bls381_public_keys` function);
-* `msg` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a message that is to be signed;
-* `out` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to an output buffer, 177 bytes long, where the signature will be written.
+* `id` is a pointer ([Definition 215](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer)) to a key type identifier ([Definition 220](https://polkadotspec.dev/chap-host-api#defn-key-type-id)). The function will panic if the identifier is invalid;
+* `pub_key` is a pointer ([Definition 215](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer)) to public key bytes (as returned by `ext_crypto_ecdsa_bls381_public_keys` function);
+* `msg` is a pointer-size ([Definition 216](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer-size)) to a message that is to be signed;
+* `out` is a pointer ([Definition 215](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer)) to an output buffer, 177 bytes long, where the signature will be written.
 
 #### Result
 
@@ -183,10 +183,10 @@ Hashes a message using Keccak256 and then signs it using the ECDSA algorithm. It
 
 #### Arguments
 
-* `id` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to a key type identifier ([Definition 220](https://spec.polkadot.network/chap-host-api#defn-key-type-id)). The function will panic if the identifier is invalid;
-* `pub_key` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to public key bytes (as returned by `ext_crypto_ecdsa_bls381_public_keys` function);
-* `msg` is a pointer-size ([Definition 216](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size)) to a message that is to be signed;
-* `out` is a pointer ([Definition 215](https://spec.polkadot.network/chap-host-api#defn-runtime-pointer)) to an output buffer, 177 bytes long, where the signature will be written.
+* `id` is a pointer ([Definition 215](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer)) to a key type identifier ([Definition 220](https://polkadotspec.dev/chap-host-api#defn-key-type-id)). The function will panic if the identifier is invalid;
+* `pub_key` is a pointer ([Definition 215](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer)) to public key bytes (as returned by `ext_crypto_ecdsa_bls381_public_keys` function);
+* `msg` is a pointer-size ([Definition 216](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer-size)) to a message that is to be signed;
+* `out` is a pointer ([Definition 215](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer)) to an output buffer, 177 bytes long, where the signature will be written.
 
 #### Result
 
