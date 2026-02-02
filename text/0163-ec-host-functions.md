@@ -210,9 +210,19 @@ Affine representation has been chosen for:
 
 ##### Return Values
 
-All host functions return `Result<Vec<u8>, ()>`, where:
+All host functions return `Result<Vec<u8>, Error>`, where:
 - On success, the `Ok` variant contains the result encoded using the ArkScale codec as described above
-- On error, the `Err` variant contains an empty unit type `()`
+- On error, the `Err` variant contains one of the following error codes:
+
+```rust
+enum Error {
+    /// Input data decoding failed.
+    DecodeError = 1,
+    /// Input sequences have different lengths.
+    /// Applies to `msm` and `multi_miller_loop` operations.
+    LengthMismatch = 2,
+}
+```
 
 #### Feature Flags
 
@@ -224,7 +234,7 @@ bls12-381 = [...]
 ed-on-bls12-381-bandersnatch = [...]
 pallas = [...]
 vesta = [...]
-all-curves = ["bls12-381", "ed-on-bls12-381-bandersnatch", "pallas", "vesta", ...]
+all-curves = ["bls12-381", "ed-on-bls12-381-bandersnatch", "pallas", "vesta"]
 ```
 
 ### Usage Example (Runtime)
