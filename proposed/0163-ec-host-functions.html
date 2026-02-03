@@ -233,8 +233,8 @@ primitives that would otherwise be significantly expensive when executed in the 
 <ul>
 <li><strong>BLS12-381</strong>: Pairing-friendly curve widely used for BLS signatures and zkSNARKs</li>
 <li><strong>Ed-on-BLS12-381-Bandersnatch</strong>: Twisted Edwards curve for in-circuit operations within BLS12-381 zkSNARKs</li>
+<li><strong>Pallas/Vesta</strong>: The Pasta curves, a 2-cycle enabling efficient recursive SNARK constructions</li>
 </ul>
-<p><strong>TODO</strong>: Which additional curves should be included in this first iteration (e.g. Ed25519, BLS12-377, etc)?</p>
 <h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
 <h3 id="present-system"><a class="header" href="#present-system">Present System</a></h3>
 <p>Currently, Polkadot runtimes that need to perform elliptic curve operations must either:</p>
@@ -332,8 +332,6 @@ for all curves (e.g., pairing operations are only available for pairing-friendly
 <p>For pairing-friendly curves with distinct G1 and G2 groups, <code>msm</code> and <code>mul</code> are provided separately
 for each group (e.g., <code>msm_g1</code>, <code>msm_g2</code>).</p>
 <h3 id="curve-specifications"><a class="header" href="#curve-specifications">Curve Specifications</a></h3>
-<p><strong>TODO</strong>: Finalize the set of curves to include based on ecosystem needs.
-<strong>TODO</strong>: Should Polkadot and Kusama expose different curve sets? Consider exposing a broader set on Kusama for experimentation.</p>
 <h4 id="bls12-381"><a class="header" href="#bls12-381">BLS12-381</a></h4>
 <p>BLS12-381 is a pairing-friendly elliptic curve that has become the de facto standard for BLS
 signatures and many zkSNARK systems. It offers approximately 128 bits of security.</p>
@@ -375,6 +373,33 @@ use cases.</p>
 <li><code>ed_on_bls12_381_bandersnatch_msm_sw</code></li>
 <li><code>ed_on_bls12_381_bandersnatch_mul_sw</code></li>
 </ul>
+<h4 id="pallas"><a class="header" href="#pallas">Pallas</a></h4>
+<p>Pallas is an elliptic curve that forms a 2-cycle with Vesta, meaning Pallas's base field equals
+Vesta's scalar field and vice versa. This property enables efficient recursive proof composition.</p>
+<p><strong>Typical Applications:</strong></p>
+<ul>
+<li><strong>Recursive SNARKs</strong>: The Pallas/Vesta 2-cycle enables efficient proof recursion without pairings.
+Pallas serves as the &quot;inner&quot; curve when Vesta is the &quot;outer&quot; curve in recursive constructions.</li>
+<li><strong>Halo2 Compatibility</strong>: Verification of proofs from <a href="https://zcash.github.io/halo2/">Zcash</a> and other Halo2-based systems.</li>
+<li><strong>Kimchi Compatibility</strong>: Verification of proofs from <a href="https://o1-labs.github.io/proof-systems/specs/pasta">Mina</a> and other Kimchi-based systems.</li>
+</ul>
+<p><strong>Host Functions:</strong></p>
+<ul>
+<li><code>pallas_msm</code></li>
+<li><code>pallas_mul</code></li>
+</ul>
+<h4 id="vesta"><a class="header" href="#vesta">Vesta</a></h4>
+<p>Vesta is the companion curve to Pallas, completing the 2-cycle. Together they enable recursive
+SNARK constructions where proofs over one curve can efficiently verify proofs from the other.</p>
+<p><strong>Typical Applications:</strong></p>
+<ul>
+<li>See Pallas</li>
+</ul>
+<p><strong>Host Functions:</strong></p>
+<ul>
+<li><code>vesta_msm</code></li>
+<li><code>vesta_mul</code></li>
+</ul>
 <h3 id="implementation-details"><a class="header" href="#implementation-details">Implementation Details</a></h3>
 <h4 id="conventions"><a class="header" href="#conventions">Conventions</a></h4>
 <h5 id="serialization-codec"><a class="header" href="#serialization-codec">Serialization Codec</a></h5>
@@ -400,17 +425,29 @@ Affine representation has been chosen for:</p>
 <li>Direct usability without requiring coordinate conversion after the operation</li>
 </ul>
 <h5 id="return-values"><a class="header" href="#return-values">Return Values</a></h5>
-<p>All host functions return <code>Result&lt;Vec&lt;u8&gt;, ()&gt;</code>, where:</p>
+<p>All host functions return <code>Result&lt;Vec&lt;u8&gt;, Error&gt;</code>, where:</p>
 <ul>
 <li>On success, the <code>Ok</code> variant contains the result encoded using the ArkScale codec as described above</li>
-<li>On error, the <code>Err</code> variant contains an empty unit type <code>()</code></li>
+<li>On error, the <code>Err</code> variant contains one of the following error codes:</li>
 </ul>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>enum Error {
+    /// Input data decoding failed.
+    DecodeError = 1,
+    /// Input sequences have different lengths.
+    /// Applies to `msm` and `multi_miller_loop` operations.
+    LengthMismatch = 2,
+}
+<span class="boring">}</span></code></pre></pre>
 <h4 id="feature-flags"><a class="header" href="#feature-flags">Feature Flags</a></h4>
 <p>Each curve is gated behind a feature flag to allow selective compilation:</p>
 <pre><code class="language-toml">[features]
 bls12-381 = [...]
 ed-on-bls12-381-bandersnatch = [...]
-all-curves = [&quot;bls12-381&quot;, &quot;ed-on-bls12-381-bandersnatch&quot;, ...]
+pallas = [...]
+vesta = [...]
+all-curves = [&quot;bls12-381&quot;, &quot;ed-on-bls12-381-bandersnatch&quot;, &quot;pallas&quot;, &quot;vesta&quot;]
 </code></pre>
 <h3 id="usage-example-runtime"><a class="header" href="#usage-example-runtime">Usage Example (Runtime)</a></h3>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -446,6 +483,9 @@ burden and expanding the attack surface.</li>
 security audits.</li>
 <li><strong>Curve Selection</strong>: Future cryptographic advances may deprecate some curves or require new ones,
 potentially leading to API churn.</li>
+<li><strong>Performance Trade-off</strong>: Granular host functions require multiple host-runtime boundary crossings,
+which introduces overhead compared to <em>fat</em> host functions (e.g., a single <code>verify_bls_signature</code>)
+that complete the entire operation in one call and can possibly leverage internal parallelization.</li>
 </ol>
 <h2 id="testing-security-and-privacy"><a class="header" href="#testing-security-and-privacy">Testing, Security and Privacy</a></h2>
 <h3 id="testing"><a class="header" href="#testing">Testing</a></h3>
@@ -486,6 +526,7 @@ to benefit from:</p>
 <li><a href="https://github.com/davxy/polkadot-arkworks-extensions">Polkadot Arkworks Extensions</a> - Integration examples, benchmarks, Groth16 and ring-VRF demos</li>
 </ul>
 <h2 id="unresolved-questions"><a class="header" href="#unresolved-questions">Unresolved Questions</a></h2>
+<p>TODO</p>
 <ul>
 <li>Which curves should be included in this initial proposal?</li>
 <li>Should Polkadot and Kusama have different curve availability?</li>

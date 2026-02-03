@@ -1453,14 +1453,11 @@ $$</p>
 <ul>
 <li><a href="proposed/0156-bls-signatures.html#ext_crypto_bls381_generate">ext_crypto_bls381_generate</a></li>
 <li><a href="proposed/0156-bls-signatures.html#ext_crypto_bls381_generate_proof_of_possession">ext_crypto_bls381_generate_proof_of_possession</a></li>
-<li><a href="proposed/0156-bls-signatures.html#ext_crypto_bls381_num_public_keys">ext_crypto_bls381_num_public_keys</a></li>
-<li><a href="proposed/0156-bls-signatures.html#ext_crypto_bls381_public_key">ext_crypto_bls381_public_key</a></li>
+<li><a href="proposed/0156-bls-signatures.html#ext_crypto_bls381_public_keys">ext_crypto_bls381_public_keys</a></li>
 <li><a href="proposed/0156-bls-signatures.html#ext_crypto_bls381_sign">ext_crypto_bls381_sign</a></li>
 <li><a href="proposed/0156-bls-signatures.html#ext_crypto_ecdsa_bls381_generate">ext_crypto_ecdsa_bls381_generate</a></li>
-<li><a href="proposed/0156-bls-signatures.html#ext_crypto_ecdsa_bls381_num_public_keys">ext_crypto_ecdsa_bls381_num_public_keys</a></li>
-<li><a href="proposed/0156-bls-signatures.html#ext_crypto_ecdsa_bls381_public_key">ext_crypto_ecdsa_bls381_public_key</a></li>
+<li><a href="proposed/0156-bls-signatures.html#ext_crypto_ecdsa_bls381_public_keys">ext_crypto_ecdsa_bls381_public_keys</a></li>
 <li><a href="proposed/0156-bls-signatures.html#ext_crypto_ecdsa_bls381_sign">ext_crypto_ecdsa_bls381_sign</a></li>
-<li><a href="proposed/0156-bls-signatures.html#ext_crypto_ecdsa_bls381_sign_with_keccak256">ext_crypto_ecdsa_bls381_sign_with_keccak256</a></li>
 </ul>
 </li>
 </ul>
@@ -1493,9 +1490,9 @@ $$</p>
 </code></pre>
 <h4 id="arguments-29"><a class="header" href="#arguments-29">Arguments</a></h4>
 <ul>
-<li><code>id</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a key type identifier (<a href="https://spec.polkadot.network/chap-host-api#defn-key-type-id">Definition 220</a>). The function will panic if the identifier is invalid;</li>
-<li><code>seed</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a SCALE-encoded Option value (<a href="https://spec.polkadot.network/id-cryptography-encoding#defn-option-type">Definition 200</a>) containing a BIP-39 seed which must be valid UTF-8. The function will panic if the seed is not a valid UTF-8;</li>
-<li><code>out</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to an output buffer, 144 bytes long, where the public key will be written.</li>
+<li><code>id</code> is a pointer (<a href="https://polkadotspec.dev/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a key type identifier (<a href="https://polkadotspec.dev/chap-host-api#defn-key-type-id">Definition 220</a>). The function will panic if the identifier is invalid;</li>
+<li><code>seed</code> is a pointer-size (<a href="https://polkadotspec.dev/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a SCALE-encoded Option value (<a href="https://polkadotspec.dev/id-cryptography-encoding#defn-option-type">Definition 200</a>) containing a BIP-39 seed which must be valid UTF-8. The function will panic if the seed is not a valid UTF-8;</li>
+<li><code>out</code> is a pointer (<a href="https://polkadotspec.dev/chap-host-api#defn-runtime-pointer">Definition 215</a>) to an output buffer, 144 bytes long, where the public key will be written.</li>
 </ul>
 <h3 id="ext_crypto_bls381_generate_proof_of_possession"><a class="header" href="#ext_crypto_bls381_generate_proof_of_possession">ext_crypto_bls381_generate_proof_of_possession</a></h3>
 <p>Generates a BLS12-381 Proof Of Possession for a given public key and owner identifier.</p>
@@ -1505,117 +1502,80 @@ $$</p>
 </code></pre>
 <h4 id="arguments-30"><a class="header" href="#arguments-30">Arguments</a></h4>
 <ul>
-<li><code>id</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a key type identifier (<a href="https://spec.polkadot.network/chap-host-api#defn-key-type-id">Definition 220</a>). The function will panic if the identifier is invalid;</li>
-<li><code>pub_key</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a public key, 144 bytes long;</li>
-<li><code>owner</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to an opaque owner identifier;</li>
-<li><code>out</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to an output buffer, 224 bytes long, where the proof of possession will be written.</li>
+<li><code>id</code> is a pointer (<a href="https://polkadotspec.dev/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a key type identifier (<a href="https://polkadotspec.dev/chap-host-api#defn-key-type-id">Definition 220</a>). The function will panic if the identifier is invalid;</li>
+<li><code>pub_key</code> is a pointer (<a href="https://polkadotspec.dev/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a public key, 144 bytes long;</li>
+<li><code>owner</code> is a pointer-size (<a href="https://polkadotspec.dev/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to an opaque owner identifier;</li>
+<li><code>out</code> is a pointer (<a href="https://polkadotspec.dev/chap-host-api#defn-runtime-pointer">Definition 215</a>) to an output buffer, 224 bytes long, where the proof of possession will be written.</li>
 </ul>
 <h4 id="result-20"><a class="header" href="#result-20">Result</a></h4>
 <p>The function returns <code>0</code> on success. On error, <code>-1</code> is returned, and the output buffer should be considered uninitialized.</p>
-<h3 id="ext_crypto_bls381_num_public_keys"><a class="header" href="#ext_crypto_bls381_num_public_keys">ext_crypto_bls381_num_public_keys</a></h3>
-<p>Retrieves the number of BLS12-381 keys of the given type available in the keystore.</p>
+<h3 id="ext_crypto_bls381_public_keys"><a class="header" href="#ext_crypto_bls381_public_keys">ext_crypto_bls381_public_keys</a></h3>
+<p>Retrieves all BLS12-381 public keys of a given type from the keystore.</p>
 <h4 id="prototype-2"><a class="header" href="#prototype-2">Prototype</a></h4>
-<pre><code class="language-wat">(func $ext_crypto_bls381_num_public_keys_version_1
- (param $id i32) (result i32))
+<pre><code class="language-wat">(func $ext_crypto_bls381_public_keys_version_1
+ (param $id i32) (param $out i64) (result i32))
 </code></pre>
 <h4 id="arguments-31"><a class="header" href="#arguments-31">Arguments</a></h4>
 <ul>
-<li><code>id</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a key type identifier (<a href="https://spec.polkadot.network/chap-host-api#defn-key-type-id">Definition 220</a>). The function will panic if the identifier is invalid.</li>
+<li><code>id</code> is a pointer (<a href="https://polkadotspec.dev/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a key type identifier (<a href="https://polkadotspec.dev/chap-host-api#defn-key-type-id">Definition 220</a>). The function will panic if the identifier is invalid;</li>
+<li><code>out</code> is a pointer-size (<a href="https://polkadotspec.dev/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the public keys of the given type known to the keystore will be stored consecutively. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into, and its contents are unchanged.</li>
 </ul>
 <h4 id="result-21"><a class="header" href="#result-21">Result</a></h4>
-<p>The result represents a (possibly zero) number of keys of the given type known to the keystore.</p>
-<h3 id="ext_crypto_bls381_public_key"><a class="header" href="#ext_crypto_bls381_public_key">ext_crypto_bls381_public_key</a></h3>
-<p>Retrieves a BLS12-381 public key of a given type at a given index from the keystore.</p>
-<h4 id="prototype-3"><a class="header" href="#prototype-3">Prototype</a></h4>
-<pre><code class="language-wat">(func $ext_crypto_bls381_public_key_version_1
- (param $id i32) (param $index i32) (param $out))
-</code></pre>
-<h4 id="arguments-32"><a class="header" href="#arguments-32">Arguments</a></h4>
-<ul>
-<li><code>id</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a key type identifier (<a href="https://spec.polkadot.network/chap-host-api#defn-key-type-id">Definition 220</a>). The function will panic if the identifier is invalid;</li>
-<li><code>index</code> is an index of the key in the keystore. If the index is out of bounds (determined by the value returned by the <code>ext_crypto_bls381_num_public_keys</code> function), the function will panic;</li>
-<li><code>out</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to an output buffer, 144 bytes long, where the key will be written.</li>
-</ul>
+<p>The result is an unsigned 32-bit integer representing the total size in bytes required to store all public keys of the given type. The number of keys can be determined by dividing this value by the known key size (144 bytes for BLS12-381). A value of <code>0</code> indicates that no keys of the given type are known to the keystore.</p>
 <h3 id="ext_crypto_bls381_sign"><a class="header" href="#ext_crypto_bls381_sign">ext_crypto_bls381_sign</a></h3>
 <p>Signs an input message using a given BLS12-381 key.</p>
-<h4 id="prototype-4"><a class="header" href="#prototype-4">Prototype</a></h4>
+<h4 id="prototype-3"><a class="header" href="#prototype-3">Prototype</a></h4>
 <pre><code class="language-wat">(func $ext_crypto_bls381_sign_version_1
  (param $id i32) (param $pub_key i32) (param $msg i64) (param $out i64) (result i64))
 </code></pre>
-<h4 id="arguments-33"><a class="header" href="#arguments-33">Arguments</a></h4>
+<h4 id="arguments-32"><a class="header" href="#arguments-32">Arguments</a></h4>
 <ul>
-<li><code>id</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a key type identifier (<a href="https://spec.polkadot.network/chap-host-api#defn-key-type-id">Definition 220</a>). The function will panic if the identifier is invalid;</li>
-<li><code>pub_key</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to public key bytes (as returned by <code>ext_crypto_bls381_public_key</code> function);</li>
-<li><code>msg</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a message that is to be signed;</li>
-<li><code>out</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to an output buffer, 112 bytes long, where the signature will be written.</li>
+<li><code>id</code> is a pointer (<a href="https://polkadotspec.dev/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a key type identifier (<a href="https://polkadotspec.dev/chap-host-api#defn-key-type-id">Definition 220</a>). The function will panic if the identifier is invalid;</li>
+<li><code>pub_key</code> is a pointer (<a href="https://polkadotspec.dev/chap-host-api#defn-runtime-pointer">Definition 215</a>) to public key bytes (as returned by <code>ext_crypto_bls381_public_keys</code> function);</li>
+<li><code>msg</code> is a pointer-size (<a href="https://polkadotspec.dev/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a message that is to be signed;</li>
+<li><code>out</code> is a pointer (<a href="https://polkadotspec.dev/chap-host-api#defn-runtime-pointer">Definition 215</a>) to an output buffer, 112 bytes long, where the signature will be written.</li>
 </ul>
 <h4 id="result-22"><a class="header" href="#result-22">Result</a></h4>
 <p>The function returns <code>0</code> on success. On error, <code>-1</code> is returned, and the output buffer should be considered uninitialized.</p>
 <h3 id="ext_crypto_ecdsa_bls381_generate"><a class="header" href="#ext_crypto_ecdsa_bls381_generate">ext_crypto_ecdsa_bls381_generate</a></h3>
 <p>Generates a combination ECDSA &amp; BLS12-381 key for a given key type using an optional <code>seed</code>, stores it in the keystore, and returns the corresponding public key.</p>
-<h4 id="prototype-5"><a class="header" href="#prototype-5">Prototype</a></h4>
+<h4 id="prototype-4"><a class="header" href="#prototype-4">Prototype</a></h4>
 <pre><code class="language-wat">(func $ext_crypto_ecdsa_bls381_generate_version_1
  (param $id i32) (param $seed i64) (param $out i32))
 </code></pre>
+<h4 id="arguments-33"><a class="header" href="#arguments-33">Arguments</a></h4>
+<ul>
+<li><code>id</code> is a pointer (<a href="https://polkadotspec.dev/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a key type identifier (<a href="https://polkadotspec.dev/chap-host-api#defn-key-type-id">Definition 220</a>). The function will panic if the identifier is invalid;</li>
+<li><code>seed</code> is a pointer-size (<a href="https://polkadotspec.dev/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a SCALE-encoded Option value (<a href="https://polkadotspec.dev/id-cryptography-encoding#defn-option-type">Definition 200</a>) containing a BIP-39 seed which must be valid UTF-8. The function will panic if the seed is not a valid UTF-8;</li>
+<li><code>out</code> is a pointer (<a href="https://polkadotspec.dev/chap-host-api#defn-runtime-pointer">Definition 215</a>) to an output buffer, 177 bytes long, where the public key will be written.</li>
+</ul>
+<h3 id="ext_crypto_ecdsa_bls381_public_keys"><a class="header" href="#ext_crypto_ecdsa_bls381_public_keys">ext_crypto_ecdsa_bls381_public_keys</a></h3>
+<p>Retrieves all ECDSA &amp; BLS12-381 public keys of a given type from the keystore.</p>
+<h4 id="prototype-5"><a class="header" href="#prototype-5">Prototype</a></h4>
+<pre><code class="language-wat">(func $ext_crypto_ecdsa_bls381_public_keys_version_1
+ (param $id i32) (param $out i64) (result i32))
+</code></pre>
 <h4 id="arguments-34"><a class="header" href="#arguments-34">Arguments</a></h4>
 <ul>
-<li><code>id</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a key type identifier (<a href="https://spec.polkadot.network/chap-host-api#defn-key-type-id">Definition 220</a>). The function will panic if the identifier is invalid;</li>
-<li><code>seed</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a SCALE-encoded Option value (<a href="https://spec.polkadot.network/id-cryptography-encoding#defn-option-type">Definition 200</a>) containing a BIP-39 seed which must be valid UTF-8. The function will panic if the seed is not a valid UTF-8;</li>
-<li><code>out</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to an output buffer, 177 bytes long, where the public key will be written.</li>
-</ul>
-<h3 id="ext_crypto_ecdsa_bls381_num_public_keys"><a class="header" href="#ext_crypto_ecdsa_bls381_num_public_keys">ext_crypto_ecdsa_bls381_num_public_keys</a></h3>
-<p>Retrieves the number of ECDSA &amp; BLS12-381 keys of a given type available in the keystore.</p>
-<h4 id="prototype-6"><a class="header" href="#prototype-6">Prototype</a></h4>
-<pre><code class="language-wat">(func $ext_crypto_ecdsa_bls381_num_public_keys_version_1
- (param $id i32) (result i32))
-</code></pre>
-<h4 id="arguments-35"><a class="header" href="#arguments-35">Arguments</a></h4>
-<ul>
-<li><code>id</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a key type identifier (<a href="https://spec.polkadot.network/chap-host-api#defn-key-type-id">Definition 220</a>). The function will panic if the identifier is invalid.</li>
+<li><code>id</code> is a pointer (<a href="https://polkadotspec.dev/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a key type identifier (<a href="https://polkadotspec.dev/chap-host-api#defn-key-type-id">Definition 220</a>). The function will panic if the identifier is invalid;</li>
+<li><code>out</code> is a pointer-size (<a href="https://polkadotspec.dev/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a buffer where the public keys of the given type known to the keystore will be stored consecutively. The value is actually stored only if the buffer is large enough. Otherwise, the buffer is not written into, and its contents are unchanged.</li>
 </ul>
 <h4 id="result-23"><a class="header" href="#result-23">Result</a></h4>
-<p>The result represents a (possibly zero) number of keys of the given type known to the keystore.</p>
-<h3 id="ext_crypto_ecdsa_bls381_public_key"><a class="header" href="#ext_crypto_ecdsa_bls381_public_key">ext_crypto_ecdsa_bls381_public_key</a></h3>
-<p>Retrieves an ECDSA &amp; BLS12-381 public key of a given type at a given index from the keystore.</p>
-<h4 id="prototype-7"><a class="header" href="#prototype-7">Prototype</a></h4>
-<pre><code class="language-wat">(func $ext_crypto_ecdsa_bls381_public_key_version_1
- (param $id i32) (param $index i32) (param $out))
-</code></pre>
-<h4 id="arguments-36"><a class="header" href="#arguments-36">Arguments</a></h4>
-<ul>
-<li><code>id</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a key type identifier (<a href="https://spec.polkadot.network/chap-host-api#defn-key-type-id">Definition 220</a>). The function will panic if the identifier is invalid;</li>
-<li><code>index</code> is an index of the key in the keystore. If the index is out of bounds (determined by the value returned by the <code>ext_crypto_ecdsa_bls381_num_public_keys</code> function), the function will panic;</li>
-<li><code>out</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to an output buffer, 177 bytes long, where the key will be written.</li>
-</ul>
+<p>The result is an unsigned 32-bit integer representing the total size in bytes required to store all public keys of the given type. The number of keys can be determined by dividing this value by the known key size (177 bytes for ECDSA &amp; BLS12-381). A value of <code>0</code> indicates that no keys of the given type are known to the keystore.</p>
 <h3 id="ext_crypto_ecdsa_bls381_sign"><a class="header" href="#ext_crypto_ecdsa_bls381_sign">ext_crypto_ecdsa_bls381_sign</a></h3>
 <p>Signs an input message using a given ECDSA &amp; BLS12-381 key.</p>
-<h4 id="prototype-8"><a class="header" href="#prototype-8">Prototype</a></h4>
+<h4 id="prototype-6"><a class="header" href="#prototype-6">Prototype</a></h4>
 <pre><code class="language-wat">(func $ext_crypto_ecdsa_bls381_sign_version_1
  (param $id i32) (param $pub_key i32) (param $msg i64) (param $out i64) (result i64))
 </code></pre>
-<h4 id="arguments-37"><a class="header" href="#arguments-37">Arguments</a></h4>
+<h4 id="arguments-35"><a class="header" href="#arguments-35">Arguments</a></h4>
 <ul>
-<li><code>id</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a key type identifier (<a href="https://spec.polkadot.network/chap-host-api#defn-key-type-id">Definition 220</a>). The function will panic if the identifier is invalid;</li>
-<li><code>pub_key</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to public key bytes (as returned by <code>ext_crypto_ecdsa_bls381_public_key</code> function);</li>
-<li><code>msg</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a message that is to be signed;</li>
-<li><code>out</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to an output buffer, 177 bytes long, where the signature will be written.</li>
+<li><code>id</code> is a pointer (<a href="https://polkadotspec.dev/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a key type identifier (<a href="https://polkadotspec.dev/chap-host-api#defn-key-type-id">Definition 220</a>). The function will panic if the identifier is invalid;</li>
+<li><code>pub_key</code> is a pointer (<a href="https://polkadotspec.dev/chap-host-api#defn-runtime-pointer">Definition 215</a>) to public key bytes (as returned by <code>ext_crypto_ecdsa_bls381_public_keys</code> function);</li>
+<li><code>msg</code> is a pointer-size (<a href="https://polkadotspec.dev/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a message that is to be signed;</li>
+<li><code>out</code> is a pointer (<a href="https://polkadotspec.dev/chap-host-api#defn-runtime-pointer">Definition 215</a>) to an output buffer, 177 bytes long, where the signature will be written.</li>
 </ul>
 <h4 id="result-24"><a class="header" href="#result-24">Result</a></h4>
-<p>The function returns <code>0</code> on success. On error, <code>-1</code> is returned, and the output buffer should be considered uninitialized.</p>
-<h3 id="ext_crypto_ecdsa_bls381_sign_with_keccak256"><a class="header" href="#ext_crypto_ecdsa_bls381_sign_with_keccak256">ext_crypto_ecdsa_bls381_sign_with_keccak256</a></h3>
-<p>Hashes a message using Keccak256 and then signs it using the ECDSA algorithm. It does not affect the behavior of the BLS12-381 component. Generates a BLS12-381 signature according to the IETF standard.</p>
-<h4 id="prototype-9"><a class="header" href="#prototype-9">Prototype</a></h4>
-<pre><code class="language-wat">(func $ext_crypto_ecdsa_bls381_sign_with_keccak256_version_1
- (param $id i32) (param $pub_key i32) (param $msg i64) (param $out i64) (result i64))
-</code></pre>
-<h4 id="arguments-38"><a class="header" href="#arguments-38">Arguments</a></h4>
-<ul>
-<li><code>id</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a key type identifier (<a href="https://spec.polkadot.network/chap-host-api#defn-key-type-id">Definition 220</a>). The function will panic if the identifier is invalid;</li>
-<li><code>pub_key</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to public key bytes (as returned by <code>ext_crypto_ecdsa_bls381_public_key</code> function);</li>
-<li><code>msg</code> is a pointer-size (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a message that is to be signed;</li>
-<li><code>out</code> is a pointer (<a href="https://spec.polkadot.network/chap-host-api#defn-runtime-pointer">Definition 215</a>) to an output buffer, 177 bytes long, where the signature will be written.</li>
-</ul>
-<h4 id="result-25"><a class="header" href="#result-25">Result</a></h4>
 <p>The function returns <code>0</code> on success. On error, <code>-1</code> is returned, and the output buffer should be considered uninitialized.</p>
 <div style="break-before: page; page-break-before: always;"></div><p><a href="https://github.com/polkadot-fellows/RFCs/pull/160">(source)</a></p>
 <p><strong>Table of Contents</strong></p>
@@ -2105,8 +2065,8 @@ primitives that would otherwise be significantly expensive when executed in the 
 <ul>
 <li><strong>BLS12-381</strong>: Pairing-friendly curve widely used for BLS signatures and zkSNARKs</li>
 <li><strong>Ed-on-BLS12-381-Bandersnatch</strong>: Twisted Edwards curve for in-circuit operations within BLS12-381 zkSNARKs</li>
+<li><strong>Pallas/Vesta</strong>: The Pasta curves, a 2-cycle enabling efficient recursive SNARK constructions</li>
 </ul>
-<p><strong>TODO</strong>: Which additional curves should be included in this first iteration (e.g. Ed25519, BLS12-377, etc)?</p>
 <h2 id="motivation-7"><a class="header" href="#motivation-7">Motivation</a></h2>
 <h3 id="present-system"><a class="header" href="#present-system">Present System</a></h3>
 <p>Currently, Polkadot runtimes that need to perform elliptic curve operations must either:</p>
@@ -2204,8 +2164,6 @@ for all curves (e.g., pairing operations are only available for pairing-friendly
 <p>For pairing-friendly curves with distinct G1 and G2 groups, <code>msm</code> and <code>mul</code> are provided separately
 for each group (e.g., <code>msm_g1</code>, <code>msm_g2</code>).</p>
 <h3 id="curve-specifications"><a class="header" href="#curve-specifications">Curve Specifications</a></h3>
-<p><strong>TODO</strong>: Finalize the set of curves to include based on ecosystem needs.
-<strong>TODO</strong>: Should Polkadot and Kusama expose different curve sets? Consider exposing a broader set on Kusama for experimentation.</p>
 <h4 id="bls12-381"><a class="header" href="#bls12-381">BLS12-381</a></h4>
 <p>BLS12-381 is a pairing-friendly elliptic curve that has become the de facto standard for BLS
 signatures and many zkSNARK systems. It offers approximately 128 bits of security.</p>
@@ -2247,6 +2205,33 @@ use cases.</p>
 <li><code>ed_on_bls12_381_bandersnatch_msm_sw</code></li>
 <li><code>ed_on_bls12_381_bandersnatch_mul_sw</code></li>
 </ul>
+<h4 id="pallas"><a class="header" href="#pallas">Pallas</a></h4>
+<p>Pallas is an elliptic curve that forms a 2-cycle with Vesta, meaning Pallas's base field equals
+Vesta's scalar field and vice versa. This property enables efficient recursive proof composition.</p>
+<p><strong>Typical Applications:</strong></p>
+<ul>
+<li><strong>Recursive SNARKs</strong>: The Pallas/Vesta 2-cycle enables efficient proof recursion without pairings.
+Pallas serves as the &quot;inner&quot; curve when Vesta is the &quot;outer&quot; curve in recursive constructions.</li>
+<li><strong>Halo2 Compatibility</strong>: Verification of proofs from <a href="https://zcash.github.io/halo2/">Zcash</a> and other Halo2-based systems.</li>
+<li><strong>Kimchi Compatibility</strong>: Verification of proofs from <a href="https://o1-labs.github.io/proof-systems/specs/pasta">Mina</a> and other Kimchi-based systems.</li>
+</ul>
+<p><strong>Host Functions:</strong></p>
+<ul>
+<li><code>pallas_msm</code></li>
+<li><code>pallas_mul</code></li>
+</ul>
+<h4 id="vesta"><a class="header" href="#vesta">Vesta</a></h4>
+<p>Vesta is the companion curve to Pallas, completing the 2-cycle. Together they enable recursive
+SNARK constructions where proofs over one curve can efficiently verify proofs from the other.</p>
+<p><strong>Typical Applications:</strong></p>
+<ul>
+<li>See Pallas</li>
+</ul>
+<p><strong>Host Functions:</strong></p>
+<ul>
+<li><code>vesta_msm</code></li>
+<li><code>vesta_mul</code></li>
+</ul>
 <h3 id="implementation-details"><a class="header" href="#implementation-details">Implementation Details</a></h3>
 <h4 id="conventions"><a class="header" href="#conventions">Conventions</a></h4>
 <h5 id="serialization-codec"><a class="header" href="#serialization-codec">Serialization Codec</a></h5>
@@ -2272,17 +2257,29 @@ Affine representation has been chosen for:</p>
 <li>Direct usability without requiring coordinate conversion after the operation</li>
 </ul>
 <h5 id="return-values"><a class="header" href="#return-values">Return Values</a></h5>
-<p>All host functions return <code>Result&lt;Vec&lt;u8&gt;, ()&gt;</code>, where:</p>
+<p>All host functions return <code>Result&lt;Vec&lt;u8&gt;, Error&gt;</code>, where:</p>
 <ul>
 <li>On success, the <code>Ok</code> variant contains the result encoded using the ArkScale codec as described above</li>
-<li>On error, the <code>Err</code> variant contains an empty unit type <code>()</code></li>
+<li>On error, the <code>Err</code> variant contains one of the following error codes:</li>
 </ul>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>enum Error {
+    /// Input data decoding failed.
+    DecodeError = 1,
+    /// Input sequences have different lengths.
+    /// Applies to `msm` and `multi_miller_loop` operations.
+    LengthMismatch = 2,
+}
+<span class="boring">}</span></code></pre></pre>
 <h4 id="feature-flags"><a class="header" href="#feature-flags">Feature Flags</a></h4>
 <p>Each curve is gated behind a feature flag to allow selective compilation:</p>
 <pre><code class="language-toml">[features]
 bls12-381 = [...]
 ed-on-bls12-381-bandersnatch = [...]
-all-curves = [&quot;bls12-381&quot;, &quot;ed-on-bls12-381-bandersnatch&quot;, ...]
+pallas = [...]
+vesta = [...]
+all-curves = [&quot;bls12-381&quot;, &quot;ed-on-bls12-381-bandersnatch&quot;, &quot;pallas&quot;, &quot;vesta&quot;]
 </code></pre>
 <h3 id="usage-example-runtime"><a class="header" href="#usage-example-runtime">Usage Example (Runtime)</a></h3>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -2318,6 +2315,9 @@ burden and expanding the attack surface.</li>
 security audits.</li>
 <li><strong>Curve Selection</strong>: Future cryptographic advances may deprecate some curves or require new ones,
 potentially leading to API churn.</li>
+<li><strong>Performance Trade-off</strong>: Granular host functions require multiple host-runtime boundary crossings,
+which introduces overhead compared to <em>fat</em> host functions (e.g., a single <code>verify_bls_signature</code>)
+that complete the entire operation in one call and can possibly leverage internal parallelization.</li>
 </ol>
 <h2 id="testing-security-and-privacy-5"><a class="header" href="#testing-security-and-privacy-5">Testing, Security and Privacy</a></h2>
 <h3 id="testing-3"><a class="header" href="#testing-3">Testing</a></h3>
@@ -2358,6 +2358,7 @@ to benefit from:</p>
 <li><a href="https://github.com/davxy/polkadot-arkworks-extensions">Polkadot Arkworks Extensions</a> - Integration examples, benchmarks, Groth16 and ring-VRF demos</li>
 </ul>
 <h2 id="unresolved-questions-3"><a class="header" href="#unresolved-questions-3">Unresolved Questions</a></h2>
+<p>TODO</p>
 <ul>
 <li>Which curves should be included in this initial proposal?</li>
 <li>Should Polkadot and Kusama have different curve availability?</li>
