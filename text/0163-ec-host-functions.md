@@ -220,7 +220,7 @@ enum HostcallResult {
     /// Output buffer is too small.
     EncodeError = 1,
     /// Input data decoding failed.
-    DecodeErrorrrr = 2,
+    DecodeError = 2,
     /// Input sequences have different lengths.
     /// Applies to `msm` and `multi_miller_loop` operations.
     LengthMismatch = 3,
