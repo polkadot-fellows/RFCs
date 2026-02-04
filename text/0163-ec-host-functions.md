@@ -80,28 +80,33 @@ crate or the Polkadot-SDK and exposed via Substrate's runtime interface mechanis
 The following operations are provided for the supported curves. Not all operations are available
 for all curves (e.g., pairing operations are only available for pairing-friendly curves).
 
-- `multi_miller_loop(g1_points: Vec<G1>, g2_points: Vec<G2>) -> T`
+All functions write their result to an output buffer and return an error code (see Return Values).
+
+- `multi_miller_loop(g1: &[u8], g2: &[u8], out: &mut [u8]) -> u32`
   - Computes the multi-Miller loop for pairing operations.
-  - Takes vectors of G1 and G2 affine points.
+  - `g1`: encoded `Vec<G1Affine>`.
+  - `g2`: encoded `Vec<G2Affine>`.
   - The two input vectors are expected to have the same length.
-  - Returns target field element.
+  - Writes encoded target field element to `out`.
 
-- `final_exponentiation(target: T) -> T`
-  - Completes the pairing computation by performing final exponentiation on a target field element.
-  - Returns target field element.
+- `final_exponentiation(in_out: &mut [u8]) -> u32`
+  - Completes the pairing computation by performing final exponentiation.
+  - `in_out`: encoded target field element (input and output).
 
-- `msm(bases: Vec<G>, scalars: Vec<F>) -> G`
+- `msm(bases: &[u8], scalars: &[u8], out: &mut [u8]) -> u32`
   - Multi-scalar multiplication.
-  - Takes vectors of affine points G and elements of the group's prime order scalar field F.
-  - Returns an element of G.
-  - Efficiently computes `sum(scalar_i * base_i)`.
+  - `bases`: encoded `Vec<GAffine>`.
+  - `scalars`: encoded `Vec<ScalarField>`.
   - The two input vectors are expected to have the same length.
+  - Efficiently computes `sum(scalar_i * base_i)`.
+  - Writes encoded `GAffine` to `out`.
 
-- `mul(base: G, scalar: I) -> G`
+- `mul(base: &[u8], scalar: &[u8], out: &mut [u8]) -> u32`
   - Single point multiplication.
+  - `base`: encoded `GAffine`.
+  - `scalar`: encoded big integer (`Vec<u64>` limbs).
   - Computes `scalar * base`.
-  - Takes an affine point G and an unbounded big integer scalar I.
-  - Returns an element of G.
+  - Writes encoded `GAffine` to `out`.
 
 For pairing-friendly curves with distinct G1 and G2 groups, `msm` and `mul` are provided separately
 for each group (e.g., `msm_g1`, `msm_g2`).
@@ -206,19 +211,24 @@ Affine representation has been chosen for:
 
 ##### Return Values
 
-All host functions return `Result<Vec<u8>, Error>`, where:
-- On success, the `Ok` variant contains the result encoded using the ArkScale codec as described above
-- On error, the `Err` variant contains one of the following error codes:
+All host functions write their output to a caller-provided buffer and return a result code.
+On success, the result is encoded using the `ArkScale` codec and written to the output buffer.
 
 ```rust
-enum Error {
+enum HostcallResult {
+    Success = 0,
+    /// Output buffer is too small.
+    EncodeError = 1,
     /// Input data decoding failed.
-    DecodeError = 1,
+    DecodeErrorrrr = 2,
     /// Input sequences have different lengths.
     /// Applies to `msm` and `multi_miller_loop` operations.
-    LengthMismatch = 2,
+    LengthMismatch = 3,
+    /// Unknown error.
+    Unknown = 255,
 }
 ```
+
 
 #### Feature Flags
 
