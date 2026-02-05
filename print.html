@@ -2124,40 +2124,44 @@ crate or the Polkadot-SDK and exposed via Substrate's runtime interface mechanis
 <h3 id="common-operations"><a class="header" href="#common-operations">Common Operations</a></h3>
 <p>The following operations are provided for the supported curves. Not all operations are available
 for all curves (e.g., pairing operations are only available for pairing-friendly curves).</p>
+<p>All functions write their result to an output buffer and return an error code (see Return Values).</p>
 <ul>
 <li>
-<p><code>multi_miller_loop(g1_points: Vec&lt;G1&gt;, g2_points: Vec&lt;G2&gt;) -&gt; T</code></p>
+<p><code>multi_miller_loop(g1: &amp;[u8], g2: &amp;[u8], out: &amp;mut [u8]) -&gt; u32</code></p>
 <ul>
 <li>Computes the multi-Miller loop for pairing operations.</li>
-<li>Takes vectors of G1 and G2 affine points.</li>
+<li><code>g1</code>: encoded <code>Vec&lt;G1Affine&gt;</code>.</li>
+<li><code>g2</code>: encoded <code>Vec&lt;G2Affine&gt;</code>.</li>
 <li>The two input vectors are expected to have the same length.</li>
-<li>Returns target field element.</li>
+<li>Writes encoded target field element to <code>out</code>.</li>
 </ul>
 </li>
 <li>
-<p><code>final_exponentiation(target: T) -&gt; T</code></p>
+<p><code>final_exponentiation(in_out: &amp;mut [u8]) -&gt; u32</code></p>
 <ul>
-<li>Completes the pairing computation by performing final exponentiation on a target field element.</li>
-<li>Returns target field element.</li>
+<li>Completes the pairing computation by performing final exponentiation.</li>
+<li><code>in_out</code>: encoded target field element (input and output).</li>
 </ul>
 </li>
 <li>
-<p><code>msm(bases: Vec&lt;G&gt;, scalars: Vec&lt;F&gt;) -&gt; G</code></p>
+<p><code>msm(bases: &amp;[u8], scalars: &amp;[u8], out: &amp;mut [u8]) -&gt; u32</code></p>
 <ul>
 <li>Multi-scalar multiplication.</li>
-<li>Takes vectors of affine points G and elements of the group's prime order scalar field F.</li>
-<li>Returns an element of G.</li>
-<li>Efficiently computes <code>sum(scalar_i * base_i)</code>.</li>
+<li><code>bases</code>: encoded <code>Vec&lt;GAffine&gt;</code>.</li>
+<li><code>scalars</code>: encoded <code>Vec&lt;ScalarField&gt;</code>.</li>
 <li>The two input vectors are expected to have the same length.</li>
+<li>Efficiently computes <code>sum(scalar_i * base_i)</code>.</li>
+<li>Writes encoded <code>GAffine</code> to <code>out</code>.</li>
 </ul>
 </li>
 <li>
-<p><code>mul(base: G, scalar: I) -&gt; G</code></p>
+<p><code>mul(base: &amp;[u8], scalar: &amp;[u8], out: &amp;mut [u8]) -&gt; u32</code></p>
 <ul>
 <li>Single point multiplication.</li>
+<li><code>base</code>: encoded <code>GAffine</code>.</li>
+<li><code>scalar</code>: encoded big integer (<code>Vec&lt;u64&gt;</code> limbs).</li>
 <li>Computes <code>scalar * base</code>.</li>
-<li>Takes an affine point G and an unbounded big integer scalar I.</li>
-<li>Returns an element of G.</li>
+<li>Writes encoded <code>GAffine</code> to <code>out</code>.</li>
 </ul>
 </li>
 </ul>
@@ -2257,19 +2261,21 @@ Affine representation has been chosen for:</p>
 <li>Direct usability without requiring coordinate conversion after the operation</li>
 </ul>
 <h5 id="return-values"><a class="header" href="#return-values">Return Values</a></h5>
-<p>All host functions return <code>Result&lt;Vec&lt;u8&gt;, Error&gt;</code>, where:</p>
-<ul>
-<li>On success, the <code>Ok</code> variant contains the result encoded using the ArkScale codec as described above</li>
-<li>On error, the <code>Err</code> variant contains one of the following error codes:</li>
-</ul>
+<p>All host functions write their output to a caller-provided buffer and return a result code.
+On success, the result is encoded using the <code>ArkScale</code> codec and written to the output buffer.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>enum Error {
+</span>enum HostcallResult {
+    Success = 0,
+    /// Output buffer is too small.
+    EncodeError = 1,
     /// Input data decoding failed.
-    DecodeError = 1,
+    DecodeError = 2,
     /// Input sequences have different lengths.
     /// Applies to `msm` and `multi_miller_loop` operations.
-    LengthMismatch = 2,
+    LengthMismatch = 3,
+    /// Unknown error.
+    Unknown = 255,
 }
 <span class="boring">}</span></code></pre></pre>
 <h4 id="feature-flags"><a class="header" href="#feature-flags">Feature Flags</a></h4>
@@ -2360,8 +2366,18 @@ to benefit from:</p>
 <h2 id="unresolved-questions-3"><a class="header" href="#unresolved-questions-3">Unresolved Questions</a></h2>
 <p>TODO</p>
 <ul>
-<li>Which curves should be included in this initial proposal?</li>
+<li>Which curves should be included in this initial proposal?
+<ul>
+<li>Currently: bls12-381, bandersnatch, vesta/pallas (pasta curves)</li>
+</ul>
+</li>
 <li>Should Polkadot and Kusama have different curve availability?</li>
+<li>Consider merging <code>mul</code> into <code>msm</code> (MSM with a single element is equivalent to scalar multiplication).</li>
+<li>Should Bandersnatch expose only Twisted Edwards operations, or keep Short Weierstrass as well?
+<ul>
+<li>Our ring-vrf implementation uses TE only</li>
+</ul>
+</li>
 </ul>
 <h2 id="future-directions-and-related-material-4"><a class="header" href="#future-directions-and-related-material-4">Future Directions and Related Material</a></h2>
 <p><strong>Additional Curves</strong>: Future RFCs may propose host functions for additional curves as
