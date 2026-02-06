@@ -192,7 +192,6 @@
 <li><a href="#ext_crypto_bls381_sign">ext_crypto_bls381_sign</a></li>
 <li><a href="#ext_crypto_ecdsa_bls381_generate">ext_crypto_ecdsa_bls381_generate</a></li>
 <li><a href="#ext_crypto_ecdsa_bls381_public_keys">ext_crypto_ecdsa_bls381_public_keys</a></li>
-<li><a href="#ext_crypto_ecdsa_bls381_sign">ext_crypto_ecdsa_bls381_sign</a></li>
 </ul>
 </li>
 </ul>
@@ -297,21 +296,6 @@
 </ul>
 <h4 id="result-3"><a class="header" href="#result-3">Result</a></h4>
 <p>The result is an unsigned 32-bit integer representing the total size in bytes required to store all public keys of the given type. The number of keys can be determined by dividing this value by the known key size (177 bytes for ECDSA &amp; BLS12-381). A value of <code>0</code> indicates that no keys of the given type are known to the keystore.</p>
-<h3 id="ext_crypto_ecdsa_bls381_sign"><a class="header" href="#ext_crypto_ecdsa_bls381_sign">ext_crypto_ecdsa_bls381_sign</a></h3>
-<p>Signs an input message using a given ECDSA &amp; BLS12-381 key.</p>
-<h4 id="prototype-6"><a class="header" href="#prototype-6">Prototype</a></h4>
-<pre><code class="language-wat">(func $ext_crypto_ecdsa_bls381_sign_version_1
- (param $id i32) (param $pub_key i32) (param $msg i64) (param $out i64) (result i64))
-</code></pre>
-<h4 id="arguments-6"><a class="header" href="#arguments-6">Arguments</a></h4>
-<ul>
-<li><code>id</code> is a pointer (<a href="https://polkadotspec.dev/chap-host-api#defn-runtime-pointer">Definition 215</a>) to a key type identifier (<a href="https://polkadotspec.dev/chap-host-api#defn-key-type-id">Definition 220</a>). The function will panic if the identifier is invalid;</li>
-<li><code>pub_key</code> is a pointer (<a href="https://polkadotspec.dev/chap-host-api#defn-runtime-pointer">Definition 215</a>) to public key bytes (as returned by <code>ext_crypto_ecdsa_bls381_public_keys</code> function);</li>
-<li><code>msg</code> is a pointer-size (<a href="https://polkadotspec.dev/chap-host-api#defn-runtime-pointer-size">Definition 216</a>) to a message that is to be signed;</li>
-<li><code>out</code> is a pointer (<a href="https://polkadotspec.dev/chap-host-api#defn-runtime-pointer">Definition 215</a>) to an output buffer, 177 bytes long, where the signature will be written.</li>
-</ul>
-<h4 id="result-4"><a class="header" href="#result-4">Result</a></h4>
-<p>The function returns <code>0</code> on success. On error, <code>-1</code> is returned, and the output buffer should be considered uninitialized.</p>
 
                     </main>
 
