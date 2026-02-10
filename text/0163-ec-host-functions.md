@@ -333,10 +333,6 @@ to benefit from:
 
 ## Unresolved Questions
 
-TODO
-- Which curves should be included in this initial proposal?
-  - Currently: bls12-381, bandersnatch, vesta/pallas (pasta curves)
-- Should Polkadot and Kusama have different curve availability?
 - Consider merging `mul` into `msm` (MSM with a single element is equivalent to scalar multiplication).
 - Should Bandersnatch expose only Twisted Edwards operations, or keep Short Weierstrass as well?
   - Our ring-vrf implementation uses TE only
