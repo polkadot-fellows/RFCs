@@ -4,7 +4,7 @@
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 21 January 2026                                                                             |
 | **Description** | Host functions for elliptic curve operations in Polkadot runtimes                           |
-| **Authors**     | Davide Galassi                                                                              |
+| **Authors**     | Davide Galassi, Jeff Burdges                                                                |
 
 ## Summary
 
