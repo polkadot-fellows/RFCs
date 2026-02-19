@@ -8,9 +8,9 @@
 
 ## Summary
 
-This RFC proposes a set of host functions for performing computationally intensive elliptic curve
-operations in Polkadot runtimes. These host functions enable efficient execution of cryptographic
-primitives that would otherwise be significantly expensive when executed in the runtime.
+We propose a family of host functions for Polkadot runtimes that provide native execution for selected operations upon elliptic curve.
+
+In this RFC, we select 2-4 operations per curve that cover the vast majority of the running time for almost all verifier algorithms in elliptic curve cryptography, while only requiring a small number of hostcall invocations.  We do not provide either field arithmetic or complete cryptographic protocols here, because they would require too many host call invocations or too much host call maintanance, respectively. 
 
 The proposal covers the following elliptic curves:
 - **BLS12-381**: Pairing-friendly curve widely used for BLS signatures and zkSNARKs
@@ -34,9 +34,9 @@ implemented in Polkadot runtimes and experimentation, particularly:
 - Zero-knowledge proof verification (e.g. Groth16, PLONK with KZG commitments, etc.)
 - BLS aggregated signature verification
 - Verifiable Random Functions (VRFs) and Ring VRFs
-- Threshold signatures and distributed key generation
-- KZG polynomial commitments (Data Availability Sampling, Verkle trees)
-- Any other advanced cryptographic protocols requiring pairings
+- Aggregation or batching any of these verifications.
+- Distributed key generation protocols for threshold signatures.
+- Any other advanced cryptographic protocols requiring pairings, like maybe some KZG storage.
 
 ### Problems
 
@@ -49,7 +49,7 @@ implemented in Polkadot runtimes and experimentation, particularly:
 
 ### Requirements
 
-1. The host functions MUST provide tangible performance improvements over pure runtime execution.
+1. The host functions MUST provide a significant performance improvement over pure runtime execution.
 2. The host functions MUST use standardized serialization formats for interoperability.
 3. The implementation MUST be based on well-audited or at least battle-tested cryptographic libraries.
 4. The API SHOULD minimize the number of host calls required for common operations.
@@ -110,6 +110,10 @@ All functions write their result to an output buffer and return an error code (s
 
 For pairing-friendly curves with distinct G1 and G2 groups, `msm` and `mul` are provided separately
 for each group (e.g., `msm_g1`, `msm_g2`).
+
+We choose these operations because verifier algorithms spend almost all their CPU time within these functions, and verifier algorithms invoke these functions only a small number of times, which makes them perfect targets for host calls.
+
+Although much smaller than the above operations, there do exist other operations that incur some CPU overhead, like serialization and batch normalization, which each require one finite field division.  At present, finite field divisions might not benefit much from SIMD, so PVM might handle them less badly than heavy curve operations.  We cannot yet say that divisions would cost more than the host call overhead, so we leave such operations to the runtime for now. 
 
 ### Curve Specifications
 
@@ -317,6 +321,8 @@ repository.
 The implementation is based on the Arkworks library ecosystem, which is widely used.
 The serialization format is designed for compatibility with other Arkworks-based implementations.
 
+We considered merging the `final_exponentiation` operation into the `multi_miller_loop`, since they are always used together.  All native cryptographic libraries seperate these two operations though, so we'd need wrapper crates to fake having not doing this, which increases the maintenance burden.  Aside from IBE protocols, we expect pairings would typically be batched across the block, so the overhead of one vs two host call makes little difference, vs the higher maintenance burden required by one host call.
+
 ### Migration
 
 Existing custom elliptic curve implementations should migrate to these standardized host functions
@@ -333,7 +339,7 @@ to benefit from:
 
 ## Unresolved Questions
 
-- Consider merging `mul` into `msm` (MSM with a single element is equivalent to scalar multiplication).
+- Consider merging `mul` into `msm` since an MSM with a single element is a scalar multiplication.  
 - Should Bandersnatch expose only Twisted Edwards operations, or keep Short Weierstrass as well?
   - Our ring-vrf implementation uses TE only
 
