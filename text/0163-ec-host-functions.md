@@ -153,10 +153,6 @@ use cases.
 - `ed_on_bls12_381_bandersnatch_msm`
 - `ed_on_bls12_381_bandersnatch_mul`
 
-**Host Functions (Short Weierstrass form):**
-- `ed_on_bls12_381_bandersnatch_msm_sw`
-- `ed_on_bls12_381_bandersnatch_mul_sw`
-
 #### Pallas
 
 Pallas is an elliptic curve that forms a 2-cycle with Vesta, meaning Pallas's base field equals
@@ -340,8 +336,6 @@ to benefit from:
 ## Unresolved Questions
 
 - Consider merging `mul` into `msm` since an MSM with a single element is a scalar multiplication.  
-- Should Bandersnatch expose only Twisted Edwards operations, or keep Short Weierstrass as well?
-  - Our ring-vrf implementation uses TE only
 
 ## Future Directions and Related Material
 
