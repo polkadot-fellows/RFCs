@@ -222,13 +222,12 @@
 <div class="table-wrapper"><table><thead><tr><th></th><th></th></tr></thead><tbody>
 <tr><td><strong>Start Date</strong></td><td>21 January 2026</td></tr>
 <tr><td><strong>Description</strong></td><td>Host functions for elliptic curve operations in Polkadot runtimes</td></tr>
-<tr><td><strong>Authors</strong></td><td>Davide Galassi</td></tr>
+<tr><td><strong>Authors</strong></td><td>Davide Galassi, Jeff Burdges</td></tr>
 </tbody></table>
 </div>
 <h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
-<p>This RFC proposes a set of host functions for performing computationally intensive elliptic curve
-operations in Polkadot runtimes. These host functions enable efficient execution of cryptographic
-primitives that would otherwise be significantly expensive when executed in the runtime.</p>
+<p>We propose a family of host functions for Polkadot runtimes that provide native execution for selected operations upon elliptic curve.</p>
+<p>In this RFC, we select 2-4 operations per curve that cover the vast majority of the running time for almost all verifier algorithms in elliptic curve cryptography, while only requiring a small number of hostcall invocations.  We do not provide either field arithmetic or complete cryptographic protocols here, because they would require too many host call invocations or too much host call maintanance, respectively. </p>
 <p>The proposal covers the following elliptic curves:</p>
 <ul>
 <li><strong>BLS12-381</strong>: Pairing-friendly curve widely used for BLS signatures and zkSNARKs</li>
@@ -251,9 +250,9 @@ implemented in Polkadot runtimes and experimentation, particularly:</p>
 <li>Zero-knowledge proof verification (e.g. Groth16, PLONK with KZG commitments, etc.)</li>
 <li>BLS aggregated signature verification</li>
 <li>Verifiable Random Functions (VRFs) and Ring VRFs</li>
-<li>Threshold signatures and distributed key generation</li>
-<li>KZG polynomial commitments (Data Availability Sampling, Verkle trees)</li>
-<li>Any other advanced cryptographic protocols requiring pairings</li>
+<li>Aggregation or batching any of these verifications.</li>
+<li>Distributed key generation protocols for threshold signatures.</li>
+<li>Any other advanced cryptographic protocols requiring pairings, like maybe some KZG storage.</li>
 </ul>
 <h3 id="problems"><a class="header" href="#problems">Problems</a></h3>
 <ol>
@@ -266,7 +265,7 @@ efficiently verify each other's cryptographic proofs.</li>
 </ol>
 <h3 id="requirements"><a class="header" href="#requirements">Requirements</a></h3>
 <ol>
-<li>The host functions MUST provide tangible performance improvements over pure runtime execution.</li>
+<li>The host functions MUST provide a significant performance improvement over pure runtime execution.</li>
 <li>The host functions MUST use standardized serialization formats for interoperability.</li>
 <li>The implementation MUST be based on well-audited or at least battle-tested cryptographic libraries.</li>
 <li>The API SHOULD minimize the number of host calls required for common operations.</li>
@@ -335,6 +334,8 @@ for all curves (e.g., pairing operations are only available for pairing-friendly
 </ul>
 <p>For pairing-friendly curves with distinct G1 and G2 groups, <code>msm</code> and <code>mul</code> are provided separately
 for each group (e.g., <code>msm_g1</code>, <code>msm_g2</code>).</p>
+<p>We choose these operations because verifier algorithms spend almost all their CPU time within these functions, and verifier algorithms invoke these functions only a small number of times, which makes them perfect targets for host calls.</p>
+<p>Although much smaller than the above operations, there do exist other operations that incur some CPU overhead, like serialization and batch normalization, which each require one finite field division.  At present, finite field divisions might not benefit much from SIMD, so PVM might handle them less badly than heavy curve operations.  We cannot yet say that divisions would cost more than the host call overhead, so we leave such operations to the runtime for now. </p>
 <h3 id="curve-specifications"><a class="header" href="#curve-specifications">Curve Specifications</a></h3>
 <h4 id="bls12-381"><a class="header" href="#bls12-381">BLS12-381</a></h4>
 <p>BLS12-381 is a pairing-friendly elliptic curve that has become the de facto standard for BLS
@@ -371,11 +372,6 @@ use cases.</p>
 <ul>
 <li><code>ed_on_bls12_381_bandersnatch_msm</code></li>
 <li><code>ed_on_bls12_381_bandersnatch_mul</code></li>
-</ul>
-<p><strong>Host Functions (Short Weierstrass form):</strong></p>
-<ul>
-<li><code>ed_on_bls12_381_bandersnatch_msm_sw</code></li>
-<li><code>ed_on_bls12_381_bandersnatch_mul_sw</code></li>
 </ul>
 <h4 id="pallas"><a class="header" href="#pallas">Pallas</a></h4>
 <p>Pallas is an elliptic curve that forms a 2-cycle with Vesta, meaning Pallas's base field equals
@@ -517,6 +513,7 @@ repository.</p>
 <h3 id="compatibility"><a class="header" href="#compatibility">Compatibility</a></h3>
 <p>The implementation is based on the Arkworks library ecosystem, which is widely used.
 The serialization format is designed for compatibility with other Arkworks-based implementations.</p>
+<p>We considered merging the <code>final_exponentiation</code> operation into the <code>multi_miller_loop</code>, since they are always used together.  All native cryptographic libraries seperate these two operations though, so we'd need wrapper crates to fake having not doing this, which increases the maintenance burden.  Aside from IBE protocols, we expect pairings would typically be batched across the block, so the overhead of one vs two host call makes little difference, vs the higher maintenance burden required by one host call.</p>
 <h3 id="migration"><a class="header" href="#migration">Migration</a></h3>
 <p>Existing custom elliptic curve implementations should migrate to these standardized host functions
 to benefit from:</p>
@@ -533,12 +530,7 @@ to benefit from:</p>
 </ul>
 <h2 id="unresolved-questions"><a class="header" href="#unresolved-questions">Unresolved Questions</a></h2>
 <ul>
-<li>Consider merging <code>mul</code> into <code>msm</code> (MSM with a single element is equivalent to scalar multiplication).</li>
-<li>Should Bandersnatch expose only Twisted Edwards operations, or keep Short Weierstrass as well?
-<ul>
-<li>Our ring-vrf implementation uses TE only</li>
-</ul>
-</li>
+<li>Consider merging <code>mul</code> into <code>msm</code> since an MSM with a single element is a scalar multiplication.</li>
 </ul>
 <h2 id="future-directions-and-related-material"><a class="header" href="#future-directions-and-related-material">Future Directions and Related Material</a></h2>
 <p><strong>Additional Curves</strong>: Future RFCs may propose host functions for additional curves as
