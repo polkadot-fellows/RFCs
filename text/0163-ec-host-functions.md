@@ -85,7 +85,7 @@ All functions write their result to an output buffer and return an error code (s
   - Computes the multi-Miller loop for pairing operations.
   - `g1`: encoded `Vec<G1Affine>`.
   - `g2`: encoded `Vec<G2Affine>`.
-  - The two input vectors are expected to have identical lengths. If they differ, the excess elements in the longer vector are silently ignored.
+  - The two input vectors are expected to have identical length.
   - Writes encoded pairing target field element to `out`.
 
 - `final_exponentiation(in_out: &mut [u8]) -> u32`
@@ -96,7 +96,7 @@ All functions write their result to an output buffer and return an error code (s
   - Multi-scalar multiplication. Efficiently computes `sum(scalars_i * bases_i)`.
   - `bases`: encoded `Vec<Affine>`.
   - `scalars`: encoded `Vec<ScalarField>`.
-  - The two input vectors are expected to have identical lengths. If they differ, the excess elements in the longer vector are silently ignored.
+  - The two input vectors are expected to have identical length.
   - Writes encoded `Affine` to `out`.
 
 - `mul(base: &[u8], scalar: &[u8], out: &mut [u8]) -> u32`
@@ -183,10 +183,9 @@ SNARK constructions where proofs over one curve can efficiently verify proofs fr
 
 ##### Serialization Codec
 
-All [Arkworks](https://github.com/arkworks-rs) types passed on the runtime/host boundary are serialized
+All types passed on the runtime/host boundary are serialized
 using [ArkScale](https://github.com/paritytech/ark-scale), a SCALE encoding wrapper for Arkworks types.
-ArkScale internally uses Arkworks' `CanonicalSerialize`/`CanonicalDeserialize` traits, ensuring
-compatibility with the broader Arkworks ecosystem.
+ArkScale internally uses Arkworks' `CanonicalSerialize`/`CanonicalDeserialize` traits.
 
 The codec is configured with the following settings:
 - **Not validated**: Points are not validated on deserialization for performance (caller responsibility)
@@ -215,9 +214,9 @@ On success, the result is encoded using the `ArkScale` codec and written to the 
 enum HostcallResult {
     Success = 0,
     /// Output buffer is too small.
-    EncodeError = 1,
+    OutputTooSmall = 1,
     /// Input data decoding failed.
-    DecodeError = 2,
+    MalformedInput = 2,
     /// Input sequences have different lengths.
     /// Applies to `msm` and `multi_miller_loop` operations.
     LengthMismatch = 3,
@@ -226,21 +225,9 @@ enum HostcallResult {
 }
 ```
 
+### Usage Example
 
-#### Feature Flags
-
-Each curve is gated behind a feature flag to allow selective compilation:
-
-```toml
-[features]
-bls12-381 = [...]
-ed-on-bls12-381-bandersnatch = [...]
-pallas = [...]
-vesta = [...]
-all-curves = ["bls12-381", "ed-on-bls12-381-bandersnatch", "pallas", "vesta"]
-```
-
-### Usage Example (Runtime)
+Runtime code snippet for BLS12-381 signature verification using Arkworks-compatible types from the polkadot-sdk. These types preserve API compatibility with upstream Arkworks and are designed to automatically and transparently delegate to host calls where required.
 
 ```rust
 use sp_crypto_ec_utils::bls12_381::{G1Affine, G2Affine};
@@ -271,11 +258,9 @@ fn verify_bls_signature(
 1. **Maintenance Overhead**: Each curve adds multiple host functions, increasing the maintenance
    burden and expanding the attack surface.
 2. **Upgrade Coordination**: Changes to host functions require coordinated runtime and node upgrades.
-3. **Library Dependency**: The implementation relies on Arkworks, which has not undergone formal
-   security audits.
-4. **Curve Selection**: Future cryptographic advances may deprecate some curves or require new ones,
+3. **Curve Selection**: Future cryptographic advances may deprecate some curves or require new ones,
    potentially leading to API churn.
-5. **Performance Trade-off**: Granular host functions require multiple host-runtime boundary crossings,
+4. **Performance Trade-off**: Granular host functions require multiple host-runtime boundary crossings,
    which introduces overhead compared to *fat* host functions (e.g., a single `verify_bls_signature`)
    that complete the entire operation in one call and can possibly leverage internal parallelization.
 
@@ -311,10 +296,10 @@ repository.
 
 ### Compatibility
 
-The implementation is based on the Arkworks library ecosystem, which is widely used.
+The polkadot-sdk implementation is based on the Arkworks library ecosystem, which is widely used.
 The serialization format is designed for compatibility with other Arkworks-based implementations.
 
-We considered merging the `final_exponentiation` operation into the `multi_miller_loop`, since they are always used together.  All native cryptographic libraries seperate these two operations though, so we'd need wrapper crates to fake having not doing this, which increases the maintenance burden.  Aside from IBE protocols, we expect pairings would typically be batched across the block, so the overhead of one vs two host call makes little difference, vs the higher maintenance burden required by one host call.
+We considered merging the `final_exponentiation` operation into the `multi_miller_loop`, since they are always used together.  All native cryptographic libraries seperate these two operations though, so we'd need wrapper crates to fake having not doing this, which increases the maintenance burden. Aside from IBE protocols, we expect pairings would typically be batched across the block, so the overhead of one vs two host call makes little difference, vs the higher maintenance burden required by one host call.
 
 ### Migration
 
