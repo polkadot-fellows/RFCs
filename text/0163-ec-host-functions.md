@@ -184,7 +184,7 @@ SNARK constructions where proofs over one curve can efficiently verify proofs fr
 ##### Serialization Codec
 
 All [Arkworks](https://github.com/arkworks-rs) types passed on the runtime/host boundary are serialized
-using [ArkScale](https://github.com/parity-tech/ark-scale), a SCALE encoding wrapper for Arkworks types.
+using [ArkScale](https://github.com/paritytech/ark-scale), a SCALE encoding wrapper for Arkworks types.
 ArkScale internally uses Arkworks' `CanonicalSerialize`/`CanonicalDeserialize` traits, ensuring
 compatibility with the broader Arkworks ecosystem.
 
