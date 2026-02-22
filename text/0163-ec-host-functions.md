@@ -95,18 +95,18 @@ All functions write their result to an output buffer and return an error code (s
 
 - `msm(bases: &[u8], scalars: &[u8], out: &mut [u8]) -> u32`
   - Multi-scalar multiplication.
-  - `bases`: encoded `Vec<GAffine>`.
+  - `bases`: encoded `Vec<Affine>`.
   - `scalars`: encoded `Vec<ScalarField>`.
   - The two input vectors are expected to have the same length.
   - Efficiently computes `sum(scalar_i * base_i)`.
-  - Writes encoded `GAffine` to `out`.
+  - Writes encoded `Affine` to `out`.
 
 - `mul(base: &[u8], scalar: &[u8], out: &mut [u8]) -> u32`
   - Single point multiplication.
-  - `base`: encoded `GAffine`.
+  - `base`: encoded `Affine`.
   - `scalar`: encoded big integer (`Vec<u64>` limbs).
   - Computes `scalar * base`.
-  - Writes encoded `GAffine` to `out`.
+  - Writes encoded `Affine` to `out`.
 
 For pairing-friendly curves with distinct G1 and G2 groups, `msm` and `mul` are provided separately
 for each group (e.g., `msm_g1`, `msm_g2`).
@@ -335,9 +335,9 @@ to benefit from:
 
 ## Unresolved Questions
 
-- Consider merging `mul` into `msm` since an MSM with a single element is a scalar multiplication.  
+None.
 
 ## Future Directions and Related Material
 
 **Additional Curves**: Future RFCs may propose host functions for additional curves as
-ecosystem needs evolve (e.g., Pasta curves for Halo2-based systems).
+ecosystem needs evolve.
