@@ -72,8 +72,7 @@ implemented in Polkadot runtimes and experimentation, particularly:
 ### Overview
 
 This proposal introduces host functions for a selected set of elliptic curves, each serving specific
-use cases in the broader cryptographic ecosystem. The functions are implemented in the `sp-crypto-ec-utils`
-crate or the Polkadot-SDK and exposed via Substrate's runtime interface mechanism.
+use cases in the broader cryptographic ecosystem. The functions are exposed via the existing Substrate's runtime interface mechanism.
 
 ### Common Operations
 
@@ -86,19 +85,18 @@ All functions write their result to an output buffer and return an error code (s
   - Computes the multi-Miller loop for pairing operations.
   - `g1`: encoded `Vec<G1Affine>`.
   - `g2`: encoded `Vec<G2Affine>`.
-  - The two input vectors are expected to have the same length.
-  - Writes encoded target field element to `out`.
+  - The two input vectors are expected to have identical lengths. If they differ, the excess elements in the longer vector are silently ignored.
+  - Writes encoded pairing target field element to `out`.
 
 - `final_exponentiation(in_out: &mut [u8]) -> u32`
   - Completes the pairing computation by performing final exponentiation.
   - `in_out`: encoded target field element (input and output).
 
 - `msm(bases: &[u8], scalars: &[u8], out: &mut [u8]) -> u32`
-  - Multi-scalar multiplication.
+  - Multi-scalar multiplication. Efficiently computes `sum(scalars_i * bases_i)`.
   - `bases`: encoded `Vec<Affine>`.
   - `scalars`: encoded `Vec<ScalarField>`.
-  - The two input vectors are expected to have the same length.
-  - Efficiently computes `sum(scalar_i * base_i)`.
+  - The two input vectors are expected to have identical lengths. If they differ, the excess elements in the longer vector are silently ignored.
   - Writes encoded `Affine` to `out`.
 
 - `mul(base: &[u8], scalar: &[u8], out: &mut [u8]) -> u32`
@@ -113,7 +111,7 @@ for each group (e.g., `msm_g1`, `msm_g2`).
 
 We choose these operations because verifier algorithms spend almost all their CPU time within these functions, and verifier algorithms invoke these functions only a small number of times, which makes them perfect targets for host calls.
 
-Although much smaller than the above operations, there do exist other operations that incur some CPU overhead, like serialization and batch normalization, which each require one finite field division.  At present, finite field divisions might not benefit much from SIMD, so PVM might handle them less badly than heavy curve operations.  We cannot yet say that divisions would cost more than the host call overhead, so we leave such operations to the runtime for now. 
+Although much smaller than the above operations, there do exist other operations that incur some CPU overhead, like serialization and batch normalization, which each require one finite field division.  At present, finite field divisions might not benefit much from SIMD, so the runtime might handle them less badly than heavy curve operations. We cannot yet say that divisions would cost more than the host call overhead, so we leave such operations to the runtime for now. 
 
 ### Curve Specifications
 
@@ -125,8 +123,7 @@ signatures and many zkSNARK systems. It offers approximately 128 bits of securit
 **Typical Applications:**
 - **BLS Signatures**: BLS signatures support efficient aggregation, allowing thousands of
   signatures to be verified as one.
-- **zkSNARK Verification**: Groth16 and other pairing-based proof systems use BLS12-381 for
-  proof verification.
+- **zkSNARK Verification**: Groth16 and other pairing-based proof systems use BLS12-381.
 - **Cross-chain bridges**: Enables verification of consensus proofs from other chains using
   BLS12-381 for trustless bridging.
 
