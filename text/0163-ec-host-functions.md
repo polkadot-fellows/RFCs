@@ -86,11 +86,12 @@ All functions write their result to an output buffer and return an error code (s
   - `g1`: encoded `Vec<G1Affine>`.
   - `g2`: encoded `Vec<G2Affine>`.
   - The two input vectors are expected to have identical length.
-  - Writes encoded pairing target field element to `out`.
+  - Writes encoded `TargetField` element to `out`.
 
 - `final_exponentiation(in_out: &mut [u8]) -> u32`
   - Completes the pairing computation by performing final exponentiation.
-  - `in_out`: encoded target field element (input and output).
+  - `in_out`: encoded `TargetField` element. The type is the same for both input and output,
+    so the buffer is reused in place.
 
 - `msm(bases: &[u8], scalars: &[u8], out: &mut [u8]) -> u32`
   - Multi-scalar multiplication. Efficiently computes `sum(scalars_i * bases_i)`.
@@ -102,7 +103,7 @@ All functions write their result to an output buffer and return an error code (s
 - `mul(base: &[u8], scalar: &[u8], out: &mut [u8]) -> u32`
   - Single point multiplication.
   - `base`: encoded `Affine`.
-  - `scalar`: encoded `Scalar`.
+  - `scalar`: encoded `BigInteger`.
   - Computes `scalar * base`.
   - Writes encoded `Affine` to `out`.
 
@@ -179,43 +180,83 @@ SNARK constructions where proofs over one curve can efficiently verify proofs fr
 
 ### Implementation Details
 
-#### Conventions
+#### Serialization Codec
 
-##### Serialization Codec
+The encoding format described below follows the conventions adopted by the
+upstream [Arkworks](https://github.com/arkworks-rs) library (`CanonicalSerialize`/`CanonicalDeserialize` traits).
 
-All types passed on the runtime/host boundary are serialized
-using [ArkScale](https://github.com/paritytech/ark-scale), a SCALE encoding wrapper for Arkworks types.
-ArkScale internally uses Arkworks' `CanonicalSerialize`/`CanonicalDeserialize` traits.
+##### BigInteger
 
-The codec is configured with the following settings:
-- **Not validated**: Points are not validated on deserialization for performance (caller responsibility)
-- **Not compressed**: Uncompressed point representation for faster deserialization
+`BigInteger` is an arbitrary-precision integer, not reduced mod the field order. Used by `mul`
+because some operations (cofactor clearing, subgroup membership checks) require multiplying
+by values that may equal or exceed the scalar field order.
 
-##### Scalar Encoding
+Encoded as a length-prefixed sequence of `u64` chunks, all in little-endian byte order:
+- The first 8 bytes encode the number of chunks as a little-endian `u64`.
+- Each subsequent 8-byte block encodes one `u64` chunk in little-endian order.
+- Chunks are ordered from least significant to most significant.
 
-Two scalar types are used across the host function signatures:
+##### ScalarField and BaseField Encoding
 
-- `ScalarField`: an element of the curve's scalar field, reduced mod the field order. Used by `msm`.
-- `Scalar`: an arbitrary-precision integer, not reduced mod the field order. Used by `mul`
-  because some operations (cofactor clearing, subgroup membership checks) require multiplying
-  by values that may equal or exceed the scalar field order.
+`ScalarField` (Fr): an element of the curve's **scalar field** (aka *Fr*), reduced mod the field order.
+The scalar field order equals the order of the curve's prime subgroup. Used by `msm`.
 
-Both types are serialized in little-endian byte order.
+`BaseField` (Fq): an element of the curve's **base field**, the field over which the curve
+equation is defined. Coordinates of curve points are elements of this field.
 
-##### Point Encoding
+Both types are serialized as fixed-size little-endian byte arrays. The size is
+`ceil(bit_length / 8)` bytes, where `bit_length` is the number of bits in the field modulus.
 
-All elliptic curve points are encoded in **affine form** as coordinate pairs `(x, y)`.
-Coordinates are scalars representing elements of the curve's base field.
+##### TargetField Encoding
+
+`TargetField` is the target field of a pairing-friendly curve. It is a high-degree extension
+of the base field, constructed as a tower of intermediate extensions. For BLS12-381 this is
+Fq12, which ultimately consists of 12 Fq elements.
+
+The tower decomposition determines the serialization order. For a 2-3-2 tower:
+- Fq2 = 2 Fq elements
+- Fq6 = 3 Fq2 = 6 Fq elements
+- Fq12 = 2 Fq6 = 12 Fq elements
+
+Elements are serialized by recursively expanding the tower: two Fq6 blocks, each containing
+three Fq2 blocks, each containing two Fq elements. Each Fq element is serialized as a
+fixed-size little-endian byte array (same rule as BaseField).
+
+##### Affine Point Encoding
+
+All elliptic curve points are encoded as uncompressed **affine** coordinate pairs `(x, y)`,
+where each coordinate is a BaseField element. For curves defined over extension fields
+(e.g. G2 over Fq2), each coordinate is an extension field element serialized by expanding
+its components into BaseField elements.
+
 This applies to both input and output parameters across all host functions.
-Affine representation has been chosen for:
-- Simplicity and interoperability with external systems and other libraries
-- Reduced serialization overhead compared to projective coordinates
-- Direct usability without requiring coordinate conversion after the operation
 
-##### Return Values
+Decoding validates that the point lies on the curve. If the data does not decode to a valid
+curve point, a `MalformedInput` error is returned. Prime subgroup membership is **not** checked.
+
+##### Example: BLS12-381
+
+Uncompressed serialization sizes for BLS12-381 types.
+
+| Type         | Size (bytes) | Composition                        |
+|--------------|--------------|------------------------------------|
+| ScalarField  | 32           | 1 Fr element                       |
+| BaseField    | 48           | 1 Fq element                       |
+| G1 point     | 96           | 2 Fq elements (x, y)              |
+| G2 point     | 192          | 2 Fq2 elements (x, y)             |
+| TargetField  | 576          | 12 Fq elements (Fq12)             |
+
+- ScalarField (Fr): The group order r is a 255-bit prime, fits in 32 bytes (ceil(255/8) = 32).
+- BaseField (Fq): The field modulus q is a 381-bit prime, fits in 48 bytes (ceil(381/8) = 48).
+- G1 (over Fq): Affine coordinates (x, y) with both in Fq: 2 * 48 = 96 bytes.
+- G2 (over Fq2): G2 is defined over Fq2, the quadratic extension of Fq. Each Fq2 element is a pair of Fq elements (96 bytes). Affine coordinates (x, y) with both in Fq2: 2 * 96 = 192 bytes.
+- TargetField (Fq12): 12 Fq elements, serialized following the 2-3-2 tower decomposition
+  (see TargetField Encoding above): 12 * 48 = 576 bytes.
+
+#### Return Values
 
 All host functions write their output to a caller-provided buffer and return a result code.
-On success, the result is encoded using the `ArkScale` codec and written to the output buffer.
+On success, the result is encoded and written to the output buffer.
 
 ```rust
 enum HostcallResult {
@@ -234,7 +275,9 @@ enum HostcallResult {
 
 ### Usage Example
 
-Runtime code snippet for BLS12-381 signature verification using Arkworks-compatible types from the polkadot-sdk. These types preserve API compatibility with upstream Arkworks and are designed to automatically and transparently delegate to host calls where required.
+Runtime code snippet for BLS12-381 signature verification using Arkworks-compatible
+types from the `polkadot-sdk`. These types preserve API compatibility with upstream Arkworks
+and are designed to automatically and transparently delegate to host calls where required.
 
 ```rust
 use sp_crypto_ec_utils::bls12_381::{G1Affine, G2Affine};
