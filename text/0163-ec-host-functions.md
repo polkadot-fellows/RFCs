@@ -389,10 +389,19 @@ repository.
 
 ### Compatibility
 
-The polkadot-sdk implementation is based on the Arkworks library ecosystem, which is widely used.
-The serialization format is designed for compatibility with other Arkworks-based implementations.
+The reference implementation in polkadot-sdk uses the Arkworks library, but the serialization
+format is defined independently of any specific library. The encoding rules described in this
+RFC use standard conventions (little-endian, uncompressed affine coordinates) that any
+elliptic curve library can produce or consume, allowing alternative implementations without
+an Arkworks dependency.
 
-We considered merging the `final_exponentiation` operation into the `multi_miller_loop`, since they are always used together.  All native cryptographic libraries separate these two operations though, so we'd need wrapper crates to fake not doing this, which increases the maintenance burden. Aside from IBE protocols, we expect pairings would typically be batched across the block, so the overhead of one vs two host call makes little difference, vs the higher maintenance burden required by one host call.
+We considered merging the `final_exponentiation` operation into the
+`multi_miller_loop`, since they are always used together. All native
+cryptographic libraries separate these two operations though, so we'd need
+wrapper crates to fake not doing this, which increases the maintenance burden.
+Aside from IBE protocols, we expect pairings would typically be batched across
+the block, so the overhead of one vs two host call makes little difference, vs
+the higher maintenance burden required by one host call.
 
 ### Migration
 
