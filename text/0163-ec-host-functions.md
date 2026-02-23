@@ -234,6 +234,13 @@ This applies to both input and output parameters across all host functions.
 Decoding validates that the point lies on the curve. If the data does not decode to a valid
 curve point, a `MalformedInput` error is returned. Prime subgroup membership is **not** checked.
 
+##### Sequences
+
+Several host functions accept sequences of elements (e.g. `Vec<Affine>` in `msm` and
+`multi_miller_loop`). A sequence is encoded as a little-endian `u64` length prefix followed
+by that many consecutively encoded elements. Each element is encoded according to its type
+(e.g. Affine points use the affine point encoding, ScalarField elements use the field encoding).
+
 ##### Example: BLS12-381
 
 Uncompressed serialization sizes for BLS12-381 types.
@@ -275,31 +282,45 @@ enum HostcallResult {
 
 ### Usage Example
 
-Runtime code snippet for BLS12-381 signature verification using Arkworks-compatible
-types from the `polkadot-sdk`. These types preserve API compatibility with upstream Arkworks
-and are designed to automatically and transparently delegate to host calls where required.
+Simplified BLS12-381 signature verification using types from the `polkadot-sdk`.
+
+The `direct` parameter selects between two usage modes:
+- **Direct host calls**: the caller explicitly encodes inputs, invokes the host functions,
+  and decodes the result. Encoding/decoding is handled via
+  [ark-scale](https://github.com/paritytech/ark-scale), a wrapper library that simplifies
+  serialization of Arkworks types.
+- **Arkworks compatibility layer**: the `polkadot-sdk` provides types that are API-compatible
+  with upstream Arkworks. Under the hood, these types transparently delegate to host calls,
+  so the caller uses standard Arkworks APIs without any awareness of the host boundary.
 
 ```rust
-use sp_crypto_ec_utils::bls12_381::{G1Affine, G2Affine};
+use ark_ec::pairing::Pairing;
+use sp_crypto_ec_utils::bls12_381::{G1Affine, G2Affine, host_calls, Bls12_381};
 
-// Verify a BLS signature (simplified)
-//
-// Compute e(signature, G2_generator) == e(public_key, message_hash)
-// Using the pairing check: e(sig, G2) * e(-pk, H(m)) == 1
+// Codec for host call boundary: uncompressed, no subgroup validation.
+type ArkScaleHostCall<T> = ark_scale::ArkScale<T, { ark_scale::HOST_CALL }>;
+
+type TargetField = <Bls12_381 as Pairing>::TargetField;
+
+// Verify: e(signature, G2_generator) == e(public_key, message_hash)
+// Equivalently: e(sig, G2) * e(-pk, H(m)) == 1
 fn verify_bls_signature(
-    public_key: G1Affine,  // G1 point
-    message_hash: G2Affine, // G2 point (hashed to curve)
-    signature: G1Affine,   // G1 point
+    pk: G1Affine,
+    msg: G2Affine, // hashed to curve
+    sig: G1Affine,
+    direct: bool,
 ) -> bool {
-
-    let miller_result = bls12_381::multi_miller_loop(
-        &[signature.encode(), negate(public_key).encode()],
-        &[G2_GENERATOR.encode(), message_hash.encode()],
-    );
-
-    let pairing_result = bls12_381::final_exponentiation(&miller_result).decode();
-
-    pairing_result == Gt::one()
+    if direct {
+        // Explicitly call host functions and handle encoding/decoding.
+        let g1: ArkScaleHostCall<_> = vec![sig, -pk].into();
+        let g2: ArkScaleHostCall<_> = vec![G2Affine::generator(), msg].into();
+        let buf = host_calls::bls12_381_multi_miller_loop(g1.encode(), g2.encode()).unwrap();
+        let buf = host_calls::bls12_381_final_exponentiation(buf).unwrap();
+        ArkScaleHostCall::<TargetField>::decode(&mut buf.as_slice()).unwrap().0.is_one()
+    } else {
+        // Use standard Arkworks API. Host calls are invoked transparently.
+        Bls12_381::multi_pairing([sig, -pk], [G2Affine::generator(), msg]).0.is_one()
+    }
 }
 ```
 
