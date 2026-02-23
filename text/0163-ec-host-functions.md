@@ -292,7 +292,16 @@ enum HostcallResult {
 }
 ```
 
-### Usage Example
+#### Edge Cases
+
+Empty `msm` returns the group identity (point at infinity). The sum of zero terms is zero.
+
+Empty `multi_miller_loop` returns the multiplicative identity of the target field.
+The product of zero terms is one. For example, for BLS12-381, the result is the identity
+element in Fq12 (the BLS12-381 target field), serialized as a single `0x01` byte
+followed by 575 zero bytes.
+
+#### Usage Example
 
 Simplified BLS12-381 signature verification using types from the `polkadot-sdk`.
 
