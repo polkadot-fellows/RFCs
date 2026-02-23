@@ -102,7 +102,7 @@ All functions write their result to an output buffer and return an error code (s
 - `mul(base: &[u8], scalar: &[u8], out: &mut [u8]) -> u32`
   - Single point multiplication.
   - `base`: encoded `Affine`.
-  - `scalar`: encoded big integer (`Vec<u64>` limbs).
+  - `scalar`: encoded `Scalar`.
   - Computes `scalar * base`.
   - Writes encoded `Affine` to `out`.
 
@@ -193,7 +193,14 @@ The codec is configured with the following settings:
 
 ##### Scalar Encoding
 
-Scalars are encoded in little endian. This is the encoding used by Arkworks and has been maintained for simplicity.
+Two scalar types are used across the host function signatures:
+
+- `ScalarField`: an element of the curve's scalar field, reduced mod the field order. Used by `msm`.
+- `Scalar`: an arbitrary-precision integer, not reduced mod the field order. Used by `mul`
+  because some operations (cofactor clearing, subgroup membership checks) require multiplying
+  by values that may equal or exceed the scalar field order.
+
+Both types are serialized in little-endian byte order.
 
 ##### Point Encoding
 
