@@ -194,7 +194,7 @@
 <li><a href="#common-operations">Common Operations</a></li>
 <li><a href="#curve-specifications">Curve Specifications</a></li>
 <li><a href="#implementation-details">Implementation Details</a></li>
-<li><a href="#usage-example-runtime">Usage Example (Runtime)</a></li>
+<li><a href="#usage-example">Usage Example</a></li>
 </ul>
 </li>
 <li><a href="#drawbacks">Drawbacks</a></li>
@@ -286,8 +286,7 @@ confidential transactions. Benefit from efficient curve operations for privacy-p
 <h2 id="explanation"><a class="header" href="#explanation">Explanation</a></h2>
 <h3 id="overview"><a class="header" href="#overview">Overview</a></h3>
 <p>This proposal introduces host functions for a selected set of elliptic curves, each serving specific
-use cases in the broader cryptographic ecosystem. The functions are implemented in the <code>sp-crypto-ec-utils</code>
-crate or the Polkadot-SDK and exposed via Substrate's runtime interface mechanism.</p>
+use cases in the broader cryptographic ecosystem. The functions are exposed via the existing Substrate's runtime interface mechanism.</p>
 <h3 id="common-operations"><a class="header" href="#common-operations">Common Operations</a></h3>
 <p>The following operations are provided for the supported curves. Not all operations are available
 for all curves (e.g., pairing operations are only available for pairing-friendly curves).</p>
@@ -299,8 +298,8 @@ for all curves (e.g., pairing operations are only available for pairing-friendly
 <li>Computes the multi-Miller loop for pairing operations.</li>
 <li><code>g1</code>: encoded <code>Vec&lt;G1Affine&gt;</code>.</li>
 <li><code>g2</code>: encoded <code>Vec&lt;G2Affine&gt;</code>.</li>
-<li>The two input vectors are expected to have the same length.</li>
-<li>Writes encoded target field element to <code>out</code>.</li>
+<li>The two input vectors are expected to have identical length.</li>
+<li>Writes encoded pairing target field element to <code>out</code>.</li>
 </ul>
 </li>
 <li>
@@ -313,29 +312,28 @@ for all curves (e.g., pairing operations are only available for pairing-friendly
 <li>
 <p><code>msm(bases: &amp;[u8], scalars: &amp;[u8], out: &amp;mut [u8]) -&gt; u32</code></p>
 <ul>
-<li>Multi-scalar multiplication.</li>
-<li><code>bases</code>: encoded <code>Vec&lt;GAffine&gt;</code>.</li>
+<li>Multi-scalar multiplication. Efficiently computes <code>sum(scalars_i * bases_i)</code>.</li>
+<li><code>bases</code>: encoded <code>Vec&lt;Affine&gt;</code>.</li>
 <li><code>scalars</code>: encoded <code>Vec&lt;ScalarField&gt;</code>.</li>
-<li>The two input vectors are expected to have the same length.</li>
-<li>Efficiently computes <code>sum(scalar_i * base_i)</code>.</li>
-<li>Writes encoded <code>GAffine</code> to <code>out</code>.</li>
+<li>The two input vectors are expected to have identical length.</li>
+<li>Writes encoded <code>Affine</code> to <code>out</code>.</li>
 </ul>
 </li>
 <li>
 <p><code>mul(base: &amp;[u8], scalar: &amp;[u8], out: &amp;mut [u8]) -&gt; u32</code></p>
 <ul>
 <li>Single point multiplication.</li>
-<li><code>base</code>: encoded <code>GAffine</code>.</li>
+<li><code>base</code>: encoded <code>Affine</code>.</li>
 <li><code>scalar</code>: encoded big integer (<code>Vec&lt;u64&gt;</code> limbs).</li>
 <li>Computes <code>scalar * base</code>.</li>
-<li>Writes encoded <code>GAffine</code> to <code>out</code>.</li>
+<li>Writes encoded <code>Affine</code> to <code>out</code>.</li>
 </ul>
 </li>
 </ul>
 <p>For pairing-friendly curves with distinct G1 and G2 groups, <code>msm</code> and <code>mul</code> are provided separately
 for each group (e.g., <code>msm_g1</code>, <code>msm_g2</code>).</p>
 <p>We choose these operations because verifier algorithms spend almost all their CPU time within these functions, and verifier algorithms invoke these functions only a small number of times, which makes them perfect targets for host calls.</p>
-<p>Although much smaller than the above operations, there do exist other operations that incur some CPU overhead, like serialization and batch normalization, which each require one finite field division.  At present, finite field divisions might not benefit much from SIMD, so PVM might handle them less badly than heavy curve operations.  We cannot yet say that divisions would cost more than the host call overhead, so we leave such operations to the runtime for now. </p>
+<p>Although much smaller than the above operations, there do exist other operations that incur some CPU overhead, like serialization and batch normalization, which each require one finite field division.  At present, finite field divisions might not benefit much from SIMD, so the runtime might handle them less badly than heavy curve operations. We cannot yet say that divisions would cost more than the host call overhead, so we leave such operations to the runtime for now. </p>
 <h3 id="curve-specifications"><a class="header" href="#curve-specifications">Curve Specifications</a></h3>
 <h4 id="bls12-381"><a class="header" href="#bls12-381">BLS12-381</a></h4>
 <p>BLS12-381 is a pairing-friendly elliptic curve that has become the de facto standard for BLS
@@ -344,8 +342,7 @@ signatures and many zkSNARK systems. It offers approximately 128 bits of securit
 <ul>
 <li><strong>BLS Signatures</strong>: BLS signatures support efficient aggregation, allowing thousands of
 signatures to be verified as one.</li>
-<li><strong>zkSNARK Verification</strong>: Groth16 and other pairing-based proof systems use BLS12-381 for
-proof verification.</li>
+<li><strong>zkSNARK Verification</strong>: Groth16 and other pairing-based proof systems use BLS12-381.</li>
 <li><strong>Cross-chain bridges</strong>: Enables verification of consensus proofs from other chains using
 BLS12-381 for trustless bridging.</li>
 </ul>
@@ -403,10 +400,9 @@ SNARK constructions where proofs over one curve can efficiently verify proofs fr
 <h3 id="implementation-details"><a class="header" href="#implementation-details">Implementation Details</a></h3>
 <h4 id="conventions"><a class="header" href="#conventions">Conventions</a></h4>
 <h5 id="serialization-codec"><a class="header" href="#serialization-codec">Serialization Codec</a></h5>
-<p>All <a href="https://github.com/arkworks-rs">Arkworks</a> types passed on the runtime/host boundary are serialized
-using <a href="https://github.com/parity-tech/ark-scale">ArkScale</a>, a SCALE encoding wrapper for Arkworks types.
-ArkScale internally uses Arkworks' <code>CanonicalSerialize</code>/<code>CanonicalDeserialize</code> traits, ensuring
-compatibility with the broader Arkworks ecosystem.</p>
+<p>All types passed on the runtime/host boundary are serialized
+using <a href="https://github.com/paritytech/ark-scale">ArkScale</a>, a SCALE encoding wrapper for Arkworks types.
+ArkScale internally uses Arkworks' <code>CanonicalSerialize</code>/<code>CanonicalDeserialize</code> traits.</p>
 <p>The codec is configured with the following settings:</p>
 <ul>
 <li><strong>Not validated</strong>: Points are not validated on deserialization for performance (caller responsibility)</li>
@@ -432,9 +428,9 @@ On success, the result is encoded using the <code>ArkScale</code> codec and writ
 </span>enum HostcallResult {
     Success = 0,
     /// Output buffer is too small.
-    EncodeError = 1,
+    OutputTooSmall = 1,
     /// Input data decoding failed.
-    DecodeError = 2,
+    MalformedInput = 2,
     /// Input sequences have different lengths.
     /// Applies to `msm` and `multi_miller_loop` operations.
     LengthMismatch = 3,
@@ -442,16 +438,8 @@ On success, the result is encoded using the <code>ArkScale</code> codec and writ
     Unknown = 255,
 }
 <span class="boring">}</span></code></pre></pre>
-<h4 id="feature-flags"><a class="header" href="#feature-flags">Feature Flags</a></h4>
-<p>Each curve is gated behind a feature flag to allow selective compilation:</p>
-<pre><code class="language-toml">[features]
-bls12-381 = [...]
-ed-on-bls12-381-bandersnatch = [...]
-pallas = [...]
-vesta = [...]
-all-curves = [&quot;bls12-381&quot;, &quot;ed-on-bls12-381-bandersnatch&quot;, &quot;pallas&quot;, &quot;vesta&quot;]
-</code></pre>
-<h3 id="usage-example-runtime"><a class="header" href="#usage-example-runtime">Usage Example (Runtime)</a></h3>
+<h3 id="usage-example"><a class="header" href="#usage-example">Usage Example</a></h3>
+<p>Runtime code snippet for BLS12-381 signature verification using Arkworks-compatible types from the polkadot-sdk. These types preserve API compatibility with upstream Arkworks and are designed to automatically and transparently delegate to host calls where required.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use sp_crypto_ec_utils::bls12_381::{G1Affine, G2Affine};
@@ -481,8 +469,6 @@ fn verify_bls_signature(
 <li><strong>Maintenance Overhead</strong>: Each curve adds multiple host functions, increasing the maintenance
 burden and expanding the attack surface.</li>
 <li><strong>Upgrade Coordination</strong>: Changes to host functions require coordinated runtime and node upgrades.</li>
-<li><strong>Library Dependency</strong>: The implementation relies on Arkworks, which has not undergone formal
-security audits.</li>
 <li><strong>Curve Selection</strong>: Future cryptographic advances may deprecate some curves or require new ones,
 potentially leading to API churn.</li>
 <li><strong>Performance Trade-off</strong>: Granular host functions require multiple host-runtime boundary crossings,
@@ -511,9 +497,9 @@ along with practical integration examples (Groth16 verification, Bandersnatch ri
 are available in the <a href="https://github.com/davxy/polkadot-arkworks-extensions">Polkadot Arkworks Extensions</a>
 repository.</p>
 <h3 id="compatibility"><a class="header" href="#compatibility">Compatibility</a></h3>
-<p>The implementation is based on the Arkworks library ecosystem, which is widely used.
+<p>The polkadot-sdk implementation is based on the Arkworks library ecosystem, which is widely used.
 The serialization format is designed for compatibility with other Arkworks-based implementations.</p>
-<p>We considered merging the <code>final_exponentiation</code> operation into the <code>multi_miller_loop</code>, since they are always used together.  All native cryptographic libraries seperate these two operations though, so we'd need wrapper crates to fake having not doing this, which increases the maintenance burden.  Aside from IBE protocols, we expect pairings would typically be batched across the block, so the overhead of one vs two host call makes little difference, vs the higher maintenance burden required by one host call.</p>
+<p>We considered merging the <code>final_exponentiation</code> operation into the <code>multi_miller_loop</code>, since they are always used together.  All native cryptographic libraries seperate these two operations though, so we'd need wrapper crates to fake having not doing this, which increases the maintenance burden. Aside from IBE protocols, we expect pairings would typically be batched across the block, so the overhead of one vs two host call makes little difference, vs the higher maintenance burden required by one host call.</p>
 <h3 id="migration"><a class="header" href="#migration">Migration</a></h3>
 <p>Existing custom elliptic curve implementations should migrate to these standardized host functions
 to benefit from:</p>
@@ -529,12 +515,10 @@ to benefit from:</p>
 <li><a href="https://github.com/davxy/polkadot-arkworks-extensions">Polkadot Arkworks Extensions</a> - Integration examples, benchmarks, Groth16 and ring-VRF demos</li>
 </ul>
 <h2 id="unresolved-questions"><a class="header" href="#unresolved-questions">Unresolved Questions</a></h2>
-<ul>
-<li>Consider merging <code>mul</code> into <code>msm</code> since an MSM with a single element is a scalar multiplication.</li>
-</ul>
+<p>None.</p>
 <h2 id="future-directions-and-related-material"><a class="header" href="#future-directions-and-related-material">Future Directions and Related Material</a></h2>
 <p><strong>Additional Curves</strong>: Future RFCs may propose host functions for additional curves as
-ecosystem needs evolve (e.g., Pasta curves for Halo2-based systems).</p>
+ecosystem needs evolve.</p>
 
                     </main>
 
