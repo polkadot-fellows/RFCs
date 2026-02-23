@@ -234,6 +234,18 @@ This applies to both input and output parameters across all host functions.
 Decoding validates that the point lies on the curve. If the data does not decode to a valid
 curve point, a `MalformedInput` error is returned. Prime subgroup membership is **not** checked.
 
+##### Short Weierstrass Form Encoding
+
+For elliptic curves in short Weierstrass form, the point at infinity (the additive identity)
+has no affine coordinate representation. Its encoding therefore requires a dedicated flag:
+the second most significant bit of the first byte (mask `0x40`) is reserved to indicate that
+the encoded point is the identity element. When this bit is set, the remaining bytes of the
+encoding are zeros and carry no coordinate data.
+
+This flag is not required for curves in twisted Edwards form, where the identity is the
+affine point (0, 1) and can be serialized directly as a pair of field element coordinates
+without special-casing.
+
 ##### Sequences
 
 Several host functions accept sequences of elements (e.g. `Vec<Affine>` in `msm` and
