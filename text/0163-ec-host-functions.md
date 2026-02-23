@@ -382,6 +382,49 @@ curve operations. This enables practical on-chain verification of:
 - Aggregated BLS signatures
 - Complex cryptographic protocols
 
+Benchmarks are shown for BLS12-381 and Bandersnatch only. Pallas and Vesta are expected to
+show similar gains to Bandersnatch, as they have comparable field sizes. The "arkworks" column
+is pure in-runtime execution, the "substrate" column uses native host functions.
+
+Benchmarks were collected on an AMD Ryzen Threadripper 3970X (32 cores / 64 threads, 3.7 GHz
+base / 4.5 GHz boost) with 64 GB RAM, running Linux 6.18 x86_64. The machine was **not**
+specially configured for benchmarking (no CPU pinning, no frequency governor lockdown),
+so results may contain some noise. However, the speedups are large enough to be meaningful
+regardless of measurement variance.
+
+| extrinsic | arkworks | substrate | speedup |
+|-----------|----------|-----------|---------|
+| bls12_381_mul_g1 | 730.09 us | 171.84 us | 4.25x |
+| bls12_381_mul_g2 | 3.53 ms | 468.70 us | 7.52x |
+| bls12_381_msm_g1_10 | 9.84 ms | 3.32 ms | 2.97x |
+| bls12_381_msm_g1_32 | 27.05 ms | 9.15 ms | 2.96x |
+| bls12_381_msm_g1_55 | 44.20 ms | 15.12 ms | 2.92x |
+| bls12_381_msm_g1_77 | 59.21 ms | 20.94 ms | 2.83x |
+| bls12_381_msm_g1_100 | 75.54 ms | 26.90 ms | 2.81x |
+| bls12_381_msm_g2_10 | 23.48 ms | 7.50 ms | 3.13x |
+| bls12_381_msm_g2_32 | 62.51 ms | 21.46 ms | 2.91x |
+| bls12_381_msm_g2_55 | 111.38 ms | 36.16 ms | 3.08x |
+| bls12_381_msm_g2_77 | 137.84 ms | 50.32 ms | 2.74x |
+| bls12_381_msm_g2_100 | 165.13 ms | 64.84 ms | 2.55x |
+| bls12_381_pairing | 7.50 ms | 1.86 ms | 4.04x |
+| ed_on_bls12_381_bandersnatch_mul | 496.44 us | 98.63 us | 5.03x |
+| ed_on_bls12_381_bandersnatch_msm_10 | 9.35 ms | 2.40 ms | 3.89x |
+| ed_on_bls12_381_bandersnatch_msm_32 | 25.65 ms | 6.55 ms | 3.92x |
+| ed_on_bls12_381_bandersnatch_msm_55 | 42.85 ms | 10.77 ms | 3.98x |
+| ed_on_bls12_381_bandersnatch_msm_77 | 57.39 ms | 14.83 ms | 3.87x |
+| ed_on_bls12_381_bandersnatch_msm_100 | 72.28 ms | 18.90 ms | 3.82x |
+
+Observations:
+- Scalar multiplication shows 4-7.5x speedups. BLS12-381 G2 `mul` sees the largest gain
+  (7.52x), likely due to the expensive Fq2 field arithmetic being particularly slow in
+  the runtime VM.
+- MSM shows consistent 2.5-4x speedups across all curves and sizes. G1 MSM speedups are
+  roughly stable as the number of bases grows (2.8-3x), while G2 MSM shows similar behavior
+  at a slightly higher baseline cost.
+- BLS12-381 pairing (miller loop + final exponentiation) achieves a 4x speedup.
+- Bandersnatch shows 3.8-4x speedups for MSM and 5x for scalar multiplication, confirming
+  that host calls are worthwhile across all the proposed curves.
+
 Detailed benchmark results comparing native host function execution versus pure runtime execution,
 along with practical integration examples (Groth16 verification, Bandersnatch ring-VRF),
 are available in the [Polkadot Arkworks Extensions](https://github.com/davxy/polkadot-arkworks-extensions)
