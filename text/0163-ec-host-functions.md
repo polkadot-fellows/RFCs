@@ -314,8 +314,9 @@ fn verify_bls_signature(
         // Explicitly call host functions and handle encoding/decoding.
         let g1: ArkScaleHostCall<_> = vec![sig, -pk].into();
         let g2: ArkScaleHostCall<_> = vec![G2Affine::generator(), msg].into();
-        let buf = host_calls::bls12_381_multi_miller_loop(g1.encode(), g2.encode()).unwrap();
-        let buf = host_calls::bls12_381_final_exponentiation(buf).unwrap();
+        let mut buf = vec![0u8; ArkScaleHostCall::<TargetField>::max_encoded_len()];
+        host_calls::bls12_381_multi_miller_loop(&g1.encode(), &g2.encode(), &mut buf).unwrap();
+        host_calls::bls12_381_final_exponentiation(&mut buf).unwrap();
         ArkScaleHostCall::<TargetField>::decode(&mut buf.as_slice()).unwrap().0.is_one()
     } else {
         // Use standard Arkworks API. Host calls are invoked transparently.
