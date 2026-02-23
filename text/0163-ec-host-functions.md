@@ -8,9 +8,9 @@
 
 ## Summary
 
-We propose a family of host functions for Polkadot runtimes that provide native execution for selected operations upon elliptic curve.
+We propose a family of host functions for Polkadot runtimes that provide native execution for selected operations upon elliptic curves.
 
-In this RFC, we select 2-4 operations per curve that cover the vast majority of the running time for almost all verifier algorithms in elliptic curve cryptography, while only requiring a small number of hostcall invocations.  We do not provide either field arithmetic or complete cryptographic protocols here, because they would require too many host call invocations or too much host call maintanance, respectively. 
+In this RFC, we select 2-4 operations per curve that cover the vast majority of the running time for almost all verifier algorithms in elliptic curve cryptography, while only requiring a small number of hostcall invocations.  We do not provide either field arithmetic or complete cryptographic protocols here, because they would require too many host call invocations or too much host call maintenance, respectively.
 
 The proposal covers the following elliptic curves:
 - **BLS12-381**: Pairing-friendly curve widely used for BLS signatures and zkSNARKs
@@ -111,7 +111,7 @@ for each group (e.g., `msm_g1`, `msm_g2`).
 
 We choose these operations because verifier algorithms spend almost all their CPU time within these functions, and verifier algorithms invoke these functions only a small number of times, which makes them perfect targets for host calls.
 
-Although much smaller than the above operations, there do exist other operations that incur some CPU overhead, like serialization and batch normalization, which each require one finite field division.  At present, finite field divisions might not benefit much from SIMD, so the runtime might handle them less badly than heavy curve operations. We cannot yet say that divisions would cost more than the host call overhead, so we leave such operations to the runtime for now. 
+Although much smaller than the above operations, there do exist other operations that incur some CPU overhead, like serialization and batch normalization, which each require one finite field division.  At present, finite field divisions might not benefit much from SIMD, so the runtime might handle them less badly than heavy curve operations. We cannot yet say that divisions would cost more than the host call overhead, so we leave such operations to the runtime for now.
 
 ### Curve Specifications
 
@@ -299,7 +299,7 @@ repository.
 The polkadot-sdk implementation is based on the Arkworks library ecosystem, which is widely used.
 The serialization format is designed for compatibility with other Arkworks-based implementations.
 
-We considered merging the `final_exponentiation` operation into the `multi_miller_loop`, since they are always used together.  All native cryptographic libraries seperate these two operations though, so we'd need wrapper crates to fake having not doing this, which increases the maintenance burden. Aside from IBE protocols, we expect pairings would typically be batched across the block, so the overhead of one vs two host call makes little difference, vs the higher maintenance burden required by one host call.
+We considered merging the `final_exponentiation` operation into the `multi_miller_loop`, since they are always used together.  All native cryptographic libraries separate these two operations though, so we'd need wrapper crates to fake not doing this, which increases the maintenance burden. Aside from IBE protocols, we expect pairings would typically be batched across the block, so the overhead of one vs two host call makes little difference, vs the higher maintenance burden required by one host call.
 
 ### Migration
 
