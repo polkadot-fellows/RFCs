@@ -898,7 +898,6 @@ Future RFCs may refine the API surface, extend child-trie handling, introduce ad
 <li><a href="proposed/0163-ec-host-functions.html#common-operations">Common Operations</a></li>
 <li><a href="proposed/0163-ec-host-functions.html#curve-specifications">Curve Specifications</a></li>
 <li><a href="proposed/0163-ec-host-functions.html#implementation-details">Implementation Details</a></li>
-<li><a href="proposed/0163-ec-host-functions.html#usage-example">Usage Example</a></li>
 </ul>
 </li>
 <li><a href="proposed/0163-ec-host-functions.html#drawbacks">Drawbacks</a></li>
@@ -930,8 +929,8 @@ Future RFCs may refine the API surface, extend child-trie handling, introduce ad
 </tbody></table>
 </div>
 <h2 id="summary-4"><a class="header" href="#summary-4">Summary</a></h2>
-<p>We propose a family of host functions for Polkadot runtimes that provide native execution for selected operations upon elliptic curve.</p>
-<p>In this RFC, we select 2-4 operations per curve that cover the vast majority of the running time for almost all verifier algorithms in elliptic curve cryptography, while only requiring a small number of hostcall invocations.  We do not provide either field arithmetic or complete cryptographic protocols here, because they would require too many host call invocations or too much host call maintanance, respectively. </p>
+<p>We propose a family of host functions for Polkadot runtimes that provide native execution for selected operations upon elliptic curves.</p>
+<p>In this RFC, we select 2-4 operations per curve that cover the vast majority of the running time for almost all verifier algorithms in elliptic curve cryptography, while only requiring a small number of hostcall invocations.  We do not provide either field arithmetic or complete cryptographic protocols here, because they would require too many host call invocations or too much host call maintenance, respectively.</p>
 <p>The proposal covers the following elliptic curves:</p>
 <ul>
 <li><strong>BLS12-381</strong>: Pairing-friendly curve widely used for BLS signatures and zkSNARKs</li>
@@ -1003,14 +1002,15 @@ for all curves (e.g., pairing operations are only available for pairing-friendly
 <li><code>g1</code>: encoded <code>Vec&lt;G1Affine&gt;</code>.</li>
 <li><code>g2</code>: encoded <code>Vec&lt;G2Affine&gt;</code>.</li>
 <li>The two input vectors are expected to have identical length.</li>
-<li>Writes encoded pairing target field element to <code>out</code>.</li>
+<li>Writes encoded <code>TargetField</code> element to <code>out</code>.</li>
 </ul>
 </li>
 <li>
 <p><code>final_exponentiation(in_out: &amp;mut [u8]) -&gt; u32</code></p>
 <ul>
 <li>Completes the pairing computation by performing final exponentiation.</li>
-<li><code>in_out</code>: encoded target field element (input and output).</li>
+<li><code>in_out</code>: encoded <code>TargetField</code> element. The type is the same for both input and output,
+so the buffer is reused in place.</li>
 </ul>
 </li>
 <li>
@@ -1028,7 +1028,7 @@ for all curves (e.g., pairing operations are only available for pairing-friendly
 <ul>
 <li>Single point multiplication.</li>
 <li><code>base</code>: encoded <code>Affine</code>.</li>
-<li><code>scalar</code>: encoded big integer (<code>Vec&lt;u64&gt;</code> limbs).</li>
+<li><code>scalar</code>: encoded <code>BigInteger</code>.</li>
 <li>Computes <code>scalar * base</code>.</li>
 <li>Writes encoded <code>Affine</code> to <code>out</code>.</li>
 </ul>
@@ -1037,7 +1037,7 @@ for all curves (e.g., pairing operations are only available for pairing-friendly
 <p>For pairing-friendly curves with distinct G1 and G2 groups, <code>msm</code> and <code>mul</code> are provided separately
 for each group (e.g., <code>msm_g1</code>, <code>msm_g2</code>).</p>
 <p>We choose these operations because verifier algorithms spend almost all their CPU time within these functions, and verifier algorithms invoke these functions only a small number of times, which makes them perfect targets for host calls.</p>
-<p>Although much smaller than the above operations, there do exist other operations that incur some CPU overhead, like serialization and batch normalization, which each require one finite field division.  At present, finite field divisions might not benefit much from SIMD, so the runtime might handle them less badly than heavy curve operations. We cannot yet say that divisions would cost more than the host call overhead, so we leave such operations to the runtime for now. </p>
+<p>Although much smaller than the above operations, there do exist other operations that incur some CPU overhead, like serialization and batch normalization, which each require one finite field division.  At present, finite field divisions might not benefit much from SIMD, so the runtime might handle them less badly than heavy curve operations. We cannot yet say that divisions would cost more than the host call overhead, so we leave such operations to the runtime for now.</p>
 <h3 id="curve-specifications"><a class="header" href="#curve-specifications">Curve Specifications</a></h3>
 <h4 id="bls12-381"><a class="header" href="#bls12-381">BLS12-381</a></h4>
 <p>BLS12-381 is a pairing-friendly elliptic curve that has become the de facto standard for BLS
@@ -1102,31 +1102,82 @@ SNARK constructions where proofs over one curve can efficiently verify proofs fr
 <li><code>vesta_mul</code></li>
 </ul>
 <h3 id="implementation-details"><a class="header" href="#implementation-details">Implementation Details</a></h3>
-<h4 id="conventions"><a class="header" href="#conventions">Conventions</a></h4>
-<h5 id="serialization-codec"><a class="header" href="#serialization-codec">Serialization Codec</a></h5>
-<p>All types passed on the runtime/host boundary are serialized
-using <a href="https://github.com/paritytech/ark-scale">ArkScale</a>, a SCALE encoding wrapper for Arkworks types.
-ArkScale internally uses Arkworks' <code>CanonicalSerialize</code>/<code>CanonicalDeserialize</code> traits.</p>
-<p>The codec is configured with the following settings:</p>
+<h4 id="serialization-codec"><a class="header" href="#serialization-codec">Serialization Codec</a></h4>
+<p>The encoding format described below follows the conventions adopted by the
+upstream <a href="https://github.com/arkworks-rs">Arkworks</a> library (<code>CanonicalSerialize</code>/<code>CanonicalDeserialize</code> traits).</p>
+<h5 id="biginteger"><a class="header" href="#biginteger">BigInteger</a></h5>
+<p><code>BigInteger</code> is an arbitrary-precision integer, not reduced mod the field order. Used by <code>mul</code>
+because some operations (cofactor clearing, subgroup membership checks) require multiplying
+by values that may equal or exceed the scalar field order.</p>
+<p>Encoded as a length-prefixed sequence of <code>u64</code> chunks, all in little-endian byte order:</p>
 <ul>
-<li><strong>Not validated</strong>: Points are not validated on deserialization for performance (caller responsibility)</li>
-<li><strong>Not compressed</strong>: Uncompressed point representation for faster deserialization</li>
+<li>The first 8 bytes encode the number of chunks as a little-endian <code>u64</code>.</li>
+<li>Each subsequent 8-byte block encodes one <code>u64</code> chunk in little-endian order.</li>
+<li>Chunks are ordered from least significant to most significant.</li>
 </ul>
-<h5 id="scalar-encoding"><a class="header" href="#scalar-encoding">Scalar Encoding</a></h5>
-<p>Scalars are encoded in little endian. This is the encoding used by Arkworks and has been maintained for simplicity.</p>
-<h5 id="point-encoding"><a class="header" href="#point-encoding">Point Encoding</a></h5>
-<p>All elliptic curve points are encoded in <strong>affine form</strong> as coordinate pairs <code>(x, y)</code>.
-Coordinates are scalars representing elements of the curve's base field.
-This applies to both input and output parameters across all host functions.
-Affine representation has been chosen for:</p>
+<h5 id="scalarfield-and-basefield-encoding"><a class="header" href="#scalarfield-and-basefield-encoding">ScalarField and BaseField Encoding</a></h5>
+<p><code>ScalarField</code> (Fr): an element of the curve's <strong>scalar field</strong> (aka <em>Fr</em>), reduced mod the field order.
+The scalar field order equals the order of the curve's prime subgroup. Used by <code>msm</code>.</p>
+<p><code>BaseField</code> (Fq): an element of the curve's <strong>base field</strong>, the field over which the curve
+equation is defined. Coordinates of curve points are elements of this field.</p>
+<p>Both types are serialized as fixed-size little-endian byte arrays. The size is
+<code>ceil(bit_length / 8)</code> bytes, where <code>bit_length</code> is the number of bits in the field modulus.</p>
+<h5 id="targetfield-encoding"><a class="header" href="#targetfield-encoding">TargetField Encoding</a></h5>
+<p><code>TargetField</code> is the target field of a pairing-friendly curve. It is a high-degree extension
+of the base field, constructed as a tower of intermediate extensions. For BLS12-381 this is
+Fq12, which ultimately consists of 12 Fq elements.</p>
+<p>The tower decomposition determines the serialization order. For a 2-3-2 tower:</p>
 <ul>
-<li>Simplicity and interoperability with external systems and other libraries</li>
-<li>Reduced serialization overhead compared to projective coordinates</li>
-<li>Direct usability without requiring coordinate conversion after the operation</li>
+<li>Fq2 = 2 Fq elements</li>
+<li>Fq6 = 3 Fq2 = 6 Fq elements</li>
+<li>Fq12 = 2 Fq6 = 12 Fq elements</li>
 </ul>
-<h5 id="return-values"><a class="header" href="#return-values">Return Values</a></h5>
+<p>Elements are serialized by recursively expanding the tower: two Fq6 blocks, each containing
+three Fq2 blocks, each containing two Fq elements. Each Fq element is serialized as a
+fixed-size little-endian byte array (same rule as BaseField).</p>
+<h5 id="affine-point-encoding"><a class="header" href="#affine-point-encoding">Affine Point Encoding</a></h5>
+<p>All elliptic curve points are encoded as uncompressed <strong>affine</strong> coordinate pairs <code>(x, y)</code>,
+where each coordinate is a BaseField element. For curves defined over extension fields
+(e.g. G2 over Fq2), each coordinate is an extension field element serialized by expanding
+its components into BaseField elements.</p>
+<p>This applies to both input and output parameters across all host functions.</p>
+<p>Decoding validates that the point lies on the curve. If the data does not decode to a valid
+curve point, a <code>MalformedInput</code> error is returned. Prime subgroup membership is <strong>not</strong> checked.</p>
+<h5 id="short-weierstrass-form-encoding"><a class="header" href="#short-weierstrass-form-encoding">Short Weierstrass Form Encoding</a></h5>
+<p>For elliptic curves in short Weierstrass form, the point at infinity (the additive identity)
+has no affine coordinate representation. Its encoding therefore requires a dedicated flag:
+the second most significant bit of the first byte (mask <code>0x40</code>) is reserved to indicate that
+the encoded point is the identity element. When this bit is set, the remaining bytes of the
+encoding are zeros and carry no coordinate data.</p>
+<p>This flag is not required for curves in twisted Edwards form, where the identity is the
+affine point (0, 1) and can be serialized directly as a pair of field element coordinates
+without special-casing.</p>
+<h5 id="sequences"><a class="header" href="#sequences">Sequences</a></h5>
+<p>Several host functions accept sequences of elements (e.g. <code>Vec&lt;Affine&gt;</code> in <code>msm</code> and
+<code>multi_miller_loop</code>). A sequence is encoded as a little-endian <code>u64</code> length prefix followed
+by that many consecutively encoded elements. Each element is encoded according to its type
+(e.g. Affine points use the affine point encoding, ScalarField elements use the field encoding).</p>
+<h5 id="example-bls12-381"><a class="header" href="#example-bls12-381">Example: BLS12-381</a></h5>
+<p>Uncompressed serialization sizes for BLS12-381 types.</p>
+<div class="table-wrapper"><table><thead><tr><th>Type</th><th>Size (bytes)</th><th>Composition</th></tr></thead><tbody>
+<tr><td>ScalarField</td><td>32</td><td>1 Fr element</td></tr>
+<tr><td>BaseField</td><td>48</td><td>1 Fq element</td></tr>
+<tr><td>G1 point</td><td>96</td><td>2 Fq elements (x, y)</td></tr>
+<tr><td>G2 point</td><td>192</td><td>2 Fq2 elements (x, y)</td></tr>
+<tr><td>TargetField</td><td>576</td><td>12 Fq elements (Fq12)</td></tr>
+</tbody></table>
+</div>
+<ul>
+<li>ScalarField (Fr): The group order r is a 255-bit prime, fits in 32 bytes (ceil(255/8) = 32).</li>
+<li>BaseField (Fq): The field modulus q is a 381-bit prime, fits in 48 bytes (ceil(381/8) = 48).</li>
+<li>G1 (over Fq): Affine coordinates (x, y) with both in Fq: 2 * 48 = 96 bytes.</li>
+<li>G2 (over Fq2): G2 is defined over Fq2, the quadratic extension of Fq. Each Fq2 element is a pair of Fq elements (96 bytes). Affine coordinates (x, y) with both in Fq2: 2 * 96 = 192 bytes.</li>
+<li>TargetField (Fq12): 12 Fq elements, serialized following the 2-3-2 tower decomposition
+(see TargetField Encoding above): 12 * 48 = 576 bytes.</li>
+</ul>
+<h4 id="return-values"><a class="header" href="#return-values">Return Values</a></h4>
 <p>All host functions write their output to a caller-provided buffer and return a result code.
-On success, the result is encoded using the <code>ArkScale</code> codec and written to the output buffer.</p>
+On success, the result is encoded and written to the output buffer.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>enum HostcallResult {
@@ -1142,30 +1193,54 @@ On success, the result is encoded using the <code>ArkScale</code> codec and writ
     Unknown = 255,
 }
 <span class="boring">}</span></code></pre></pre>
-<h3 id="usage-example"><a class="header" href="#usage-example">Usage Example</a></h3>
-<p>Runtime code snippet for BLS12-381 signature verification using Arkworks-compatible types from the polkadot-sdk. These types preserve API compatibility with upstream Arkworks and are designed to automatically and transparently delegate to host calls where required.</p>
+<h4 id="edge-cases"><a class="header" href="#edge-cases">Edge Cases</a></h4>
+<p>Empty <code>msm</code> returns the group identity (point at infinity). The sum of zero terms is zero.</p>
+<p>Empty <code>multi_miller_loop</code> returns the multiplicative identity of the target field.
+The product of zero terms is one. For example, for BLS12-381, the result is the identity
+element in Fq12 (the BLS12-381 target field), serialized as a single <code>0x01</code> byte
+followed by 575 zero bytes.</p>
+<h4 id="usage-example"><a class="header" href="#usage-example">Usage Example</a></h4>
+<p>Simplified BLS12-381 signature verification using types from the <code>polkadot-sdk</code>.</p>
+<p>The <code>direct</code> parameter selects between two usage modes:</p>
+<ul>
+<li><strong>Direct host calls</strong>: the caller explicitly encodes inputs, invokes the host functions,
+and decodes the result. Encoding/decoding is handled via
+<a href="https://github.com/paritytech/ark-scale">ark-scale</a>, a wrapper library that simplifies
+serialization of Arkworks types.</li>
+<li><strong>Arkworks compatibility layer</strong>: the <code>polkadot-sdk</code> provides types that are API-compatible
+with upstream Arkworks. Under the hood, these types transparently delegate to host calls,
+so the caller uses standard Arkworks APIs without any awareness of the host boundary.</li>
+</ul>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use sp_crypto_ec_utils::bls12_381::{G1Affine, G2Affine};
+</span>use ark_ec::pairing::Pairing;
+use sp_crypto_ec_utils::bls12_381::{G1Affine, G2Affine, host_calls, Bls12_381};
 
-// Verify a BLS signature (simplified)
-//
-// Compute e(signature, G2_generator) == e(public_key, message_hash)
-// Using the pairing check: e(sig, G2) * e(-pk, H(m)) == 1
+// Codec for host call boundary: uncompressed, no subgroup validation.
+type ArkScaleHostCall&lt;T&gt; = ark_scale::ArkScale&lt;T, { ark_scale::HOST_CALL }&gt;;
+
+type TargetField = &lt;Bls12_381 as Pairing&gt;::TargetField;
+
+// Verify: e(signature, G2_generator) == e(public_key, message_hash)
+// Equivalently: e(sig, G2) * e(-pk, H(m)) == 1
 fn verify_bls_signature(
-    public_key: G1Affine,  // G1 point
-    message_hash: G2Affine, // G2 point (hashed to curve)
-    signature: G1Affine,   // G1 point
+    pk: G1Affine,
+    msg: G2Affine, // hashed to curve
+    sig: G1Affine,
+    direct: bool,
 ) -&gt; bool {
-
-    let miller_result = bls12_381::multi_miller_loop(
-        &amp;[signature.encode(), negate(public_key).encode()],
-        &amp;[G2_GENERATOR.encode(), message_hash.encode()],
-    );
-
-    let pairing_result = bls12_381::final_exponentiation(&amp;miller_result).decode();
-
-    pairing_result == Gt::one()
+    if direct {
+        // Explicitly call host functions and handle encoding/decoding.
+        let g1: ArkScaleHostCall&lt;_&gt; = vec![sig, -pk].into();
+        let g2: ArkScaleHostCall&lt;_&gt; = vec![G2Affine::generator(), msg].into();
+        let mut buf = vec![0u8; ArkScaleHostCall::&lt;TargetField&gt;::max_encoded_len()];
+        host_calls::bls12_381_multi_miller_loop(&amp;g1.encode(), &amp;g2.encode(), &amp;mut buf).unwrap();
+        host_calls::bls12_381_final_exponentiation(&amp;mut buf).unwrap();
+        ArkScaleHostCall::&lt;TargetField&gt;::decode(&amp;mut buf.as_slice()).unwrap().0.is_one()
+    } else {
+        // Use standard Arkworks API. Host calls are invoked transparently.
+        Bls12_381::multi_pairing([sig, -pk], [G2Affine::generator(), msg]).0.is_one()
+    }
 }
 <span class="boring">}</span></code></pre></pre>
 <h2 id="drawbacks-2"><a class="header" href="#drawbacks-2">Drawbacks</a></h2>
@@ -1196,14 +1271,65 @@ curve operations. This enables practical on-chain verification of:</p>
 <li>Aggregated BLS signatures</li>
 <li>Complex cryptographic protocols</li>
 </ul>
+<p>Benchmarks are shown for BLS12-381 and Bandersnatch only. Pallas and Vesta are expected to
+show similar gains to Bandersnatch, as they have comparable field sizes. The &quot;arkworks&quot; column
+is pure in-runtime execution, the &quot;substrate&quot; column uses native host functions.</p>
+<p>Benchmarks were collected on an AMD Ryzen Threadripper 3970X (32 cores / 64 threads, 3.7 GHz
+base / 4.5 GHz boost) with 64 GB RAM, running Linux 6.18 x86_64. The machine was <strong>not</strong>
+specially configured for benchmarking (no CPU pinning, no frequency governor lockdown),
+so results may contain some noise. However, the speedups are large enough to be meaningful
+regardless of measurement variance.</p>
+<div class="table-wrapper"><table><thead><tr><th>extrinsic</th><th>arkworks</th><th>substrate</th><th>speedup</th></tr></thead><tbody>
+<tr><td>bls12_381_mul_g1</td><td>730.09 us</td><td>171.84 us</td><td>4.25x</td></tr>
+<tr><td>bls12_381_mul_g2</td><td>3.53 ms</td><td>468.70 us</td><td>7.52x</td></tr>
+<tr><td>bls12_381_msm_g1_10</td><td>9.84 ms</td><td>3.32 ms</td><td>2.97x</td></tr>
+<tr><td>bls12_381_msm_g1_32</td><td>27.05 ms</td><td>9.15 ms</td><td>2.96x</td></tr>
+<tr><td>bls12_381_msm_g1_55</td><td>44.20 ms</td><td>15.12 ms</td><td>2.92x</td></tr>
+<tr><td>bls12_381_msm_g1_77</td><td>59.21 ms</td><td>20.94 ms</td><td>2.83x</td></tr>
+<tr><td>bls12_381_msm_g1_100</td><td>75.54 ms</td><td>26.90 ms</td><td>2.81x</td></tr>
+<tr><td>bls12_381_msm_g2_10</td><td>23.48 ms</td><td>7.50 ms</td><td>3.13x</td></tr>
+<tr><td>bls12_381_msm_g2_32</td><td>62.51 ms</td><td>21.46 ms</td><td>2.91x</td></tr>
+<tr><td>bls12_381_msm_g2_55</td><td>111.38 ms</td><td>36.16 ms</td><td>3.08x</td></tr>
+<tr><td>bls12_381_msm_g2_77</td><td>137.84 ms</td><td>50.32 ms</td><td>2.74x</td></tr>
+<tr><td>bls12_381_msm_g2_100</td><td>165.13 ms</td><td>64.84 ms</td><td>2.55x</td></tr>
+<tr><td>bls12_381_pairing</td><td>7.50 ms</td><td>1.86 ms</td><td>4.04x</td></tr>
+<tr><td>ed_on_bls12_381_bandersnatch_mul</td><td>496.44 us</td><td>98.63 us</td><td>5.03x</td></tr>
+<tr><td>ed_on_bls12_381_bandersnatch_msm_10</td><td>9.35 ms</td><td>2.40 ms</td><td>3.89x</td></tr>
+<tr><td>ed_on_bls12_381_bandersnatch_msm_32</td><td>25.65 ms</td><td>6.55 ms</td><td>3.92x</td></tr>
+<tr><td>ed_on_bls12_381_bandersnatch_msm_55</td><td>42.85 ms</td><td>10.77 ms</td><td>3.98x</td></tr>
+<tr><td>ed_on_bls12_381_bandersnatch_msm_77</td><td>57.39 ms</td><td>14.83 ms</td><td>3.87x</td></tr>
+<tr><td>ed_on_bls12_381_bandersnatch_msm_100</td><td>72.28 ms</td><td>18.90 ms</td><td>3.82x</td></tr>
+</tbody></table>
+</div>
+<p>Observations:</p>
+<ul>
+<li>Scalar multiplication shows 4-7.5x speedups. BLS12-381 G2 <code>mul</code> sees the largest gain
+(7.52x), likely due to the expensive Fq2 field arithmetic being particularly slow in
+the runtime VM.</li>
+<li>MSM shows consistent 2.5-4x speedups across all curves and sizes. G1 MSM speedups are
+roughly stable as the number of bases grows (2.8-3x), while G2 MSM shows similar behavior
+at a slightly higher baseline cost.</li>
+<li>BLS12-381 pairing (miller loop + final exponentiation) achieves a 4x speedup.</li>
+<li>Bandersnatch shows 3.8-4x speedups for MSM and 5x for scalar multiplication, confirming
+that host calls are worthwhile across all the proposed curves.</li>
+</ul>
 <p>Detailed benchmark results comparing native host function execution versus pure runtime execution,
 along with practical integration examples (Groth16 verification, Bandersnatch ring-VRF),
 are available in the <a href="https://github.com/davxy/polkadot-arkworks-extensions">Polkadot Arkworks Extensions</a>
 repository.</p>
 <h3 id="compatibility-2"><a class="header" href="#compatibility-2">Compatibility</a></h3>
-<p>The polkadot-sdk implementation is based on the Arkworks library ecosystem, which is widely used.
-The serialization format is designed for compatibility with other Arkworks-based implementations.</p>
-<p>We considered merging the <code>final_exponentiation</code> operation into the <code>multi_miller_loop</code>, since they are always used together.  All native cryptographic libraries seperate these two operations though, so we'd need wrapper crates to fake having not doing this, which increases the maintenance burden. Aside from IBE protocols, we expect pairings would typically be batched across the block, so the overhead of one vs two host call makes little difference, vs the higher maintenance burden required by one host call.</p>
+<p>The reference implementation in polkadot-sdk uses the Arkworks library, but the serialization
+format is defined independently of any specific library. The encoding rules described in this
+RFC use standard conventions (little-endian, uncompressed affine coordinates) that any
+elliptic curve library can produce or consume, allowing alternative implementations without
+an Arkworks dependency.</p>
+<p>We considered merging the <code>final_exponentiation</code> operation into the
+<code>multi_miller_loop</code>, since they are always used together. All native
+cryptographic libraries separate these two operations though, so we'd need
+wrapper crates to fake not doing this, which increases the maintenance burden.
+Aside from IBE protocols, we expect pairings would typically be batched across
+the block, so the overhead of one vs two host call makes little difference, vs
+the higher maintenance burden required by one host call.</p>
 <h3 id="migration"><a class="header" href="#migration">Migration</a></h3>
 <p>Existing custom elliptic curve implementations should migrate to these standardized host functions
 to benefit from:</p>
@@ -3075,7 +3201,7 @@ must match the definitions found within this specification.</p>
 <p>It is convenient to make use of code snippets as part of the protocol
 description. As a convention, the code is formatted in a style similar to
 <em>Rust</em>, and can make use of the following set of predefined procedures:</p>
-<h4 id="sequences"><a class="header" href="#sequences">Sequences</a></h4>
+<h4 id="sequences-1"><a class="header" href="#sequences-1">Sequences</a></h4>
 <ul>
 <li>
 <p><code>CONCAT(x₀: OctetString, ..., xₖ: OctetString) -&gt; OctetString</code>: Concatenates the
@@ -13063,7 +13189,7 @@ This approach is compatible with the Slot-Based collation and the currently depl
 </li>
 <li><code>polkadot-sdk/substrate/frame/treasury/src/lib.rs</code>: update <code>RejectOrigin</code> to accept our new <code>SpendCanceller</code> origin.</li>
 </ul>
-<h3 id="edge-cases"><a class="header" href="#edge-cases">Edge Cases</a></h3>
+<h3 id="edge-cases-1"><a class="header" href="#edge-cases-1">Edge Cases</a></h3>
 <p>Edge cases with regards to spend lifecycle management should be handled by the Treasury pallet itself. No additional edge cases are currently expected.</p>
 <h2 id="drawbacks-60"><a class="header" href="#drawbacks-60">Drawbacks</a></h2>
 <p>A politically motivated agent could overabuse the track. The decision deposit parameter has been chosen to be equal to the Treasurer track decision deposit, so that the surface area for governance attacks stays equal.</p>
