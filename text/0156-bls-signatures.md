@@ -55,14 +55,13 @@ Generates a BLS12-381 Proof Of Possession for a given public key and owner ident
 
 ```wat
 (func $ext_crypto_bls381_generate_proof_of_possession_version_1
- (param $id i32) (param $pub_key i32) (param $owner i64) (param $out i32) (result i64))
+ (param $id i32) (param $pub_key i32) (param $out i32) (result i64))
 ```
 
 #### Arguments
 
 * `id` is a pointer ([Definition 215](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer)) to a key type identifier ([Definition 220](https://polkadotspec.dev/chap-host-api#defn-key-type-id)). The function will panic if the identifier is invalid;
 * `pub_key` is a pointer ([Definition 215](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer)) to a public key, 144 bytes long;
-* `owner` is a pointer-size ([Definition 216](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer-size)) to an opaque owner identifier;
 * `out` is a pointer ([Definition 215](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer)) to an output buffer, 224 bytes long, where the proof of possession will be written.
 
 #### Result
