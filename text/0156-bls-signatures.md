@@ -8,7 +8,7 @@
 
 ## Summary
 
-Introduce new host functions allowing runtimes to generate BLS12-381 keys, signatures, and proofs of possession.
+This RFC introduces new host functions allowing runtimes to generate BLS12-381 keys, signatures, and proofs of possession. Additionally, it allows the runtime to generate paired (ECDSA, BLS12-381) keys to enable BEEFY to support both signatures at the same time.
 
 ## Credits
 
