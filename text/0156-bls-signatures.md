@@ -62,7 +62,7 @@ Generates a BLS12-381 Proof Of Possession for a given public key and owner ident
 
 * `id` is a pointer ([Definition 215](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer)) to a key type identifier ([Definition 220](https://polkadotspec.dev/chap-host-api#defn-key-type-id)). The function will panic if the identifier is invalid;
 * `pub_key` is a pointer ([Definition 215](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer)) to a public key, 144 bytes long;
-* `out` is a pointer ([Definition 215](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer)) to an output buffer, 224 bytes long, where the proof of possession will be written.
+* `out` is a pointer ([Definition 215](https://polkadotspec.dev/chap-host-api#defn-runtime-pointer)) to an output buffer, 112 bytes long, where the proof of possession will be written.
 
 #### Result
 
@@ -112,7 +112,7 @@ The function returns `0` on success. On error, `-1` is returned, and the output 
 
 ### ext_crypto_ecdsa_bls381_generate
 
-Generates a combination ECDSA & BLS12-381 key for a given key type using an optional `seed`, stores it in the keystore, and returns the corresponding public key.
+Generates a pair of (ECDSA,BLS12-381) keys for a given key type using an optional `seed`, stores it in the keystore, and returns the corresponding public key. The keystore and the runtime regard this pair as a single key.
 
 #### Prototype
 
@@ -129,7 +129,7 @@ Generates a combination ECDSA & BLS12-381 key for a given key type using an opti
 
 ### ext_crypto_ecdsa_bls381_public_keys
 
-Retrieves all ECDSA & BLS12-381 public keys of a given type from the keystore.
+Retrieves all paired (ECDSA,BLS12-381) public keys of a given type from the keystore.
 
 #### Prototype
 
@@ -145,4 +145,4 @@ Retrieves all ECDSA & BLS12-381 public keys of a given type from the keystore.
 
 #### Result
 
-The result is an unsigned 32-bit integer representing the total size in bytes required to store all public keys of the given type. The number of keys can be determined by dividing this value by the known key size (177 bytes for ECDSA & BLS12-381). A value of `0` indicates that no keys of the given type are known to the keystore.
+The result is an unsigned 32-bit integer representing the total size in bytes required to store all public keys of the given type. The number of keys can be determined by dividing this value by the known key size (177 bytes for (ECDSA,BLS12-381)). A value of `0` indicates that no keys of the given type are known to the keystore.
