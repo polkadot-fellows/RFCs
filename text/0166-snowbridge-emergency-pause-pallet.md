@@ -8,7 +8,7 @@
 
 ## Summary
 
-Add a new FRAME pallet to BridgeHub (`snowbridge-pallet-emergency-pause`) that lets any account post a 100,000 DOT deposit to halt Snowbridge end-to-end. The halt is a best-effort sequence of seven side-effecting calls (five BridgeHub-local, one XCM to AssetHub, one outbound governance command to the Ethereum Gateway) with `on_initialize` retry of any leg that fails to land. Fellowship resolves the trigger as genuine (refund) or malicious (slash to treasury); a 7-day on-chain backstop refunds and resets only if Fellowship is incapacitated. This is the reactive half of a two-layer halt strategy; see the companion Snowbridge Circuit Breakers RFC (TBA) for the preventive half.
+Add a new FRAME pallet to BridgeHub (`snowbridge-pallet-emergency-pause`) that lets any account post a configured deposit (suggested to be 100,000 DOT) to halt Snowbridge end-to-end. The halt is a best-effort sequence of seven side-effecting calls (five BridgeHub-local, one XCM to AssetHub, one outbound governance command to the Ethereum Gateway) with `on_initialize` retry of any leg that fails to land. Fellowship resolves the trigger as genuine (refund) or malicious (slash to treasury); a time-based (suggested 7 days) on-chain backstop refunds and resets only if Fellowship is incapacitated. This is the reactive half of a two-layer halt strategy; see the companion Snowbridge Circuit Breakers RFC (TBA) for the preventive half.
 
 ## Motivation
 
