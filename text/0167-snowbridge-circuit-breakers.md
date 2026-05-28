@@ -16,6 +16,8 @@ The emergency pause pallet is reactive: a human notices an incident, fires `trig
 
 Circuit breakers cap value-at-risk during the detection window automatically. Calibrated correctly, they almost never fire in normal operation; when they fire, they buy the security council time to investigate before deciding whether to escalate to the full halt.
 
+The empirical case for caps is the absence of incidents: bridges that have shipped automated velocity-cap circuit breakers (Wormhole's [Governor](https://github.com/wormhole-foundation/wormhole/blob/main/whitepapers/0007_governor.md), Chainlink CCIP's [token-pool rate limits](https://docs.chain.link/ccip/concepts/rate-limit-management/how-rate-limits-work), Axelar's [per-chain daily caps](https://www.axelar.network/blog/axelar-governance-explained), LayerZero OFT's [`RateLimiter`](https://docs.layerzero.network/v2/concepts/technical-reference/oft-reference)) have not been catastrophically drained since adoption; bridges that lacked them (Nomad's [$190M / 150-minute exploit](https://cloud.google.com/blog/topics/threat-intelligence/dissecting-nomad-bridge-hack), Multichain, Ronin, Wormhole's own pre-Governor Solana exploit) have. The pattern this RFC adopts (per-asset, rolling-window, governance-set, auto-lifting) is the state of the practice; specific calibrations and refinements borrow from CCIP and Wormhole experience documented in §Prior Art.
+
 Per-asset velocity caps as a *primary* defense face a calibration dilemma: caps tight enough to catch single-tx exploits false-positive on legitimate institutional flows; caps loose enough to avoid false positives let large single-tx exploits through. Layered behind the per-asset emergency halt, that pressure drops sharply: catching every attack is not the cap layer's job, the halt pallet handles that with its broader, slower lever. The caps only need to bound the *runaway* attacks that would drain the bridge faster than a human can notice and trigger the halt, so they can sit much higher and rarely false-positive in practice.
 
 ### Why the primary cap belongs on the Gateway, not Polkadot
@@ -61,13 +63,13 @@ Prior socialization: design discussed in the 2026 Snowbridge maintenance proposa
 
 For each asset and each class, `net = outflow - inflow` over the window. Net flow, not gross, so two-way arbitrage and market-maker activity doesn't burn the budget (lifted from Hydration's `pallet-circuit-breaker` net-volume pattern).
 
-**Window:** rolling 24 hours, implemented as 24 hourly buckets with a sliding sum. 24 hours because that's roughly the time-to-notice budget for a security council; the cap should ensure the bridge cannot be fully drained within one human response cycle.
+**Window:** rolling 24 hours, implemented as 24 hourly buckets with a sliding sum. 24 hours because that's roughly the time-to-notice budget for a security council; the cap should ensure the bridge cannot be fully drained within one human response cycle. This window matches Wormhole's Governor (rolling 24h) and LayerZero OFT default deployments, and is the modal choice across major bridges; CCIP uses a continuously-refilling token bucket instead, see §Future Directions for that as a v2 refinement.
 
-**Denomination:** token units. No oracle in the security-critical path. The trade-off with a USD-aggregate cap is below in "Why per-asset token-denominated, not aggregate USD".
+**Denomination:** token units. No oracle in the security-critical path. The trade-off with a USD-aggregate cap is below in "Why per-asset token-denominated, not aggregate USD". This is the same denomination choice CCIP made for its per-token-pool buckets and LayerZero OFT made for its `RateLimiter`. Wormhole's Governor uses USD-equivalent but hardcodes the thresholds in config rather than reading a live oracle, accepting the staleness rather than the oracle attack surface.
 
 **Caps are opt-in per asset.** The Gateway maintains `cap[asset][class]: Option<uint256>`. When `None`, that asset+class has no velocity limit and bypasses the rate-tracking logic entirely (saving the ~10-15k gas on every operation). When `Some(n)`, the cap is enforced. Governance decides per asset whether the operational overhead of tracking and tuning a cap is worth it.
 
-This matches the Hydration pattern (their per-asset XCM rate limit is `Option<u128>` keyed off the asset registry). Capping a low-value asset wastes operator attention without buying defense, because the catastrophic outcome of an unrestricted drain is bounded by the asset's total locked value. The 100k-DOT emergency-pause trigger still covers low-cap assets in the rare case a drain attempt happens, just without the automated brake.
+This matches the Hydration pattern (their per-asset XCM rate limit is `Option<u128>` keyed off the asset registry) and CCIP's per-token-pool model (each pool independently configured with capacity and refill rate). Capping a low-value asset wastes operator attention without buying defense, because the catastrophic outcome of an unrestricted drain is bounded by the asset's total locked value. The 100k-DOT emergency-pause trigger still covers low-cap assets in the rare case a drain attempt happens, just without the automated brake.
 
 A rough heuristic: if the asset's total locked value on the bridge exceeds the 100k DOT trigger deposit by a meaningful multiple (say, 10x), the cap pays for itself in expected loss reduction; below that, skip it.
 
@@ -122,7 +124,7 @@ A "delay any transfer above threshold X by N hours" layer (optimistic-settlement
 * A slow drain just under the per-hour rate gets caught by the 24h aggregate.
 * The threshold the delay would use ends up being approximately the same number as the velocity cap divided by N, so the two layers are largely redundant.
 
-The per-tx delay would add UX friction (legitimate large transfers wait) without earning meaningful additional protection. Optimistic-settlement is the right pattern for OP rollups because it's fundamental to their security model; for Snowbridge it's not.
+The per-tx delay would add UX friction (legitimate large transfers wait) without earning meaningful additional protection. Optimistic-settlement is the right pattern for OP rollups because it's fundamental to their security model (Arbitrum and Optimism use a 7-day challenge window on every L2→L1 withdrawal; Across uses a 1.5-hour optimistic-oracle dispute window on bundle proposals, with fast relayer-fronted liquidity covering user latency). For Snowbridge, which is non-optimistic by design, layering this pattern on top of velocity caps is structurally redundant.
 
 ### Why no BridgeHub outbound-queue message-rate cap
 
@@ -238,7 +240,8 @@ pub enum Event<T: Config> {
 * **Gas overhead on capped assets.** ~10-15k extra gas per ERC20 release / PNA mint of a capped asset. Falls hardest on small transfers (proportionally), with a possible perverse incentive pushing small transfers toward uncapped assets.
 * **Per-asset operational overhead.** Each capped asset needs a governance vote to set its initial cap and another to re-tune; that's ongoing operator time.
 * **Cap trip can lock funds during a false positive.** A legitimate but anomalous spike can lock down an asset until governance acts. The 24-hour auto-lift bounds the worst case but a day of lockup is still uncomfortable.
-* **Aggregate USD blind spot.** Per-asset caps don't catch multi-asset coordinated drains where each individual asset stays under its cap. Documented as a follow-up.
+* **Aggregate USD blind spot.** Per-asset caps don't catch multi-asset coordinated drains where each individual asset stays under its cap. Documented as a follow-up; CCIP's combined per-pool + per-lane-aggregate model is the canonical "fully defended" target.
+* **Stablecoin friction is the expected pain point.** Wormhole's Governor experience showed that stablecoin flows routinely hit 100% of their cap and benignly stranded users, leading to a "flow-cancelling" extension being added later. Snowbridge already uses *net* (outflow minus inflow) to mitigate this, but expect USDT/USDC to be the friction edge, calibrate accordingly and accept some operational overhead around stablecoin cap re-tuning.
 
 ## Testing, Security, and Privacy
 
@@ -272,7 +275,13 @@ Operator-facing: cap configuration is a governance-driven workflow. The relayer-
 ## Prior Art and References
 
 * Hydration's [`pallet-circuit-breaker`](https://github.com/galacticcouncil/hydration-node/tree/master/pallets/circuit-breaker), the net-volume rolling-window pattern this design lifts.
-* OP-style optimistic-rollup withdrawal delays, considered and rejected as a parallel layer for the reasons in "Why no per-tx delay layer".
+* Wormhole's [Governor](https://github.com/wormhole-foundation/wormhole/blob/main/whitepapers/0007_governor.md) and [Global Accountant](https://github.com/wormhole-foundation/wormhole/blob/main/whitepapers/0011_accountant.md): rolling-24h USD-denominated per-chain cap (Governor) layered with a cumulative balance check (Accountant). Their later [flow-cancelling extension](https://wormhole.com/blog/understanding-the-flow-canceling-governor-in-wormhole) addressed stablecoin caps routinely hitting 100% utilization; informed the net-flow choice in this RFC.
+* Chainlink CCIP's [token-pool rate limits](https://docs.chain.link/ccip/concepts/rate-limit-management/how-rate-limits-work): per-token-per-lane token-bucket model `(capacity, refillRate)` denominated in raw token units, optionally layered with a per-lane aggregate USD cap "always lower than the sum of all individual token pool rate limits". The cleanest reference for the design space this RFC targets; CCIP's continuous-refill model is flagged as a v2 refinement in §Future Directions.
+* LayerZero OFT [`RateLimiter`](https://docs.layerzero.network/v2/concepts/technical-reference/oft-reference): per-pathway `(limit, window)` with linear refill, raw token denomination, separately tunable inbound and outbound. Demonstrates per-asset-per-route token-denominated as a workable production pattern.
+* Axelar's [governance-controlled per-chain daily USD caps](https://www.axelar.network/blog/axelar-governance-explained): closest analogue to a Polkadot-governance-controlled bridge, governance-multisig sets limits on-chain with auto-lift refill.
+* Linea's bridge `RateLimiter` ([OpenZeppelin audit notes](https://www.openzeppelin.com/news/linea-bridge-audit-1)): ETH-withdrawn-per-period cap with role-gated reset.
+* OP-style optimistic-rollup withdrawal delays (Arbitrum, Optimism 7-day; Across 1.5-hour OO liveness), considered and rejected as a parallel layer for the reasons in "Why no per-tx delay layer".
+* The [Nomad bridge exploit post-mortem](https://cloud.google.com/blog/topics/threat-intelligence/dissecting-nomad-bridge-hack) ($190M drained in 150 minutes, no velocity cap), illustrative of the failure mode this RFC's primary cap is designed to prevent.
 * [Snowbridge Emergency Pause Pallet RFC](./0166-snowbridge-emergency-pause-pallet.md), the companion reactive layer.
 
 ## Unresolved Questions
@@ -281,9 +290,11 @@ Operator-facing: cap configuration is a governance-driven workflow. The relayer-
 * **Threshold for opting an asset into a cap.** A "total locked value > N x 100k DOT" rule works as a starting heuristic but ignores assets that are low-TVL but high-volume. Worth refining once there's a year of data.
 * **Inflow-side credit timing.** Should inflow credit the cap immediately at deposit, or only after some confirmation period? If immediate, a wash-trading attacker could inflate their cap budget by depositing-then-immediately-withdrawing the same asset, paying only gas. Probably need a small inflow delay (a few minutes) before the deposit counts toward the cap.
 * **Gas-cost regressivity for capped assets.** Whether the ~10-15k overhead meaningfully shifts the smallest-economical-transfer threshold, and whether that produces a perverse incentive toward uncapped assets for small transfers.
-## Future Directions and Related Material
 
-* **Global aggregate USD cap as a third parallel layer.** Catches multi-asset coordinated drains. Would pull an oracle into the path but as a *parallel* check, not replacing the per-asset caps, so oracle manipulation can't bypass the primary defense.
+## Future Directions and Related Material
+* **Continuous token-bucket refill (CCIP-style) as a v2 refinement.** Replace the discrete 24-hourly sliding-sum with a token-bucket `(capacity, refillRate)` model that refills continuously. Two real advantages: it avoids "midnight reset" gameability of fixed buckets, and the per-block accounting is cheaper. Same calibration framework as the current design, different arithmetic on the storage layout. Sensible v2 once the v1 layer has operational data.
+* **Combined per-asset + per-lane aggregate USD cap (CCIP-style).** The canonical "fully defended" end-state: per-asset token-denominated caps (this RFC) plus an aggregate USD cap on the bridge as a whole, with the aggregate always lower than the sum of per-asset caps. The aggregate catches multi-asset coordinated drains that no individual per-asset cap would trip. Would pull an oracle into the path but as a *parallel* check rather than replacing the per-asset caps, so oracle manipulation can't bypass the primary defense. Treat as a follow-up RFC once the per-asset layer is shipping.
+* **Generalised fisherman / watchtower bonded-challenge layer.** Extend Snowbridge's existing fisherman role into a generalised challenge mechanism: external monitors can pause an asset by posting a bond, similar in shape to the emergency-pause `trigger()` but per-asset. Composes well with both this RFC's caps and the pause pallet. Deserves its own design work; not a quick add to this RFC.
 * **Auto-calibration.** Once per-asset trailing-7-day-median telemetry is observable, the formula `cap = max(5x median, floor)` could be re-applied periodically via a governance batch, replacing the initial TVL-fraction heuristic.
 * **Asset-class default caps at registration.** Add an "asset class" field to the asset registry (stablecoin, ETH-LST, long-tail, etc.) with a per-class default cap multiplier so new asset listings auto-cap at a sensible starting value pending governance refinement.
 * **Companion RFC:** the [Snowbridge Emergency Pause Pallet RFC](./0166-snowbridge-emergency-pause-pallet.md) (PR #166) specifies the reactive layer that this preventive layer composes with.
