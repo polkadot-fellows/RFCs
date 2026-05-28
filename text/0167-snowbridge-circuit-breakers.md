@@ -3,12 +3,12 @@
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 2026-05-28                                                                                  |
-| **Description** | Per-asset velocity caps on the Ethereum Gateway (primary), the AssetHub frontend, and the BridgeHub outbound queue (secondary) that automatically throttle anomalous Snowbridge flows. |
+| **Description** | Per-asset velocity caps on the Ethereum Gateway (primary) and the AssetHub frontend (secondary) that automatically throttle anomalous Snowbridge flows. |
 | **Authors**     | Snowbridge team                                                                             |
 
 ## Summary
 
-Add three layers of automatic rate-limiting to Snowbridge: a primary per-asset velocity cap on the Ethereum Gateway covering both ERC20 release and PNA mint, a secondary per-asset cap on the AssetHub frontend covering outbound exports, and a secondary aggregate message-rate cap on the BridgeHub outbound queue. Each cap tracks rolling 24-hour net flow per asset (or aggregate for BH), trips into a per-asset lockdown when exceeded, and is reset by governance. Caps are denominated in token units (no oracle in the security-critical path) and are opt-in per asset. This is the preventive half of a two-layer halt strategy; see the companion [Snowbridge Emergency Pause Pallet RFC](./0166-snowbridge-emergency-pause-pallet.md) for the reactive half.
+Add two layers of automatic rate-limiting to Snowbridge: a primary per-asset velocity cap on the Ethereum Gateway covering both ERC20 release and PNA mint, and a secondary per-asset cap on the AssetHub frontend covering outbound exports. Each cap tracks rolling 24-hour net flow per asset, trips into a per-asset lockdown when exceeded, and auto-lifts after 24 hours. Caps are denominated in token units (no oracle in the security-critical path) and are opt-in per asset. This is the preventive half of a two-layer halt strategy; see the companion [Snowbridge Emergency Pause Pallet RFC](./0166-snowbridge-emergency-pause-pallet.md) for the reactive half.
 
 ## Motivation
 
@@ -56,7 +56,7 @@ Prior socialization: design discussed in the 2026 Snowbridge maintenance proposa
 
 **What it tracks:** per-asset NET outflow over a rolling 24-hour window, separately for two operation classes:
 
-* Release of escrowed ERC20 (E-to-P originated, asset returning to user)
+* Release of locked ERC20 (E-to-P originated, asset returning to user)
 * Mint of PNA (P-to-E originated, Polkadot-native asset minted on Ethereum)
 
 For each asset and each class, `net = outflow - inflow` over the window. Net flow, not gross, so two-way arbitrage and market-maker activity doesn't burn the budget (lifted from Hydration's `pallet-circuit-breaker` net-volume pattern).
@@ -77,12 +77,9 @@ A rough heuristic: if the asset's total locked value on the bridge exceeds the 1
 * The floor prevents low-volume-but-high-value assets from having absurdly small caps relative to their total locked value.
 * Both factors are governance-settable per asset; no automatic defaults at asset registration (new assets start uncapped).
 
-**Trip behavior:** sets `lockdownUntil[asset][class]: BlockNumber`. Other assets keep flowing. Other classes for the same asset (e.g. PNA mint still works if ERC20 release tripped) keep flowing. Lockdown blocks new outflow/mint of that asset+class until either:
+**Trip behavior:** sets `lockdownUntil[asset][class]: BlockNumber`, proposed 24 hours from the trip block. Other assets keep flowing. Other classes for the same asset (e.g. PNA mint still works if ERC20 release tripped) keep flowing. Lockdown blocks new outflow/mint of that asset+class until `lockdownUntil` is reached, at which point the cap auto-lifts and normal rate tracking resumes. There is no separate manual-reset command, see "Auto-lift calibration" below for why.
 
-1. A governance reset arrives via `PRIMARY_GOVERNANCE_CHANNEL`, or
-2. `lockdownUntil` is reached (weeks-scale backstop, never expected to fire in normal operation; exists purely so an unresponsive governance cannot lock value forever).
-
-**Reset path.** Implemented as a new Gateway inbound command (`CommandV1.ResetCap`, V1 only), handled identically to existing governance commands like `SetOperatingMode`. Routed from BH through `EthereumSystem` on the V1 outbound queue's `PRIMARY_GOVERNANCE_CHANNEL`, which already bypasses the V1 outbound queue halt (`pallets/outbound-queue/src/send_message_impl.rs:79`), so a cap-reset lands even when the bridge is fully halted. The Gateway's inbound dispatch (`submitV1`/`submitV2`) does not gate on operating mode either, so the command also dispatches regardless of halt state. Same routing pattern as call 7 in the companion pause-pallet RFC (Option A); the V2 path is intentionally not used because the V2 outbound queue has no governance bypass today.
+**Auto-lift calibration.** The 24-hour auto-lift is sized to buy time for human escalation, not to *be* the defense. If the trip is a real attack, on-call detects the `CapTripped` event (paged as `critical` per §Observability) and fires the emergency-pause `trigger()` well within the window, which globally halts the bridge and supersedes the cap. If the trip is a false positive, the worst case is up to a day of asset+class lockdown for that one asset, with other assets continuing to flow normally. A weeks-scale auto-lift would be miscalibrated: it would unduly hinder legitimate flow on false positives without buying meaningful additional defense, since the relevant fast defense (emergency halt) acts in seconds and the auto-lift always wins the race against a governance reset anyway (OpenGov / Whitelisted Caller paths typically take ~24 hours minimum, often longer; a manual reset would never land before the 24-hour auto-lift). This is why there is no separate `ResetCap` command, with a 24-hour auto-lift it is structurally unreachable, and the emergency-pause halt is the fast override.
 
 **Gas cost:** each ERC20 release and each PNA mint of a **capped** asset pays ~10-15k extra gas to read+write the per-asset counter and check the cap. Uncapped assets pay no extra gas (the cap lookup short-circuits on `None`). Material but not prohibitive for the small set of high-value assets where capping pays for itself; uncapped low-value assets stay cheap.
 
@@ -92,11 +89,22 @@ Catches AH-side exploits where the attacker abuses the frontend to send unauthor
 
 Cheap to add (`snowbridge-pallet-rate-limit` on AH, hooks into the `PausableExporter`). Tripping blocks new exports for the affected asset on AH; the Gateway-side cap continues to operate independently downstream.
 
-### Layer 3 (secondary): BridgeHub outbound-queue message-rate cap
+### Stuck messages and stale fees
 
-A protocol-aggregate (not per-asset) cap on how many messages can be committed by the BH outbound queue per block. Catches "suddenly 1000x more messages are being committed than normal", anomalous regardless of which asset they reference. Trip behavior: blocks new commitments until governance reset.
+A P→E message that reaches the Gateway after the user's AH-side asset is already burned, but finds the cap tripped, must not produce asymmetric state (asset gone on AH, nothing dispatched on Ethereum). This subsection specifies the trip behavior to avoid that.
 
-Useful as a generic "something is wrong" detector. Higher false-positive surface than per-asset caps because legitimate spikes (e.g., a new parachain integration goes live) can hit it; calibration should be conservative (10x trailing median, not 5x) and operator workflow should expect occasional governance resets that aren't tied to incidents.
+**Defer, don't revert.** The Gateway-side cap check fires *before* nonce increment in `submitV1` / `submitV2`. If the cap is tripped for the message's asset+class, the whole submit reverts:
+
+* No nonce increment (the message stays at `inboundNonce + 1`, not consumed).
+* No relayer payment (the relayer's tx reverts and they eat the gas; in practice they back off and wait for the auto-lift rather than retry tightly).
+* No asset action.
+* The message stays in the BH outbound queue's existing merkle commitment and is fully relayable after the cap auto-lifts.
+
+The alternative (cap check inside the handler, dispatch reverts but submit succeeds) would consume the message but produce no asset action, leaving the user's AH-side burn unmatched on Ethereum. Defer-not-revert puts the message in a "wait and retry" state instead of stranding funds.
+
+**Fee staleness does not permanently block messages.** The user pre-pays a fee at AH (computed at submit time from the governance-set `PricingParameters`, i.e., `fee_per_gas * gas_used_at_most + remote_reward`, see `pallets/outbound-queue/src/lib.rs:368`). If the cap holds a message for up to 24 hours and ETH gas has moved enough that the relayer's actual cost exceeds the pre-paid fee, the relayer will refuse to resubmit, but the message is still recoverable: anyone can call `add_tip` on `snowbridge-pallet-system-v2` (which routes to `OutboundQueue::add_tip`) with the message's nonce to bump the tip in DOT, and the relayer becomes willing to retry. This is a pre-existing Snowbridge primitive, not a new mechanism in this RFC; cap trips just exercise it more often than usual. The key point is that a stale fee never permanently strands the message; the auto-lift removes the cap block within 24h, and `add_tip` remains available indefinitely after that to clear any residual fee-economics block.
+
+**Open question (observability).** The relayer currently sees a generic `submitV1` revert when the cap is tripped; there's no specific signal that the cap was the cause. Adding a `MessageDeferredByCap(asset, class)` event (or matching revert reason) would let the relayer infrastructure log and alert cleanly, and let users / operators decide whether to top up proactively. Recommended addition; see §Observability.
 
 ### Why per-asset token-denominated, not aggregate USD
 
@@ -108,7 +116,7 @@ If a global aggregate becomes desired later as additional defense, it can be add
 
 ### Why no per-tx delay layer
 
-An earlier sketch considered a "delay any transfer above threshold X by N hours" layer (optimistic-settlement style). A correctly-set velocity cap subsumes it:
+A "delay any transfer above threshold X by N hours" layer (optimistic-settlement style) was considered and not adopted. A correctly-set velocity cap subsumes it:
 
 * A single $300M release trips the per-asset cap immediately.
 * A slow drain just under the per-hour rate gets caught by the 24h aggregate.
@@ -116,51 +124,69 @@ An earlier sketch considered a "delay any transfer above threshold X by N hours"
 
 The per-tx delay would add UX friction (legitimate large transfers wait) without earning meaningful additional protection. Optimistic-settlement is the right pattern for OP rollups because it's fundamental to their security model; for Snowbridge it's not.
 
+### Why no BridgeHub outbound-queue message-rate cap
+
+A third layer was considered and not adopted: a protocol-aggregate cap on how many messages BH outbound queue could commit per block, intended to catch "many small drains across many assets" patterns that wouldn't trip any individual per-asset cap. It was rejected for four reasons:
+
+1. **Blast radius is too large for the trigger sensitivity.** A single trip halts *all* BH outbound for the full 24-hour auto-lift window. Every parachain integration, every legitimate user message, every Snowbridge governance command except the V1 governance channel bypass, all blocked. That overlaps with the emergency-pause pallet's role but with worse precision (everything halts, not just Snowbridge flows) and no deposit-gated permissionless trigger.
+2. **High documented false-positive rate.** Legitimate spikes (a new parachain integration going live, a coordinated batch settlement, a busy market hour) routinely produce burst patterns that look anomalous to a per-block message count. Operator workflow would become "every few weeks the bridge halts on a non-incident."
+3. **Message count is a poor proxy for value.** One parachain doing 1,000 small transfers and one whale doing one large transfer have wildly different message counts but possibly similar value-at-risk. Capping on count rather than value means catching the wrong thing.
+4. **A better replacement exists.** §Future Directions retains the option of a global aggregate USD cap as a parallel layer; that addresses the same "multi-asset coordinated drain" gap with USD-aware accounting, which is the right unit for cross-asset comparison. The trade-off is pulling an oracle into the path, acceptable as a *parallel* check that doesn't replace the per-asset caps.
+
+The conclusion: per-asset caps (Layer 1) catch the realistic attack surface; AH-frontend caps (Layer 2) catch AH-side abuse; the emergency-pause pallet handles broad halts when a human escalates; aggregate-USD detection, if and when added, is the right tool for residual multi-asset gaps. A protocol-aggregate message-count cap on BH sits in an awkward middle ground that pays a high false-positive cost without commensurate defensive value.
+
+### Why no Gateway-side pending-action queue
+
+A Gateway-side pending-action queue was considered and not adopted. The shape: instead of reverting at the Gateway when a cap is tripped (the current "defer, don't revert" behavior in §"Stuck messages and stale fees"), an alternative design would accept the message (nonce increments, relayer paid), record the asset action in a per-asset pending queue on the Gateway, and auto-execute (or drain via a separate function call) once the cap auto-lifts. It was rejected for five reasons:
+
+1. **Significant new Gateway state and contract code.** A pending-action queue with ordering, pagination, and drain semantics is non-trivial Solidity in a security-critical path. The defer-revert approach adds zero new Gateway state for pending messages, the existing BH outbound queue commitment is reused as the durable record.
+2. **DoS attack surface.** An attacker who has reached the Gateway with valid messages (e.g., during an active exploit before the cap trips) can push the queue arbitrarily large. Each entry is at least one storage slot, paid by the submitter, so the cost is bounded but the audit and post-incident-cleanup complexity is real.
+3. **Drain ordering and gas accounting are complicated.** When the cap auto-lifts and the queue has many pending releases, drain semantics get tricky: do they all execute in one block (gas exhaustion risk)? In a batch with explicit pagination? Lazily as a side-effect of next normal release? Each option creates edge cases that need careful spec work.
+4. **Fee staleness still applies at drain time.** The original message's pre-paid fee was sized for one dispatch at submission time. If the drain happens 24h later and gas has spiked, the dispatch can still fail at drain time for fee-insufficient reasons. The queue doesn't escape this; it just defers it.
+5. **The defer-revert path is recoverable.** Per §"Stuck messages and stale fees", a deferred message stays in the BH outbound queue's existing merkle commitment, gets retried after auto-lift, and a stale fee is resolved by `add_tip`. The pending-queue path's UX advantage (relayer doesn't eat gas on the failed submit) is real but small at typical cap-trip frequency.
+
+The pending-queue pattern is well-suited to a follow-up if operational data shows the defer-revert path's relayer-gas-waste or message-tracking complexity becomes a real pain point. It's not the right starting point for the initial cap layer.
+
+### Higher-level alternatives considered
+
+The per-asset velocity cap design in this RFC sits at one specific point on the design space. Several architecturally higher-level alternatives were considered and not adopted as the primary defense for the reasons below; some remain candidates for complementary future layers (see §Future Directions).
+
+**Optimistic-style withdrawal delay window.** All P→E withdrawals wait N hours or days, during which anyone can submit a fraud proof to cancel. Default behavior is "permitted unless challenged." Not adopted because: (a) Snowbridge today is non-optimistic, this would be a paradigm-level re-architecture; (b) it introduces material UX latency on every legitimate transfer rather than only on cap-tripped ones; (c) it requires building a fraud-proof system and a watchtower-incentive scheme that don't exist today. If Snowbridge's risk profile materially changes, this is the canonical "next level up"; as an addition to the current trust-minimized model, it's heavier than the problem warrants.
+
+**Committee multi-sig signoff on large withdrawals.** Transfers above a per-asset threshold require N-of-M security-committee approval before dispatching on Ethereum. Not adopted because it introduces a permissioned bottleneck and a trusted set of signers, at odds with Snowbridge's trust-minimized design. Could in principle be opt-in for very-high-TVL assets but is out of scope of an RFC focused on automated rate-limiting.
+
+**Protocol-owned insurance / backstop pool.** A reserve funded by bridge fees pays claims for documented exploits; doesn't prevent attacks but bounds user damage. Not adopted as a primary defense (it isn't one, by design), but flagged in §Future Directions as a complementary layer. It pairs naturally with velocity caps: the cap bounds worst-case exposure, the pool covers what slips through.
+
+**Watchtower / fisherman pattern with economic challenge.** External monitors actively scan for anomalies and stake bonds to raise challenges; the bond is slashed on false alarms, rewarded on real catches. Snowbridge already has a "fisherman" role on the relayer side. Generalising it, e.g., a fisherman can pause an asset by posting a bond, similar shape to the emergency-pause trigger but per-asset, would compose well with both the velocity caps and the pause pallet. Not adopted in this RFC because it deserves its own design work; flagged in §Future Directions.
+
+**Higher-resolution velocity caps (sub-24h windows).** Same shape as the current design but with shorter rolling windows (per-hour, per-15-minute) stacked alongside the 24h cap. Not adopted as part of the initial layer because shorter windows multiply the calibration problem (each window per asset needs its own value) and create more false positives. Worth revisiting if 24h windows turn out to be too coarse against observed burst patterns.
+
+**Per-recipient address rate-limit.** Velocity is tracked per-destination rather than (or in addition to) per-asset. Not adopted because it pulls address-attribution into the cap logic, which has privacy and attribution-spoofing implications that don't fit Snowbridge's permissionless model.
+
 ### Interaction with the emergency-pause pallet
 
 The two systems compose cleanly:
 
 * **Pause pallet halt is global.** When the pause pallet's `trigger()` fires the seven halts, all ERC20 release and PNA mint operations stop regardless of cap state. Cap counters keep accumulating in storage but no outflow happens.
 * **Cap trip is per-asset.** A cap trip doesn't halt the bridge; it locks down one asset+class. Other traffic keeps flowing.
-* **Resolution order is independent.** If both fire (cap trips, then a human triggers the pause), the pause pallet's `resume()` flips the bridge's operating modes back but does **not** lift the cap lockdown; the cap reset is a separate governance call routed through the Gateway's inbound dispatch (`CommandV1.ResetCap`). This is intentional: the cap is a stronger signal than the human-triggered halt; resetting it should be an explicit additional decision. Conversely, lifting the cap lockdown does not resume a halted bridge.
+* **Resolution is independent.** If both fire (cap trips, then a human triggers the pause), the pause pallet's `resume()` flips the bridge's operating modes back without touching cap state; the cap lockdown clears on its own 24-hour auto-lift. Lifting the cap lockdown does not resume a halted bridge either. Intentional: the cap is a stronger signal than the human-triggered halt, and the auto-lift is the cap layer's only lift mechanism, so the two systems don't need to coordinate explicitly.
 
-### Starting caps from current Snowbridge TVL
+### Initial calibration approach
 
-Concrete proposal for which assets warrant a cap and what the initial value should be, derived from the Snowbridge dashboard snapshot on 2026-05-25. Total TVL is $35.46M across 18 assets.
+Caps are set via a new Gateway inbound command, `CommandV2.SetCap(asset, class, value)`, issued from BridgeHub governance through `EthereumSystemV2`. The initial set of caps is bundled into a governance preimage by the Snowbridge SDK and submitted to Polkadot OpenGov as a referendum; the community votes on it like any other root-level Snowbridge configuration change. Subsequent re-tunings (after telemetry becomes available, or after asset prices move materially enough to warrant a re-vote) use the same flow.
 
-The cap formula uses trailing-7-day-median hourly net flow as the input, but that data isn't on the public dashboard. The numbers below use a **fraction-of-TVL per 24h window** stand-in heuristic, calibrated by asset turnover profile. Once the cap system is live and per-asset volume telemetry is observable, governance should refine these from the 5x-trailing-median formula instead.
+V2 is chosen for the cap-management commands because cap-setting is a normal-operation governance action, not an incident-response one; it does not need to land while the bridge is halted, so the V1 `PRIMARY_GOVERNANCE_CHANNEL` halt-bypass (relevant for `SetOperatingMode` in the companion pause-pallet RFC) is not required here. Routing through V2 keeps the new code in V2, which is the long-term path forward; V1 doesn't need to be extended for a new feature being added today.
 
-**Tier A: cap at 5% of TVL per 24h (TVL > $5M).** Concentrated holdings where a runaway drain would be catastrophic in absolute terms.
+Concrete cap values per asset are deliberately out of scope of this RFC, which specifies the cap mechanism's shape and the framework for choosing values, not the values themselves. Token-denominated cap values (per §Layer 1) are decided and ratified by community vote at deployment and at each subsequent re-vote.
 
-| Asset | TVL | Cap (USD-equivalent, 24h) |
-|---|---|---|
-| TRAC | $16.83M | $840k |
-| tBTC | $5.72M | $285k |
+Until per-asset volume telemetry is observable on-chain, the §Layer 1 formula (`cap = max(5x trailing-7-day-median hourly net flow, configured floor per asset)`) cannot be applied directly. Governance can bootstrap initial caps from a fraction-of-TVL heuristic instead, with the heuristic tuned by asset turnover profile. Illustrative tiers:
 
-**Tier B: cap at 10% of TVL per 24h (TVL $1M-$5M).** Looser because legitimate spikes are more meaningful relative to TVL at this scale.
+* **High-TVL concentrated holdings** (low turnover relative to balance, e.g., wrapped-Bitcoin variants): tightest fraction, around 5% of TVL per 24h. A runaway drain would be catastrophic in absolute terms, and legitimate flows rarely approach this fraction.
+* **Mid-TVL DeFi assets** (e.g., ETH and ETH-LSTs): looser, around 10% of TVL per 24h.
+* **Stablecoins**: loosest, around 15% of TVL per 24h, since stables turn over more often relative to balance.
+* **Low-TVL assets**: skip the cap entirely (`cap[asset] = None`). The emergency-pause halt is sufficient defense for any single small-TVL asset; the operator overhead of capping it isn't worth the marginal protection.
 
-| Asset | TVL | Cap (USD-equivalent, 24h) |
-|---|---|---|
-| ETH | $2.29M | $230k |
-| wstETH | $1.89M | $190k |
-| PAXG | $1.52M | $150k |
-| MYTH | $1.36M | $135k |
-| KILT | $1.03M | $103k |
-| LINK | $1.02M | $102k |
-
-**Tier C: cap at 15% of TVL per 24h (TVL $500k-$1M, mostly stables).** Highest legitimate turnover (stablecoins move more relative to balance) so the cap is loosest.
-
-| Asset | TVL | Cap (USD-equivalent, 24h) |
-|---|---|---|
-| WETH | $996k | $150k |
-| USDT | $589k | $88k |
-| USDC | $575k | $86k |
-
-**Skip caps initially** (TVL < $500k): sUSDe ($471k), AAVE, CFG, SKY, LDO, ENA, WBTC. These stay as `None` in `cap[asset]`. The worst-case outcome of an unrestricted drain on any one of them is bounded by their TVL, which is small enough that the 100k-DOT emergency-pause trigger is sufficient defense. Governance opts an asset in when its TVL crosses $500k or its observed volume profile warrants it.
-
-**On-chain encoding:** the Gateway stores caps in token units (not USD), so these USD figures need to be converted at the asset's prevailing oracle price when the governance vote to set the cap lands. For TRAC at $840k/24h cap: if TRAC trades around $7 at vote time, that's a `cap = 120_000` (TRAC units) value written to storage. The cap stays in token units forever after; if TRAC price moves materially, governance re-votes.
-
-**Caveat on the recent-month volume spikes.** Monthly volume in 2026-04 was $36.07M, in 2025-10 was $84.35M, against a 6-month median of ~$13M. The tier-A and tier-B caps are deliberately permissive enough to tolerate spikes of this scale: a $36M month spread across 30 days is ~$50k/hour aggregate, well below even the smaller per-asset caps. Per-asset distribution of those spike months should be checked to confirm no individual asset would have tripped its cap during them; that is part of why the initial values should be re-tuned from real telemetry.
+Once telemetry is available, the §Layer 1 formula becomes the canonical input and governance re-tunes from it. The fraction-of-TVL heuristic is a bootstrap, not a permanent calibration.
 
 ### Observability and alerting
 
@@ -186,8 +212,7 @@ event CapTripped(
 
 event CapLifted(
     address indexed token,
-    uint8 indexed class,
-    uint8 reason             // 0 = governance reset, 1 = lockdownUntil reached
+    uint8 indexed class
 );
 ```
 
@@ -195,8 +220,7 @@ event CapLifted(
 
 * `CapApproaching`, `info` level, log + Slack channel.
 * `CapTripped`, `critical` level, page on-call + auto-create incident ticket.
-* `CapLifted` with `reason == 0`, `info`, confirms governance reset landed.
-* `CapLifted` with `reason == 1`, `warning`, the backstop fired without governance acting; worth a post-mortem.
+* `CapLifted`, `info`, confirms the 24-hour auto-lift fired. A trip + lift pair without an emergency-pause `trigger()` in between is worth a post-mortem.
 
 **AH-frontend secondary (FRAME events):**
 
@@ -204,36 +228,23 @@ event CapLifted(
 pub enum Event<T: Config> {
     CapApproaching { asset: AssetId, net_flow: Balance, cap: Balance },
     CapTripped { asset: AssetId, net_flow: Balance, cap: Balance, lockdown_until: BlockNumberFor<T> },
-    CapLifted { asset: AssetId, reason: LiftReason },
+    CapLifted { asset: AssetId },
 }
 ```
-
-**BH message-rate-cap secondary (FRAME events):**
-
-```rust
-pub enum Event<T: Config> {
-    MessageRateCapApproaching { rate: u32, cap: u32 },
-    MessageRateCapTripped { rate: u32, cap: u32, lockdown_until: BlockNumberFor<T> },
-    MessageRateCapLifted { reason: LiftReason },
-}
-```
-
-Aggregate, so one stream of events to watch. Higher false-positive surface, alert policy should tolerate occasional trips without paging, escalating only on repeated trips within a short window.
 
 ## Drawbacks
 
 * **Calibration uncertainty.** The TVL-fraction starting caps are a heuristic stand-in for the trailing-7-day-median formula because per-asset volume telemetry isn't publicly available. Until live data is collected and the formula recalibrated, some risk of false positives during legitimate spikes remains.
 * **Gas overhead on capped assets.** ~10-15k extra gas per ERC20 release / PNA mint of a capped asset. Falls hardest on small transfers (proportionally), with a possible perverse incentive pushing small transfers toward uncapped assets.
 * **Per-asset operational overhead.** Each capped asset needs a governance vote to set its initial cap and another to re-tune; that's ongoing operator time.
-* **Cap trip can lock funds during a false positive.** A legitimate but anomalous spike can lock down an asset until governance acts. The weeks-scale backstop limits the worst case but a multi-day lockup is uncomfortable.
+* **Cap trip can lock funds during a false positive.** A legitimate but anomalous spike can lock down an asset until governance acts. The 24-hour auto-lift bounds the worst case but a day of lockup is still uncomfortable.
 * **Aggregate USD blind spot.** Per-asset caps don't catch multi-asset coordinated drains where each individual asset stays under its cap. Documented as a follow-up.
 
 ## Testing, Security, and Privacy
 
-* **Gateway unit tests** for the rolling-bucket window arithmetic (correct sliding-sum across hour boundaries), `None`-cap short-circuit, lockdown behavior, governance-reset path, and the lockdown-until backstop.
+* **Gateway unit tests** for the rolling-bucket window arithmetic (correct sliding-sum across hour boundaries), `None`-cap short-circuit, lockdown behavior, governance-reset path, and the `lockdownUntil` auto-lift.
 * **AH-frontend pallet tests** for cap accounting on `ExportMessage` and trip behavior on the `PausableExporter` integration.
-* **BH outbound-queue tests** for the aggregate message-rate cap.
-* **End-to-end simulation** (chopsticks fork): single-tx > cap, slow drain just under per-hour rate, two-way arbitrage staying net-zero, governance reset while halted (verifies the inbound dispatch path lands the reset regardless of operating mode).
+* **End-to-end simulation** (chopsticks fork): single-tx > cap, slow drain just under per-hour rate, two-way arbitrage staying net-zero, trip-then-24h-auto-lift across the rolling-window boundary.
 * **Reorg behavior on Gateway** for the rolling-bucket window: bucket writes happen inside the dispatched message tx, so they roll back with reorgs naturally; testing should confirm no double-counting on reorg recovery.
 * **Security posture:** the cap layer is purely additive defense. It cannot enable a drain that the existing security model wouldn't allow; its only failure modes are (a) failing to trip on a real attack, and (b) tripping on a legitimate flow. Both are calibration issues, not authentication or authorization issues.
 * **No new privacy surface.** All events public; no caller identity tracked beyond what the existing Snowbridge events already expose.
@@ -254,9 +265,9 @@ Operator-facing: cap configuration is a governance-driven workflow. The relayer-
 
 ### Compatibility
 
-* **Gateway:** requires a contract upgrade adding storage fields (`cap`, `bucket counters`, `lockdownUntil`), a new inbound command (`CommandV1.ResetCap`, V1 only), and rate-tracking inside `submitV1` / `submitV2` dispatch handlers for the release / mint paths. No breaking ABI changes for existing callers. The reset command is routed through V1 only, leveraging V1's `PRIMARY_GOVERNANCE_CHANNEL` bypass at the BH outbound queue, the same Option A reasoning as the companion pause-pallet RFC's call 7. Adding a `CommandV2.ResetCap` is deferred to V1 deprecation, at which point the V2 outbound queue will also gain its governance bypass.
+* **Gateway:** requires a contract upgrade adding storage fields (`cap`, `bucket counters`, `lockdownUntil`), rate-tracking in `submitV1` / `submitV2`, and a new V2 inbound command `CommandV2.SetCap(asset, class, value)` for governance to set and update cap values (see §"Initial calibration approach"). The cap storage is shared between V1 and V2 dispatch paths, so setting it via the V2 command flips the cap for both directions. The cap check fires *before* nonce increment so a cap-tripped message is deferred rather than consumed, no asymmetric state with the AH-side burn; see §"Stuck messages and stale fees" for the full reasoning and the fee-top-up fallback. No breaking ABI changes for existing callers. There is no `ResetCap` command, see §"Layer 1" for why a manual reset would be structurally unreachable given the 24-hour auto-lift.
+* **BridgeHub (`snowbridge-pallet-system-v2`):** a new extrinsic `set_cap(asset, class, value)` lets governance issue the corresponding `CommandV2.SetCap` to the Gateway. Same shape as the existing `set_operating_mode` extrinsic on `snowbridge-pallet-system-v2`. Root-only origin, consistent with other Gateway-configuration commands.
 * **AH frontend:** new pallet (`snowbridge-pallet-rate-limit`) wired into the existing `PausableExporter`. No migration; new state defaults to "no cap configured".
-* **BH:** message-rate counter added to the outbound queue pallet. No migration.
 
 ## Prior Art and References
 
@@ -270,16 +281,9 @@ Operator-facing: cap configuration is a governance-driven workflow. The relayer-
 * **Threshold for opting an asset into a cap.** A "total locked value > N x 100k DOT" rule works as a starting heuristic but ignores assets that are low-TVL but high-volume. Worth refining once there's a year of data.
 * **Inflow-side credit timing.** Should inflow credit the cap immediately at deposit, or only after some confirmation period? If immediate, a wash-trading attacker could inflate their cap budget by depositing-then-immediately-withdrawing the same asset, paying only gas. Probably need a small inflow delay (a few minutes) before the deposit counts toward the cap.
 * **Gas-cost regressivity for capped assets.** Whether the ~10-15k overhead meaningfully shifts the smallest-economical-transfer threshold, and whether that produces a perverse incentive toward uncapped assets for small transfers.
-* **Reset preimage authoring vs on-chain reset extrinsic.** Two paths are available for issuing the `ResetCap` command:
-  * Build it as a governance XCM preimage in the Snowbridge SDK alongside the existing halt/unhalt preimages, submit via OpenGov (hours).
-  * Add an `on_chain_reset_cap(asset, class)` extrinsic on a BH pallet, callable by Fellowship XCM voice (minutes), which builds and dispatches the V1 outbound governance command from pallet code.
-
-  The companion pause-pallet RFC moves halt/resume on-chain into a pallet for permissionless-speed (halt) and Fellowship-XCM-voice-speed (resume). The case for the same move on cap-reset is weaker: cap-reset is fundamentally a deliberate Fellowship decision after investigating *why* the cap tripped, and "wait for OpenGov" arguably is the right cadence rather than a misfeature. SDK-only is the proposed starting point; an on-chain reset extrinsic is a future direction if operational experience shows the OpenGov path is too slow in practice.
-
 ## Future Directions and Related Material
 
 * **Global aggregate USD cap as a third parallel layer.** Catches multi-asset coordinated drains. Would pull an oracle into the path but as a *parallel* check, not replacing the per-asset caps, so oracle manipulation can't bypass the primary defense.
 * **Auto-calibration.** Once per-asset trailing-7-day-median telemetry is observable, the formula `cap = max(5x median, floor)` could be re-applied periodically via a governance batch, replacing the initial TVL-fraction heuristic.
 * **Asset-class default caps at registration.** Add an "asset class" field to the asset registry (stablecoin, ETH-LST, long-tail, etc.) with a per-class default cap multiplier so new asset listings auto-cap at a sensible starting value pending governance refinement.
-* **V2 outbound queue governance bypass (V1-deprecation follow-up).** Cap-reset currently routes through V1's `EthereumSystem`. When V1 is deprecated, `CommandV2.ResetCap` will need to exist on the Gateway and the V2 outbound queue will need to gain a governance bypass on its send path. Tracked in tandem with the equivalent follow-up in the [Snowbridge Emergency Pause Pallet RFC](./0166-snowbridge-emergency-pause-pallet.md) (PR #166).
 * **Companion RFC:** the [Snowbridge Emergency Pause Pallet RFC](./0166-snowbridge-emergency-pause-pallet.md) (PR #166) specifies the reactive layer that this preventive layer composes with.
