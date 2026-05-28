@@ -1,4 +1,4 @@
-# RFC-XXXX: Snowbridge Emergency Pause Pallet
+# RFC-0166: Snowbridge Emergency Pause Pallet
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
