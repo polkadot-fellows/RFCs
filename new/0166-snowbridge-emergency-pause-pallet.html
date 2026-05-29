@@ -1,0 +1,477 @@
+
+<!DOCTYPE HTML>
+<html lang="en" class="polkadot" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>RFC-0166: Snowbridge Emergency Pause Pallet - Polkadot Fellowship RFCs</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="An online book of RFCs approved or proposed within the Polkadot Fellowship.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/polkadot.css">
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "polkadot" : "polkadot";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('polkadot')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../introduction.html">Introduction</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Newly Proposed</li><li class="chapter-item expanded "><a href="../new/0166-snowbridge-emergency-pause-pallet.html" class="active">RFC-0166: Snowbridge Emergency Pause Pallet</a></li><li class="chapter-item expanded "><a href="../new/0167-snowbridge-circuit-breakers.html">RFC-0167: Snowbridge Circuit Breakers</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Proposed</li><li class="chapter-item expanded "><a href="../proposed/0000-pq_accounts.html">RFC-0000: Hybrid post-quantum accounts (DRAFT)</a></li><li class="chapter-item expanded "><a href="../proposed/0104-stale-nomination-reward-curve.html">RFC-0104: Stale Nomination Reward Curve</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Approved</li><li class="chapter-item expanded "><a href="../approved/0001-agile-coretime.html">RFC-1: Agile Coretime</a></li><li class="chapter-item expanded "><a href="../approved/0005-coretime-interface.html">RFC-5: Coretime Interface</a></li><li class="chapter-item expanded "><a href="../approved/0007-system-collator-selection.html">RFC-0007: System Collator Selection</a></li><li class="chapter-item expanded "><a href="../approved/0008-parachain-bootnodes-dht.html">RFC-0008: Store parachain bootnodes in relay chain DHT</a></li><li class="chapter-item expanded "><a href="../approved/0009-improved-net-light-client-requests.html">RFC-0009: Improved light client requests networking protocol</a></li><li class="chapter-item expanded "><a href="../approved/0010-burn-coretime-revenue.html">RFC-0010: Burn Coretime Revenue</a></li><li class="chapter-item expanded "><a href="../approved/0012-process-for-adding-new-collectives.html">RFC-0012: Process for Adding New System Collectives</a></li><li class="chapter-item expanded "><a href="../approved/0013-prepare-blockbuilder-and-core-runtime-apis-for-mbms.html">RFC-0013: Prepare Core runtime API for MBMs</a></li><li class="chapter-item expanded "><a href="../approved/0014-improve-locking-mechanism-for-parachains.html">RFC-0014: Improve locking mechanism for parachains</a></li><li class="chapter-item expanded "><a href="../approved/0017-coretime-market-redesign.html">RFC-0017: Coretime Market Redesign</a></li><li class="chapter-item expanded "><a href="../approved/0022-adopt-encointer-runtime.html">RFC-0022: Adopt Encointer Runtime</a></li><li class="chapter-item expanded "><a href="../approved/0026-sassafras-consensus.html">RFC-0026: Sassafras Consensus Protocol</a></li><li class="chapter-item expanded "><a href="../approved/0032-minimal-relay.html">RFC-0032: Minimal Relay</a></li><li class="chapter-item expanded "><a href="../approved/0042-extrinsics-state-version.html">RFC-0042: Add System version that replaces StateVersion on RuntimeVersion</a></li><li class="chapter-item expanded "><a href="../approved/0043-storage-proof-size-hostfunction.html">RFC-0043: Introduce storage_proof_size Host Function for Improved Parachain Block Utilization</a></li><li class="chapter-item expanded "><a href="../approved/0045-nft-deposits-asset-hub.html">RFC-0045: Lowering NFT Deposits on Asset Hub</a></li><li class="chapter-item expanded "><a href="../approved/0047-assignment-of-availability-chunks.html">RFC-0047: Assignment of availability chunks to validators</a></li><li class="chapter-item expanded "><a href="../approved/0048-session-keys-runtime-api.html">RFC-0048: Generate ownership proof for SessionKeys</a></li><li class="chapter-item expanded "><a href="../approved/0050-fellowship-salaries.html">RFC-0050: Fellowship Salaries</a></li><li class="chapter-item expanded "><a href="../approved/0056-one-transaction-per-notification.html">RFC-0056: Enforce only one transaction per notification</a></li><li class="chapter-item expanded "><a href="../approved/0059-nodes-capabilities-discovery.html">RFC-0059: Add a discovery mechanism for nodes based on their capabilities</a></li><li class="chapter-item expanded "><a href="../approved/0078-merkleized-metadata.html">RFC-0078: Merkleized Metadata</a></li><li class="chapter-item expanded "><a href="../approved/0084-general-transaction-extrinsic-format.html">RFC-0084: General transactions in extrinsic format</a></li><li class="chapter-item expanded "><a href="../approved/0091-dht-record-creation-time.html">RFC-0091: DHT Authority discovery record creation time</a></li><li class="chapter-item expanded "><a href="../approved/0097-unbonding_queue.html">RFC-0097: Unbonding Queue</a></li><li class="chapter-item expanded "><a href="../approved/0099-transaction-extension-version.html">RFC-0099: Introduce a transaction extension version</a></li><li class="chapter-item expanded "><a href="../approved/0100-xcm-multi-type-asset-transfer.html">RFC-0100: New XCM instruction: InitiateAssetsTransfer</a></li><li class="chapter-item expanded "><a href="../approved/0101-xcm-transact-remove-max-weight-param.html">RFC-0101: XCM Transact remove require_weight_at_most parameter</a></li><li class="chapter-item expanded "><a href="../approved/0103-introduce-core-index-commitment.html">RFC-0103:  Introduce a CoreIndex commitment and a SessionIndex field in candidate receipts</a></li><li class="chapter-item expanded "><a href="../approved/0105-xcm-improved-fee-mechanism.html">RFC-0105: XCM improved fee mechanism</a></li><li class="chapter-item expanded "><a href="../approved/0107-xcm-execution-hints.html">RFC-0107: XCM Execution hints</a></li><li class="chapter-item expanded "><a href="../approved/0108-xcm-remove-testnet-ids.html">RFC-0108: Remove XCM testnet NetworkIds</a></li><li class="chapter-item expanded "><a href="../approved/0122-alias-origin-on-asset-transfers.html">RFC-0122: Asset transfers can alias XCM origin on destination to original origin</a></li><li class="chapter-item expanded "><a href="../approved/0123-pending-code-as-storage-location-for-runtime-upgrades.html">RFC-0123: Introduce :pending_code as intermediate storage key for the runtime code</a></li><li class="chapter-item expanded "><a href="../approved/0125-xcm-asset-metadata.html">RFC-0125: XCM Asset Metadata</a></li><li class="chapter-item expanded "><a href="../approved/0126-introduce-pvq.html">RFC-0126: Introduce PVQ (PolkaVM Query)</a></li><li class="chapter-item expanded "><a href="../approved/0135-compressed-blob-prefixes.html">RFC-0135: Compressed Blob Prefixes</a></li><li class="chapter-item expanded "><a href="../approved/0139-faster-erasure-coding.html">RFC-0139: Faster Erasure Coding</a></li><li class="chapter-item expanded "><a href="../approved/0145-remove-unnecessary-allocator-usage.html">RFC-0145: Remove the host-side runtime memory allocator</a></li><li class="chapter-item expanded "><a href="../approved/0146-deflationary-fee-proposal.html">RFC-0146: Deflationary Transaction Fee Model for the Relay Chain and its System Parachains</a></li><li class="chapter-item expanded "><a href="../approved/0149-rfc-1-renewal-adjustment.html">RFC-0149: Renewal Adjustment</a></li><li class="chapter-item expanded "><a href="../approved/0150-voting-while-delegating.html">RFC-150: Allow Voting While Delegating</a></li><li class="chapter-item expanded "><a href="../approved/0156-bls-signatures.html">RFC-0156: Add BLS12-381 Host Functions</a></li><li class="chapter-item expanded "><a href="../approved/0163-ec-host-functions.html">RFC-0163: Elliptic Curves Host Functions</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Stale</li><li class="chapter-item expanded "><a href="../stale/0000-pre-elves_soft.html">RFC-0000: Pre-ELVES soft concensus</a></li><li class="chapter-item expanded "><a href="../stale/0000-rewards.html">RFC-0000: Validator Rewards</a></li><li class="chapter-item expanded "><a href="../stale/0004-remove-unnecessary-allocator-usage.html">RFC-0004: Remove the host-side runtime memory allocator</a></li><li class="chapter-item expanded "><a href="../stale/0074-stateful-multisig-pallet.html">RFC-0074: Stateful Multisig Pallet</a></li><li class="chapter-item expanded "><a href="../stale/0102-offchain-parachain-runtime-upgrades.html">RFC-0000: Feature Name Here</a></li><li class="chapter-item expanded "><a href="../stale/0106-xcm-remove-fees-mode.html">RFC-0106: Remove XCM fees mode</a></li><li class="chapter-item expanded "><a href="../stale/0111-pure-proxy-replication.html">RFC-0111: Pure Proxy Replication</a></li><li class="chapter-item expanded "><a href="../stale/0112-compress-state-response-message-in-state-sync.html">RFC-0112: Compress the State Response Message in State Sync</a></li><li class="chapter-item expanded "><a href="../stale/0117-unbrick-collective.html">RFC-0117: The Unbrick Collective</a></li><li class="chapter-item expanded "><a href="../stale/0124-extrinsic-version-5.html">RFC-0124: Extrinsic version 5</a></li><li class="chapter-item expanded "><a href="../stale/0138-invulnerable-collator-election.html">RFC-0138: Election mechanism for invulnerable collators on system chains</a></li><li class="chapter-item expanded "><a href="../stale/0154-multi-slot-aura.html">RFC-0154: AURA Multi-Slot Collation </a></li><li class="chapter-item expanded "><a href="../stale/0158-storage-proof-size-v2.html">RFC-0158: Storage Proof Size Host Function Version 2</a></li><li class="chapter-item expanded "><a href="../stale/0159-spend-canceller-track.html">RFC-0000: Spend Canceller Track</a></li><li class="chapter-item expanded "><a href="../stale/0160-pub-sub-mechanism.html">RFC-0160: PubSub Mechanism</a></li><li class="chapter-item expanded "><a href="../stale/0161-discussion-phase-for-opengov-referenda.html">RFC-0161: Discussion Period for OpenGov Referenda</a></li><li class="chapter-item expanded "><a href="../stale/0162-antitrust-omnibus.html">RFC-0162: The Ecosystem Anti-Trust & Market Structure Omnibus</a></li><li class="chapter-item expanded "><a href="../stale/0164-aura-allow-anyone-to-author-blocks.html">RFC-0164: Aura: Allow anyone to produce blocks after a downtime</a></li><li class="chapter-item expanded "><a href="../stale/xxxx-improve-the-security-of-proof-of-possession.html">RFC-XXXX: Adding customized mandatory context to proof of possession statement</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="polkadot">Polkadot</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Polkadot Fellowship RFCs</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <p><a href="https://github.com/polkadot-fellows/RFCs/pull/166">(source)</a></p>
+<p><strong>Table of Contents</strong></p>
+<ul>
+<li><a href="#rfc-0166-snowbridge-emergency-pause-pallet">RFC-0166: Snowbridge Emergency Pause Pallet</a>
+<ul>
+<li><a href="#summary">Summary</a></li>
+<li><a href="#motivation">Motivation</a></li>
+<li><a href="#stakeholders">Stakeholders</a></li>
+<li><a href="#explanation">Explanation</a>
+<ul>
+<li><a href="#goal">Goal</a></li>
+<li><a href="#the-seven-halt-calls">The seven halt calls</a></li>
+<li><a href="#why-best-effort-everywhere">Why best-effort everywhere</a></li>
+<li><a href="#resuming-the-bridge">Resuming the bridge</a></li>
+<li><a href="#pallet-structure">Pallet structure</a></li>
+<li><a href="#what-we-reuse-from-prior-work">What we reuse from prior work</a></li>
+<li><a href="#threat-model-coverage">Threat model coverage</a></li>
+<li><a href="#what-the-halt-does-not-cover">What the halt does not cover</a></li>
+</ul>
+</li>
+<li><a href="#drawbacks">Drawbacks</a></li>
+<li><a href="#testing-security-and-privacy">Testing, Security, and Privacy</a></li>
+<li><a href="#performance-ergonomics-and-compatibility">Performance, Ergonomics, and Compatibility</a>
+<ul>
+<li><a href="#performance">Performance</a></li>
+<li><a href="#ergonomics">Ergonomics</a></li>
+<li><a href="#compatibility">Compatibility</a></li>
+</ul>
+</li>
+<li><a href="#prior-art-and-references">Prior Art and References</a></li>
+<li><a href="#unresolved-questions">Unresolved Questions</a></li>
+<li><a href="#future-directions-and-related-material">Future Directions and Related Material</a></li>
+</ul>
+</li>
+</ul>
+<h1 id="rfc-0166-snowbridge-emergency-pause-pallet"><a class="header" href="#rfc-0166-snowbridge-emergency-pause-pallet">RFC-0166: Snowbridge Emergency Pause Pallet</a></h1>
+<div class="table-wrapper"><table><thead><tr><th></th><th></th></tr></thead><tbody>
+<tr><td><strong>Start Date</strong></td><td>2026-05-28</td></tr>
+<tr><td><strong>Description</strong></td><td>A permissionless, deposit-gated emergency pause for Snowbridge that halts both sides of the bridge via best-effort calls with on-chain retry, resolved by Fellowship.</td></tr>
+<tr><td><strong>Authors</strong></td><td>Snowbridge team</td></tr>
+</tbody></table>
+</div>
+<h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
+<p>Add a new FRAME pallet to BridgeHub (<code>snowbridge-pallet-emergency-pause</code>) that lets any account post a configured deposit (suggested to be 100,000 DOT) to halt Snowbridge end-to-end. The halt is a best-effort sequence of seven side-effecting calls (five BridgeHub-local, one XCM to AssetHub, one outbound governance command to the Ethereum Gateway) with <code>on_initialize</code> retry of any leg that fails to land. Fellowship resolves the trigger as genuine (refund) or malicious (slash to treasury); a time-based (suggested 7 days) on-chain backstop refunds and resets only if Fellowship is incapacitated. This is the reactive half of a two-layer halt strategy; see the companion Snowbridge Circuit Breakers RFC (TBA) for the preventive half.</p>
+<h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
+<p>Snowbridge has no fast, broadly-accessible halt path today. Existing governance halt routes require a referendum (hours-to-days latency) or Fellowship action (minutes-to-hours, and only if Fellowship is reachable). Both are too slow for an active drainage exploit and too high-friction for &quot;stop new activity while we investigate&quot;.</p>
+<p>Two pieces of prior work in the Fellowship are relevant but do not solve Snowbridge's halt needs:</p>
+<ul>
+<li><a href="https://github.com/polkadot-fellows/runtimes/issues/1089">polkadot-fellows/runtimes #1089</a>, proposing deployment of <code>pallet-tx-pause</code> and <code>pallet-safe-mode</code> across system chains.</li>
+<li><a href="https://github.com/polkadot-fellows/runtimes/pull/1164">polkadot-fellows/runtimes #1164</a> (draft), wiring <code>pallet-safe-mode</code> into AssetHub with a 100k DOT permissionless trigger.</li>
+</ul>
+<p>Neither fits Snowbridge:</p>
+<ul>
+<li><strong>Blast radius is wrong.</strong> <code>pallet-safe-mode</code> installs a chain-wide <code>BaseCallFilter</code>. On BridgeHub that would freeze Kusama-side bridging, identity, governance proxies, etc., not just Snowbridge.</li>
+<li><strong>No outbound side-effects.</strong> Safe-mode is a passive filter. It cannot emit the XCM to AssetHub that halts <code>snowbridgeSystemFrontend</code>, and it cannot queue the outbound governance command that flips the Ethereum Gateway's operating mode.</li>
+<li><strong>Wrong release semantics.</strong> Safe-mode's <code>EnterDuration</code> is days-scale, with auto-resume as the normal exit path. For a multi-million-TVL bridge, auto-resuming under an active attack is more dangerous than staying paused; the duration must be a long backstop, not the expected exit.</li>
+<li><strong><code>pallet-tx-pause</code> requires Fellowship origin</strong> for trigger and has no Currency coupling for a deposit.</li>
+</ul>
+<p>What's needed: a Snowbridge-specific halt with a permissionless economic trigger that executes the different halting mechanisms, a longer halt window, and Fellowship-driven genuine/malicious classification.</p>
+<h2 id="stakeholders"><a class="header" href="#stakeholders">Stakeholders</a></h2>
+<ul>
+<li><strong>Polkadot Fellowship</strong>, the <code>ResolveOrigin</code> and the body that decides between genuine vs malicious triggers.</li>
+<li><strong>Snowbridge maintainers</strong>, who implement and operate the halt path.</li>
+<li><strong>Snowbridge users and integrators</strong>, who experience a halt as the bridge being closed at submit time on both Ethereum and AssetHub.</li>
+<li><strong>Polkadot Treasury</strong>, the destination of slashed deposits on malicious triggers.</li>
+<li><strong>Security researchers and watchdog operators</strong>, the most likely callers of a permissionless trigger during an incident.</li>
+</ul>
+<h2 id="explanation"><a class="header" href="#explanation">Explanation</a></h2>
+<h3 id="goal"><a class="header" href="#goal">Goal</a></h3>
+<p>A permissionless 100,000 DOT deposit triggers a complete Snowbridge halt, in response to possible exploit (stop new activity while investigating) and active exploits (attacker is actively draining value).</p>
+<h3 id="the-seven-halt-calls"><a class="header" href="#the-seven-halt-calls">The seven halt calls</a></h3>
+<p>The pallet adds one new extrinsic to BridgeHub, <code>trigger()</code>. It is permissionless, gated only by a 100,000 DOT reservable deposit. On a successful call it reserves the deposit, transitions state to <code>Triggered</code>, and dispatches the seven halt calls below in priority order. Six of the seven are the same <code>set_operating_mode</code> extrinsics that root-level governance halts use today; the new pallet becomes an additional (deposit-gated, permissionless) caller of them. The seventh, <code>EthereumOutboundQueueV2::set_operating_mode(Halted)</code>, is a new extrinsic this RFC requires on the V2 outbound queue. V2's pause architecture is single-chokepoint at AssetHub: <code>snowbridge-pallet-system-frontend</code> owns the operating mode, and the AH XCM router's <code>PausableExporter</code> checks it at <code>validate()</code> time, so a halted frontend means V2 messages never reach BridgeHub at all, making a BH-local mode redundant in the steady state. The emergency-pause use case introduces a new reason for it: during the ~1-2 min window between <code>trigger()</code> and the cross-chain AH frontend halt (call 6) actually landing, V2 messages users submit on AH still pass <code>PausableExporter</code> (the frontend is still <code>Normal</code>), wrap into <code>ExportMessage</code>, ride XCMP to BH, and queue in V2 outbound with no check. The new BH-local mode closes that window symmetrically with how call 3 does for V1.</p>
+<p>None of the seven calls block the trigger: the pallet attempts each, logs successes and failures, and re-attempts pending legs in later blocks via <code>on_initialize</code>.</p>
+<p>BridgeHub-local calls are fired first because they are synchronous local writes with no cross-chain dependency, so they typically land in the same block as the trigger. <strong>This serves as an immediate hard-stop of any asset flow through the bridge.</strong> It could cause asymmetry in bridge assets (e.g. funds locked on Ethereum but not minted on AssetHub), but this is preferable to more possible illegitimate transactions being processed through the bridge. The two cross-chain calls depend on HRMP delivery and BEEFY relay respectively, so they take ~1-2 min when everything is healthy and can take longer or fail entirely under congestion.</p>
+<ol>
+<li><code>EthereumInboundQueue::set_operating_mode(Halted)</code> (BH local), blocks E→P V1 dispatch on Polkadot. Covers inbound-queue exploits and any in-flight V1 message arriving before the Gateway halt lands.</li>
+<li><code>EthereumInboundQueueV2::set_operating_mode(Halted)</code> (BH local), same for V2.</li>
+<li><code>EthereumOutboundQueue::set_operating_mode(Halted)</code> (BH local), rejects V1 P→E exports when AH's XCM <code>ExportMessage</code> lands on BH. Closes the gap between trigger time and the AH frontend halt landing.</li>
+<li><code>EthereumOutboundQueueV2::set_operating_mode(Halted)</code> (BH local, new). Same as call 3 but for V2 P→E exports. Closes the symmetric in-flight gap before the Gateway halt lands on Ethereum.</li>
+<li><code>EthereumBeaconClient::set_operating_mode(Halted)</code> (BH local), stops new beacon-header ingestion. Doesn't gate dispatch directly (calls 1 and 2 already do) but it's a cheap defense-in-depth lever for the case where the exploit IS the beacon client.</li>
+<li>AH <code>snowbridgeSystemFrontend::set_operating_mode(Halted)</code> (XCM Transact from BH). Blocks AH users and parachains from even attempting P→E sends.</li>
+<li>Outbound governance command via <code>EthereumSystem</code> (V1 path only) flipping the Ethereum Gateway to <code>OperatingMode::RejectingOutboundMessages</code>. With Fiat-Shamir-assisted BEEFY verification this lands on Ethereum in ~1-2 min instead of ~20 min. The V1 path is used because its <code>PRIMARY_GOVERNANCE_CHANNEL</code> already bypasses the V1 outbound queue halt (<code>pallets/outbound-queue/src/send_message_impl.rs:79</code>), so call 3 does not block call 7. Routing this command through <code>EthereumSystemV2</code> is not used because the V2 outbound queue has no governance bypass today, and adding one is more invasive than reusing the V1 governance path. The Gateway has a single shared <code>mode</code> storage (<code>Gateway.sol:247</code>) used by both V1 and V2 dispatch, so writing it via V1 flips it for both. See §&quot;Compatibility&quot; and §&quot;Future Directions&quot; for the V1-deprecation follow-up. No relayer change is required: the existing primary and secondary governance relayer instances (<code>PRIMARY_GOVERNANCE_RELAY_*</code> / <code>SECONDARY_GOVERNANCE_RELAY_*</code> in <code>relayer/.env.mainnet.example</code>) are pinned to <code>PRIMARY_GOVERNANCE_CHANNEL_ID</code> and run as independent services from per-parachain user-message relayers, so they pick up the SetOperatingMode commitment on their next scan without competing for compute or Ethereum gas budget; the dominant latency variable is BEEFY proof availability, not relayer prioritization.</li>
+</ol>
+<h3 id="why-best-effort-everywhere"><a class="header" href="#why-best-effort-everywhere">Why best-effort everywhere</a></h3>
+<p>All seven calls are best-effort: any one of them failing does not abort <code>trigger()</code> or revert the others. The motivating failure mode is the XCM Transact to AH (call 6), which depends on the BH outbound HRMP queue having capacity. Under congestion, the same congestion an active incident might be causing, that send can fail. If the trigger were all-or-nothing, the whole halt would revert and the bridge would stay open at exactly the moment we need it closed. With best-effort, whichever calls land at trigger time take effect; the rest are retried by <code>on_initialize</code>. Worst case: &quot;the bridge is closed via whatever subset landed, and the remaining levers retry on subsequent blocks&quot;.</p>
+<p>The BH-local calls are synchronous storage writes on the same chain as the pallet, so they should always succeed; treating them as best-effort too doesn't change behavior in the common case, it just removes a class of &quot;trigger reverted because of an edge case nobody anticipated&quot; outcomes.</p>
+<h3 id="resuming-the-bridge"><a class="header" href="#resuming-the-bridge">Resuming the bridge</a></h3>
+<p>Resume is the symmetric inverse of the halt: a <code>set_operating_mode(Normal)</code> on each of the BH-local pallets that were halted, an XCM Transact to AH flipping <code>snowbridge-pallet-system-frontend</code> back to <code>Normal</code>, and an outbound governance command flipping the Ethereum Gateway back to <code>OperatingMode::Normal</code>. The pallet exposes this as a single <code>resume()</code> extrinsic, callable by <code>ResolveOrigin</code> (Fellowship XCM voice). It uses the same <code>LocalOperatingMode</code> / <code>AssetHubXcmSender</code> / <code>GatewayOperatingModeSender</code> plumbing as <code>trigger()</code>, just with <code>Normal</code> instead of <code>Halted</code>, including the same best-effort, <code>on_initialize</code> retry loop.</p>
+<p>Encoding resume on-chain in this pallet (rather than relying solely on an external SDK preimage tool to assemble the seven calls) means the resume logic is versioned and tested alongside the halt logic. If the set of pallets that need flipping ever changes (e.g., a new outbound queue version is added), <code>trigger()</code> and <code>resume()</code> move together as one pallet upgrade; there is no second artifact to keep in sync.</p>
+<p>The pallet has three resume paths, with different policies for who resumes the bridge:</p>
+<ul>
+<li><strong><code>resolve_genuine</code></strong>: the pallet refunds the deposit and transitions to <code>Normal</code>, but does <strong>not</strong> auto-resume. The trigger was a legitimate incident response, so resuming requires an explicit <code>resume()</code> call once the underlying issue is fixed. Fellowship issues <code>resume()</code> when ready; this is fast (Fellowship XCM voice, the same path as the resolve calls) and keeps incident-response decisions deliberate.</li>
+<li><strong><code>resolve_malicious</code></strong>: slashes the deposit and transitions directly to <code>Resuming</code>. The bridge auto-resumes via <code>on_initialize</code> without waiting on a separate <code>resume()</code> call. The trigger was bogus, so no separate decision is needed.</li>
+<li><strong>Backstop timeout</strong>: refunds the deposit, transitions to <code>Resuming</code>, and auto-resumes (same shape as <code>resolve_malicious</code> for the resume side). The reasoning: if Fellowship has been unreachable for the full backstop window, the default policy is &quot;the trigger was probably bad&quot;, since a real incident would have been resolved well before then. The per-asset Gateway-side velocity caps from the companion preventive layer remain in force regardless and continue to bound value-at-risk after the bridge resumes.</li>
+</ul>
+<p>The existing SDK governance resume preimage still works and remains the fallback if the pallet itself is somehow wedged (governance can always submit <code>set_operating_mode(Normal)</code> directly to the underlying Snowbridge pallets via root). The <code>resume()</code> extrinsic is the fast, on-chain path for the common case; the SDK preimage is the slow, out-of-band escape hatch.</p>
+<h3 id="pallet-structure"><a class="header" href="#pallet-structure">Pallet structure</a></h3>
+<h4 id="storage"><a class="header" href="#storage">Storage</a></h4>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[pallet::storage]
+pub type State&lt;T: Config&gt; = StorageValue&lt;_, PauseState&lt;T&gt;, ValueQuery&gt;;
+
+pub enum PauseState&lt;T: Config&gt; {
+    /// Pallet idle. The bridge's actual operating mode is independent of this
+    /// and may be either Normal or Halted depending on prior history.
+    Normal,
+    /// A `trigger()` is active. Halt calls in flight or done; awaiting Fellowship resolution.
+    Triggered {
+        who: T::AccountId,
+        at: BlockNumberFor&lt;T&gt;,
+        deadline: BlockNumberFor&lt;T&gt;,
+        deposit: BalanceOf&lt;T&gt;,
+        pending: PendingLegs,
+        last_attempt: BlockNumberFor&lt;T&gt;,
+    },
+    /// A resume is in flight. `on_initialize` retries pending legs until all
+    /// land, then transitions back to `Normal`.
+    Resuming {
+        pending: PendingLegs,
+        last_attempt: BlockNumberFor&lt;T&gt;,
+    },
+}
+
+/// Bitset of bridge legs. In `Triggered` it tracks which halts have not yet
+/// landed; in `Resuming` it tracks which resumes have not yet landed.
+#[derive(Encode, Decode, TypeInfo, Clone, Copy, PartialEq, Eq)]
+pub struct PendingLegs {
+    pub inbound_v1: bool,
+    pub inbound_v2: bool,
+    pub outbound_v1: bool,
+    pub outbound_v2: bool,
+    pub beacon_client: bool,
+    pub ah_frontend: bool,
+    pub gateway: bool,
+}
+
+#[pallet::storage]
+pub type TriggerDeposit&lt;T: Config&gt; =
+    StorageValue&lt;_, BalanceOf&lt;T&gt;, ValueQuery, T::TriggerDeposit&gt;;
+<span class="boring">}</span></code></pre></pre>
+<h4 id="config-trait"><a class="header" href="#config-trait">Config trait</a></h4>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub trait Config: frame_system::Config {
+    type RuntimeEvent: From&lt;Event&lt;Self&gt;&gt; + IsType&lt;&lt;Self as frame_system::Config&gt;::RuntimeEvent&gt;;
+    type Currency: ReservableCurrency&lt;Self::AccountId&gt;;
+    type TriggerDeposit: Get&lt;BalanceOf&lt;Self&gt;&gt;;             // 100_000 DOT
+    type BackstopDuration: Get&lt;BlockNumberFor&lt;Self&gt;&gt;;      // 7 days
+    type ExtendDuration: Get&lt;BlockNumberFor&lt;Self&gt;&gt;;
+    type ResolveOrigin: EnsureOrigin&lt;Self::RuntimeOrigin&gt;; // Fellowship XCM voice
+    type SlashDestination: OnUnbalanced&lt;NegativeImbalanceOf&lt;Self&gt;&gt;; // Treasury
+    type LocalOperatingMode: SnowbridgeLocalOperatingMode;
+    type AssetHubXcmSender: SendXcm;
+    type GatewayOperatingModeSender: OutboundQueue;
+    type RetryBackoff: Get&lt;BlockNumberFor&lt;Self&gt;&gt;;
+}
+<span class="boring">}</span></code></pre></pre>
+<p><code>LocalOperatingMode</code> is a thin trait the runtime implements to call <code>set_operating_mode(mode)</code> on the five BH-local pallets (inbound V1, inbound V2, outbound V1, outbound V2, beacon client), so the new pallet has zero direct dependency on them. The trait exposes per-leg methods, each taking a <code>BasicOperatingMode</code> parameter and returning <code>DispatchResult</code>, so both <code>trigger()</code> (with <code>Halted</code>) and <code>resume()</code> (with <code>Normal</code>) reuse the same plumbing and the pallet can record which legs succeeded and retry only the failed ones. <code>AssetHubXcmSender</code> and <code>GatewayOperatingModeSender</code> follow the same pattern: each accepts a mode and is reused for both directions.</p>
+<h4 id="calls"><a class="header" href="#calls">Calls</a></h4>
+<ul>
+<li><code>trigger()</code>, permissionless. Checks <code>State::Normal</code>, reserves <code>TriggerDeposit</code>, attempts each of the seven halt calls (<code>Halted</code> mode) in priority order, records which succeeded and which are still pending, transitions to <code>Triggered</code>. Emits <code>EmergencyPauseTriggered</code> plus a per-leg <code>HaltSucceeded</code> / <code>HaltFailed { leg, reason }</code>.</li>
+<li><code>resolve_genuine()</code>, <code>ResolveOrigin</code> only. Requires <code>State::Triggered</code>. Unreserves deposit, transitions to <code>Normal</code>. Does not resume Snowbridge; resuming is a separate, explicit call (<code>resume()</code>) so incident response stays deliberate. See §&quot;Resuming the bridge&quot;.</li>
+<li><code>resolve_malicious()</code>, <code>ResolveOrigin</code> only. Requires <code>State::Triggered</code>. Slashes deposit to <code>SlashDestination</code>, transitions to <code>Resuming { pending = all true }</code>. <code>on_initialize</code> then fires the seven resume calls. See §&quot;Resuming the bridge&quot;.</li>
+<li><code>resume()</code>, <code>ResolveOrigin</code> only. Requires <code>State::Normal</code> (i.e., trigger already resolved or never fired). Transitions to <code>Resuming { pending = all true }</code> and fires the seven <code>set_operating_mode(Normal)</code> calls best-effort with retry. Idempotent at the target pallets: calling <code>set_operating_mode(Normal)</code> on a pallet already in <code>Normal</code> is a cheap no-op. Symmetric with <code>trigger()</code>.</li>
+<li><code>force_extend()</code>, <code>ResolveOrigin</code> only. Requires <code>State::Triggered</code>. Pushes <code>deadline</code> out by <code>ExtendDuration</code>.</li>
+</ul>
+<p><code>on_initialize</code> hook:</p>
+<ul>
+<li>While <code>State::Triggered</code>:
+<ul>
+<li>If any halt leg is still pending and at least <code>RetryBackoff</code> blocks have passed since the last attempt, re-attempt just those legs.</li>
+<li>If <code>now &gt;= deadline</code>, unreserve deposit, transition to <code>Resuming { pending = all true }</code>, and emit <code>ResolvedTimeout</code>. The pallet then issues the seven resume calls on the same block (and retries on subsequent blocks if needed). Quorum-failure backstop only. See §&quot;Resuming the bridge&quot;.</li>
+</ul>
+</li>
+<li>While <code>State::Resuming</code>:
+<ul>
+<li>Attempt any pending resume legs subject to <code>RetryBackoff</code>, clearing flags as they succeed and emitting per-leg events.</li>
+<li>Once all legs have landed, transition to <code>Normal</code> and emit <code>ResumeCompleted</code>.</li>
+</ul>
+</li>
+</ul>
+<h4 id="events-and-errors"><a class="header" href="#events-and-errors">Events and errors</a></h4>
+<p>Events: <code>EmergencyPauseTriggered { who, deposit, deadline, pending }</code>, <code>HaltSucceeded { leg }</code>, <code>HaltFailed { leg, reason }</code>, <code>ResolvedGenuine</code>, <code>ResolvedMalicious { slashed }</code>, <code>ResolvedTimeout</code>, <code>Extended { new_deadline }</code>, <code>ResumeStarted</code>, <code>ResumeSucceeded { leg }</code>, <code>ResumeFailed { leg, reason }</code>, <code>ResumeCompleted</code>.</p>
+<p>Errors: <code>AlreadyTriggered</code>, <code>NotTriggered</code>, <code>NotIdle</code> (for <code>resume()</code> when state is not <code>Normal</code>), <code>InsufficientDeposit</code>. There is intentionally no <code>HaltFailed</code> / <code>ResumeFailed</code> error variant; per-leg failures surface as events, not as dispatch errors, because they do not abort the trigger or resume.</p>
+<h3 id="what-we-reuse-from-prior-work"><a class="header" href="#what-we-reuse-from-prior-work">What we reuse from prior work</a></h3>
+<p><strong>From <code>pallet-safe-mode</code> and <a href="https://github.com/polkadot-fellows/runtimes/pull/1164">PR #1164</a>'s AssetHub wiring:</strong> the deposit / reserve / release pattern, the <code>EnsureXcm&lt;IsVoiceOfBody&gt;</code> origin pattern for <code>ResolveOrigin</code>, the 100k DOT deposit calibration, the duration / extension machinery (<code>EnterDuration</code> + <code>ExtendDuration</code> + <code>on_initialize</code> deadline check).</p>
+<p><strong>From <code>pallet-tx-pause</code>:</strong> the (pallet, call) addressing convention as a future direction if a softer per-extrinsic pause is ever wanted, and the runtime-level Fellowship-only call gating model for <code>resolve_*</code>.</p>
+<p><strong>Net code reuse:</strong> the deposit/reserve/slash skeleton and the duration/extension/timeout machinery come from <code>pallet-safe-mode</code>. What we drop is the <code>BaseCallFilter</code> integration. What we add is the seven side-effect hooks (one of which requires a small accompanying change to the V2 outbound queue pallet, see §Compatibility) and the best-effort retry loop in <code>on_initialize</code>.</p>
+<h3 id="threat-model-coverage"><a class="header" href="#threat-model-coverage">Threat model coverage</a></h3>
+<ul>
+<li><strong>E→P entry (Ethereum-side UX)</strong>, Gateway halt (call 7).</li>
+<li><strong>E→P in-flight + inbound-queue exploit</strong>, inbound V1 + V2 halts (calls 1, 2). Critically also covers exploits that bypass the Gateway entirely (malformed proofs, payload-decode bugs, MMR weaknesses).</li>
+<li><strong>P→E new submissions during AH-halt-in-flight window, V1</strong>, outbound V1 halt (call 3).</li>
+<li><strong>P→E new submissions during AH-halt-in-flight window, V2</strong>, outbound V2 halt (call 4).</li>
+<li><strong>P→E entry (AH-side UX)</strong>, AH frontend halt (call 6).</li>
+<li><strong>Beacon-client exploit</strong>, beacon client halt (call 5).</li>
+</ul>
+<h3 id="what-the-halt-does-not-cover"><a class="header" href="#what-the-halt-does-not-cover">What the halt does not cover</a></h3>
+<p>The seven calls block <em>new submissions</em> on both sides. They cannot stop a P→E message that has already passed <code>deliver()</code> and entered the BH MessageQueue before the halt lands. Once a message is in the MessageQueue, the outbound queue's <code>do_process_message</code> (<code>pallets/outbound-queue/src/lib.rs:301</code>, and the V2 equivalent) processes it, builds a merkle commitment, and the message becomes relayable. The Gateway's <code>submitV1</code> / <code>submitV2</code> inbound dispatch path does not check operating mode either, the Gateway's <code>RejectingOutboundMessages</code> mode only gates Ethereum-side senders, not inbound dispatch, so once relayed, the message executes (<code>releaseToken</code> or <code>mintForeignToken</code>) regardless of the halt.</p>
+<p>Concretely: an attacker who has already managed to enqueue a malicious P→E message before the halt lands will still see that message dispatch on Ethereum. The halt only stops <em>future</em> enqueues.</p>
+<p>This residual gap is the explicit motivation for the companion preventive layer. The <a href="TBA">Snowbridge Circuit Breakers RFC</a> specifies per-asset Gateway-side velocity caps that block <code>releaseToken</code> / <code>mintForeignToken</code> at the Gateway itself, regardless of whether the message came through normal flow or the in-flight window of a halt. The halt pallet is the reactive &quot;stop new flow&quot; layer; the circuit breakers are the preventive &quot;stop value extraction&quot; layer. Both are needed for full coverage.</p>
+<h2 id="drawbacks"><a class="header" href="#drawbacks">Drawbacks</a></h2>
+<ul>
+<li><strong>Spam vector mitigated only by deposit.</strong> A determined adversary willing to forfeit 100k DOT can halt the bridge once. The Fellowship-resolved slash makes repeat abuse expensive but a single griefing event is unavoidable. The companion preventive layer reduces the value an attacker gains from the resulting investigation window.</li>
+<li><strong>Per-leg outcome dispersion.</strong> Operators must inspect emitted events to know which legs actually landed. Worst case: a triggered pallet with the Gateway halt still pending for many blocks if the BH outbound queue is congested.</li>
+<li><strong>Bridge recovery before the backstop fires requires a reachable Fellowship.</strong> The only paths back to <code>Normal</code> ahead of the 7-day backstop are <code>resolve_genuine</code> and <code>resolve_malicious</code>, both Fellowship-only. If Fellowship is unreachable at the same time as a bad trigger (a troll halt, a false-alarm halt), the bridge stays halted until the backstop auto-unhalts, up to a week later. Funds aren't lost, but no new transfers move in or out during that window. Intentional bias: auto-resuming too early under an active attack is worse than a week of downtime for legitimate users, but worth noting as a real failure mode.</li>
+<li><strong>Cross-chain calls remain a dependency.</strong> If HRMP between BH and AH is down, the AH frontend halt will never land via <code>on_initialize</code>. The pallet has no in-band escape hatch for this case; Fellowship would need to land a separate runtime call (e.g., re-routing the XCM through an alternate path) outside the pallet's API.</li>
+</ul>
+<h2 id="testing-security-and-privacy"><a class="header" href="#testing-security-and-privacy">Testing, Security, and Privacy</a></h2>
+<ul>
+<li><strong>Per-leg pallet tests</strong> asserting each <code>LocalOperatingMode</code> leg flips the correct storage (in both <code>Halted</code> and <code>Normal</code> directions), and that <code>on_initialize</code> retries the right subset on partial failure for both <code>trigger()</code> and <code>resume()</code>.</li>
+<li><strong>XCM integration tests</strong> with a wedged AH HRMP queue, asserting <code>trigger()</code> still transitions to <code>Triggered</code>, records the AH leg as pending, retries on subsequent blocks, and clears once HRMP drains.</li>
+<li><strong>End-to-end simulation</strong> (chopsticks fork): trigger with all seven legs healthy, with one failed leg, with the BH outbound queue at capacity, with AH unreachable. Each scenario should yield &quot;bridge closed via whatever subset landed, remaining legs pending&quot;.</li>
+<li><strong>Deposit reservation paths</strong> under sufficient/insufficient balance.</li>
+<li><strong>Resolution paths</strong> (<code>resolve_genuine</code>, <code>resolve_malicious</code>, timeout, <code>force_extend</code>).</li>
+<li><strong>No new privacy surface.</strong> All events are public; the deposit caller is already implicit in the transaction signer.</li>
+<li><strong>Security posture:</strong> the pallet creates a new attack surface (anyone with 100k DOT can halt). This is the intended design, calibrated against the asymmetric harm of being unable to halt during an active drainage.</li>
+</ul>
+<h2 id="performance-ergonomics-and-compatibility"><a class="header" href="#performance-ergonomics-and-compatibility">Performance, Ergonomics, and Compatibility</a></h2>
+<h3 id="performance"><a class="header" href="#performance">Performance</a></h3>
+<p>Trigger weight is dominated by the seven side-effect calls. BH-local legs are O(1) storage writes; the AH XCM and Gateway outbound legs queue messages but do not synchronously execute remote logic. <code>on_initialize</code> weight while <code>Triggered</code> is bounded by the per-leg retry cost gated by <code>RetryBackoff</code>, so the steady-state idle cost is reading <code>State</code> and a block-number comparison.</p>
+<h3 id="ergonomics"><a class="header" href="#ergonomics">Ergonomics</a></h3>
+<p>Trigger UX is one extrinsic with 100k DOT in the signer's account. Operator UX during a triggered state is event-driven, the relayer indexer should add <code>EmergencyPauseTriggered</code> and per-leg <code>HaltSucceeded</code> / <code>HaltFailed</code> to its watch set. Fellowship-side, <code>resolve_genuine</code> / <code>resolve_malicious</code> / <code>force_extend</code> follow the same XCM-voice pattern as existing Fellowship governance calls.</p>
+<h3 id="compatibility"><a class="header" href="#compatibility">Compatibility</a></h3>
+<p>One small change is required to an existing Snowbridge pallet: <code>EthereumOutboundQueueV2</code> gains an <code>OperatingMode</code> storage item and a <code>set_operating_mode</code> extrinsic, mirroring the V1 outbound queue but without a governance bypass on the send path. V2 deliberately omitted operating-mode plumbing because its pause architecture is single-chokepoint at the AH frontend's <code>PausableExporter</code>; in the steady state, a halted frontend means nothing reaches BH, so a BH-local check is redundant. This RFC adds the check as defense-in-depth for the brief window during which the cross-chain AH frontend halt is in flight (see §&quot;The seven halt calls&quot; for the full reasoning).</p>
+<p>The V2 send path intentionally does <strong>not</strong> get a <code>PRIMARY_GOVERNANCE_CHANNEL</code>-style governance bypass. The bypass would only matter if call 7 routed through V2's outbound queue, but call 7 routes through V1's <code>EthereumSystem</code> instead, which already has the V1 bypass. The Gateway's shared <code>mode</code> storage means writing it once via V1 flips both V1 and V2 dispatch paths, so the V2 path is unused for governance commands today. This minimizes the V2 outbound queue diff and avoids inventing a new bypass mechanism (V2's <code>Message</code> type carries <code>origin: H256</code> instead of V1's <code>channel_id</code>, so any V2 bypass would be net-new infrastructure). The V1-deprecation follow-up will need to add the V2 bypass at that point, since call 7 will then have to use V2; this is flagged in §&quot;Future Directions&quot;.</p>
+<p>The new storage defaults to <code>Normal</code> so the change is backwards-compatible. No other existing Snowbridge pallet interfaces change. The <code>LocalOperatingMode</code> trait is new and implemented in the runtime. The XCM Transact and Gateway outbound paths use existing pallets and channels. No migration required for the new pallet's <code>State</code> (initial value is <code>Normal</code>).</p>
+<h2 id="prior-art-and-references"><a class="header" href="#prior-art-and-references">Prior Art and References</a></h2>
+<ul>
+<li><a href="https://github.com/polkadot-fellows/runtimes/issues/1089">polkadot-fellows/runtimes #1089</a>, the chain-wide safe-mode and tx-pause deployment proposal.</li>
+<li><a href="https://github.com/polkadot-fellows/runtimes/pull/1164">polkadot-fellows/runtimes #1164</a>, the AssetHub safe-mode wiring.</li>
+<li><code>pallet-safe-mode</code> and <code>pallet-tx-pause</code> in the Polkadot SDK.</li>
+<li>TBA Snowbridge Circuit Breakers RFC, the companion preventive layer.</li>
+</ul>
+<h2 id="unresolved-questions"><a class="header" href="#unresolved-questions">Unresolved Questions</a></h2>
+<ul>
+<li><strong><code>RetryBackoff</code> calibration.</strong> Too short hammers a congested HRMP queue; too long extends cross-chain halt latency. ~30-60 seconds (a few blocks) is a starting point.</li>
+<li><strong>Cross-chain call ordering.</strong> Whether to fire the AH XCM and the Gateway outbound send in a fixed order or in parallel within the same block. They are independent in practice.</li>
+<li><strong>Deposit calibration.</strong> 100k DOT matches the runtimes #1089 number, but Snowbridge halts more than a generic safe-mode would. Worth a separate Fellowship discussion on whether the deposit should be higher.</li>
+<li><strong><code>BackstopDuration</code> value.</strong> Default is 7 days. Open question whether a longer value (e.g. 2-3 weeks) is warranted as additional caution against premature auto-resume under a prolonged real incident, weighed against the longer worst-case downtime in the Fellowship-unreachable case. Set in runtime config; can be tuned without changing the pallet.</li>
+</ul>
+<h2 id="future-directions-and-related-material"><a class="header" href="#future-directions-and-related-material">Future Directions and Related Material</a></h2>
+<ul>
+<li><strong>V2 outbound queue governance bypass (V1-deprecation follow-up).</strong> Call 7 currently routes through V1's <code>EthereumSystem</code>, leveraging V1's existing <code>PRIMARY_GOVERNANCE_CHANNEL</code> bypass. When V1 is deprecated and removed, call 7 will need to use <code>EthereumSystemV2</code> instead, at which point the V2 outbound queue must gain a governance bypass on its send path (since otherwise call 4's V2 halt would block call 7). V2's <code>Message</code> type carries <code>origin: H256</code> rather than V1's <code>channel_id</code>, so the bypass mechanism will need to be new infrastructure, e.g. checking message origin against the runtime's governance origin, or an explicit <code>is_governance</code> flag on the V2 <code>Message</code>. This work is deferred until V1 deprecation; this RFC explicitly chooses to keep the V2 outbound queue diff minimal today.</li>
+<li><strong>Per-extrinsic granular pause</strong> as a v2 of the pallet, using <code>pallet-tx-pause</code>'s <code>FullNameOf&lt;T&gt;</code> addressing.</li>
+<li><strong>Watchdog automation:</strong> off-chain monitors with funded accounts that auto-trigger on observed anomalies, with the deposit acting as their skin in the game.</li>
+<li><strong>Companion RFC:</strong> the TBA Snowbridge Circuit Breakers RFC specifies the preventive layer (per-asset Gateway-side velocity caps, AH and BH secondary caps) that bounds value-at-risk during the detection-latency window this pallet does not cover.</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../introduction.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../new/0167-snowbridge-circuit-breakers.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../introduction.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../new/0167-snowbridge-circuit-breakers.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>
