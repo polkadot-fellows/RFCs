@@ -287,6 +287,11 @@ enum HostcallResult {
     /// Input sequences have different lengths.
     /// Applies to `msm` and `multi_miller_loop` operations.
     LengthMismatch = 3,
+    /// A twisted Edwards operation produced a projective point with no affine
+    /// representative (`z = 0`). Reachable only on incomplete twisted Edwards
+    /// curves (e.g. Bandersnatch) when the inputs are not in the prime-order
+    /// subgroup. See Edge Cases below.
+    DegeneratePoint = 4,
     /// Unknown error.
     Unknown = 255,
 }
@@ -300,6 +305,24 @@ Empty `multi_miller_loop` returns the multiplicative identity of the target fiel
 The product of zero terms is one. For example, for BLS12-381, the result is the identity
 element in Fq12 (the BLS12-381 target field), serialized as a single `0x01` byte
 followed by 575 zero bytes.
+
+Degenerate twisted Edwards results. Incomplete twisted Edwards curves such as
+Bandersnatch use addition/doubling formulas that, when fed inputs outside the
+prime-order subgroup, can land on a projective point with `z = 0`. Such a point
+has no affine `(x, y)` representative and therefore cannot be written to the
+output buffer (the conversion to affine would divide by zero). In this case
+`msm` and `mul` return `DegeneratePoint` instead of writing a result. The output
+encoding is unchanged: no sentinel bit and no projective codec are introduced.
+
+Honest callers that restrict their inputs to the prime-order subgroup never
+reach this path. Callers that need a total operation regardless of input (for
+example, an Arkworks-compatible layer where the host call must return a curve
+point) may, on receiving `DegeneratePoint`, substitute an explicitly invalid
+projective point such as the all-zero `(0, 0, 0, 0)`. That value is not a valid
+curve point, so any downstream on-curve or subgroup-membership check on the
+result rejects it rather than silently accepting an identity-like value. This
+fallback is a per-curve policy decision left to the caller, not part of the host
+function ABI.
 
 #### Usage Example
 
