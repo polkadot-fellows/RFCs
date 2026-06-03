@@ -1,0 +1,522 @@
+
+<!DOCTYPE HTML>
+<html lang="en" class="polkadot" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>RFC-0169: Kusama Society V2.1 - Polkadot Fellowship RFCs</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="An online book of RFCs approved or proposed within the Polkadot Fellowship.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/polkadot.css">
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "polkadot" : "polkadot";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('polkadot')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../introduction.html">Introduction</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Newly Proposed</li><li class="chapter-item expanded "><a href="../new/0166-snowbridge-emergency-pause-pallet.html">RFC-0166: Snowbridge Emergency Pause Pallet</a></li><li class="chapter-item expanded "><a href="../new/0167-snowbridge-circuit-breakers.html">RFC-0167: Snowbridge Circuit Breakers</a></li><li class="chapter-item expanded "><a href="../new/0169-kusama-society-v2-1.html" class="active">RFC-0169: Kusama Society V2.1</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Proposed</li><li class="chapter-item expanded "><a href="../proposed/0000-pq_accounts.html">RFC-0000: Hybrid post-quantum accounts (DRAFT)</a></li><li class="chapter-item expanded "><a href="../proposed/0104-stale-nomination-reward-curve.html">RFC-0104: Stale Nomination Reward Curve</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Approved</li><li class="chapter-item expanded "><a href="../approved/0001-agile-coretime.html">RFC-1: Agile Coretime</a></li><li class="chapter-item expanded "><a href="../approved/0005-coretime-interface.html">RFC-5: Coretime Interface</a></li><li class="chapter-item expanded "><a href="../approved/0007-system-collator-selection.html">RFC-0007: System Collator Selection</a></li><li class="chapter-item expanded "><a href="../approved/0008-parachain-bootnodes-dht.html">RFC-0008: Store parachain bootnodes in relay chain DHT</a></li><li class="chapter-item expanded "><a href="../approved/0009-improved-net-light-client-requests.html">RFC-0009: Improved light client requests networking protocol</a></li><li class="chapter-item expanded "><a href="../approved/0010-burn-coretime-revenue.html">RFC-0010: Burn Coretime Revenue</a></li><li class="chapter-item expanded "><a href="../approved/0012-process-for-adding-new-collectives.html">RFC-0012: Process for Adding New System Collectives</a></li><li class="chapter-item expanded "><a href="../approved/0013-prepare-blockbuilder-and-core-runtime-apis-for-mbms.html">RFC-0013: Prepare Core runtime API for MBMs</a></li><li class="chapter-item expanded "><a href="../approved/0014-improve-locking-mechanism-for-parachains.html">RFC-0014: Improve locking mechanism for parachains</a></li><li class="chapter-item expanded "><a href="../approved/0017-coretime-market-redesign.html">RFC-0017: Coretime Market Redesign</a></li><li class="chapter-item expanded "><a href="../approved/0022-adopt-encointer-runtime.html">RFC-0022: Adopt Encointer Runtime</a></li><li class="chapter-item expanded "><a href="../approved/0026-sassafras-consensus.html">RFC-0026: Sassafras Consensus Protocol</a></li><li class="chapter-item expanded "><a href="../approved/0032-minimal-relay.html">RFC-0032: Minimal Relay</a></li><li class="chapter-item expanded "><a href="../approved/0042-extrinsics-state-version.html">RFC-0042: Add System version that replaces StateVersion on RuntimeVersion</a></li><li class="chapter-item expanded "><a href="../approved/0043-storage-proof-size-hostfunction.html">RFC-0043: Introduce storage_proof_size Host Function for Improved Parachain Block Utilization</a></li><li class="chapter-item expanded "><a href="../approved/0045-nft-deposits-asset-hub.html">RFC-0045: Lowering NFT Deposits on Asset Hub</a></li><li class="chapter-item expanded "><a href="../approved/0047-assignment-of-availability-chunks.html">RFC-0047: Assignment of availability chunks to validators</a></li><li class="chapter-item expanded "><a href="../approved/0048-session-keys-runtime-api.html">RFC-0048: Generate ownership proof for SessionKeys</a></li><li class="chapter-item expanded "><a href="../approved/0050-fellowship-salaries.html">RFC-0050: Fellowship Salaries</a></li><li class="chapter-item expanded "><a href="../approved/0056-one-transaction-per-notification.html">RFC-0056: Enforce only one transaction per notification</a></li><li class="chapter-item expanded "><a href="../approved/0059-nodes-capabilities-discovery.html">RFC-0059: Add a discovery mechanism for nodes based on their capabilities</a></li><li class="chapter-item expanded "><a href="../approved/0078-merkleized-metadata.html">RFC-0078: Merkleized Metadata</a></li><li class="chapter-item expanded "><a href="../approved/0084-general-transaction-extrinsic-format.html">RFC-0084: General transactions in extrinsic format</a></li><li class="chapter-item expanded "><a href="../approved/0091-dht-record-creation-time.html">RFC-0091: DHT Authority discovery record creation time</a></li><li class="chapter-item expanded "><a href="../approved/0097-unbonding_queue.html">RFC-0097: Unbonding Queue</a></li><li class="chapter-item expanded "><a href="../approved/0099-transaction-extension-version.html">RFC-0099: Introduce a transaction extension version</a></li><li class="chapter-item expanded "><a href="../approved/0100-xcm-multi-type-asset-transfer.html">RFC-0100: New XCM instruction: InitiateAssetsTransfer</a></li><li class="chapter-item expanded "><a href="../approved/0101-xcm-transact-remove-max-weight-param.html">RFC-0101: XCM Transact remove require_weight_at_most parameter</a></li><li class="chapter-item expanded "><a href="../approved/0103-introduce-core-index-commitment.html">RFC-0103:  Introduce a CoreIndex commitment and a SessionIndex field in candidate receipts</a></li><li class="chapter-item expanded "><a href="../approved/0105-xcm-improved-fee-mechanism.html">RFC-0105: XCM improved fee mechanism</a></li><li class="chapter-item expanded "><a href="../approved/0107-xcm-execution-hints.html">RFC-0107: XCM Execution hints</a></li><li class="chapter-item expanded "><a href="../approved/0108-xcm-remove-testnet-ids.html">RFC-0108: Remove XCM testnet NetworkIds</a></li><li class="chapter-item expanded "><a href="../approved/0122-alias-origin-on-asset-transfers.html">RFC-0122: Asset transfers can alias XCM origin on destination to original origin</a></li><li class="chapter-item expanded "><a href="../approved/0123-pending-code-as-storage-location-for-runtime-upgrades.html">RFC-0123: Introduce :pending_code as intermediate storage key for the runtime code</a></li><li class="chapter-item expanded "><a href="../approved/0125-xcm-asset-metadata.html">RFC-0125: XCM Asset Metadata</a></li><li class="chapter-item expanded "><a href="../approved/0126-introduce-pvq.html">RFC-0126: Introduce PVQ (PolkaVM Query)</a></li><li class="chapter-item expanded "><a href="../approved/0135-compressed-blob-prefixes.html">RFC-0135: Compressed Blob Prefixes</a></li><li class="chapter-item expanded "><a href="../approved/0139-faster-erasure-coding.html">RFC-0139: Faster Erasure Coding</a></li><li class="chapter-item expanded "><a href="../approved/0145-remove-unnecessary-allocator-usage.html">RFC-0145: Remove the host-side runtime memory allocator</a></li><li class="chapter-item expanded "><a href="../approved/0146-deflationary-fee-proposal.html">RFC-0146: Deflationary Transaction Fee Model for the Relay Chain and its System Parachains</a></li><li class="chapter-item expanded "><a href="../approved/0149-rfc-1-renewal-adjustment.html">RFC-0149: Renewal Adjustment</a></li><li class="chapter-item expanded "><a href="../approved/0150-voting-while-delegating.html">RFC-150: Allow Voting While Delegating</a></li><li class="chapter-item expanded "><a href="../approved/0156-bls-signatures.html">RFC-0156: Add BLS12-381 Host Functions</a></li><li class="chapter-item expanded "><a href="../approved/0163-ec-host-functions.html">RFC-0163: Elliptic Curves Host Functions</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Stale</li><li class="chapter-item expanded "><a href="../stale/0000-pre-elves_soft.html">RFC-0000: Pre-ELVES soft concensus</a></li><li class="chapter-item expanded "><a href="../stale/0000-rewards.html">RFC-0000: Validator Rewards</a></li><li class="chapter-item expanded "><a href="../stale/0004-remove-unnecessary-allocator-usage.html">RFC-0004: Remove the host-side runtime memory allocator</a></li><li class="chapter-item expanded "><a href="../stale/0074-stateful-multisig-pallet.html">RFC-0074: Stateful Multisig Pallet</a></li><li class="chapter-item expanded "><a href="../stale/0102-offchain-parachain-runtime-upgrades.html">RFC-0000: Feature Name Here</a></li><li class="chapter-item expanded "><a href="../stale/0106-xcm-remove-fees-mode.html">RFC-0106: Remove XCM fees mode</a></li><li class="chapter-item expanded "><a href="../stale/0111-pure-proxy-replication.html">RFC-0111: Pure Proxy Replication</a></li><li class="chapter-item expanded "><a href="../stale/0112-compress-state-response-message-in-state-sync.html">RFC-0112: Compress the State Response Message in State Sync</a></li><li class="chapter-item expanded "><a href="../stale/0117-unbrick-collective.html">RFC-0117: The Unbrick Collective</a></li><li class="chapter-item expanded "><a href="../stale/0124-extrinsic-version-5.html">RFC-0124: Extrinsic version 5</a></li><li class="chapter-item expanded "><a href="../stale/0138-invulnerable-collator-election.html">RFC-0138: Election mechanism for invulnerable collators on system chains</a></li><li class="chapter-item expanded "><a href="../stale/0154-multi-slot-aura.html">RFC-0154: AURA Multi-Slot Collation </a></li><li class="chapter-item expanded "><a href="../stale/0158-storage-proof-size-v2.html">RFC-0158: Storage Proof Size Host Function Version 2</a></li><li class="chapter-item expanded "><a href="../stale/0159-spend-canceller-track.html">RFC-0000: Spend Canceller Track</a></li><li class="chapter-item expanded "><a href="../stale/0160-pub-sub-mechanism.html">RFC-0160: PubSub Mechanism</a></li><li class="chapter-item expanded "><a href="../stale/0161-discussion-phase-for-opengov-referenda.html">RFC-0161: Discussion Period for OpenGov Referenda</a></li><li class="chapter-item expanded "><a href="../stale/0162-antitrust-omnibus.html">RFC-0162: The Ecosystem Anti-Trust & Market Structure Omnibus</a></li><li class="chapter-item expanded "><a href="../stale/0164-aura-allow-anyone-to-author-blocks.html">RFC-0164: Aura: Allow anyone to produce blocks after a downtime</a></li><li class="chapter-item expanded "><a href="../stale/xxxx-improve-the-security-of-proof-of-possession.html">RFC-XXXX: Adding customized mandatory context to proof of possession statement</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="polkadot">Polkadot</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Polkadot Fellowship RFCs</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <p><a href="https://github.com/polkadot-fellows/RFCs/pull/169">(source)</a></p>
+<p><strong>Table of Contents</strong></p>
+<ul>
+<li><a href="#rfc-0169-kusama-society-v21">RFC-0169: Kusama Society V2.1</a>
+<ul>
+<li><a href="#summary">Summary</a></li>
+<li><a href="#motivation">Motivation</a></li>
+<li><a href="#stakeholders">Stakeholders</a></li>
+<li><a href="#explanation">Explanation</a>
+<ul>
+<li><a href="#understanding-the-bidclaim-gap">Understanding the bid/claim gap</a></li>
+<li><a href="#the-gap-between-bid-and-claim">The gap between bid and claim</a></li>
+<li><a href="#the-worst-case-scenario-a-long-range-attack-hypothesis">The worst-case scenario, a long-range attack hypothesis</a></li>
+<li><a href="#no-poi-incident-and-kick_member">No PoI incident and <code>kick_member</code></a></li>
+<li><a href="#possible-solutions">Possible solutions</a></li>
+<li><a href="#rfc-behavior">RFC behavior</a></li>
+</ul>
+</li>
+<li><a href="#drawbacks">Drawbacks</a></li>
+<li><a href="#testing-security-and-privacy">Testing, Security, and Privacy</a></li>
+<li><a href="#performance-ergonomics-and-compatibility">Performance, Ergonomics, and Compatibility</a>
+<ul>
+<li><a href="#performance">Performance</a></li>
+<li><a href="#ergonomics">Ergonomics</a></li>
+<li><a href="#compatibility">Compatibility</a></li>
+</ul>
+</li>
+<li><a href="#prior-art-and-references">Prior Art and References</a></li>
+<li><a href="#unresolved-questions">Unresolved Questions</a></li>
+<li><a href="#future-directions-and-related-material">Future Directions and Related Material</a></li>
+</ul>
+</li>
+</ul>
+<h1 id="rfc-0169-kusama-society-v21"><a class="header" href="#rfc-0169-kusama-society-v21">RFC-0169: Kusama Society V2.1</a></h1>
+<div class="table-wrapper"><table><thead><tr><th></th><th></th></tr></thead><tbody>
+<tr><td><strong>Start Date</strong></td><td>2026-06-02</td></tr>
+<tr><td><strong>Description</strong></td><td>Fix identified exploits, add quorum, change PoI rules, and add missing events</td></tr>
+<tr><td><strong>Authors</strong></td><td>Lauro Gripa</td></tr>
+</tbody></table>
+</div>
+<h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
+<p>The upcoming Proof of Personhood raises an important question for Kusama Society: what role should it play, if any?</p>
+<p>Kusama Society (Kappa Sigma Mu) is one of the oldest and most consistent experiments in the ecosystem. It was one of the first live pallets that composed other pallets and served as a battle test. In a strict sense, it has been successful: it fulfilled its purpose and works as intended. At the same time, it leaves a few missed opportunities, since there is not much to do after joining it besides voting.</p>
+<p>Currently, we are in V2, created by Gavin Wood a couple of years ago. It has been better than V1 in general, but some issues have appeared. A few months ago, for example, coordinated accounts allowed a candidate to claim membership without providing Proof-of-Ink. As a short-term solution, <code>kick_member</code> was introduced and made callable by the Founder. This works as an emergency measure, but gives too much power to the Founder.</p>
+<p>With all that in mind, there are several questions to answer. First and most important: Does the Kusama Society still have a place in the Proof of Personhood vision? If yes, how? What experiments should be done with it? For example, could the Society work collectively as one of the curators for the art bounty? What other ideas could be tested? More specifically, should <code>kick_member</code> be delegated to Society members instead of the Founder?</p>
+<p>These questions need further discussion. However, at the very least, this RFC proposes fixing the following issues that emerged during V2:</p>
+<ul>
+<li><strong>No PoI exploit</strong>: a new candidate can become a member with a single approval without providing PoI. This already happened recently.</li>
+<li><strong>False PoI exploit</strong>: a new candidate can become a member by providing a false PoI generated by AI. Less likely, but getting more and more possible with time.</li>
+<li><strong>Bid/claim gap exploit</strong>: A coordinated long-range attack could potentially spend the whole treasury (&gt;180K KSM) in just a few years, instead of the expected 200 years. Hard to pull off in full, but can be done in smaller scales. Already happening.</li>
+<li><strong>Multiple identities</strong>: A single person could hold multiple identities (&gt;10) by tattooing themselves multiple times. Likely to be already happening.</li>
+<li><strong>What's more concerning is that some of these exploits can be combined.</strong></li>
+<li><strong>Missing events</strong>: a few code paths in the Society pallet are missing events, making some state changes harder to track from interfaces and indexers.</li>
+<li>Finally, <strong>V1 payout migration issue</strong>: some payout history failed during the V1 to V2 migration.</li>
+</ul>
+<p>The RFC proposes:</p>
+<ul>
+<li>Fixing the bid/claim gap through automatic claim, pot deduction when bidders become candidates, or both. The exact approach still needs to be decided.</li>
+<li>A quorum requirement for approvals and rejections.</li>
+<li>Updating the Society rules hash to explicitly require stronger PoI evidence.</li>
+<li>Adding missing Society pallet events.</li>
+<li>Revisiting whether <code>kick_member</code> should be removed or changed after these fixes are deployed.</li>
+</ul>
+<p>Together, these changes are proposed as Society V2.1.</p>
+<h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
+<p>Main concerns: V2 currently allows candidates to be approved with too few votes, and lets approved candidates abuse the pot limit by delaying claiming membership indefinitely.</p>
+<h2 id="stakeholders"><a class="header" href="#stakeholders">Stakeholders</a></h2>
+<ul>
+<li><strong>Society members</strong>: need to vote on candidates and verify PoI.</li>
+<li><strong>Candidates</strong>: need to know how long they have to provide PoI and what evidence is required.</li>
+<li><strong>Runtime developers</strong>: need to update the Society pallet behavior and runtime configuration.</li>
+<li><strong>Society interfaces and bots</strong>: need to show quorum, candidate status, PoI status, and automatic resolution.</li>
+<li><strong>Founder</strong>: currently has emergency power through <code>kick_member</code>, but this should be revisited.</li>
+</ul>
+<h2 id="explanation"><a class="header" href="#explanation">Explanation</a></h2>
+<h3 id="understanding-the-bidclaim-gap"><a class="header" href="#understanding-the-bidclaim-gap">Understanding the bid/claim gap</a></h3>
+<p>To understand the gap, here are some considerations about the pot and bidding process:</p>
+<ul>
+<li>Every rotation the pot grows constantly by 16.666 KSM. This constant is defined <a href="https://github.com/polkadot-fellows/runtimes/blob/db4bb534cb411c0d6a2fe57eb331e6ec93ace825/relay/kusama/src/lib.rs#L1064">here</a> as <code>PeriodSpend = ConstU128&lt;{ 500 * QUID }&gt;</code></li>
+<li>The pot can only shrink when an approved candidate claims their membership, deducting their bid from the pot</li>
+<li>The pot is a mere limiter of how high a bid can go, it doesn’t limit payouts, even if it goes to 0</li>
+<li>Payouts come from the treasury account, not the pot account. Even if the pot goes to 0, the payouts are still deducted from the treasury account.</li>
+<li>In every rotation, the <code>PeriodSpend</code> amount is added first, and then new bids are selected</li>
+<li>Any new bidder can assume their bids based on the current amount on the pot + <code>PeriodSpend</code></li>
+<li>A candidate can remain indefinitely as long there’s no clear rejection</li>
+</ul>
+<h3 id="the-gap-between-bid-and-claim"><a class="header" href="#the-gap-between-bid-and-claim">The gap between bid and claim</a></h3>
+<ul>
+<li>Suppose 2 full rotations go by without new bids and a 3rd round starts</li>
+<li>The pot reaches 49.999 KSM</li>
+<li>Someone bids 40 KSM and becomes a candidate</li>
+<li>The candidate provides PoI and reaches clear approval, but doesn’t claim membership (they can wait as long as they want)</li>
+<li>Next rotation the pot will reach 66.666 KSM</li>
+<li>Someone can still bid up to 66.666 KSM, even if there’s a candidate in the queue with 40 KSM</li>
+<li>Someone bids 60 KSM and becomes a candidate</li>
+<li>The 2nd candidate provides PoI and reaches clear approval</li>
+<li>Both candidates claim membership, and they both get a reserved payout from the treasury. Their payout sum is 100 KSM, even though the pot had only 66.666 KSM. The pot goes to 0 but their payouts are guaranteed (because the treasury holds a very large amount of KSM)</li>
+<li>This has been happening for the last few months, but can potentially be exploited by a long-range attack</li>
+</ul>
+<h3 id="the-worst-case-scenario-a-long-range-attack-hypothesis"><a class="header" href="#the-worst-case-scenario-a-long-range-attack-hypothesis">The worst-case scenario, a long-range attack hypothesis</a></h3>
+<ul>
+<li>Worst-case: $c \times \sum_{k=1}^n k$ where $c = 16.666$ KSM</li>
+<li>If candidates never claim their membership, society can spend $16.666×(1+2+3+…+n)$ KSM every round, instead of just 16.666 KSM</li>
+<li>It’s very hard to pull off, but theoretically, this attack could spend the entire treasury in 142 rounds (less than 3 years)</li>
+<li>The treasury holds &gt;180K KSM</li>
+<li>If the gap is fixed, the treasury will last enough for 200 years of 16.666 KSM every rotation</li>
+<li><strong>However, if the gap is not fixed, the treasury could theoretically be spent in less than 3 years, instead of the expected 200 years (at current values)</strong></li>
+</ul>
+<h3 id="no-poi-incident-and-kick_member"><a class="header" href="#no-poi-incident-and-kick_member">No PoI incident and <code>kick_member</code></a></h3>
+<p>The no-PoI exploit already happened in practice:</p>
+<ul>
+<li>A candidate had 1 rejection</li>
+<li>All of a sudden, 2 accounts voted for approval</li>
+<li>The candidate invoked <code>claim_membership</code></li>
+<li>The 2 approvals and the claim calls happened in the span of 1-2 minutes</li>
+<li>The most likely explanation is that all 3 accounts were controlled by the same person, or at least tightly coordinated</li>
+</ul>
+<p>The timeline was:</p>
+<ul>
+<li>2025-06-17 06:18:54 (UTC): AYE from <code>EPyHYoCAw7DfJxa7azZ6Y11yKxoy9cvfCCUji5uNFu5oNdq</code></li>
+<li>2025-06-17 06:19:24 (UTC): failed <code>claim_membership</code> from <code>HsD9zf6No7xtq6mWuQWrZU6FxJyVTKtofyPBNhvrM1b96wQ</code></li>
+<li>2025-06-17 06:20:00 (UTC): AYE from <code>HEqo31Q969uBdaux5b9145rkHaXtu8rQN2CThfsmTVKiaGn</code></li>
+<li>2025-06-17 06:20:48 (UTC): successful <code>claim_membership</code> from <code>HsD9zf6No7xtq6mWuQWrZU6FxJyVTKtofyPBNhvrM1b96wQ</code></li>
+</ul>
+<p>The PoI-less account was kicked with the new <a href="https://github.com/paritytech/polkadot-sdk/pull/11154"><code>kick_member</code></a> extrinsic.</p>
+<p>This solved the immediate incident, but <code>kick_member</code> gives too much power to the Founder. Once the changes in this RFC are deployed, we should discuss either:</p>
+<ul>
+<li>Removing <code>kick_member</code></li>
+<li>Or giving the responsibility to members through a vote</li>
+</ul>
+<p>The member-vote version is probably better socially, but rather complex. It needs a voting flow, a threshold, and clear rules for when member removal can be used.</p>
+<h3 id="possible-solutions"><a class="header" href="#possible-solutions">Possible solutions</a></h3>
+<h4 id="no-poi"><a class="header" href="#no-poi">No PoI</a></h4>
+<ul>
+<li>Members preemptively vote NAY for new candidates and change to AYE once PoI is provided (no runtime upgrade needed)</li>
+<li>Require a quorum at the protocol level (runtime upgrade needed)</li>
+</ul>
+<p>This RFC proposes the protocol-level quorum.</p>
+<p>The proposed quorum:</p>
+<ul>
+<li>Quorum is based on total voting power, not member count</li>
+<li>Require at least 5% of total voting power to participate</li>
+<li>Keep 2/3 majority</li>
+</ul>
+<p>For example, if Society has 400 members but total voting power is 520, quorum is 26 voting power. A candidate reaches quorum once participating votes add up to at least 26 voting power.</p>
+<h4 id="false-poi-and-multiple-identities"><a class="header" href="#false-poi-and-multiple-identities">False PoI and multiple identities</a></h4>
+<p>Change the rules to explicitly ask for a long video of the process (at least 30 seconds, maybe 3 minutes to make it more future-proof). This should be a simple runtime upgrade to update the rules hash in the pallet constants.</p>
+<p>Regarding multiple identities, we could specify a fixed set of allowed regions of the body, but this one needs further discussion.</p>
+<h4 id="bidclaim-gap"><a class="header" href="#bidclaim-gap">Bid/claim gap</a></h4>
+<p>Re-design the bidding and claiming process to fix the gap.</p>
+<p>The gap can be fixed by either:</p>
+<ul>
+<li>Deducting the bid from the pot earlier — as soon as the bidder turns into candidate — instead of waiting to deduct only when the candidate claims membership. The bid can be returned to the pot if the candidate is rejected.</li>
+<li>Implementing automatic claim for approvals and automatic rejection for rejections. This way candidates still have enough time to present PoI, but once a clear approval is reached after the 2-round window, the candidate turns into member automatically. However, automatic resolution alone can still be exploited if members collude to keep the voting undecided.</li>
+</ul>
+<p>Both options require runtime upgrades.</p>
+<h3 id="rfc-behavior"><a class="header" href="#rfc-behavior">RFC behavior</a></h3>
+<p>Society V2.1 would include:</p>
+<ul>
+<li>Bid/claim gap fix
+<ul>
+<li>The exact approach still needs to be decided</li>
+<li>Option A: automatic membership claim
+<ul>
+<li>2-round window</li>
+<li>Remove manual claim</li>
+<li>Rejection also automatic</li>
+<li>Candidate remains indefinitely as long as there's no clear rejection or approval</li>
+</ul>
+</li>
+<li>Option B: deduct the bid from the pot when the bidder becomes a candidate
+<ul>
+<li>Return the bid to the pot if the candidate is rejected</li>
+</ul>
+</li>
+<li>Option C: combine options A and B</li>
+</ul>
+</li>
+<li>Require quorum
+<ul>
+<li>Quorum is based on total voting power, not member count</li>
+<li>Require at least 5% of total voting power to participate</li>
+<li>Keep 2/3 majority</li>
+</ul>
+</li>
+<li>Change rules hash
+<ul>
+<li>Explicitly ask for a video</li>
+<li>Require a predetermined region of the body</li>
+<li>This needs to go through Society voting</li>
+</ul>
+</li>
+<li>Revisit <code>kick_member</code>
+<ul>
+<li>Remove it once these changes are deployed, or</li>
+<li>Change it so member removal is decided by members through a vote</li>
+</ul>
+</li>
+</ul>
+<h2 id="drawbacks"><a class="header" href="#drawbacks">Drawbacks</a></h2>
+<ul>
+<li>Automatic membership claim removes the candidate’s ability to choose when to claim membership</li>
+<li>Making the intake flow more deterministic can make Society less interesting and less chaotic as an experiment</li>
+<li>Quorum can slow down intake if members are not voting</li>
+<li>Requiring videos and predetermined body regions can reduce privacy and increase friction for candidates</li>
+<li>Deducting the bid from the pot earlier changes pot accounting and requires care when candidates are rejected</li>
+<li>Removing <code>kick_member</code> can leave the Society without an emergency tool</li>
+<li>Keeping <code>kick_member</code> gives too much power to the Founder</li>
+<li>Moving <code>kick_member</code> responsibility to members through a vote is fairer, but complex</li>
+</ul>
+<h2 id="testing-security-and-privacy"><a class="header" href="#testing-security-and-privacy">Testing, Security, and Privacy</a></h2>
+<p>Testing should cover:</p>
+<ul>
+<li>If automatic claim is implemented:
+<ul>
+<li>A candidate with clear approval and quorum becomes a member automatically after the 2-round window</li>
+<li>A candidate with clear rejection and quorum is rejected automatically after the 2-round window</li>
+<li>A candidate cannot reproduce the recent no-PoI incident by getting fast votes and invoking <code>claim_membership</code></li>
+<li>Approved-but-unclaimed candidates cannot be used to multiply payout exposure across rotations</li>
+</ul>
+</li>
+<li>If bid deduction is implemented:
+<ul>
+<li>The bid is deducted from the pot when the bidder turns into candidate</li>
+<li>The bid is returned to the pot if the candidate is rejected</li>
+<li>Multiple pending candidates cannot make the pot over-select new candidates across rotations</li>
+</ul>
+</li>
+<li>A candidate without quorum cannot become a member</li>
+<li>A candidate with many approvals cannot become a member unless quorum is reached</li>
+<li>Missing events are emitted for the relevant Society pallet state changes</li>
+<li>If <code>kick_member</code> remains, tests should cover who can call it and what happens to the kicked member's payouts</li>
+</ul>
+<p>Security improves because:</p>
+<ul>
+<li>A single approval is no longer enough</li>
+<li>Candidates cannot claim without quorum</li>
+<li>Candidates cannot wait indefinitely after approval to claim at a strategic time</li>
+<li>If bid deduction is implemented, the pot can be made to account for pending candidates (pot predictability increases)</li>
+<li>The PoI rules become harder to bypass with AI-generated pictures</li>
+</ul>
+<h2 id="performance-ergonomics-and-compatibility"><a class="header" href="#performance-ergonomics-and-compatibility">Performance, Ergonomics, and Compatibility</a></h2>
+<h3 id="performance"><a class="header" href="#performance">Performance</a></h3>
+<p>Automatic claim and automatic rejection add work to rotation logic. This should be bounded by the maximum number of candidates that can be resolved in one rotation.</p>
+<p>If the implementation deducts and returns bid values from the pot, the accounting should stay bounded by the number of resolved candidates.</p>
+<h3 id="ergonomics"><a class="header" href="#ergonomics">Ergonomics</a></h3>
+<p>Candidates no longer need to manually claim membership.</p>
+<p>Members and interfaces need to clearly show:</p>
+<ul>
+<li>Whether quorum was reached</li>
+<li>Whether the candidate is still inside the 2-round window</li>
+<li>Whether the candidate is waiting for more votes</li>
+<li>Whether the candidate will be automatically approved or rejected next rotation</li>
+</ul>
+<h3 id="compatibility"><a class="header" href="#compatibility">Compatibility</a></h3>
+<p>This requires a runtime upgrade.</p>
+<p>Interfaces that currently ask candidates to call <code>claim_membership</code> need to be updated.</p>
+<p>If <code>kick_member</code> is removed or changed into a member-vote flow, interfaces need to be updated as well.</p>
+<p>The rules hash change also needs coordination with Society communication channels and interfaces.</p>
+<h2 id="prior-art-and-references"><a class="header" href="#prior-art-and-references">Prior Art and References</a></h2>
+<ul>
+<li><a href="https://github.com/paritytech/polkadot-sdk/blob/master/substrate/frame/society/src/lib.rs">Society Pallet</a></li>
+<li><a href="https://github.com/paritytech/polkadot-sdk/pull/11154">PR introducing kick_member</a></li>
+<li><a href="https://github.com/polkadot-fellows/runtimes/blob/db4bb534cb411c0d6a2fe57eb331e6ec93ace825/relay/kusama/src/lib.rs#L1064">PeriodSpend value</a></li>
+<li><a href="https://ksmsociety.io/explore/poi/rules">Proof-of-Ink rules</a></li>
+</ul>
+<h2 id="unresolved-questions"><a class="header" href="#unresolved-questions">Unresolved Questions</a></h2>
+<ul>
+<li>What role should Kusama Society play in Proof of Personhood, if any?</li>
+<li>If Kusama Society still has a place in Proof of Personhood, how should it integrate with it?</li>
+<li>What experiments should be done with Kusama Society?</li>
+<li>Could Kusama Society work collectively as one of the curators for the art bounty?</li>
+<li>What other ideas should be tested?</li>
+<li>Should the bid/claim gap be fixed by automatic resolution alone, by deducting bids from the pot when bidders become candidates, or by both?</li>
+<li>Should the V1 to V2 payout migration issue be fixed as part of Society V2.1, or handled separately?</li>
+<li>Should quorum be exactly 5%, or configurable?</li>
+<li>Should the 2-round window be fixed, or configurable?</li>
+<li>Should the tattoo be required to be in one of 10 predetermined regions of the body?</li>
+<li>Which regions should be accepted?</li>
+<li>Should <code>kick_member</code> be removed once the new changes are deployed?</li>
+<li>If <code>kick_member</code> remains, should it be delegated to Society members instead of the Founder?</li>
+<li>If member removal becomes a vote, what threshold should it use?</li>
+</ul>
+<h2 id="future-directions-and-related-material"><a class="header" href="#future-directions-and-related-material">Future Directions and Related Material</a></h2>
+<ul>
+<li>Stronger multiple-identity defenses may be needed later</li>
+<li>Interfaces should expose:
+<ul>
+<li>Current pot</li>
+<li>Quorum progress</li>
+<li>Time left in the 2-round window</li>
+</ul>
+</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../new/0167-snowbridge-circuit-breakers.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../proposed/0000-pq_accounts.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../new/0167-snowbridge-circuit-breakers.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../proposed/0000-pq_accounts.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>
