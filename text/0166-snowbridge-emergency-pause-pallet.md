@@ -245,7 +245,6 @@ The new storage defaults to `Normal` so the change is backwards-compatible. No o
 
 ## Future Directions and Related Material
 
-* **V2 outbound queue governance bypass (V1-deprecation follow-up).** Call 7 currently routes through V1's `EthereumSystem`, leveraging V1's existing `PRIMARY_GOVERNANCE_CHANNEL` bypass. When V1 is deprecated and removed, call 7 will need to use `EthereumSystemV2` instead, at which point the V2 outbound queue must gain a governance bypass on its send path (since otherwise call 4's V2 halt would block call 7). V2's `Message` type carries `origin: H256` rather than V1's `channel_id`, so the bypass mechanism will need to be new infrastructure, e.g. checking message origin against the runtime's governance origin, or an explicit `is_governance` flag on the V2 `Message`. This work is deferred until V1 deprecation; this RFC explicitly chooses to keep the V2 outbound queue diff minimal today.
 * **Per-extrinsic granular pause** as a v2 of the pallet, using `pallet-tx-pause`'s `FullNameOf<T>` addressing.
 * **Watchdog automation:** off-chain monitors with funded accounts that auto-trigger on observed anomalies, with the deposit acting as their skin in the game.
 * **Companion RFC:** the TBA Snowbridge Circuit Breakers RFC specifies the preventive layer (per-asset Gateway-side velocity caps, AH and BH secondary caps) that bounds value-at-risk during the detection-latency window this pallet does not cover.
