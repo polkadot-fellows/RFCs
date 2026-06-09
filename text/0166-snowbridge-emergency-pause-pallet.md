@@ -8,11 +8,11 @@
 
 ## Summary
 
-Add a new FRAME pallet to BridgeHub (`snowbridge-pallet-emergency-pause`) that lets any account post a configured deposit (suggested to be 100,000 DOT) to halt Snowbridge end-to-end. The halt is a best-effort sequence of seven side-effecting calls (five BridgeHub-local, one XCM to AssetHub, one outbound governance command to the Ethereum Gateway) with `on_initialize` retry of any leg that fails to land. Fellowship resolves the trigger as genuine (refund) or malicious (slash to treasury); a time-based (suggested 7 days) on-chain backstop refunds and resets only if Fellowship is incapacitated. This is the reactive half of a two-layer halt strategy; see the companion Snowbridge Circuit Breakers RFC (TBA) for the preventive half.
+At the moment, there is no way for Snowbridge to be halted immediately. The best course of action to halt the bridge should an exploit be detected, is to halt the bridge through a whitelisted caller proposal, through OpenGov. This has obvious drawbacks - even if a Snowbridge exploit is detected, there is no way to halt the bridge on-chain (off-chain relayers can be switched off but it is obviously not a fool-proof stopgap). This RFC proposes a permissionless, instant Snowbridge halt if the caller deposits a large sum of DOT, to be slashed if paused maliciously. This proposal is a reactive security measure (i.e. a exploit or vulnerability first need to be visible for this functionality to be useful). Another proposal, Snowbridge Circuit Breakers, is proposed alongside this RFC for a more proactive approach.
 
 ## Motivation
 
-Snowbridge has no fast, broadly-accessible halt path today. Existing governance halt routes require a referendum (hours-to-days latency) or Fellowship action (minutes-to-hours, and only if Fellowship is reachable). Both are too slow for an active drainage exploit and too high-friction for "stop new activity while we investigate".
+Snowbridge has no fast, broadly-accessible halt path today. Existing governance halt routes require a referendum  and Fellowship action (hours-to-days latency). Both are too slow for an active drainage exploit and to stop  activity during investigation.
 
 Two pieces of prior work in the Fellowship are relevant but do not solve Snowbridge's halt needs:
 
@@ -21,12 +21,12 @@ Two pieces of prior work in the Fellowship are relevant but do not solve Snowbri
 
 Neither fits Snowbridge:
 
-* **Blast radius is wrong.** `pallet-safe-mode` installs a chain-wide `BaseCallFilter`. On BridgeHub that would freeze Kusama-side bridging, identity, governance proxies, etc., not just Snowbridge.
+* **Blast radius is different.** `pallet-safe-mode` installs a chain-wide `BaseCallFilter`. On BridgeHub that would freeze Kusama-side bridging, identity, governance proxies, etc., not just Snowbridge.
 * **No outbound side-effects.** Safe-mode is a passive filter. It cannot emit the XCM to AssetHub that halts `snowbridgeSystemFrontend`, and it cannot queue the outbound governance command that flips the Ethereum Gateway's operating mode.
-* **Wrong release semantics.** Safe-mode's `EnterDuration` is days-scale, with auto-resume as the normal exit path. For a multi-million-TVL bridge, auto-resuming under an active attack is more dangerous than staying paused; the duration must be a long backstop, not the expected exit.
-* **`pallet-tx-pause` requires Fellowship origin** for trigger and has no Currency coupling for a deposit.
+* **Different resume semantics.** Safe-mode's exit model is auto-resume on expiry. For Snowbridge, deliberate Fellowship resolution is the expected exit, and the timeout is a quorum-failure backstop that should rarely fire, because auto-resuming under an active attack is more dangerous than staying paused.
+* **`pallet-tx-pause` is a privileged-origin gate with no currency support.** Its `pause` call is guarded by a configured `PauseOrigin` (a privileged origin such as Fellowship or root), not a permissionless signed caller, and its `Config` has no `Currency`/`ReservableCurrency` type, so there isn't an easy way to attach the slashable deposit that makes a permissionless trigger safe.
 
-What's needed: a Snowbridge-specific halt with a permissionless economic trigger that executes the different halting mechanisms, a longer halt window, and Fellowship-driven genuine/malicious classification.
+Snowbridge requires a more specific implementation: a halt with a permissionless economic trigger that executes the different halting mechanisms, a longer halt window, and Fellowship-driven genuine/malicious classification.
 
 ## Stakeholders
 
@@ -40,9 +40,9 @@ What's needed: a Snowbridge-specific halt with a permissionless economic trigger
 
 ### Goal
 
-A permissionless 100,000 DOT deposit triggers a complete Snowbridge halt, in response to possible exploit (stop new activity while investigating) and active exploits (attacker is actively draining value).
+A permissionless DOT deposit triggers a complete Snowbridge halt, in response to possible exploit (stop new activity while investigating) and active exploits (attacker is actively draining value).
 
-### The seven halt calls
+### Implementation
 
 The pallet adds one new extrinsic to BridgeHub, `trigger()`. It is permissionless, gated only by a 100,000 DOT reservable deposit. On a successful call it reserves the deposit, transitions state to `Triggered`, and dispatches the seven halt calls below in priority order. Six of the seven are the same `set_operating_mode` extrinsics that root-level governance halts use today; the new pallet becomes an additional (deposit-gated, permissionless) caller of them. The seventh, `EthereumOutboundQueueV2::set_operating_mode(Halted)`, is a new extrinsic this RFC requires on the V2 outbound queue. V2's pause architecture is single-chokepoint at AssetHub: `snowbridge-pallet-system-frontend` owns the operating mode, and the AH XCM router's `PausableExporter` checks it at `validate()` time, so a halted frontend means V2 messages never reach BridgeHub at all, making a BH-local mode redundant in the steady state. The emergency-pause use case introduces a new reason for it: during the ~1-2 min window between `trigger()` and the cross-chain AH frontend halt (call 6) actually landing, V2 messages users submit on AH still pass `PausableExporter` (the frontend is still `Normal`), wrap into `ExportMessage`, ride XCMP to BH, and queue in V2 outbound with no check. The new BH-local mode closes that window symmetrically with how call 3 does for V1.
 
@@ -84,7 +84,7 @@ The existing SDK governance resume preimage still works and remains the fallback
 
 **From `pallet-tx-pause`:** the (pallet, call) addressing convention as a future direction if a softer per-extrinsic pause is ever wanted, and the runtime-level Fellowship-only call gating model for `resolve`.
 
-**Net code reuse:** the deposit/reserve/slash skeleton and the duration/extension/timeout machinery come from `pallet-safe-mode`. What we drop is the `BaseCallFilter` integration. What we add is the seven side-effect hooks (one of which requires a small accompanying change to the V2 outbound queue pallet, see §Compatibility) and the best-effort retry loop in `on_initialize`.
+**Code reuse:** the deposit/reserve/slash skeleton and the duration/extension/timeout machinery come from `pallet-safe-mode`. What we drop is the `BaseCallFilter` integration. What we add is the seven side-effect hooks (one of which requires a small accompanying change to the V2 outbound queue pallet, see §Compatibility) and the best-effort retry loop in `on_initialize`.
 
 ### Threat model coverage
 
