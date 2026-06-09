@@ -70,11 +70,11 @@ Resume is the symmetric inverse of the halt: a `set_operating_mode(Normal)` on e
 
 Encoding resume on-chain in this pallet (rather than relying solely on an external SDK preimage tool to assemble the seven calls) means the resume logic is versioned and tested alongside the halt logic. If the set of pallets that need flipping ever changes (e.g., a new outbound queue version is added), `trigger()` and `resume()` move together as one pallet upgrade; there is no second artifact to keep in sync.
 
-The pallet has three resume paths, with different policies for who resumes the bridge:
+The pallet has two resume paths, with different policies for who resumes the bridge. Fellowship resolution is a `resolve(policy)` extrinsic taking a `ResolutionPolicy` enum parameter:
 
-* **`resolve_genuine`**: the pallet refunds the deposit and transitions to `Normal`, but does **not** auto-resume. The trigger was a legitimate incident response, so resuming requires an explicit `resume()` call once the underlying issue is fixed. Fellowship issues `resume()` when ready; this is fast (Fellowship XCM voice, the same path as the resolve calls) and keeps incident-response decisions deliberate.
-* **`resolve_malicious`**: slashes the deposit and transitions directly to `Resuming`. The bridge auto-resumes via `on_initialize` without waiting on a separate `resume()` call. The trigger was bogus, so no separate decision is needed.
-* **Backstop timeout**: refunds the deposit, transitions to `Resuming`, and auto-resumes (same shape as `resolve_malicious` for the resume side). The reasoning: if Fellowship has been unreachable for the full backstop window, the default policy is "the trigger was probably bad", since a real incident would have been resolved well before then. The per-asset Gateway-side velocity caps from the companion preventive layer remain in force regardless and continue to bound value-at-risk after the bridge resumes.
+* **`resolve(Genuine)`**: the pallet refunds the deposit and transitions to `Normal`, but does not auto-resume. The trigger was a legitimate incident response, so resuming requires an explicit `resume()` call once the underlying issue is fixed. Fellowship issues `resume()` when ready.
+* **`resolve(Malicious)`**: slashes the deposit and transitions directly to `Resuming`. The bridge auto-resumes via `on_initialize` without waiting on a separate `resume()` call. The trigger was malicious and the bridge should be resumed immediately, so no separate decision is needed.
+* **Backstop timeout**: refunds the deposit, transitions to `Resuming`, and auto-resumes (same shape as `resolve(Malicious)` for the resume side). The reasoning: if Fellowship has been unreachable for the full backstop window, the default policy is "the trigger was probably bad", since a real incident would have been resolved well before then. The per-asset Gateway-side velocity caps from the companion preventive layer remain in force regardless and continue to bound value-at-risk after the bridge resumes.
 
 The existing SDK governance resume preimage still works and remains the fallback if the pallet itself is somehow wedged (governance can always submit `set_operating_mode(Normal)` directly to the underlying Snowbridge pallets via root). The `resume()` extrinsic is the fast, on-chain path for the common case; the SDK preimage is the slow, out-of-band escape hatch.
 
@@ -148,8 +148,9 @@ pub trait Config: frame_system::Config {
 #### Calls
 
 * `trigger()`, permissionless. Checks `State::Normal`, reserves `TriggerDeposit`, attempts each of the seven halt calls (`Halted` mode) in priority order, records which succeeded and which are still pending, transitions to `Triggered`. Emits `EmergencyPauseTriggered` plus a per-leg `HaltSucceeded` / `HaltFailed { leg, reason }`.
-* `resolve_genuine()`, `ResolveOrigin` only. Requires `State::Triggered`. Unreserves deposit, transitions to `Normal`. Does not resume Snowbridge; resuming is a separate, explicit call (`resume()`) so incident response stays deliberate. See §"Resuming the bridge".
-* `resolve_malicious()`, `ResolveOrigin` only. Requires `State::Triggered`. Slashes deposit to `SlashDestination`, transitions to `Resuming { pending = all true }`. `on_initialize` then fires the seven resume calls. See §"Resuming the bridge".
+* `resolve(policy: ResolutionPolicy)`, `ResolveOrigin` only. Requires `State::Triggered`. A single extrinsic parameterised by a `ResolutionPolicy { Genuine, Malicious }` enum:
+  * `Genuine`: unreserves deposit, transitions to `Normal`. Does not resume Snowbridge; resuming is a separate, explicit call (`resume()`) so incident response stays deliberate. See §"Resuming the bridge".
+  * `Malicious`: slashes deposit to `SlashDestination`, transitions to `Resuming { pending = all true }`. `on_initialize` then fires the seven resume calls. See §"Resuming the bridge".
 * `resume()`, `ResolveOrigin` only. Requires `State::Normal` (i.e., trigger already resolved or never fired). Transitions to `Resuming { pending = all true }` and fires the seven `set_operating_mode(Normal)` calls best-effort with retry. Idempotent at the target pallets: calling `set_operating_mode(Normal)` on a pallet already in `Normal` is a cheap no-op. Symmetric with `trigger()`.
 * `force_extend()`, `ResolveOrigin` only. Requires `State::Triggered`. Pushes `deadline` out by `ExtendDuration`.
 
@@ -172,7 +173,7 @@ Errors: `AlreadyTriggered`, `NotTriggered`, `NotIdle` (for `resume()` when state
 
 **From `pallet-safe-mode` and [PR #1164](https://github.com/polkadot-fellows/runtimes/pull/1164)'s AssetHub wiring:** the deposit / reserve / release pattern, the `EnsureXcm<IsVoiceOfBody>` origin pattern for `ResolveOrigin`, the 100k DOT deposit calibration, the duration / extension machinery (`EnterDuration` + `ExtendDuration` + `on_initialize` deadline check).
 
-**From `pallet-tx-pause`:** the (pallet, call) addressing convention as a future direction if a softer per-extrinsic pause is ever wanted, and the runtime-level Fellowship-only call gating model for `resolve_*`.
+**From `pallet-tx-pause`:** the (pallet, call) addressing convention as a future direction if a softer per-extrinsic pause is ever wanted, and the runtime-level Fellowship-only call gating model for `resolve`.
 
 **Net code reuse:** the deposit/reserve/slash skeleton and the duration/extension/timeout machinery come from `pallet-safe-mode`. What we drop is the `BaseCallFilter` integration. What we add is the seven side-effect hooks (one of which requires a small accompanying change to the V2 outbound queue pallet, see §Compatibility) and the best-effort retry loop in `on_initialize`.
 
@@ -197,7 +198,7 @@ This residual gap is the explicit motivation for the companion preventive layer.
 
 * **Spam vector mitigated only by deposit.** A determined adversary willing to forfeit 100k DOT can halt the bridge once. The Fellowship-resolved slash makes repeat abuse expensive but a single griefing event is unavoidable. The companion preventive layer reduces the value an attacker gains from the resulting investigation window.
 * **Per-leg outcome dispersion.** Operators must inspect emitted events to know which legs actually landed. Worst case: a triggered pallet with the Gateway halt still pending for many blocks if the BH outbound queue is congested.
-* **Bridge recovery before the backstop fires requires a reachable Fellowship.** The only paths back to `Normal` ahead of the 7-day backstop are `resolve_genuine` and `resolve_malicious`, both Fellowship-only. If Fellowship is unreachable at the same time as a bad trigger (a troll halt, a false-alarm halt), the bridge stays halted until the backstop auto-unhalts, up to a week later. Funds aren't lost, but no new transfers move in or out during that window. Intentional bias: auto-resuming too early under an active attack is worse than a week of downtime for legitimate users, but worth noting as a real failure mode.
+* **Bridge recovery before the backstop fires requires a reachable Fellowship.** The only paths back to `Normal` ahead of the 7-day backstop are `resolve(Genuine)` and `resolve(Malicious)`, both Fellowship-only. If Fellowship is unreachable at the same time as a bad trigger (a troll halt, a false-alarm halt), the bridge stays halted until the backstop auto-unhalts, up to a week later. Funds aren't lost, but no new transfers move in or out during that window. Intentional bias: auto-resuming too early under an active attack is worse than a week of downtime for legitimate users, but worth noting as a real failure mode.
 * **Cross-chain calls remain a dependency.** If HRMP between BH and AH is down, the AH frontend halt will never land via `on_initialize`. The pallet has no in-band escape hatch for this case; Fellowship would need to land a separate runtime call (e.g., re-routing the XCM through an alternate path) outside the pallet's API.
 
 ## Testing, Security, and Privacy
@@ -206,7 +207,7 @@ This residual gap is the explicit motivation for the companion preventive layer.
 * **XCM integration tests** with a wedged AH HRMP queue, asserting `trigger()` still transitions to `Triggered`, records the AH leg as pending, retries on subsequent blocks, and clears once HRMP drains.
 * **End-to-end simulation** (chopsticks fork): trigger with all seven legs healthy, with one failed leg, with the BH outbound queue at capacity, with AH unreachable. Each scenario should yield "bridge closed via whatever subset landed, remaining legs pending".
 * **Deposit reservation paths** under sufficient/insufficient balance.
-* **Resolution paths** (`resolve_genuine`, `resolve_malicious`, timeout, `force_extend`).
+* **Resolution paths** (`resolve(Genuine)`, `resolve(Malicious)`, timeout, `force_extend`).
 * **No new privacy surface.** All events are public; the deposit caller is already implicit in the transaction signer.
 * **Security posture:** the pallet creates a new attack surface (anyone with 100k DOT can halt). This is the intended design, calibrated against the asymmetric harm of being unable to halt during an active drainage.
 
@@ -218,7 +219,7 @@ Trigger weight is dominated by the seven side-effect calls. BH-local legs are O(
 
 ### Ergonomics
 
-Trigger UX is one extrinsic with 100k DOT in the signer's account. Operator UX during a triggered state is event-driven, the relayer indexer should add `EmergencyPauseTriggered` and per-leg `HaltSucceeded` / `HaltFailed` to its watch set. Fellowship-side, `resolve_genuine` / `resolve_malicious` / `force_extend` follow the same XCM-voice pattern as existing Fellowship governance calls.
+Trigger UX is an extrinsic with 100k DOT in the signer's account. Operator UX during a triggered state is event-driven, the relayer indexer should add `EmergencyPauseTriggered` and per-leg `HaltSucceeded` / `HaltFailed` to its watch set. Fellowship-side, `resolve` or `force_extend` follow the same XCM-voice pattern as existing Fellowship governance calls.
 
 ### Compatibility
 
