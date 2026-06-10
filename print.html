@@ -9159,6 +9159,11 @@ On success, the result is encoded and written to the output buffer.</p>
     /// Input sequences have different lengths.
     /// Applies to `msm` and `multi_miller_loop` operations.
     LengthMismatch = 3,
+    /// A twisted Edwards operation produced a projective point with no affine
+    /// representative (`z = 0`). Reachable only on incomplete twisted Edwards
+    /// curves (e.g. Bandersnatch) when the inputs are not in the prime-order
+    /// subgroup. See Edge Cases below.
+    DegeneratePoint = 4,
     /// Unknown error.
     Unknown = 255,
 }
@@ -9169,6 +9174,22 @@ On success, the result is encoded and written to the output buffer.</p>
 The product of zero terms is one. For example, for BLS12-381, the result is the identity
 element in Fq12 (the BLS12-381 target field), serialized as a single <code>0x01</code> byte
 followed by 575 zero bytes.</p>
+<p>Degenerate twisted Edwards results. Incomplete twisted Edwards curves such as
+Bandersnatch use addition/doubling formulas that, when fed inputs outside the
+prime-order subgroup, can land on a projective point with <code>z = 0</code>. Such a point
+has no affine <code>(x, y)</code> representative and therefore cannot be written to the
+output buffer (the conversion to affine would divide by zero). In this case
+<code>msm</code> and <code>mul</code> return <code>DegeneratePoint</code> instead of writing a result. The output
+encoding is unchanged: no sentinel bit and no projective codec are introduced.</p>
+<p>Honest callers that restrict their inputs to the prime-order subgroup never
+reach this path. Callers that need a total operation regardless of input (for
+example, an Arkworks-compatible layer where the host call must return a curve
+point) may, on receiving <code>DegeneratePoint</code>, substitute an explicitly invalid
+projective point such as the all-zero <code>(0, 0, 0, 0)</code>. That value is not a valid
+curve point, so any downstream on-curve or subgroup-membership check on the
+result rejects it rather than silently accepting an identity-like value. This
+fallback is a per-curve policy decision left to the caller, not part of the host
+function ABI.</p>
 <h4 id="usage-example"><a class="header" href="#usage-example">Usage Example</a></h4>
 <p>Simplified BLS12-381 signature verification using types from the <code>polkadot-sdk</code>.</p>
 <p>The <code>direct</code> parameter selects between two usage modes:</p>
