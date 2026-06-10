@@ -530,10 +530,9 @@ f(s) = Floor                                            if s ≥ GracePeriod + D
 <li><a href="proposed/0166-snowbridge-emergency-pause-pallet.html#explanation">Explanation</a>
 <ul>
 <li><a href="proposed/0166-snowbridge-emergency-pause-pallet.html#goal">Goal</a></li>
-<li><a href="proposed/0166-snowbridge-emergency-pause-pallet.html#the-seven-halt-calls">The seven halt calls</a></li>
+<li><a href="proposed/0166-snowbridge-emergency-pause-pallet.html#implementation">Implementation</a></li>
 <li><a href="proposed/0166-snowbridge-emergency-pause-pallet.html#why-best-effort-everywhere">Why best-effort everywhere</a></li>
 <li><a href="proposed/0166-snowbridge-emergency-pause-pallet.html#resuming-the-bridge">Resuming the bridge</a></li>
-<li><a href="proposed/0166-snowbridge-emergency-pause-pallet.html#pallet-structure">Pallet structure</a></li>
 <li><a href="proposed/0166-snowbridge-emergency-pause-pallet.html#what-we-reuse-from-prior-work">What we reuse from prior work</a></li>
 <li><a href="proposed/0166-snowbridge-emergency-pause-pallet.html#threat-model-coverage">Threat model coverage</a></li>
 <li><a href="proposed/0166-snowbridge-emergency-pause-pallet.html#what-the-halt-does-not-cover">What the halt does not cover</a></li>
@@ -562,9 +561,9 @@ f(s) = Floor                                            if s ≥ GracePeriod + D
 </tbody></table>
 </div>
 <h2 id="summary-2"><a class="header" href="#summary-2">Summary</a></h2>
-<p>Add a new FRAME pallet to BridgeHub (<code>snowbridge-pallet-emergency-pause</code>) that lets any account post a configured deposit (suggested to be 100,000 DOT) to halt Snowbridge end-to-end. The halt is a best-effort sequence of seven side-effecting calls (five BridgeHub-local, one XCM to AssetHub, one outbound governance command to the Ethereum Gateway) with <code>on_initialize</code> retry of any leg that fails to land. Fellowship resolves the trigger as genuine (refund) or malicious (slash to treasury); a time-based (suggested 7 days) on-chain backstop refunds and resets only if Fellowship is incapacitated. This is the reactive half of a two-layer halt strategy; see the companion Snowbridge Circuit Breakers RFC (TBA) for the preventive half.</p>
+<p>At the moment, there is no way for Snowbridge to be halted immediately. The best course of action to halt the bridge should an exploit be detected, is to halt the bridge through a whitelisted caller proposal, through OpenGov. This has obvious drawbacks - even if a Snowbridge exploit is detected, there is no way to halt the bridge on-chain (off-chain relayers can be switched off but it is obviously not a fool-proof stopgap). This RFC proposes a permissionless, instant Snowbridge halt if the caller deposits a large sum of DOT, to be slashed if paused maliciously. This proposal is a reactive security measure (i.e. a exploit or vulnerability first need to be visible for this functionality to be useful). Another proposal, Snowbridge Circuit Breakers, is proposed alongside this RFC for a more proactive approach.</p>
 <h2 id="motivation-2"><a class="header" href="#motivation-2">Motivation</a></h2>
-<p>Snowbridge has no fast, broadly-accessible halt path today. Existing governance halt routes require a referendum (hours-to-days latency) or Fellowship action (minutes-to-hours, and only if Fellowship is reachable). Both are too slow for an active drainage exploit and too high-friction for &quot;stop new activity while we investigate&quot;.</p>
+<p>Snowbridge has no fast, broadly-accessible halt path today. Existing governance halt routes require a referendum  and Fellowship action (hours-to-days latency). Both are too slow for an active drainage exploit and to stop  activity during investigation.</p>
 <p>Two pieces of prior work in the Fellowship are relevant but do not solve Snowbridge's halt needs:</p>
 <ul>
 <li><a href="https://github.com/polkadot-fellows/runtimes/issues/1089">polkadot-fellows/runtimes #1089</a>, proposing deployment of <code>pallet-tx-pause</code> and <code>pallet-safe-mode</code> across system chains.</li>
@@ -572,12 +571,12 @@ f(s) = Floor                                            if s ≥ GracePeriod + D
 </ul>
 <p>Neither fits Snowbridge:</p>
 <ul>
-<li><strong>Blast radius is wrong.</strong> <code>pallet-safe-mode</code> installs a chain-wide <code>BaseCallFilter</code>. On BridgeHub that would freeze Kusama-side bridging, identity, governance proxies, etc., not just Snowbridge.</li>
+<li><strong>Blast radius is different.</strong> <code>pallet-safe-mode</code> installs a chain-wide <code>BaseCallFilter</code>. On BridgeHub that would freeze Kusama-side bridging, identity, governance proxies, etc., not just Snowbridge.</li>
 <li><strong>No outbound side-effects.</strong> Safe-mode is a passive filter. It cannot emit the XCM to AssetHub that halts <code>snowbridgeSystemFrontend</code>, and it cannot queue the outbound governance command that flips the Ethereum Gateway's operating mode.</li>
-<li><strong>Wrong release semantics.</strong> Safe-mode's <code>EnterDuration</code> is days-scale, with auto-resume as the normal exit path. For a multi-million-TVL bridge, auto-resuming under an active attack is more dangerous than staying paused; the duration must be a long backstop, not the expected exit.</li>
-<li><strong><code>pallet-tx-pause</code> requires Fellowship origin</strong> for trigger and has no Currency coupling for a deposit.</li>
+<li><strong>Different resume semantics.</strong> Safe-mode's exit model is auto-resume on expiry. For Snowbridge, deliberate Fellowship resolution is the expected exit, and the timeout is a quorum-failure backstop that should rarely fire, because auto-resuming under an active attack is more dangerous than staying paused.</li>
+<li><strong><code>pallet-tx-pause</code> is a privileged-origin gate with no currency support.</strong> Its <code>pause</code> call is guarded by a configured <code>PauseOrigin</code> (a privileged origin such as Fellowship or root), not a permissionless signed caller, and its <code>Config</code> has no <code>Currency</code>/<code>ReservableCurrency</code> type, so there isn't an easy way to attach the slashable deposit that makes a permissionless trigger safe.</li>
 </ul>
-<p>What's needed: a Snowbridge-specific halt with a permissionless economic trigger that executes the different halting mechanisms, a longer halt window, and Fellowship-driven genuine/malicious classification.</p>
+<p>Snowbridge requires a more specific implementation: a halt with a permissionless economic trigger that executes the different halting mechanisms, a longer halt window, and Fellowship-driven genuine/malicious classification.</p>
 <h2 id="stakeholders-2"><a class="header" href="#stakeholders-2">Stakeholders</a></h2>
 <ul>
 <li><strong>Polkadot Fellowship</strong>, the <code>ResolveOrigin</code> and the body that decides between genuine vs malicious triggers.</li>
@@ -588,8 +587,8 @@ f(s) = Floor                                            if s ≥ GracePeriod + D
 </ul>
 <h2 id="explanation-2"><a class="header" href="#explanation-2">Explanation</a></h2>
 <h3 id="goal"><a class="header" href="#goal">Goal</a></h3>
-<p>A permissionless 100,000 DOT deposit triggers a complete Snowbridge halt, in response to possible exploit (stop new activity while investigating) and active exploits (attacker is actively draining value).</p>
-<h3 id="the-seven-halt-calls"><a class="header" href="#the-seven-halt-calls">The seven halt calls</a></h3>
+<p>A permissionless DOT deposit triggers a complete Snowbridge halt, in response to possible exploit (stop new activity while investigating) and active exploits (attacker is actively draining value).</p>
+<h3 id="implementation"><a class="header" href="#implementation">Implementation</a></h3>
 <p>The pallet adds one new extrinsic to BridgeHub, <code>trigger()</code>. It is permissionless, gated only by a 100,000 DOT reservable deposit. On a successful call it reserves the deposit, transitions state to <code>Triggered</code>, and dispatches the seven halt calls below in priority order. Six of the seven are the same <code>set_operating_mode</code> extrinsics that root-level governance halts use today; the new pallet becomes an additional (deposit-gated, permissionless) caller of them. The seventh, <code>EthereumOutboundQueueV2::set_operating_mode(Halted)</code>, is a new extrinsic this RFC requires on the V2 outbound queue. V2's pause architecture is single-chokepoint at AssetHub: <code>snowbridge-pallet-system-frontend</code> owns the operating mode, and the AH XCM router's <code>PausableExporter</code> checks it at <code>validate()</code> time, so a halted frontend means V2 messages never reach BridgeHub at all, making a BH-local mode redundant in the steady state. The emergency-pause use case introduces a new reason for it: during the ~1-2 min window between <code>trigger()</code> and the cross-chain AH frontend halt (call 6) actually landing, V2 messages users submit on AH still pass <code>PausableExporter</code> (the frontend is still <code>Normal</code>), wrap into <code>ExportMessage</code>, ride XCMP to BH, and queue in V2 outbound with no check. The new BH-local mode closes that window symmetrically with how call 3 does for V1.</p>
 <p>None of the seven calls block the trigger: the pallet attempts each, logs successes and failures, and re-attempts pending legs in later blocks via <code>on_initialize</code>.</p>
 <p>BridgeHub-local calls are fired first because they are synchronous local writes with no cross-chain dependency, so they typically land in the same block as the trigger. <strong>This serves as an immediate hard-stop of any asset flow through the bridge.</strong> It could cause asymmetry in bridge assets (e.g. funds locked on Ethereum but not minted on AssetHub), but this is preferable to more possible illegitimate transactions being processed through the bridge. The two cross-chain calls depend on HRMP delivery and BEEFY relay respectively, so they take ~1-2 min when everything is healthy and can take longer or fail entirely under congestion.</p>
@@ -608,106 +607,17 @@ f(s) = Floor                                            if s ≥ GracePeriod + D
 <h3 id="resuming-the-bridge"><a class="header" href="#resuming-the-bridge">Resuming the bridge</a></h3>
 <p>Resume is the symmetric inverse of the halt: a <code>set_operating_mode(Normal)</code> on each of the BH-local pallets that were halted, an XCM Transact to AH flipping <code>snowbridge-pallet-system-frontend</code> back to <code>Normal</code>, and an outbound governance command flipping the Ethereum Gateway back to <code>OperatingMode::Normal</code>. The pallet exposes this as a single <code>resume()</code> extrinsic, callable by <code>ResolveOrigin</code> (Fellowship XCM voice). It uses the same <code>LocalOperatingMode</code> / <code>AssetHubXcmSender</code> / <code>GatewayOperatingModeSender</code> plumbing as <code>trigger()</code>, just with <code>Normal</code> instead of <code>Halted</code>, including the same best-effort, <code>on_initialize</code> retry loop.</p>
 <p>Encoding resume on-chain in this pallet (rather than relying solely on an external SDK preimage tool to assemble the seven calls) means the resume logic is versioned and tested alongside the halt logic. If the set of pallets that need flipping ever changes (e.g., a new outbound queue version is added), <code>trigger()</code> and <code>resume()</code> move together as one pallet upgrade; there is no second artifact to keep in sync.</p>
-<p>The pallet has three resume paths, with different policies for who resumes the bridge:</p>
+<p>The pallet has two resume paths, with different policies for who resumes the bridge. Fellowship resolution is a <code>resolve(policy)</code> extrinsic taking a <code>ResolutionPolicy</code> enum parameter:</p>
 <ul>
-<li><strong><code>resolve_genuine</code></strong>: the pallet refunds the deposit and transitions to <code>Normal</code>, but does <strong>not</strong> auto-resume. The trigger was a legitimate incident response, so resuming requires an explicit <code>resume()</code> call once the underlying issue is fixed. Fellowship issues <code>resume()</code> when ready; this is fast (Fellowship XCM voice, the same path as the resolve calls) and keeps incident-response decisions deliberate.</li>
-<li><strong><code>resolve_malicious</code></strong>: slashes the deposit and transitions directly to <code>Resuming</code>. The bridge auto-resumes via <code>on_initialize</code> without waiting on a separate <code>resume()</code> call. The trigger was bogus, so no separate decision is needed.</li>
-<li><strong>Backstop timeout</strong>: refunds the deposit, transitions to <code>Resuming</code>, and auto-resumes (same shape as <code>resolve_malicious</code> for the resume side). The reasoning: if Fellowship has been unreachable for the full backstop window, the default policy is &quot;the trigger was probably bad&quot;, since a real incident would have been resolved well before then. The per-asset Gateway-side velocity caps from the companion preventive layer remain in force regardless and continue to bound value-at-risk after the bridge resumes.</li>
+<li><strong><code>resolve(Genuine)</code></strong>: the pallet refunds the deposit and transitions to <code>Normal</code>, but does not auto-resume. The trigger was a legitimate incident response, so resuming requires an explicit <code>resume()</code> call once the underlying issue is fixed. Fellowship issues <code>resume()</code> when ready.</li>
+<li><strong><code>resolve(Malicious)</code></strong>: slashes the deposit and transitions directly to <code>Resuming</code>. The bridge auto-resumes via <code>on_initialize</code> without waiting on a separate <code>resume()</code> call. The trigger was malicious and the bridge should be resumed immediately, so no separate decision is needed.</li>
+<li><strong>Backstop timeout</strong>: refunds the deposit, transitions to <code>Resuming</code>, and auto-resumes (same shape as <code>resolve(Malicious)</code> for the resume side). The reasoning: if Fellowship has been unreachable for the full backstop window, the default policy is &quot;the trigger was probably bad&quot;, since a real incident would have been resolved well before then. The per-asset Gateway-side velocity caps from the companion preventive layer remain in force regardless and continue to bound value-at-risk after the bridge resumes.</li>
 </ul>
 <p>The existing SDK governance resume preimage still works and remains the fallback if the pallet itself is somehow wedged (governance can always submit <code>set_operating_mode(Normal)</code> directly to the underlying Snowbridge pallets via root). The <code>resume()</code> extrinsic is the fast, on-chain path for the common case; the SDK preimage is the slow, out-of-band escape hatch.</p>
-<h3 id="pallet-structure"><a class="header" href="#pallet-structure">Pallet structure</a></h3>
-<h4 id="storage"><a class="header" href="#storage">Storage</a></h4>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>#[pallet::storage]
-pub type State&lt;T: Config&gt; = StorageValue&lt;_, PauseState&lt;T&gt;, ValueQuery&gt;;
-
-pub enum PauseState&lt;T: Config&gt; {
-    /// Pallet idle. The bridge's actual operating mode is independent of this
-    /// and may be either Normal or Halted depending on prior history.
-    Normal,
-    /// A `trigger()` is active. Halt calls in flight or done; awaiting Fellowship resolution.
-    Triggered {
-        who: T::AccountId,
-        at: BlockNumberFor&lt;T&gt;,
-        deadline: BlockNumberFor&lt;T&gt;,
-        deposit: BalanceOf&lt;T&gt;,
-        pending: PendingLegs,
-        last_attempt: BlockNumberFor&lt;T&gt;,
-    },
-    /// A resume is in flight. `on_initialize` retries pending legs until all
-    /// land, then transitions back to `Normal`.
-    Resuming {
-        pending: PendingLegs,
-        last_attempt: BlockNumberFor&lt;T&gt;,
-    },
-}
-
-/// Bitset of bridge legs. In `Triggered` it tracks which halts have not yet
-/// landed; in `Resuming` it tracks which resumes have not yet landed.
-#[derive(Encode, Decode, TypeInfo, Clone, Copy, PartialEq, Eq)]
-pub struct PendingLegs {
-    pub inbound_v1: bool,
-    pub inbound_v2: bool,
-    pub outbound_v1: bool,
-    pub outbound_v2: bool,
-    pub beacon_client: bool,
-    pub ah_frontend: bool,
-    pub gateway: bool,
-}
-
-#[pallet::storage]
-pub type TriggerDeposit&lt;T: Config&gt; =
-    StorageValue&lt;_, BalanceOf&lt;T&gt;, ValueQuery, T::TriggerDeposit&gt;;
-<span class="boring">}</span></code></pre></pre>
-<h4 id="config-trait"><a class="header" href="#config-trait">Config trait</a></h4>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>pub trait Config: frame_system::Config {
-    type RuntimeEvent: From&lt;Event&lt;Self&gt;&gt; + IsType&lt;&lt;Self as frame_system::Config&gt;::RuntimeEvent&gt;;
-    type Currency: ReservableCurrency&lt;Self::AccountId&gt;;
-    type TriggerDeposit: Get&lt;BalanceOf&lt;Self&gt;&gt;;             // 100_000 DOT
-    type BackstopDuration: Get&lt;BlockNumberFor&lt;Self&gt;&gt;;      // 7 days
-    type ExtendDuration: Get&lt;BlockNumberFor&lt;Self&gt;&gt;;
-    type ResolveOrigin: EnsureOrigin&lt;Self::RuntimeOrigin&gt;; // Fellowship XCM voice
-    type SlashDestination: OnUnbalanced&lt;NegativeImbalanceOf&lt;Self&gt;&gt;; // Treasury
-    type LocalOperatingMode: SnowbridgeLocalOperatingMode;
-    type AssetHubXcmSender: SendXcm;
-    type GatewayOperatingModeSender: OutboundQueue;
-    type RetryBackoff: Get&lt;BlockNumberFor&lt;Self&gt;&gt;;
-}
-<span class="boring">}</span></code></pre></pre>
-<p><code>LocalOperatingMode</code> is a thin trait the runtime implements to call <code>set_operating_mode(mode)</code> on the five BH-local pallets (inbound V1, inbound V2, outbound V1, outbound V2, beacon client), so the new pallet has zero direct dependency on them. The trait exposes per-leg methods, each taking a <code>BasicOperatingMode</code> parameter and returning <code>DispatchResult</code>, so both <code>trigger()</code> (with <code>Halted</code>) and <code>resume()</code> (with <code>Normal</code>) reuse the same plumbing and the pallet can record which legs succeeded and retry only the failed ones. <code>AssetHubXcmSender</code> and <code>GatewayOperatingModeSender</code> follow the same pattern: each accepts a mode and is reused for both directions.</p>
-<h4 id="calls"><a class="header" href="#calls">Calls</a></h4>
-<ul>
-<li><code>trigger()</code>, permissionless. Checks <code>State::Normal</code>, reserves <code>TriggerDeposit</code>, attempts each of the seven halt calls (<code>Halted</code> mode) in priority order, records which succeeded and which are still pending, transitions to <code>Triggered</code>. Emits <code>EmergencyPauseTriggered</code> plus a per-leg <code>HaltSucceeded</code> / <code>HaltFailed { leg, reason }</code>.</li>
-<li><code>resolve_genuine()</code>, <code>ResolveOrigin</code> only. Requires <code>State::Triggered</code>. Unreserves deposit, transitions to <code>Normal</code>. Does not resume Snowbridge; resuming is a separate, explicit call (<code>resume()</code>) so incident response stays deliberate. See §&quot;Resuming the bridge&quot;.</li>
-<li><code>resolve_malicious()</code>, <code>ResolveOrigin</code> only. Requires <code>State::Triggered</code>. Slashes deposit to <code>SlashDestination</code>, transitions to <code>Resuming { pending = all true }</code>. <code>on_initialize</code> then fires the seven resume calls. See §&quot;Resuming the bridge&quot;.</li>
-<li><code>resume()</code>, <code>ResolveOrigin</code> only. Requires <code>State::Normal</code> (i.e., trigger already resolved or never fired). Transitions to <code>Resuming { pending = all true }</code> and fires the seven <code>set_operating_mode(Normal)</code> calls best-effort with retry. Idempotent at the target pallets: calling <code>set_operating_mode(Normal)</code> on a pallet already in <code>Normal</code> is a cheap no-op. Symmetric with <code>trigger()</code>.</li>
-<li><code>force_extend()</code>, <code>ResolveOrigin</code> only. Requires <code>State::Triggered</code>. Pushes <code>deadline</code> out by <code>ExtendDuration</code>.</li>
-</ul>
-<p><code>on_initialize</code> hook:</p>
-<ul>
-<li>While <code>State::Triggered</code>:
-<ul>
-<li>If any halt leg is still pending and at least <code>RetryBackoff</code> blocks have passed since the last attempt, re-attempt just those legs.</li>
-<li>If <code>now &gt;= deadline</code>, unreserve deposit, transition to <code>Resuming { pending = all true }</code>, and emit <code>ResolvedTimeout</code>. The pallet then issues the seven resume calls on the same block (and retries on subsequent blocks if needed). Quorum-failure backstop only. See §&quot;Resuming the bridge&quot;.</li>
-</ul>
-</li>
-<li>While <code>State::Resuming</code>:
-<ul>
-<li>Attempt any pending resume legs subject to <code>RetryBackoff</code>, clearing flags as they succeed and emitting per-leg events.</li>
-<li>Once all legs have landed, transition to <code>Normal</code> and emit <code>ResumeCompleted</code>.</li>
-</ul>
-</li>
-</ul>
-<h4 id="events-and-errors"><a class="header" href="#events-and-errors">Events and errors</a></h4>
-<p>Events: <code>EmergencyPauseTriggered { who, deposit, deadline, pending }</code>, <code>HaltSucceeded { leg }</code>, <code>HaltFailed { leg, reason }</code>, <code>ResolvedGenuine</code>, <code>ResolvedMalicious { slashed }</code>, <code>ResolvedTimeout</code>, <code>Extended { new_deadline }</code>, <code>ResumeStarted</code>, <code>ResumeSucceeded { leg }</code>, <code>ResumeFailed { leg, reason }</code>, <code>ResumeCompleted</code>.</p>
-<p>Errors: <code>AlreadyTriggered</code>, <code>NotTriggered</code>, <code>NotIdle</code> (for <code>resume()</code> when state is not <code>Normal</code>), <code>InsufficientDeposit</code>. There is intentionally no <code>HaltFailed</code> / <code>ResumeFailed</code> error variant; per-leg failures surface as events, not as dispatch errors, because they do not abort the trigger or resume.</p>
 <h3 id="what-we-reuse-from-prior-work"><a class="header" href="#what-we-reuse-from-prior-work">What we reuse from prior work</a></h3>
 <p><strong>From <code>pallet-safe-mode</code> and <a href="https://github.com/polkadot-fellows/runtimes/pull/1164">PR #1164</a>'s AssetHub wiring:</strong> the deposit / reserve / release pattern, the <code>EnsureXcm&lt;IsVoiceOfBody&gt;</code> origin pattern for <code>ResolveOrigin</code>, the 100k DOT deposit calibration, the duration / extension machinery (<code>EnterDuration</code> + <code>ExtendDuration</code> + <code>on_initialize</code> deadline check).</p>
-<p><strong>From <code>pallet-tx-pause</code>:</strong> the (pallet, call) addressing convention as a future direction if a softer per-extrinsic pause is ever wanted, and the runtime-level Fellowship-only call gating model for <code>resolve_*</code>.</p>
-<p><strong>Net code reuse:</strong> the deposit/reserve/slash skeleton and the duration/extension/timeout machinery come from <code>pallet-safe-mode</code>. What we drop is the <code>BaseCallFilter</code> integration. What we add is the seven side-effect hooks (one of which requires a small accompanying change to the V2 outbound queue pallet, see §Compatibility) and the best-effort retry loop in <code>on_initialize</code>.</p>
+<p><strong>From <code>pallet-tx-pause</code>:</strong> the (pallet, call) addressing convention as a future direction if a softer per-extrinsic pause is ever wanted, and the runtime-level Fellowship-only call gating model for <code>resolve</code>.</p>
+<p><strong>Code reuse:</strong> the deposit/reserve/slash skeleton and the duration/extension/timeout machinery come from <code>pallet-safe-mode</code>. What we drop is the <code>BaseCallFilter</code> integration. What we add is the seven side-effect hooks (one of which requires a small accompanying change to the V2 outbound queue pallet, see §Compatibility) and the best-effort retry loop in <code>on_initialize</code>.</p>
 <h3 id="threat-model-coverage"><a class="header" href="#threat-model-coverage">Threat model coverage</a></h3>
 <ul>
 <li><strong>E→P entry (Ethereum-side UX)</strong>, Gateway halt (call 7).</li>
@@ -725,7 +635,7 @@ pub type TriggerDeposit&lt;T: Config&gt; =
 <ul>
 <li><strong>Spam vector mitigated only by deposit.</strong> A determined adversary willing to forfeit 100k DOT can halt the bridge once. The Fellowship-resolved slash makes repeat abuse expensive but a single griefing event is unavoidable. The companion preventive layer reduces the value an attacker gains from the resulting investigation window.</li>
 <li><strong>Per-leg outcome dispersion.</strong> Operators must inspect emitted events to know which legs actually landed. Worst case: a triggered pallet with the Gateway halt still pending for many blocks if the BH outbound queue is congested.</li>
-<li><strong>Bridge recovery before the backstop fires requires a reachable Fellowship.</strong> The only paths back to <code>Normal</code> ahead of the 7-day backstop are <code>resolve_genuine</code> and <code>resolve_malicious</code>, both Fellowship-only. If Fellowship is unreachable at the same time as a bad trigger (a troll halt, a false-alarm halt), the bridge stays halted until the backstop auto-unhalts, up to a week later. Funds aren't lost, but no new transfers move in or out during that window. Intentional bias: auto-resuming too early under an active attack is worse than a week of downtime for legitimate users, but worth noting as a real failure mode.</li>
+<li><strong>Bridge recovery before the backstop fires requires a reachable Fellowship.</strong> The only paths back to <code>Normal</code> ahead of the 7-day backstop are <code>resolve(Genuine)</code> and <code>resolve(Malicious)</code>, both Fellowship-only. If Fellowship is unreachable at the same time as a bad trigger (a troll halt, a false-alarm halt), the bridge stays halted until the backstop auto-unhalts, up to a week later. Funds aren't lost, but no new transfers move in or out during that window. Intentional bias: auto-resuming too early under an active attack is worse than a week of downtime for legitimate users, but worth noting as a real failure mode.</li>
 <li><strong>Cross-chain calls remain a dependency.</strong> If HRMP between BH and AH is down, the AH frontend halt will never land via <code>on_initialize</code>. The pallet has no in-band escape hatch for this case; Fellowship would need to land a separate runtime call (e.g., re-routing the XCM through an alternate path) outside the pallet's API.</li>
 </ul>
 <h2 id="testing-security-and-privacy-2"><a class="header" href="#testing-security-and-privacy-2">Testing, Security, and Privacy</a></h2>
@@ -734,7 +644,7 @@ pub type TriggerDeposit&lt;T: Config&gt; =
 <li><strong>XCM integration tests</strong> with a wedged AH HRMP queue, asserting <code>trigger()</code> still transitions to <code>Triggered</code>, records the AH leg as pending, retries on subsequent blocks, and clears once HRMP drains.</li>
 <li><strong>End-to-end simulation</strong> (chopsticks fork): trigger with all seven legs healthy, with one failed leg, with the BH outbound queue at capacity, with AH unreachable. Each scenario should yield &quot;bridge closed via whatever subset landed, remaining legs pending&quot;.</li>
 <li><strong>Deposit reservation paths</strong> under sufficient/insufficient balance.</li>
-<li><strong>Resolution paths</strong> (<code>resolve_genuine</code>, <code>resolve_malicious</code>, timeout, <code>force_extend</code>).</li>
+<li><strong>Resolution paths</strong> (<code>resolve(Genuine)</code>, <code>resolve(Malicious)</code>, timeout, <code>force_extend</code>).</li>
 <li><strong>No new privacy surface.</strong> All events are public; the deposit caller is already implicit in the transaction signer.</li>
 <li><strong>Security posture:</strong> the pallet creates a new attack surface (anyone with 100k DOT can halt). This is the intended design, calibrated against the asymmetric harm of being unable to halt during an active drainage.</li>
 </ul>
@@ -742,7 +652,7 @@ pub type TriggerDeposit&lt;T: Config&gt; =
 <h3 id="performance-1"><a class="header" href="#performance-1">Performance</a></h3>
 <p>Trigger weight is dominated by the seven side-effect calls. BH-local legs are O(1) storage writes; the AH XCM and Gateway outbound legs queue messages but do not synchronously execute remote logic. <code>on_initialize</code> weight while <code>Triggered</code> is bounded by the per-leg retry cost gated by <code>RetryBackoff</code>, so the steady-state idle cost is reading <code>State</code> and a block-number comparison.</p>
 <h3 id="ergonomics-1"><a class="header" href="#ergonomics-1">Ergonomics</a></h3>
-<p>Trigger UX is one extrinsic with 100k DOT in the signer's account. Operator UX during a triggered state is event-driven, the relayer indexer should add <code>EmergencyPauseTriggered</code> and per-leg <code>HaltSucceeded</code> / <code>HaltFailed</code> to its watch set. Fellowship-side, <code>resolve_genuine</code> / <code>resolve_malicious</code> / <code>force_extend</code> follow the same XCM-voice pattern as existing Fellowship governance calls.</p>
+<p>Trigger UX is an extrinsic with 100k DOT in the signer's account. Operator UX during a triggered state is event-driven, the relayer indexer should add <code>EmergencyPauseTriggered</code> and per-leg <code>HaltSucceeded</code> / <code>HaltFailed</code> to its watch set. Fellowship-side, <code>resolve</code> or <code>force_extend</code> follow the same XCM-voice pattern as existing Fellowship governance calls.</p>
 <h3 id="compatibility-1"><a class="header" href="#compatibility-1">Compatibility</a></h3>
 <p>One small change is required to an existing Snowbridge pallet: <code>EthereumOutboundQueueV2</code> gains an <code>OperatingMode</code> storage item and a <code>set_operating_mode</code> extrinsic, mirroring the V1 outbound queue but without a governance bypass on the send path. V2 deliberately omitted operating-mode plumbing because its pause architecture is single-chokepoint at the AH frontend's <code>PausableExporter</code>; in the steady state, a halted frontend means nothing reaches BH, so a BH-local check is redundant. This RFC adds the check as defense-in-depth for the brief window during which the cross-chain AH frontend halt is in flight (see §&quot;The seven halt calls&quot; for the full reasoning).</p>
 <p>The V2 send path intentionally does <strong>not</strong> get a <code>PRIMARY_GOVERNANCE_CHANNEL</code>-style governance bypass. The bypass would only matter if call 7 routed through V2's outbound queue, but call 7 routes through V1's <code>EthereumSystem</code> instead, which already has the V1 bypass. The Gateway's shared <code>mode</code> storage means writing it once via V1 flips both V1 and V2 dispatch paths, so the V2 path is unused for governance commands today. This minimizes the V2 outbound queue diff and avoids inventing a new bypass mechanism (V2's <code>Message</code> type carries <code>origin: H256</code> instead of V1's <code>channel_id</code>, so any V2 bypass would be net-new infrastructure). The V1-deprecation follow-up will need to add the V2 bypass at that point, since call 7 will then have to use V2; this is flagged in §&quot;Future Directions&quot;.</p>
@@ -763,7 +673,6 @@ pub type TriggerDeposit&lt;T: Config&gt; =
 </ul>
 <h2 id="future-directions-and-related-material-2"><a class="header" href="#future-directions-and-related-material-2">Future Directions and Related Material</a></h2>
 <ul>
-<li><strong>V2 outbound queue governance bypass (V1-deprecation follow-up).</strong> Call 7 currently routes through V1's <code>EthereumSystem</code>, leveraging V1's existing <code>PRIMARY_GOVERNANCE_CHANNEL</code> bypass. When V1 is deprecated and removed, call 7 will need to use <code>EthereumSystemV2</code> instead, at which point the V2 outbound queue must gain a governance bypass on its send path (since otherwise call 4's V2 halt would block call 7). V2's <code>Message</code> type carries <code>origin: H256</code> rather than V1's <code>channel_id</code>, so the bypass mechanism will need to be new infrastructure, e.g. checking message origin against the runtime's governance origin, or an explicit <code>is_governance</code> flag on the V2 <code>Message</code>. This work is deferred until V1 deprecation; this RFC explicitly chooses to keep the V2 outbound queue diff minimal today.</li>
 <li><strong>Per-extrinsic granular pause</strong> as a v2 of the pallet, using <code>pallet-tx-pause</code>'s <code>FullNameOf&lt;T&gt;</code> addressing.</li>
 <li><strong>Watchdog automation:</strong> off-chain monitors with funded accounts that auto-trigger on observed anomalies, with the deposit acting as their skin in the game.</li>
 <li><strong>Companion RFC:</strong> the TBA Snowbridge Circuit Breakers RFC specifies the preventive layer (per-asset Gateway-side velocity caps, AH and BH secondary caps) that bounds value-at-risk during the detection-latency window this pallet does not cover.</li>
