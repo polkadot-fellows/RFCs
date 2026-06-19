@@ -32,12 +32,12 @@ A permissionless DOT deposit triggers a complete Snowbridge halt, in response to
 
 ### Implementation
 
-The proposed implementation starts with an entry point extrinsic on Bridge Hub (in a new pallet). The extrinsic should require a DOT deposit. If a valid deposit has been reserved, the pallet state should change to `Triggered`. The caller should specify an `Immediate` or `Gradual` option to the extrinsic:
+The proposed implementation starts with an entry point extrinsic on Bridge Hub (in a new pallet). The extrinsic should require a DOT deposit. If a valid deposit has been reserved, the pallet state should change to `Halted`. The caller should specify an `Immediate` or `Gradual` option to the extrinsic:
 
 - `Immediate`: The immediate option would immediately block all incoming and outgoing bridge traffic on BridgeHub. This might have inconvenient effects on both sides of the bridge - Ethereum transactions might have been submitted and will not be processed on Polkadot, and transactions from other parachains might have to initiated but will not be completed due to the immediate block on BridgeHub. In an active exploit scenario, the upside (blocking all traffic, immediately) outweighs the downside, given that it can be corrected with a follow-up recon proposal.
 - `Gradual`: The gradual option sends the required cross-chain messages to block messages incoming from AssetHub and Ethereum, so that the bridge is halted gracefully, with inflight transactions being allowed to complete before halting the bridge. This case would make more sense to use in a situation where a vulnerability is detected but not actively exploited.
 
-Once the pallet is in `Triggered` state, follow-up calls to the same extrinsic will fail.
+Once the pallet is in `Halted` state, follow-up calls to the same extrinsic will fail.
 
 The halting extrinsics and messages that will be used to block the bridge are:
 
@@ -58,6 +58,8 @@ These calls are all best-effort, and failure does not prevent the other calls fr
 Resume is the symmetric inverse of the halt. Resuming the bridge and resolution of the halt deposit are separate extrinsics, to allow granular control over the shape of the recovery. The Fellowship will likely bundle the two concerns in a single whitelisted caller proposal (e.g. resume + slash), but in some cases, the specific scenario might require a longer halted bridge state. In that case, the halting account may be refunded, but the bridge should not be resumed yet.
 
 To prevent censoring the bridge should the Technical Fellowship being unavailable for an extended amount of time, the bridge should autoresume after a set duration, set in the pallet config (suggested around 2 weeks).
+
+The resume extrinsic should do the inverse of all the operations expressed in the previous section, and set the pallet state to `Normal`. While the async calls execute, the bridge might actually be in `Halted` still, but since this is short in duration (1-2 mins) the temporary inconsistency is allowable.
 
 The pallet should also have an extend extrinsic, callable by the Fellowship, to extend the halt by the provided duration.
 
@@ -94,7 +96,7 @@ Performance is not really a concern of this RFC, since the halt is gated by a la
 
 ### Ergonomics
 
-The permissionless halt trigger is an extrinsic with large (to be determined, around 100k) DOT in the signer's account. Offchain relayers should implement watching events for the new pallet, and also stop relaying messages once the pallet `Triggered` state is discovered.
+The permissionless halt trigger is an extrinsic with large (to be determined, around 100k) DOT in the signer's account. Offchain relayers should implement watching events for the new pallet, and also stop relaying messages once the pallet `Halted` state is discovered.
 
 The second user of this new function is the Fellowship, who will likely interact with this pallet through whitelisted caller proposals, to resume, slash, refund or extend the halt.
 
