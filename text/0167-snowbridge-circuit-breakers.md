@@ -88,8 +88,6 @@ The contract emits events at trip and lift so the existing relayer infrastructur
 ### Performance
 
 - **Gateway:** ~10-15k extra gas per ERC20 release and PNA mint of a capped asset. Uncapped assets pay no extra gas.
-- **AH frontend:** O(1) storage read/write per export of a capped asset.
-- **BH outbound queue:** O(1) per-block aggregate increment, negligible.
 
 ### Ergonomics
 
