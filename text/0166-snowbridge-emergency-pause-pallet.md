@@ -57,11 +57,9 @@ These calls are all best-effort, and failure does not prevent the other calls fr
 
 Resume is the symmetric inverse of the halt. Resuming the bridge and resolution of the halt deposit are separate extrinsics, to allow granular control over the shape of the recovery. The Fellowship will likely bundle the two concerns in a single whitelisted caller proposal (e.g. resume + slash), but in some cases, the specific scenario might require a longer halted bridge state. In that case, the halting account may be refunded, but the bridge should not be resumed yet.
 
-To prevent censoring the bridge should the Technical Fellowship being unavailable for an extended amount of time, the bridge should autoresume after a set duration, set in the pallet config (suggested around 2 weeks).
+It was considered to have the bridge auto resume after a set duration in case the Technical Fellowship should be unavailable for an extended time. The counter argument is that if the Technical Fellowship is unavailable, Polkadot would likely have bigger problems that resuming Snowbridge, and so it was removed from this spec.
 
 The resume extrinsic should do the inverse of all the operations expressed in the previous section, and set the pallet state to `Normal`. While the async calls execute, the bridge might actually be in `Halted` still, but since this is short in duration (1-2 mins) the temporary inconsistency is allowable.
-
-The pallet should also have an extend extrinsic, callable by the Fellowship, to extend the halt by the provided duration.
 
 ### Releasing or slashing the deposit
 
@@ -117,7 +115,6 @@ These all relate to pallet config, and decisions can be kicked down the line to 
 
 * **Retry backoff:** Need to agree on a retry setting config, perhaps 30-60 seconds, in block time.
 * **Deposit:** 100k DOT matches the runtimes #1089 number, but Snowbridge halts more than a generic safe-mode would. Worth a separate Fellowship discussion on whether the deposit should be higher.
-* **Auto resume duration:** Suggested to be between 7 - 14 days.
 
 ## Future Directions and Related Material
 
