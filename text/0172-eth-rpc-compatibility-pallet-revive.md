@@ -1,10 +1,11 @@
-# RFC-0000: Ethereum JSON-RPC compatibility standard for `pallet-revive`
+# RFC-0172: Ethereum JSON-RPC compatibility standard for `pallet-revive`
 
 |                 |                                                                       |
 | --------------- | --------------------------------------------------------------------- |
 | **Start Date**  | 2026-06-25                                                            |
 | **Description** | Define a normative Ethereum JSON-RPC conformance target, Substrate↔Ethereum semantics, and a conformance test suite for `pallet-revive`'s `eth-rpc` server. |
 | **Authors**     | Maheswaran Velmurugan (@solokingm)                                    |
+| **RFC PR**      | [polkadot-fellows/RFCs#172](https://github.com/polkadot-fellows/RFCs/pull/172) |
 
 ## Summary
 
