@@ -1,10 +1,10 @@
 # RFC-0167: Snowbridge Circuit Breakers
 
-|                 |                                                                                             |
-| --------------- | ------------------------------------------------------------------------------------------- |
-| **Start Date**  | 2026-05-28                                                                                  |
-| **Description** | Per-asset velocity caps on the Ethereum Gateway (primary) and the AssetHub frontend (secondary) that automatically throttle anomalous Snowbridge flows. |
-| **Authors**     | Snowbridge team                                                                             |
+|                 |                                                                                                                                                       |
+| --------------- |-------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Start Date**  | 2026-05-28                                                                                                                                            |
+| **Description** | Per-asset velocity caps on the Ethereum Gateway (P→E) and Asset Hub (E→P) that automatically throttle irregular Snowbridge flows in both directions. |
+| **Authors**     | Snowbridge team                                                                                                                                       |
 
 ## Summary
 
@@ -12,7 +12,7 @@ Snowbridge does not currently have any proactive on-chain security measures in p
 
 ## Motivation
 
-At the moment, there is no way to halt Snowbridge besides a Fellowship-driven whitelisted caller proposal to halt Snowbridge. A permissionless halt is proposed in [Snowbridge Emergency Pause Pallet RFC](./0166-snowbridge-emergency-pause-pallet.md). A reactive halt might not be enough in the case of an exploit that already occurred, and saw millions of dollars flow out of the bridge. Consequently, this proposal adds a proactive security measure - delaying unusual large net transfers out of the bridge, to give the community time to inspect the transfer, and halt the bridge via the permissionless halt, if illegitimate.
+At the moment, there is no way to halt Snowbridge besides a Fellowship-driven whitelisted caller proposal to halt Snowbridge. A permissionless halt is proposed in [Snowbridge Emergency Pause Pallet RFC](./0166-snowbridge-emergency-pause-pallet.md). A reactive halt might not be enough in the case of an exploit that already occurred, and saw millions of dollars flow out of the bridge. Consequently, this proposal adds a proactive security measure - delaying unusual large net transfers in either direction (funds leaving the bridge on Ethereum, or bridged assets minted on Polkadot), to give the community time to inspect the transfer, and halt the bridge via the permissionless halt, if illegitimate.
 
 The need for such a feature is supported by other popular bridges, e.g. (Wormhole's [Governor](https://github.com/wormhole-foundation/wormhole/blob/main/whitepapers/0007_governor.md), Axelar's [transfer-rate limits](https://www.axelar.network/blog/axelar-governance-explained) and LayerZero OFT's [`RateLimiter`](https://github.com/LayerZero-Labs/devtools/blob/main/packages/oapp-evm/contracts/oapp/utils/RateLimiter.sol)). Bridges that did not implement rate limiting, have seen exploits that might have been prevented with rate limiting (Nomad's [$190M exploit](https://cloud.google.com/blog/topics/threat-intelligence/dissecting-nomad-bridge-hack), Multichain, Ronin, Wormhole's own pre-Governor Solana exploit). This RFC adopts the best practices that other bridges have set: per-asset, rolling-window, governance-set, auto-lifting.
 
@@ -39,7 +39,7 @@ If one considers the possible exploit shapes, they would all be protected by a c
 - Gateway message decode bug
 - PNA minting bug
 
-The implementation should track per-asset, net outflow over a rolling 24 hour window, both ERC-20s and Ether, and PNAs. For each asset and each class, net movement (outflow - inflow) is tracked over the window. Net flow is tracked so two-way arbitrage and market-maker activity doesn't trigger the cap and unnecessarily delay transactions. This is borrowed from Hydration's `pallet-circuit-breaker` net-volume pattern. 
+The implementation should track per-asset, net outflow over a rolling 24 hour window, both ERC-20s and Ether, and PNAs (Polkadot native assets, like DOT). This part of the circuit breaker is specifically for P->E transfers For each asset and each class, net movement (outflow - inflow) is tracked over the window. Net flow is tracked so two-way arbitrage and market-maker activity doesn't trigger the cap and unnecessarily delay transactions. This is borrowed from Hydration's `pallet-circuit-breaker` net-volume pattern. 
 
 A 24 hour window is suggested, as the delay needs to be long enough for bridge operators to notice. The window matches bridges like Wormhole and LayerZero's behaviour. Assets should be tracked by denomination, not USD, so that it doesn't create reliance on oracles. Assets without a cap ignore the circuit breaker pattern, so that the tracking is opt-in by way of governance vote.
 
@@ -60,9 +60,22 @@ The reason why the asset lock auto-lifts is that this mechanism is a buy-us-time
 
 The increased gas cost to add the circuit breaker is estimated to be around ~10-15k extra (read and write the per-asset counter and check the cap).
 
+It is worth noting that the gateway circuit breaker only covers P->E transfers because in the case of E->P transfers, where an exploit bypasses Ethereum and submits fraudulent transactions to Bridge Hub, the circuit breaker on Ethereum won't help. This is why a separate circuit breaker on Asset Hub is also required.
+
+### Asset Hub Circuit Breaker
+
+A circuit breaker on AssetHub is also required. It caps the net amount of each bridged asset minted over a rolling window:
+
+- Ethereum assets: net mint = minted (E→P) − burned (P→E).
+- PNAs: net release = released from the reserve (E→P) − locked (P→E).
+
+Asset Hub is well suited for this implementation, because this is where assets and minted and in reverse. It also simplifies the hold pattern - it eliminates a delayed crosschain call from Bridge Hub to Asset Hub, and rather delays the transaction on AssetHub itself. The case where the final transaction destination is another parachain (like Hydration), should still be kept in mind (and the intricacies that come with that, like fee cost might shift in that window). When an incoming transfer would breach the cap, Asset Hub holds it rather than completing the mint, and retries once the lock lifts, so a tripped cap delays the transfer rather than losing it.
+
+Everything else matches the Gateway breaker: per-asset, tracked by denomination (no oracle), net flow, a governance-set cap with a floor, and a 24h auto-lift. These caps are set locally on Asset Hub. The same trip and lift events page on-call so the bridge can be halted if the spike turns out to be a real exploit.
+
 ### Caps set by Governance
 
-Caps are set via governance, through the usual method of using the Ethereum Frontend pallet on Asset Hub, which sends a message to the Ethereum System V2 pallet on Bridge Hub, which in turn sends the message to Ethereum. Concrete cap values per asset are deliberately out of scope of this RFC, which specifies the cap mechanism's shape and the framework for choosing values, not the values themselves. Token-denominated cap values are decided and ratified by community vote at deployment and at re-vote, if necessary.
+Caps are set via governance, through the usual method of using the Ethereum Frontend pallet on Asset Hub, which sets the Asset Hub circuit breaker cap, as well as sends a message to the Ethereum System V2 pallet on Bridge Hub, which in turn sends the message to Ethereum. Concrete cap values per asset are deliberately out of scope of this RFC, which specifies the cap mechanism's shape and the framework for choosing values, not the values themselves. Token-denominated cap values are decided and ratified by community vote at deployment and at re-vote, if necessary.
 
 For the initial contract upgrade, the 24h asset flow will not be accurate (since it needs 24 hours to build up a true view of flows), but the governance-decided floor cap will be used (as part of the cap calculation).
 
@@ -78,8 +91,9 @@ The contract emits events at trip and lift so the existing relayer infrastructur
 
 ## Testing, Security, and Privacy
 
-- Gateway tests: Solidity unit tests, covering all the possible scenarios.
-- Asset Hub frontend pallet unit tests
+- P→E cap Gateway tests: Solidity unit tests, covering all the possible scenarios.
+- E→P Asset Hub circuit breaker unit tests: net-mint tracking, cap reached and auto-lift, holding and retry of an over-cap mint, for both foreign assets and PNAs.
+- Ethereum System Frontend pallet unit tests for setting both the Gateway and Asset Hub `set_cap` governance entry.
 - Polkadot SDK integration tests: Testing the governance command from Asset Hub, is sent to Bridge Hub and the outbound message to Ethereum is queued correctly.
 - No privacy concerns with this proposal - all events are public.
 
@@ -88,6 +102,7 @@ The contract emits events at trip and lift so the existing relayer infrastructur
 ### Performance
 
 - **Gateway:** ~10-15k extra gas per ERC20 release and PNA mint of a capped asset. Uncapped assets pay no extra gas.
+- **Asset Hub:** a per-asset counter read and write per E→P mint of a capped asset, negligible. Uncapped assets are untouched.
 
 ### Ergonomics
 
@@ -97,9 +112,9 @@ Operator-facing: cap configuration is a governance-driven workflow. Bridge monit
 
 ### Compatibility
 
-- **Ethereum Gateway:** This is a major Ethereum contract change and requires a gateway upgrade. Adds the per-asset caps, a command to set cap values, inflow and outflow tracking and checking each transfer against the cap.
-- **Asset Hub:** Adds a `set_cap` extrinsic to the Ethereum System Frontend pallet, guarded by root origin.
-- **Bridge Hub:** Adds a `set_cap` extrinsic in the Ethereum System V2 pallet.
+- **Ethereum Gateway (P→E breaker):** This is a major Ethereum contract change and requires a gateway upgrade. Adds the per-asset caps, a command to set cap values, inflow and outflow tracking and checking each transfer against the cap.
+- **Asset Hub (E→P breaker):** Adds the E→P circuit breaker" net-mint tracking per bridged asset, the cap check, and holding over-cap transfers until the lock lifts, with its caps set on Asset Hub. The Ethereum System Frontend pallet also needs a `set_cap` extrinsic (root origin), the governance entry point for the *Gateway* cap, which it proxies to Bridge Hub.
+- **Bridge Hub:** Adds a `set_cap` extrinsic (in the Ethereum System V2 pallet) that relays the Gateway cap command on to Ethereum.
 
 ## Prior Art and References
 
