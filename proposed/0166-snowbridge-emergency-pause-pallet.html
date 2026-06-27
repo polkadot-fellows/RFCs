@@ -214,11 +214,10 @@
 </tbody></table>
 </div>
 <h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
-<p>At the moment, there is no way for Snowbridge to be halted immediately. The best course of action to halt the bridge should an exploit be detected, is to halt the bridge through a whitelisted caller proposal, through OpenGov. This has obvious drawbacks - even if a Snowbridge exploit is detected, there is no way to halt the bridge on-chain (off-chain relayers can be switched off but it is obviously not a fool-proof stopgap). This RFC proposes a permissionless, instant Snowbridge halt if the caller deposits a large sum of DOT, to be slashed if paused maliciously. This proposal is a reactive security measure (i.e. a exploit or vulnerability first need to be visible for this functionality to be useful). Another proposal, Snowbridge Circuit Breakers, is proposed alongside this RFC for a more proactive approach.</p>
+<p>At the moment, there is no way for Snowbridge to be halted immediately. The best course of action to halt the bridge should an exploit be detected, is to halt the bridge through a whitelisted caller proposal, through OpenGov. This has obvious drawbacks - even if a Snowbridge exploit is detected, there is no way to halt the bridge on-chain (off-chain relayers can be switched off but it is obviously not a fool-proof stopgap). This RFC proposes a permissionless, instant Snowbridge halt if the caller deposits a large sum of DOT, to be slashed if paused maliciously. This proposal is a reactive security measure (i.e. a exploit or vulnerability first need to be visible for this functionality to be useful). Another proposal, <a href="https://github.com/polkadot-fellows/RFCs/pull/167">Snowbridge Circuit Breakers</a>, is proposed alongside this RFC for a more proactive approach.</p>
 <h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
-<p>Snowbridge has no near-immediately halt path today. Existing governance halt routes require a referendum  and Fellowship action (hours-to-days latency). Both are too slow for an active drainage exploit and to stop activity during investigation.</p>
-<p>Investigation into the new TX pause pallet and Safe Mode pallet (<a href="https://github.com/polkadot-fellows/runtimes/pull/1164">polkadot-fellows/runtimes PR1164</a> revealed that parts that can be reused and referenced, but
-it does not resolve Snowbridge's need directly. Pallet Safe Mode blocks all calls on the chain, including unrelated parts of the chain, which could have intended affects for the rest of chain. Besides this, Snowbridge requires a multi-chain freeze that spans Ethereum contracts, Bridge Hub and Asset Hub. Neither of these two existing pallets support inter-chain messaging. Similarly, pallet TX Pause requires a privileged origin. Snowbridge requires a permissionless pausing mechanism, given an sizeable, slashable deposit.</p>
+<p>Snowbridge has no near-immediate halt path today. Existing governance halt routes require a referendum  and Fellowship action (hours-to-days latency). Both are too slow for an active drainage exploit and to stop activity during investigation.</p>
+<p>Investigation into the new TX Pause pallet and Safe Mode pallet (<a href="https://github.com/polkadot-fellows/runtimes/pull/1164">polkadot-fellows/runtimes PR1164</a>) revealed parts that can be reused and referenced, but they do not resolve Snowbridge's need directly. Pallet Safe Mode blocks all calls on the chain, including unrelated parts of the chain, which could have unintended effects for the rest of the chain. Besides this, Snowbridge requires a multi-chain freeze that spans Ethereum contracts, Bridge Hub and Asset Hub. Neither of these two existing pallets support inter-chain messaging. Similarly, pallet TX Pause requires a privileged origin. Snowbridge requires a permissionless pausing mechanism, given a sizeable, slashable deposit.</p>
 <h2 id="stakeholders"><a class="header" href="#stakeholders">Stakeholders</a></h2>
 <ul>
 <li><strong>Polkadot Fellowship</strong>, the <code>ResolveOrigin</code> and the body that decides between genuine vs malicious triggers. The most likely callers of a permissionless trigger during an incident.</li>
@@ -230,38 +229,32 @@ it does not resolve Snowbridge's need directly. Pallet Safe Mode blocks all call
 <h3 id="goal"><a class="header" href="#goal">Goal</a></h3>
 <p>A permissionless DOT deposit triggers a complete Snowbridge halt, in response to possible exploit (stop new activity while investigating) and active exploits (attacker is actively draining value).</p>
 <h3 id="implementation"><a class="header" href="#implementation">Implementation</a></h3>
-<p>The proposed implementation starts with an entry point extrinsic on Bridge Hub (in a new pallet). The extrinsic should require a DOT deposit. If a valid deposit has been reserved, the pallet state should change to <code>Halted</code>. The caller should specify an <code>Immediate</code> or <code>Gradual</code> option to the extrinsic:</p>
-<ul>
-<li><code>Immediate</code>: The immediate option would immediately block all incoming and outgoing bridge traffic on BridgeHub. This might have inconvenient effects on both sides of the bridge - Ethereum transactions might have been submitted and will not be processed on Polkadot, and transactions from other parachains might have to initiated but will not be completed due to the immediate block on BridgeHub. In an active exploit scenario, the upside (blocking all traffic, immediately) outweighs the downside, given that it can be corrected with a follow-up recon proposal.</li>
-<li><code>Gradual</code>: The gradual option sends the required cross-chain messages to block messages incoming from AssetHub and Ethereum, so that the bridge is halted gracefully, with inflight transactions being allowed to complete before halting the bridge. This case would make more sense to use in a situation where a vulnerability is detected but not actively exploited.</li>
-</ul>
-<p>Once the pallet is in <code>Halted</code> state, follow-up calls to the same extrinsic will fail.</p>
-<p>The halting extrinsics and messages that will be used to block the bridge are:</p>
+<p>The proposed implementation starts with an entry point extrinsic on Bridge Hub (in a new pallet). The extrinsic requires a DOT deposit. Once a valid deposit has been reserved, the pallet state changes to <code>Halted</code> and the bridge is halted in both directions. The halt is graceful: messages that were already in flight, in either direction, are held and sent once the bridge resumes rather than being lost (see below). Once in the <code>Halted</code> state, follow-up calls to the same extrinsic will fail.</p>
+<p>The halt blocks new transfers from entering the bridge:</p>
 <ol>
-<li><code>EthereumInboundQueue::set_operating_mode(Halted)</code> (Immediate)</li>
-<li><code>EthereumInboundQueueV2::set_operating_mode(Halted)</code> (Immediate)</li>
-<li><code>EthereumOutboundQueue::set_operating_mode(Halted)</code> (Immediate)</li>
-<li><code>EthereumOutboundQueueV2::set_operating_mode(Halted)</code> (Immediate) - needs to be implemented, does not exist yet.</li>
-<li><code>EthereumBeaconClient::set_operating_mode(Halted)</code> (Immediate)</li>
-<li><code>snowbridgeSystemFrontend::set_operating_mode(Halted)</code> (Immediate, Gradual)</li>
-<li>Outbound governance command via <code>EthereumSystem</code> (Immediate, Gradual)</li>
+<li><code>snowbridgeSystemFrontend::set_operating_mode(Halted)</code>: Sets the frontend's export mode on Asset Hub, blocking new P→E transfers there.</li>
+<li>Outbound governance command issued from Bridge Hub via <code>snowbridge-pallet-system-v2</code>: Sets the Gateway's operating mode, blocking new E→P transfers on Ethereum.</li>
+<li><code>EthereumBeaconClient::set_operating_mode(Halted)</code> - a local Bridge Hub call that stops new Ethereum header ingestion, as defense-in-depth.</li>
 </ol>
-<p>We should consider adding a bridge operating mode state check in the Ethereum <code>submitV1</code> and <code>submitV2</code> contracts, to prevent in-flight messages from P-&gt;E from processing in an immediate halt.</p>
+<p>Messages that were already in flight when the halt landed are not rejected. Rejecting them would leave the bridge inconsistent, for example an asset burned on one side with nothing minted on the other. Instead, in-flight transfers are held and sent on resume, as described below.</p>
 <p>These calls are all best-effort, and failure does not prevent the other calls from being executed. The pallet attempts each, logs successes and failures, and re-attempts pending calls in later blocks via <code>on_initialize</code>.</p>
+<p>The holds below reads the new halt pallet's <code>Halted</code> state, which the inbound and outbound message handling on Bridge Hub read directly to decide whether to hold a message or process it as normal.</p>
+<p>For P→E transfers, in-flight messages are held using the MessageQueue. Outbound messages only get a nonce when they are committed for relay to Ethereum, so while the bridge is halted they are accepted into the queue but not committed. When the bridge resumes, they are committed with fresh nonces, which avoids any stale light client proofs. A small number of P→E messages may have been committed and relayed just before the halt landed, which cannot be held on Bridge Hub; to cover those, we should also consider a bridge operating mode check in the Ethereum <code>submitV1</code> and <code>submitV2</code> contracts, so they do not process on Ethereum while the bridge is halted.</p>
+<p>For E→P transfers, halting holds messages in storage until the bridge resumes. While the bridge is halted, incoming messages are still verified but, rather than being forwarded to Asset Hub, they are kept in the pallet's storage. When the bridge resumes, the held messages are sent on. This applies to the V2 inbound path only, since the older V1 path is being deprecated.</p>
+<p>In both directions, the held messages can be inspected while the bridge is halted and any malicious ones removed via a governance approved migration before it resumes.</p>
 <h3 id="resuming-the-bridge"><a class="header" href="#resuming-the-bridge">Resuming the bridge</a></h3>
 <p>Resume is the symmetric inverse of the halt. Resuming the bridge and resolution of the halt deposit are separate extrinsics, to allow granular control over the shape of the recovery. The Fellowship will likely bundle the two concerns in a single whitelisted caller proposal (e.g. resume + slash), but in some cases, the specific scenario might require a longer halted bridge state. In that case, the halting account may be refunded, but the bridge should not be resumed yet.</p>
-<p>It was considered to have the bridge auto resume after a set duration in case the Technical Fellowship should be unavailable for an extended time. The counter argument is that if the Technical Fellowship is unavailable, Polkadot would likely have bigger problems that resuming Snowbridge, and so it was removed from this spec.</p>
+<p>It was considered to have the bridge auto resume after a set duration in case the Technical Fellowship should be unavailable for an extended time. The counter argument is that if the Technical Fellowship is unavailable, Polkadot would likely have bigger problems than resuming Snowbridge, and so it was removed from this spec.</p>
 <p>The resume extrinsic should do the inverse of all the operations expressed in the previous section, and set the pallet state to <code>Normal</code>. While the async calls execute, the bridge might actually be in <code>Halted</code> still, but since this is short in duration (1-2 mins) the temporary inconsistency is allowable.</p>
 <h3 id="releasing-or-slashing-the-deposit"><a class="header" href="#releasing-or-slashing-the-deposit">Releasing or slashing the deposit</a></h3>
 <p>The pallet should add two extrinsics to resolve the halting deposit - <code>slash</code> and <code>refund</code>. Slashing the deposit should send the deposit to Treasury on Asset Hub. Refunding the deposit should release the funds back to the sender. It might be worthwhile to capture a bounded text reason, to capture the reason behind the slash or refund onchain.</p>
 <h3 id="threat-model-coverage"><a class="header" href="#threat-model-coverage">Threat model coverage</a></h3>
 <ul>
-<li><strong>E→P entry (Ethereum-side UX)</strong>, Gateway halt (call 7).</li>
-<li><strong>E→P in-flight + inbound-queue exploit</strong>, inbound V1 + V2 halts (calls 1, 2). Critically also covers exploits that bypass the Gateway entirely (malformed proofs, payload-decode bugs, MMR weaknesses).</li>
-<li><strong>P→E new submissions during AH-halt-in-flight window, V1</strong>, outbound V1 halt (call 3).</li>
-<li><strong>P→E new submissions during AH-halt-in-flight window, V2</strong>, outbound V2 halt (call 4).</li>
-<li><strong>P→E entry (AH-side UX)</strong>, AH frontend halt (call 6).</li>
-<li><strong>Beacon-client exploit</strong>, beacon client halt (call 5).</li>
+<li><strong>New E→P entry</strong>, Gateway halt (call 2) stops new transfers starting on Ethereum.</li>
+<li><strong>E→P in-flight + inbound-queue exploit</strong>, the inbound hold. Covers exploits that bypass the Gateway entirely (malformed proofs, payload-decode bugs, MMR weaknesses): messages are verified and held, and malicious ones can be dropped before reaching Asset Hub.</li>
+<li><strong>New P→E entry</strong>, AH frontend halt (call 1) stops new transfers at Asset Hub.</li>
+<li><strong>P→E in-flight</strong>, the outbound hold keeps messages queued and uncommitted until resume.</li>
+<li><strong>Beacon-client exploit</strong>, beacon client halt (call 3).</li>
 </ul>
 <h2 id="drawbacks"><a class="header" href="#drawbacks">Drawbacks</a></h2>
 <ul>
@@ -270,7 +263,7 @@ it does not resolve Snowbridge's need directly. Pallet Safe Mode blocks all call
 </ul>
 <h2 id="testing-security-and-privacy"><a class="header" href="#testing-security-and-privacy">Testing, Security, and Privacy</a></h2>
 <ul>
-<li><strong>Pallet unit tests:</strong> Usual tests to cover the pallet code, in a unit test fashion (including halt type, deposit under sufficient/insufficient balance, bridge resuming, extend).</li>
+<li><strong>Pallet unit tests:</strong> Usual tests to cover the pallet code, in a unit test fashion (including halting, holding and replaying inbound messages, deposit under sufficient/insufficient balance, bridge resuming, extend).</li>
 <li><strong>Integration tests:</strong> Test that calls the pallet extrinsic and verifies all the expected effects occur (all the Bridge Hub halt events trigger, outbound message to Ethereum is queued and AssetHub receives and processed Snowbridge system frontend halt message).</li>
 <li><strong>End-to-end simulation</strong> (chopsticks fork): Polkadot ecosystem tests to verify that all the correct behaviour executes against a fork of Polkadot mainnet.</li>
 <li><strong>Security posture:</strong> the pallet creates a new attack surface. This is the intended design, calibrated against the asymmetric harm of being unable to halt during an active drainage.</li>
@@ -282,13 +275,13 @@ it does not resolve Snowbridge's need directly. Pallet Safe Mode blocks all call
 <p>The permissionless halt trigger is an extrinsic with large (to be determined, around 100k) DOT in the signer's account. Offchain relayers should implement watching events for the new pallet, and also stop relaying messages once the pallet <code>Halted</code> state is discovered.</p>
 <p>The second user of this new function is the Fellowship, who will likely interact with this pallet through whitelisted caller proposals, to resume, slash, refund or extend the halt.</p>
 <h3 id="compatibility"><a class="header" href="#compatibility">Compatibility</a></h3>
-<p>This proposal mostly adds new functionality, with minor extensions to EthereumOutboundQueueV2 and EthereumOutboundQueueV1 (add set_operating_mode<code>extrinsic). As mentioned in the implementation,</code>submitV1<code>and</code>submitV2<code>Ethereum contracts should also check the operating mode, to ensure messages already enqueued on Polkadot can still be prevented to process on Ethereum. The new storage defaults to</code>Normal` so the change is backwards-compatible. No other existing Snowbridge pallet interfaces change. </p>
+<p>This proposal mostly adds new functionality. The main changes to existing Snowbridge components are on Bridge Hub: while the bridge is paused, outbound P→E messages are held in the queue rather than committed, and inbound E→P messages are held in storage rather than dispatched to Asset Hub. As mentioned above, the Ethereum <code>submitV1</code> and <code>submitV2</code> contracts should also check the operating mode, so P→E messages that were already relayed cannot process on Ethereum while the bridge is halted. The new storage defaults to <code>Normal</code> so the change is backwards-compatible. No other existing Snowbridge pallet interfaces change.</p>
 <h2 id="prior-art-and-references"><a class="header" href="#prior-art-and-references">Prior Art and References</a></h2>
 <ul>
 <li><a href="https://github.com/polkadot-fellows/runtimes/issues/1089">polkadot-fellows/runtimes #1089</a>, the chain-wide safe-mode and tx-pause deployment proposal.</li>
 <li><a href="https://github.com/polkadot-fellows/runtimes/pull/1164">polkadot-fellows/runtimes #1164</a>, the AssetHub safe-mode wiring.</li>
 <li><code>pallet-safe-mode</code> and <code>pallet-tx-pause</code> in the Polkadot SDK.</li>
-<li>TBA Snowbridge Circuit Breakers RFC, the companion preventive layer.</li>
+<li><a href="https://github.com/polkadot-fellows/RFCs/pull/167">Snowbridge Circuit Breakers RFC (PR #167)</a>, the companion preventive layer.</li>
 </ul>
 <h2 id="unresolved-questions"><a class="header" href="#unresolved-questions">Unresolved Questions</a></h2>
 <p>These all relate to pallet config, and decisions can be kicked down the line to Polkadot runtime config, if necessary:</p>
@@ -300,7 +293,7 @@ it does not resolve Snowbridge's need directly. Pallet Safe Mode blocks all call
 <ul>
 <li><strong>Per-extrinsic granular pause</strong> as a v2 of the pallet, using <code>pallet-tx-pause</code>'s <code>FullNameOf&lt;T&gt;</code> addressing.</li>
 <li><strong>Watchdog automation:</strong> off-chain monitors with funded accounts that auto-trigger on observed anomalies.</li>
-<li><strong>Companion RFC:</strong> the TBA Snowbridge Circuit Breakers RFC specifies the preventive layer (per-asset Gateway-side velocity caps, AH and BH secondary caps) that bounds value-at-risk during the detection-latency window this pallet does not cover.</li>
+<li><strong>Companion RFC:</strong> the <a href="https://github.com/polkadot-fellows/RFCs/pull/167">Snowbridge Circuit Breakers RFC (PR #167)</a> specifies the preventive layer (per-asset velocity caps on the Ethereum Gateway for P→E and Asset Hub for E→P) that bounds value-at-risk during the detection-latency window this pallet does not cover.</li>
 </ul>
 
                     </main>
