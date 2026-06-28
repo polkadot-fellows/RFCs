@@ -4,7 +4,7 @@
 | --------------- | --------------------------------------------------------------------- |
 | **Start Date**  | 2026-06-25                                                            |
 | **Description** | Define a normative Ethereum JSON-RPC conformance target, Substrate↔Ethereum semantics, and a conformance test suite for `pallet-revive`'s `eth-rpc` server. |
-| **Authors**     | Maheswaran Velmurugan (@solokingm), [@Nathy-bajo](https://github.com/Nathy-bajo) |
+| **Authors**     | Maheswaran Velmurugan (@solokingm), Nathaniel (@Nathy-bajo) |
 | **RFC PR**      | [polkadot-fellows/RFCs#172](https://github.com/polkadot-fellows/RFCs/pull/172) |
 
 ## Summary
@@ -98,7 +98,7 @@ where `proof_size_to_fee` normalises one unit of proof size into ref-time-equiva
 
 **Storage deposit.** The refundable storage deposit is not part of `Weight` and so is not captured by the fold. The Ethereum gas budget MUST cover it: on-chain, a transaction's authorised value `gas × gasPrice` is split into the weight fee and the deposit (`storage_deposit = eth_fee − tx_fee`). Consequently `eth_estimateGas` MUST include the call's storage deposit in the returned gas, so that a transaction submitted with `gasLimit = eth_estimateGas(...)` is funded for both execution and state growth and does not fail for insufficient funds — matching the go-ethereum guarantee that a transaction sent with the estimated gas does not run out. The deposit continues to be refunded on-chain; only the *limit* the client must supply is affected.
 
-**Requirements.** `eth_gasPrice` MUST return the price used in this conversion (derived from the runtime's fee multiplier and native-to-Ether ratio), so that `gas × gasPrice` reproduces the on-chain fee. `eth_estimateGas` MUST return the gas corresponding — via the binding-dimension fold plus the storage deposit — to the resources the call actually consumes, i.e. a true upper bound. Returning a value from the averaged fold, or one that omits the deposit, is a conformance bug.
+**Requirements.** The **fold rule itself** — binding dimension plus storage deposit — is normative and MUST be applied by every conforming server; the per-dimension coefficients (`ref_time_to_fee`, `proof_size_to_fee`) remain per-chain configuration. `eth_gasPrice` MUST return the price used in this conversion (derived from the runtime's fee multiplier and native-to-Ether ratio), so that `gas × gasPrice` reproduces the on-chain fee. `eth_estimateGas` MUST return the gas corresponding — via the binding-dimension fold plus the storage deposit — to the resources the call actually consumes, i.e. a true upper bound. The gas value presented to the client MUST also be divided by the current fee multiplier (the reciprocal applied by `next_fee_multiplier_reciprocal` in `fees.rs`) before it is returned, because the wallet re-applies that multiplier through `eth_gasPrice`; this keeps `gas × gasPrice` equal to the on-chain fee instead of double-counting or dropping the multiplier. Returning a value from the averaged fold, omitting the deposit, or mishandling the multiplier is a conformance bug.
 
 ### 3. Conformance test suite
 
@@ -147,7 +147,6 @@ The proposal increases compatibility with the Ethereum ecosystem. For chains alr
 - **`safe` semantics.** Is mapping `safe` to `finalized` acceptable to all stakeholders, or is there appetite to expose a genuinely weaker-than-finalised checkpoint (e.g. best-block-with-N-confirmations) as `safe`?
 - **Where the suite lives.** Should the conformance suite vendor the upstream `execution-apis` vectors, or maintain an independent curated set, or both?
 - **Normative strength.** Should conformance be a hard CI gate (MUST) or advisory (SHOULD) during an initial stabilisation period?
-- **Gas fold normativity.** Should the binding-dimension fold (§2.4) be a hard MUST for `eth_estimateGas` on every revive chain, or guidance, given chains may configure different weight-to-fee coefficients? The fold *rule* is chain-independent even if the coefficients are not.
 
 ## Future Directions and Related Material
 
