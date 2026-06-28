@@ -4,7 +4,7 @@
 | --------------- | --------------------------------------------------------------------- |
 | **Start Date**  | 2026-06-25                                                            |
 | **Description** | Define a normative Ethereum JSON-RPC conformance target, Substrate↔Ethereum semantics, and a conformance test suite for `pallet-revive`'s `eth-rpc` server. |
-| **Authors**     | Maheswaran Velmurugan (@solokingm)                                    |
+| **Authors**     | Maheswaran Velmurugan (@solokingm), [@Nathy-bajo](https://github.com/Nathy-bajo) |
 | **RFC PR**      | [polkadot-fellows/RFCs#172](https://github.com/polkadot-fellows/RFCs/pull/172) |
 
 ## Summary
@@ -22,7 +22,7 @@ The value proposition of `pallet-revive` is that *unmodified* Ethereum tooling w
 3. **Edge-case divergences are real and recurring.** Concrete examples found and fixed while preparing this RFC:
    - `eth_feeHistory` returned the wrong reward bucket because the cache lookup discarded the half-percentile resolution the cache was built at ([paritytech/polkadot-sdk#12470](https://github.com/paritytech/polkadot-sdk/pull/12470)).
    - `eth_getLogs` rejected the standard block tags `finalized`/`safe`/`pending` in filter ranges with an "Unsupported tag" error, although the same tags are accepted elsewhere in the server ([#12474](https://github.com/paritytech/polkadot-sdk/pull/12474)).
-   - `eth_getLogs` produced invalid `IN ()` SQL — and therefore an error — for the valid filters `{"address": []}` and `{"topics": [[]]}`, which Ethereum clients treat as "match anything" ([#12479](https://github.com/paritytech/polkadot-sdk/pull/12479)).
+   - `eth_getLogs` treated the valid filters `{"address": []}` and `{"topics": [[]]}` as an always-false `IN ()` clause and silently returned zero logs, although Ethereum clients treat an empty list as "match anything" ([#12479](https://github.com/paritytech/polkadot-sdk/pull/12479)).
    - The mapping of internal errors to JSON-RPC error codes did not follow EIP-1474 ([#11887](https://github.com/paritytech/polkadot-sdk/pull/11887)).
 
    Each was a small fix, but the *pattern* — independent, unspecified, untested-against-reference behaviour — is the underlying problem this RFC addresses.
@@ -75,7 +75,7 @@ Errors MUST be reported using the codes defined in [EIP-1474](https://eips.ether
 
 #### 2.3 Parameter edge cases
 
-Where Ethereum clients accept a degenerate-but-valid parameter, the server MUST accept it with the same meaning rather than erroring:
+Where Ethereum clients accept a degenerate-but-valid parameter, the server MUST accept it with the same meaning rather than erroring or silently dropping results:
 
 - An **empty address or topic set** in an `eth_getLogs` filter (`[]`) imposes no constraint on that field — it matches any value (cf. #12479).
 - A **`null` topic position** matches any value at that position (positional topic matching as defined by `eth_getLogs`).
@@ -83,11 +83,28 @@ Where Ethereum clients accept a degenerate-but-valid parameter, the server MUST 
 
 These are not new behaviours; they are the existing Ethereum semantics, written down so they are testable.
 
+#### 2.4 Gas ↔ resource metering
+
+Ethereum meters execution with a single scalar, *gas*. `pallet-revive` meters two independent resources — `Weight { ref_time, proof_size }` — and separately charges a refundable **storage deposit** for state growth. Every Ethereum-facing quantity (`eth_estimateGas`, `eth_gasPrice`, and a transaction's `gas`/`gasPrice`) has to collapse this multi-dimensional cost into one gas number. Leaving the collapse unspecified is the same class of silent divergence this RFC targets: `eth_estimateGas` can differ between revive chains, and calls dominated by proof size can be mispriced (cf. [paritytech/polkadot-sdk#11525](https://github.com/paritytech/polkadot-sdk/issues/11525), [paritytech/polkadot-sdk#10751](https://github.com/paritytech/polkadot-sdk/issues/10751)).
+
+**Fold rule (binding dimension).** Each weight dimension is priced with its own coefficient and the **larger** of the two sets the fee:
+
+```text
+fee(weight) = max( ref_time   × ref_time_to_fee,
+                   proof_size  × proof_size_to_fee )
+```
+
+where `proof_size_to_fee` normalises one unit of proof size into ref-time-equivalent fee units using the block's resource ratio (`ref_time_to_fee × max_block.ref_time / max_block.proof_size`). This is the rule the runtime already applies in `BlockRatioFee::weight_to_fee`; taking the binding dimension makes the gas a faithful **upper bound**. The averaging variant `(ref_time_fee + proof_size_fee) / 2` (present in the code as `weight_to_fee_average`) MUST NOT be used for any Ethereum-facing gas value, because it underprices transactions dominated by a single dimension.
+
+**Storage deposit.** The refundable storage deposit is not part of `Weight` and so is not captured by the fold. The Ethereum gas budget MUST cover it: on-chain, a transaction's authorised value `gas × gasPrice` is split into the weight fee and the deposit (`storage_deposit = eth_fee − tx_fee`). Consequently `eth_estimateGas` MUST include the call's storage deposit in the returned gas, so that a transaction submitted with `gasLimit = eth_estimateGas(...)` is funded for both execution and state growth and does not fail for insufficient funds — matching the go-ethereum guarantee that a transaction sent with the estimated gas does not run out. The deposit continues to be refunded on-chain; only the *limit* the client must supply is affected.
+
+**Requirements.** `eth_gasPrice` MUST return the price used in this conversion (derived from the runtime's fee multiplier and native-to-Ether ratio), so that `gas × gasPrice` reproduces the on-chain fee. `eth_estimateGas` MUST return the gas corresponding — via the binding-dimension fold plus the storage deposit — to the resources the call actually consumes, i.e. a true upper bound. Returning a value from the averaged fold, or one that omits the deposit, is a conformance bug.
+
 ### 3. Conformance test suite
 
-A conformance suite MUST be runnable in CI and SHOULD reuse the Ethereum `execution-apis` test vectors where applicable, supplemented by a curated set of the Substrate-specific cases above (block-tag mapping, empty filter sets, fee-history resolution, EIP-1474 error codes). The suite runs against a local development node and asserts the responses match the specified behaviour. New `eth_*` methods or behavioural changes MUST be accompanied by conformance cases.
+A conformance suite MUST be runnable in CI and SHOULD reuse the Ethereum `execution-apis` test vectors where applicable, supplemented by a curated set of the Substrate-specific cases above (block-tag mapping, empty filter sets, fee-history resolution, EIP-1474 error codes, and the gas fold — asserting `eth_estimateGas` is a binding-dimension upper bound that covers the storage deposit, not an average). The suite runs against a local development node and asserts the responses match the specified behaviour. New `eth_*` methods or behavioural changes MUST be accompanied by conformance cases.
 
-The intent is that the guarantee in Part 1 is *enforced mechanically*: a regression like any of the four linked examples would be caught by CI rather than by a downstream user.
+The intent is that the guarantee in Part 1 is *enforced mechanically*: a regression like any of the linked examples would be caught by CI rather than by a downstream user.
 
 ## Drawbacks
 
@@ -98,7 +115,7 @@ The intent is that the guarantee in Part 1 is *enforced mechanically*: a regress
 ## Testing, Security, and Privacy
 
 - **Testing** is central to the proposal: the conformance suite *is* the enforcement mechanism. Adherence is demonstrated by the suite passing in CI against a local node.
-- **Security.** Standardising error codes and input handling reduces the risk of clients mis-interpreting responses (e.g. treating a rejected transaction as a transient failure and resubmitting). Specifying that empty/`null` filter fields match-all rather than error removes an input-handling path that previously produced backend errors. The proposal does not change runtime or consensus behaviour and so does not expand the trusted computing base.
+- **Security.** Standardising error codes and input handling reduces the risk of clients mis-interpreting responses (e.g. treating a rejected transaction as a transient failure and resubmitting). Specifying that empty/`null` filter fields match-all rather than silently return nothing removes an input-handling path that previously produced wrong results. Standardising the gas fold prevents under-priced estimates that could let proof-size-heavy transactions fail or be mismetered. The proposal does not change runtime or consensus behaviour and so does not expand the trusted computing base.
 - **Privacy.** No change; the RPC surface exposes the same on-chain data as before.
 
 ## Performance, Ergonomics, and Compatibility
@@ -113,7 +130,7 @@ This is a pure ergonomics improvement for the primary audience: Ethereum tooling
 
 ### Compatibility
 
-The proposal increases compatibility with the Ethereum ecosystem. For chains already running `pallet-revive`, the specified behaviours are either already correct or are bug-fixes that make previously-erroring requests succeed; no request that worked before should stop working. There is no on-chain migration. The one behaviour worth calling out to integrators is the explicit (and unchanged-in-practice) `safe`/`pending` → finalised/latest mapping.
+The proposal increases compatibility with the Ethereum ecosystem. For chains already running `pallet-revive`, the specified behaviours are either already correct or are bug-fixes that make previously-erroring or silently-wrong requests behave as Ethereum clients expect; no request that worked before should stop working. There is no on-chain migration. The one behaviour worth calling out to integrators is the explicit (and unchanged-in-practice) `safe`/`pending` → finalised/latest mapping.
 
 ## Prior Art and References
 
@@ -121,6 +138,7 @@ The proposal increases compatibility with the Ethereum ecosystem. For chains alr
 - [EIP-1474: Remote procedure call specification](https://eips.ethereum.org/EIPS/eip-1474).
 - go-ethereum, the de-facto reference implementation of the JSON-RPC surface.
 - Motivating fixes: [#12470](https://github.com/paritytech/polkadot-sdk/pull/12470), [#12474](https://github.com/paritytech/polkadot-sdk/pull/12474), [#12479](https://github.com/paritytech/polkadot-sdk/pull/12479), [#11887](https://github.com/paritytech/polkadot-sdk/pull/11887).
+- Related gas/metering-divergence reports: [#11525](https://github.com/paritytech/polkadot-sdk/issues/11525), [#10751](https://github.com/paritytech/polkadot-sdk/issues/10751).
 - Frontier (the EVM pallet for Substrate) faced the same class of compatibility questions and is a useful source of prior decisions.
 
 ## Unresolved Questions
@@ -129,6 +147,7 @@ The proposal increases compatibility with the Ethereum ecosystem. For chains alr
 - **`safe` semantics.** Is mapping `safe` to `finalized` acceptable to all stakeholders, or is there appetite to expose a genuinely weaker-than-finalised checkpoint (e.g. best-block-with-N-confirmations) as `safe`?
 - **Where the suite lives.** Should the conformance suite vendor the upstream `execution-apis` vectors, or maintain an independent curated set, or both?
 - **Normative strength.** Should conformance be a hard CI gate (MUST) or advisory (SHOULD) during an initial stabilisation period?
+- **Gas fold normativity.** Should the binding-dimension fold (§2.4) be a hard MUST for `eth_estimateGas` on every revive chain, or guidance, given chains may configure different weight-to-fee coefficients? The fold *rule* is chain-independent even if the coefficients are not.
 
 ## Future Directions and Related Material
 
