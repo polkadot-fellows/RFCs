@@ -10,10 +10,10 @@
 
 This RFC proposes two additions to prevent transaction replay attacks that arise from Polkadot's account reaping mechanism:
 
-1. A `created_at_height` field (`u32`, block height) added to per-account storage, set to the current block height whenever an account is created (or re-created), and defaulting to zero for genesis and pre-upgrade accounts.
+1. A `created_at_height` property (`u32`, block height) associated with every account, set to the current block height whenever an account is created or re-created, and exposed via a dedicated runtime API. This RFC defines the semantics and interface of this property without prescribing its storage implementation.
 2. A new `CheckCreatedAtHeight` transaction extension whose sole value is `created_at_height` carried as an **implicit** (additional-signed) field, mixed into the transaction signature without increasing the extrinsic's encoded size.
 
-Together these changes ensure that a transaction is cryptographically bound to a specific lifetime of its sender account. If the account is reaped and subsequently re-funded, `created_at_height` changes and all previously signed transactions become permanently invalid, eliminating replay attacks and simplifying transaction-tracking APIs for DApps and indexers.
+Together these changes ensure that a signed transaction is cryptographically bound to a specific lifetime of its sender account. If the account is reaped and subsequently re-funded, `created_at_height` changes and all previously signed transactions become permanently invalid, eliminating replay attacks. As a consequence, for signed and general transactions, the transaction hash becomes a safe unique identifier, and the triple `(account_id, created_at_height, nonce)` also becomes a reliable canonical identifier: both of which simplify transaction-tracking APIs for DApps and indexers.
 
 ## Motivation
 
@@ -82,18 +82,38 @@ The `CheckNonce` extension would then carry:
 
 This would have prevented the replay vulnerability from the start. Retrofitting this structure into `CheckNonce` is not feasible without breaking the existing signed extension interface. Instead, this RFC introduces a dedicated `CheckCreatedAtHeight` extension that achieves the same cryptographic binding without modifying `CheckNonce`.
 
-### Storage Change: `created_at_height`
+### `created_at_height`: Semantics and Interface
 
-A new `created_at_height` field of type `u32` MUST be added to per-account storage. The field SHALL:
+The `created_at_height` property is a `u32` value associated with every account. Its semantics are:
 
-- Be set to the **current block height** (`frame_system::Pallet::<T>::block_number()`) whenever an account transitions from non-existent to existent in `System::Account`.
-- Default to **zero** (`0u32`) for all accounts that exist prior to the runtime upgrade that enacts this change (see storage placement options below).
+- It MUST be set to the **current block height** whenever an account transitions from non-existent to existent (on both first creation and recreation after reaping).
+- It MUST default to **zero** (`0u32`) for all accounts that exist prior to the runtime upgrade enacting this change.
+- It MUST NOT change for any reason other than account recreation.
 
-When an account is reaped and subsequently re-funded, a new `AccountInfo` entry is written with `created_at_height` set to the block height at the time of recreation. This new value differs from the value in effect when any prior transactions were signed, making those transactions permanently invalid.
+When an account is reaped and subsequently re-funded, `created_at_height` takes the value of the block in which the account is recreated. This new value differs from the value in effect when any prior transactions were signed, making those transactions permanently invalid.
 
-#### Option A: New field in `frame_system::AccountInfo`
+#### Runtime API
 
-The field is added directly to `AccountInfo`, after `data`:
+Implementations MUST expose `created_at_height` to external consumers through a dedicated runtime API:
+
+```rust
+sp_api::decl_runtime_apis! {
+    pub trait AccountCreatedAtHeightApi<AccountId: codec::Codec> {
+        /// Returns the `created_at_height` for the given account, or `0` if the account does not exist.
+        fn created_at_height(account: AccountId) -> u32;
+    }
+}
+```
+
+Consumers MUST call this API to obtain the value before constructing the signing payload. The `CheckCreatedAtHeight` extension internally reads the same value via whatever storage mechanism the implementation chooses (see Implementation Considerations below).
+
+#### Implementation Considerations
+
+This RFC does not prescribe how `created_at_height` is stored; that is an implementation detail to be resolved at the time of implementation, ideally informed by benchmarks. Three approaches are outlined below for consideration.
+
+##### Option A: New field in `frame_system::AccountInfo`
+
+Add `created_at_height` directly to `AccountInfo`, e.g. after `data`:
 
 ```rust
 pub struct AccountInfo<Nonce, AccountData> {
@@ -106,23 +126,13 @@ pub struct AccountInfo<Nonce, AccountData> {
 }
 ```
 
-**Advantage:** Semantically correct. Account lifecycle is managed entirely by `frame_system`; the field that tracks the lifecycle epoch belongs there. Future readers of the code will find the field in the natural location.
+**Advantage:** Semantically correct. Account lifecycle is managed entirely by `frame_system`; the field that tracks the lifecycle epoch belongs there.
 
-**Disadvantage:** The SCALE encoding of `AccountInfo` changes, requiring a state migration. All existing `System::Account` entries must be migrated to the new layout (inserting four zero bytes after `data`). On Polkadot, this covers millions of accounts. To avoid excessive block weight in a single block, the migration SHOULD be implemented as a lazy/on-demand migration: old-format entries are transparently decoded on read, and entries are written in the new format on any subsequent update.
+**Disadvantage:** The SCALE encoding of `AccountInfo` changes, requiring a state migration over all existing `System::Account` entries (millions of accounts on Polkadot). A lazy/on-demand migration strategy (decode old entries on read, write new format on update) reduces peak weight but leaves the intermediate state in place until all accounts are touched.
 
-#### Option B: Reinterpret `ExtraFlags` in `pallet_balances::AccountData`
+##### Option B: Reinterpret `ExtraFlags` in `pallet_balances::AccountData`
 
-The `ExtraFlags` field in `pallet_balances::AccountData` is currently a `u128` newtype with only one bit in use, bit 127 (the MSB), which is the `new_logic` sentinel introduced when the holds/freezes balance model was adopted:
-
-```rust
-pub struct ExtraFlags(pub u128);
-
-impl ExtraFlags {
-    pub const NEW_LOGIC: ExtraFlags = ExtraFlags(1 << 127);
-}
-```
-
-All bits 0–126 are zero for every existing account. This RFC proposes reinterpreting the `u128` as a structured layout without changing any stored bytes. SCALE encodes integers in little-endian order, so the mapping is:
+The `ExtraFlags` field in `pallet_balances::AccountData` is a `u128` with only bit 127 in use (the `new_logic` sentinel). All bits 0–126 are zero for every existing account. The `u128` can be reinterpreted as a structured layout without changing any stored bytes (SCALE is little-endian):
 
 ```
 bits   0– 31  : created_at_height  (u32)  - this RFC
@@ -130,16 +140,23 @@ bits  32– 63  : extra_flags        (u32)  - reserved for future use
 bits  64–127  : flags              (u64)  - existing flags; bit 127 = new_logic sentinel
 ```
 
-For all existing accounts, bits 0–63 are zero, so `created_at_height` decodes as `0` with no migration whatsoever.
+**Advantage:** No state migration required; existing accounts decode `created_at_height` as `0` automatically.
 
-**Advantage:** No state migration required. Fully backwards-compatible at the storage level.
+**Disadvantage:** `created_at_height` lives in `pallet_balances` rather than `frame_system`, which is the wrong conceptual home. The codec reinterpretation is non-obvious and requires careful documentation. This approach also only works for runtimes that use `pallet_balances`.
 
-**Disadvantage:**
-- `created_at_height` ends up living in `pallet_balances` rather than `frame_system`, which is the wrong conceptual home for an account lifecycle property.
-- The codec interpretation of `ExtraFlags` becomes non-obvious and requires careful documentation and defensive assertions to prevent future corruption of the field layout.
-- This approach only applies to runtimes that use `pallet_balances`. Parachains using alternative balance pallets would need a different strategy (see Unresolved Questions).
+##### Option C: Dedicated storage map in `frame_system`
 
-The Fellowship SHOULD debate and resolve which option to adopt before this RFC is merged (see Unresolved Questions).
+Introduce a new storage map, e.g.:
+
+```
+System::AccountCreatedAtHeight: StorageMap<AccountId, u32, Blake2_128Concat>
+```
+
+Missing entries return `0` as the default.
+
+**Advantage:** No state migration required (missing entries read as `0`). No changes to `AccountInfo` or `pallet_balances`. The concern lives cleanly in `frame_system`. Works for any FRAME runtime regardless of which balance pallet is used.
+
+**Disadvantage:** A separate storage entry per account increases total state size (a key + value entry per account rather than a field appended to an existing entry). Each account lookup requires an additional trie read unless the runtime batches it with the `System::Account` read.
 
 ### New Extension: `CheckCreatedAtHeight`
 
@@ -153,8 +170,8 @@ Explicit = ()    (empty, no bytes added to the extrinsic)
 In FRAME's `TransactionExtension` trait, the implicit value is gathered at validation time by reading the sender's `created_at_height` from storage and is added into the signing payload alongside other implicit values (spec version, genesis hash, etc.). The signer MUST read the same value from storage at signing time and include it in their signed payload. If the stored value has changed since the transaction was signed, because the account was reaped and re-created, signature verification fails automatically. No explicit comparison is required in `validate()`.
 
 #### Formal Behaviour
-
-- **`implicit()`**: Returns `System::Account::<T>::get(&signer).created_at_height`. If the account does not exist in storage, returns `0u32`, consistent with the default value used for pre-upgrade accounts.
+u
+- **`implicit()`**: Returns the `created_at_height` for the consumer, as exposed by `AccountCreatedAtHeightApi`. If the account does not exist, returns `0u32`, consistent with the default value for pre-upgrade accounts.
 - **`validate()`**: No explicit logic beyond what signature verification already enforces.
 - **`prepare()`**: No state changes required.
 
@@ -182,17 +199,20 @@ Implementations MUST enforce, within `BlockBuilder_apply_extrinsic`, that the ha
 
 ### Impact on Transaction Uniqueness
 
-With this extension enforced, a given transaction can only ever be included once across the entire history of the chain. This makes the **transaction hash** a safe and stable unique identifier for inclusion events: the primary benefit for DApps, indexers, and block explorers, which can rely on it without any defensive edge-case handling. Additionally, the triple `(account_id, created_at_height, nonce)` becomes a reliable alternative canonical identifier across the full history of the chain.
+With this extension enforced, a given **signed or general transaction** can only ever be included once across the new history of the chain. This has two useful consequences for DApps, indexers, and block explorers:
+
+- The **transaction hash** becomes a safe and stable unique identifier for signed/general transactions. This was not previously possible since the same signed extrinsic could appear in multiple blocks after account reaping.
+- The triple **`(account_id, created_at_height, nonce)`** becomes a reliable canonical identifier for signed/general transactions across the new history of the chain. Previously, `(account_id, nonce)` alone was insufficient because the same pair could recur after reaping.
+
+Note that this guarantee does **not** extend to unsigned/bare transactions. Unsigned extrinsics (such as `Timestamp::set`, BABE inherents, or multi-block election submissions) carry no signature and are not subject to `CheckCreatedAtHeight`. Their hashes may repeat across blocks and are out of scope for this RFC.
 
 ## Drawbacks
 
-1. **Storage overhead (Option A only)**: Option A adds 4 bytes of new state per account. For Polkadot's current account population this is small in absolute terms but is a permanent per-account cost. Option B has no storage overhead: it repurposes 4 bytes that are already allocated within the existing `ExtraFlags` u128 but are currently unused.
+1. **Additional per-account state**: All implementation options require maintaining an additional `u32` value per account, either as a new field, a reinterpreted existing field, or a separate storage entry. The exact cost depends on the storage option chosen by the implementation.
 
-2. **Option A migration cost**: A full iteration over all `System::Account` entries is expensive. Even with a lazy migration strategy the intermediate state, where some accounts have the old layout, persists until all accounts have been touched by at least one write operation.
+2. **Ecosystem tooling update**: Every signer (wallets, hardware signing devices, scripts, etc) must be updated to call `AccountCreatedAtHeightApi` and include the result in the signing payload. This is the largest practical coordination cost of this RFC.
 
-3. **Ecosystem tooling update**: Every signer, wallets, hardware signing devices, scripts, etc, must be updated to fetch `created_at_height` from storage and include it in the signing payload. This is the largest practical coordination cost of this RFC.
-
-4. **Option B semantic mismatch**: Encoding an account lifecycle property inside a balance pallet's flags field is architecturally incoherent and places an ongoing documentation and maintenance burden on `pallet_balances`.
+3. **Uniqueness guarantee is scoped to signed/general transactions**: Unsigned extrinsics remain outside this guarantee. Consumers building tools that rely on transaction hash uniqueness must be aware of this distinction.
 
 ## Testing, Security, and Privacy
 
@@ -226,9 +246,9 @@ This proposal has no privacy implications. `created_at_height` is a deterministi
 
 ### Ergonomics
 
-Signing libraries MUST add one storage query to retrieve `created_at_height` before constructing the signing payload. Libraries that already fetch `AccountInfo` to read the nonce can extract `created_at_height` from the same response at no extra network round-trip cost (under Option A, or with an updated decoder under Option B). The ergonomic impact on signers is therefore minimal once libraries are updated.
+Consumers MUST call `AccountCreatedAtHeightApi::created_at_height` to retrieve the value before constructing the signing payload. This is one additional call, equivalent in cost to the existing call used to fetch the nonce. Libraries that already fetch account state may be able to batch both queries into a single round-trip depending on the storage option chosen by the implementation.
 
-For DApp and indexer developers, the change is a net improvement: the transaction hash becomes a safe unique identifier for inclusion events, eliminating the defensive edge-case handling that the current protocol requires.
+For DApp and indexer developers, the change is a net improvement: the transaction hash becomes a safe unique identifier for inclusion events on signed/general transactions, eliminating the defensive edge-case handling that the current protocol requires.
 
 ### Compatibility
 
@@ -242,16 +262,20 @@ This breakage is no different in kind from any prior runtime upgrade that modifi
 - **`CheckMortality`** (`frame_system`): Limits transaction validity to a block range and optionally to a specific fork. Partially mitigates replay but not when the account is reaped and re-funded within the validity window, and not at all for immortal transactions or intra-block replay.
 - **Ethereum**: Ethereum accounts are not reaped when balance reaches zero; the nonce persists permanently at any balance. This class of replay vulnerability does not exist in Ethereum's account model. The problem is specific to the Polkadot ED-based account lifecycle.
 - **Bitcoin**: UTXO model; no per-account nonce. Replay is structurally prevented by the one-time consumption of UTXOs [since BIP-0034](https://github.com/bitcoin/bips/blob/master/bip-0034.mediawiki).
-- **[polkadot-fellows/RFCs#19](https://github.com/polkadot-fellows/RFCs/issues/19)**: Discussion on light clients and downloading block bodies. Proposals in that thread, such as a `System.Extrinsics` per-block `StorageMap<Hash, ExtrinsicIndex>`, are complicated by the fact that transaction hashes are not currently unique. This RFC resolves that precondition.
-- **[paritytech/json-rpc-interface-spec#182](https://github.com/paritytech/json-rpc-interface-spec/pull/182)**: Proposal for an `archive_unstable_transactionReceipt` JSON-RPC method for efficient, stateless transaction location queries. Reviewers in that thread explicitly identified transaction hash non-uniqueness as a design problem for the method. This RFC eliminates that obstacle.
+- **[polkadot-fellows/runtimes#248](https://github.com/polkadot-fellows/runtimes/issues/248)**: Proposes solving the same replay problem by initialising the nonce to the current block height on account creation/recreation, so that old transactions (with low nonces) become invalid after reaping. This approach is simpler in some respects, it requires no new extension, no new storage field, and the migration burden for signers is minimal, but has meaningful drawbacks compared to this RFC:
+  - **It does not fully prevent replay.** Consider an account created at block `M` that makes `K` transactions (nonces `M` through `M+K-1`), is reaped, and re-created at block `N` where `M < N < M+K`. The stored nonce becomes `N`, and the old transaction signed with nonce `N` from the first lifetime is immediately replayable. High-throughput accounts (exchange hot wallets, protocol-owned accounts) can easily accumulate more transactions than blocks elapsed, making this a realistic rather than theoretical attack surface.
+  - **Transaction size grows with account age.** The nonce is an explicit field in the extrinsic body, and SCALE compact-encodes integers: a nonce near zero fits in one byte, while a nonce equal to the current block height (~20M+ on Polkadot) requires four bytes. Every transaction an account makes carries this overhead permanently, and the penalty grows the later the account is created.
+  - **It conflates two distinct concepts.** The nonce is a transaction-sequencing mechanism; account lifecycle epoch is a separate concern. Encoding both into the nonce complicates reasoning about either in isolation.
+- **[polkadot-fellows/RFCs#19](https://github.com/polkadot-fellows/RFCs/issues/19)**: Discussion on light clients and downloading block bodies. Proposals in that thread (e.g. a `System.Extrinsics` per-block `StorageMap<Hash, ExtrinsicIndex>`) are complicated by the non-uniqueness of transaction hashes. This RFC resolves that precondition for signed/general transactions.
+- **[paritytech/json-rpc-interface-spec#182](https://github.com/paritytech/json-rpc-interface-spec/pull/182)**: Proposal for an `archive_unstable_transactionReceipt` JSON-RPC method. Reviewers flagged transaction hash non-uniqueness as a design obstacle; this RFC removes it for signed/general transactions.
 
 ## Unresolved Questions
 
-1. **Which storage placement option should be adopted?** Option A (new field in `frame_system::AccountInfo`, requires state migration) vs Option B (reinterpret `ExtraFlags` in `pallet_balances::AccountData`, no migration but semantic mismatch). The Fellowship should weigh implementation correctness against migration cost.
+1. **Behaviour for non-existent accounts**: `implicit()` returns `0u32` when the signer's account does not exist. Is there a scenario where this could allow a transaction to pass validation against a reaped, not-yet-recreated account?
 
-2. **Lazy vs eager migration (Option A only)**: If Option A is adopted, should the migration be lazy/on-demand, an eager bounded migration scheduled at upgrade time, or a combination? The choice has implications for how long the mixed-format intermediate state persists and how tooling must handle it.
+2. **Runtime API naming and placement**: Should `AccountCreatedAtHeightApi` live in `frame_system` or be defined alongside `CheckCreatedAtHeight`? Should it be a standalone runtime API or folded into an existing one?
 
-3. **Behaviour for non-existent accounts**: `implicit()` returns `0u32` when the signer's account does not exist in storage. Is there a scenario in which this could cause a transaction to validate against an account that has been reaped but not yet re-created?
+3. **Storage implementation**: The choice between Options A, B, and C (described under Implementation Considerations) is left to the implementation. The Fellowship may wish to reach informal consensus on the preferred approach before or during implementation work, using benchmarks to inform the decision.
 
 
 ## Future Directions and Related Material
