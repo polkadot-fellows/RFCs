@@ -64,14 +64,20 @@ It is worth noting that the gateway circuit breaker only covers P->E transfers b
 
 ### Asset Hub Circuit Breaker
 
-A circuit breaker on AssetHub is also required. It caps the net amount of each bridged asset minted over a rolling window:
+The Asset Hub breaker caps the net amount of each bridged asset minted over a rolling window:
 
 - Ethereum assets: net mint = minted (E→P) − burned (P→E).
 - PNAs: net release = released from the reserve (E→P) − locked (P→E).
 
- When an incoming transfer breaches the cap, Asset Hub holds it rather than completing the mint, and then retries once the lock lifts, so a tripped cap delays the transfer. This would be implemented in a new circuit breaker pallet on Asset Hub that wraps the mint and burn path bridged assets already go through. It checks the cap, then lets `pallet-assets` do the minting (or holds the transfer if the cap is tripped). Only Snowbridge's bridged assets are routed through it, so nothing else minting on Asset Hub is affected. The resumed transactions are driven by the pallet's `on_initialize` hook: each block it checks whether any held transfers can now go through and completes as many as fit, re-checking the cap as it goes. So a backlog that built up during a lockdown drains gradually rather than all at once and immediately re-tripping. When nothing is held (the normal case) the hook is just a cheap storage read.
+The cap works exactly like the Gateway breaker: per-asset, tracked by denomination (no oracle), net flow, a governance-set cap with a floor, and a 24h auto-lift. What differs is where it hooks in, because on Asset Hub the assets pallet is not the natural place to meter bridge flow.
 
-Everything else matches the Gateway breaker: per-asset, tracked by denomination (no oracle), net flow, a governance-set cap with a floor, and a 24h auto-lift. These caps are set locally on Asset Hub. The same trip and lift events page on-call so the bridge can be halted if the spike turns out to be a real exploit.
+On Asset Hub, bridged assets are minted and burned by the XCM asset transactor as it executes the inbound message. With the current Snowbridge implementation, the foreign-assets transactor (`ForeignFungiblesTransactor` in the Asset Hub `xcm_config`) mints the deposit asset for an E→P transfer, and withdraw burns it for a P→E transfer. The circuit breaker wraps this transactor and adds a small pallet for the per-asset counters and the held-transfer queue. On a deposit it checks the cap and meters the amount before letting the mint proceed; on a withdraw it credits the meter. Because both directions pass through this one transactor, it is the single point that can keep a true net (mint − burn) count rather than a gross inbound one.
+
+The wrapper only meters Snowbridge's own bridged assets. Ethereum-bridged assets are identified by their asset location under `GlobalConsensus(Ethereum)`; the wrapper is configured before the generic transactor and matches only Ethereum assets, so everything else Asset Hub mints falls through untouched.
+
+When a transfer would breach the cap it is delayed. Instead of minting, the wrapper records the pending deposit (its asset and beneficiary) and returns success. The pallet's `on_initialize` hook later replays that deposit through the same transactor once the cap is no longer breached, completing as many held transfers as fit each block and re-checking the cap as it goes, so a backlog drains gradually rather than re-tripping all at once. Nothing is minted until release, and release just re-runs the existing deposit path, so no minting logic is duplicated and a transfer later judged malicious is simply dropped. This is the Asset Hub counterpart to the Gateway side, where the relayer holds and resubmits off-chain; here the held transfer is parked on-chain and completed by the runtime.
+
+Caps are set through a root-gated `set_cap` extrinsic on the Snowbridge System Frontend pallet on Asset Hub, the same pallet the Gateway cap is routed through (see "Caps set by Governance"), so both caps share one governance surface. Trip and lift events are emitted so the existing relayer monitoring can watch for them and page on-call, and halt the bridge via the emergency pause if the spike turns out to be real.
 
 ### Caps set by Governance
 
@@ -113,7 +119,7 @@ Operator-facing: cap configuration is a governance-driven workflow. Bridge monit
 ### Compatibility
 
 - **Ethereum Gateway (P→E breaker):** This is a major Ethereum contract change and requires a gateway upgrade. Adds the per-asset caps, a command to set cap values, inflow and outflow tracking and checking each transfer against the cap.
-- **Asset Hub (E→P breaker):** Adds the E→P circuit breaker" net-mint tracking per bridged asset, the cap check, and holding over-cap transfers until the lock lifts, with its caps set on Asset Hub. The Ethereum System Frontend pallet also needs a `set_cap` extrinsic (root origin), the governance entry point for the *Gateway* cap, which it proxies to Bridge Hub.
+- **Asset Hub (E→P breaker):** Adds an asset-transactor wrapper (scoped to `GlobalConsensus(Ethereum)` assets, ahead of the generic transactor) and a circuit-breaker pallet for the net-mint counters and held-transfer queue. Non-Snowbridge mints are unaffected. The Snowbridge System Frontend pallet gains a root-origin `set_cap` extrinsic (mirroring its `set_operating_mode`) that sets the local cap and proxies the *Gateway* cap command to Bridge Hub.
 - **Bridge Hub:** Adds a `set_cap` extrinsic (in the Ethereum System V2 pallet) that relays the Gateway cap command on to Ethereum.
 
 ## Prior Art and References
