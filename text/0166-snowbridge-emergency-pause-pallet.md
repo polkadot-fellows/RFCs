@@ -12,7 +12,7 @@ At the moment, there is no way for Snowbridge to be halted immediately. The best
 
 ## Motivation
 
-Snowbridge has no near-immediate halt path today. Existing governance halt routes require a referendum  and Fellowship action (hours-to-days latency). Both are too slow for an active drainage exploit and to stop activity during investigation.
+Snowbridge has no near-immediate halt path today. Existing governance halt routes require a referendum and Fellowship action (hours-to-days latency). Both are too slow for an active drainage exploit and to stop activity during investigation.
 
 Investigation into the new TX Pause pallet and Safe Mode pallet ([polkadot-fellows/runtimes PR1164](https://github.com/polkadot-fellows/runtimes/pull/1164)) revealed parts that can be reused and referenced, but they do not resolve Snowbridge's need directly. Pallet Safe Mode blocks all calls on the chain, including unrelated parts of the chain, which could have unintended effects for the rest of the chain. Besides this, Snowbridge requires a multi-chain freeze that spans Ethereum contracts, Bridge Hub and Asset Hub. Neither of these two existing pallets support inter-chain messaging. Similarly, pallet TX Pause requires a privileged origin. Snowbridge requires a permissionless pausing mechanism, given a sizeable, slashable deposit.
 
