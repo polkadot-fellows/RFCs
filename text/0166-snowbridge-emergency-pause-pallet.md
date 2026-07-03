@@ -18,7 +18,7 @@ Investigation into the new TX Pause pallet and Safe Mode pallet ([polkadot-fello
 
 ## Stakeholders
 
-* **Polkadot Fellowship**, the `ResolveOrigin` and the body that decides between genuine vs malicious triggers. The most likely callers of a permissionless trigger during an incident.
+* **Polkadot Fellowship**, the `ResolveOrigin` and the body that decides between genuine vs malicious triggers.
 * **Snowbridge maintainers**, who implement and operate the halt path.
 * **Snowbridge users and integrators**, who experience a halt as the bridge being closed at submit time on both Ethereum and AssetHub.
 * **Polkadot Treasury**, the destination of slashed deposits on malicious triggers.
