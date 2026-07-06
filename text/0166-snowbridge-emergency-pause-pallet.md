@@ -29,6 +29,12 @@ Investigation into the new TX Pause pallet and Safe Mode pallet ([polkadot-fello
 
 A permissionless DOT deposit triggers a complete Snowbridge halt, in response to possible exploit (stop new activity while investigating) and active exploits (attacker is actively draining value).
 
+### Halt and resolution authority
+
+Authority is deliberately split: anyone can halt, only OpenGov can resolve. The halt is permissionless, gated only by a large slashable deposit. An emergency stop has to be fast and open to whoever spots an exploit, so putting it behind a privileged origin would reintroduce the latency this proposal exists to remove, and the deposit deters griefing (lost if the halt was malicious, returned if genuine).
+
+Resolution, resuming the bridge and deciding slash versus refund, sits with OpenGov, not the halter or the Fellowship. The halter must not resolve, or a malicious caller could hold the bridge down or reopen it to suit their exploit. The Fellowship should not, since judging whether an incident is over is an operational call, not the technical stewardship it exists for. OpenGov is the natural authority and is always available, so no automatic time-based resume is needed. The asymmetry is intentional.
+
 ### Implementation
 
 The proposed implementation starts with an entry point extrinsic, `halt`, on Bridge Hub (in a new pallet). The extrinsic requires a DOT deposit. Once a valid deposit has been reserved, the pallet state changes to `Halted` and the bridge is halted in both directions. The halt is graceful: messages that were already in flight, in either direction, are held and sent once the bridge resumes rather than being lost, with one bounded exception on the P→E side described below. Once in the `Halted` state, follow-up calls to the `halt` will fail.
