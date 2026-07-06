@@ -93,7 +93,7 @@ Performance is not really a concern of this RFC, since the halt is gated by a la
 
 The permissionless halt trigger is an extrinsic with large (to be determined, around 100k) DOT in the signer's account. Offchain relayers should implement watching events for the new pallet, and also stop relaying messages once the pallet `Halted` state is discovered.
 
-The second user of this new function is OpenGov, which resolves the halt (resume, slash, refund or extend), through the whitelisted caller track.
+The second user of this new function is OpenGov, which resolves the halt: resume, slash, refund or extend.
 
 ### Compatibility
 
