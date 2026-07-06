@@ -3,7 +3,7 @@
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | 2026-05-28                                                                                  |
-| **Description** | A permissionless, deposit-gated emergency pause for Snowbridge that halts both sides of the bridge via best-effort calls with on-chain retry, resolved by Fellowship. |
+| **Description** | A permissionless, deposit-gated emergency pause for Snowbridge that halts both sides of the bridge via best-effort calls with on-chain retry, resolved by OpenGov. |
 | **Authors**     | Snowbridge team                                                                             |
 
 ## Summary
@@ -18,7 +18,7 @@ Investigation into the new TX Pause pallet and Safe Mode pallet ([polkadot-fello
 
 ## Stakeholders
 
-* **Polkadot Fellowship**, the `ResolveOrigin` and the body that decides between genuine vs malicious triggers.
+* **Polkadot OpenGov**, the resolution authority that resumes the bridge and decides between genuine (refund) and malicious (slash) triggers.
 * **Snowbridge maintainers**, who implement and operate the halt path.
 * **Snowbridge users and integrators**, who experience a halt as the bridge being closed at submit time on both Ethereum and AssetHub.
 * **Polkadot Treasury**, the destination of slashed deposits on malicious triggers.
@@ -53,15 +53,15 @@ In both directions, the held messages can be inspected while the bridge is halte
 
 ### Resuming the bridge
 
-Resume is the symmetric inverse of the halt. Resuming the bridge and resolution of the halt deposit are separate extrinsics, to allow granular control over the shape of the recovery. The Fellowship will likely bundle the two concerns in a single whitelisted caller proposal (e.g. resume + slash), but in some cases, the specific scenario might require a longer halted bridge state. In that case, the halting account may be refunded, but the bridge should not be resumed yet.
+Resume is the symmetric inverse of the halt. Both resuming the bridge and resolving the halt deposit are done through OpenGov referenda. The whitelisted caller track should be used, where the decision still rests with OpenGov. Resume and the deposit resolution are separate extrinsics, so OpenGov can bundle them in a single referendum (e.g. resume + slash) or, where a scenario needs a longer halted state, refund the caller without resuming yet.
 
-It was considered to have the bridge auto resume after a set duration in case the Technical Fellowship should be unavailable for an extended time. The counter argument is that if the Technical Fellowship is unavailable, Polkadot would likely have bigger problems than resuming Snowbridge, and so it was removed from this spec.
+It was considered to have the bridge auto resume after a set duration, as a fallback if the resolution authority were unavailable. With OpenGov as that authority there is no separate body that can be unavailable, it is the base governance layer, so a stuck halt would only coincide with much larger Polkadot problems. Along with the idea to not add unnecessary complexity, auto-resume was therefore removed from this spec.
 
 The resume extrinsic should do the inverse of all the operations expressed in the previous section, and set the pallet state to `Normal`. While the async calls execute, the bridge might actually be in `Halted` still, but since this is short in duration (1-2 mins) the temporary inconsistency is allowable.
 
 ### Releasing or slashing the deposit
 
-The pallet should add two extrinsics to resolve the halting deposit - `slash` and `refund`. Slashing the deposit should send the deposit to Treasury on Asset Hub. Refunding the deposit should release the funds back to the sender. It might be worthwhile to capture a bounded text reason, to capture the reason behind the slash or refund onchain.
+The pallet should add two extrinsics to resolve the halting deposit, `slash` and `refund`, both voted on by OpenGov. Slashing the deposit should send it to Treasury on Asset Hub. Refunding the deposit should release the funds back to the caller. It might be worthwhile to capture a bounded text reason on-chain behind the slash or refund.
 
 ### Threat model coverage
 
@@ -93,7 +93,7 @@ Performance is not really a concern of this RFC, since the halt is gated by a la
 
 The permissionless halt trigger is an extrinsic with large (to be determined, around 100k) DOT in the signer's account. Offchain relayers should implement watching events for the new pallet, and also stop relaying messages once the pallet `Halted` state is discovered.
 
-The second user of this new function is the Fellowship, who will likely interact with this pallet through whitelisted caller proposals, to resume, slash, refund or extend the halt.
+The second user of this new function is OpenGov, which resolves the halt (resume, slash, refund or extend), through the whitelisted caller track.
 
 ### Compatibility
 
@@ -111,7 +111,7 @@ This proposal mostly adds new functionality. The main changes to existing Snowbr
 These all relate to pallet config, and decisions can be kicked down the line to Polkadot runtime config, if necessary:
 
 * **Retry backoff:** Need to agree on a retry setting config, perhaps 30-60 seconds, in block time.
-* **Deposit:** 100k DOT matches the runtimes #1089 number, but Snowbridge halts more than a generic safe-mode would. Worth a separate Fellowship discussion on whether the deposit should be higher.
+* **Deposit:** 100k DOT matches the runtimes #1089 number, but Snowbridge halts more than a generic safe-mode would. Worth a separate discussion on whether the deposit should be higher.
 
 ## Future Directions and Related Material
 
