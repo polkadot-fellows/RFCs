@@ -67,7 +67,7 @@ The resume extrinsic should do the inverse of all the operations expressed in th
 
 ### Releasing or slashing the deposit
 
-The pallet should add two extrinsics to resolve the halting deposit, `slash` and `refund`, both voted on by OpenGov. Slashing the deposit should send it to the Dynamic Allocation Pool (DAP), where other Polkadot slashes now go, routed from Bridge Hub via the `dap-satellite` pallet. Refunding the deposit should release the funds back to the caller. It might be worthwhile to capture a bounded text reason on-chain behind the slash or refund.
+The pallet should add two extrinsics to resolve the halting deposit, `slash` and `refund`, both voted on by OpenGov. Slashing the deposit should send it to the Dynamic Allocation Pool (DAP), where other Polkadot slashes now go, routed from Bridge Hub via the `dap-satellite` pallet. Refunding the deposit should release the funds back to the caller. The reason behind the slash or refund should be captured on-chain as text.
 
 ### Threat model coverage
 
