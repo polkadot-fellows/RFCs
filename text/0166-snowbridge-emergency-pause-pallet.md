@@ -21,7 +21,7 @@ Investigation into the new TX Pause pallet and Safe Mode pallet ([polkadot-fello
 * **Polkadot OpenGov**, the resolution authority that resumes the bridge and decides between genuine (refund) and malicious (slash) triggers.
 * **Snowbridge maintainers**, who implement and operate the halt path.
 * **Snowbridge users and integrators**, who experience a halt as the bridge being closed at submit time on both Ethereum and AssetHub.
-* **Polkadot Treasury**, the destination of slashed deposits on malicious triggers.
+* **The Dynamic Allocation Pool (DAP)**, the destination of slashed deposits on malicious triggers, consistent with where other Polkadot slashes now go.
 
 ## Explanation
 
@@ -67,7 +67,7 @@ The resume extrinsic should do the inverse of all the operations expressed in th
 
 ### Releasing or slashing the deposit
 
-The pallet should add two extrinsics to resolve the halting deposit, `slash` and `refund`, both voted on by OpenGov. Slashing the deposit should send it to Treasury on Asset Hub. Refunding the deposit should release the funds back to the caller. It might be worthwhile to capture a bounded text reason on-chain behind the slash or refund.
+The pallet should add two extrinsics to resolve the halting deposit, `slash` and `refund`, both voted on by OpenGov. Slashing the deposit should send it to the Dynamic Allocation Pool (DAP), where other Polkadot slashes now go, routed from Bridge Hub via the `dap-satellite` pallet. Refunding the deposit should release the funds back to the caller. It might be worthwhile to capture a bounded text reason on-chain behind the slash or refund.
 
 ### Threat model coverage
 
