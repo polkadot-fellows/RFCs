@@ -31,7 +31,7 @@ A permissionless DOT deposit triggers a complete Snowbridge halt, in response to
 
 ### Implementation
 
-The proposed implementation starts with an entry point extrinsic on Bridge Hub (in a new pallet). The extrinsic requires a DOT deposit. Once a valid deposit has been reserved, the pallet state changes to `Halted` and the bridge is halted in both directions. The halt is graceful: messages that were already in flight, in either direction, are held and sent once the bridge resumes rather than being lost (see below). Once in the `Halted` state, follow-up calls to the same extrinsic will fail.
+The proposed implementation starts with an entry point extrinsic, `halt`, on Bridge Hub (in a new pallet). The extrinsic requires a DOT deposit. Once a valid deposit has been reserved, the pallet state changes to `Halted` and the bridge is halted in both directions. The halt is graceful: messages that were already in flight, in either direction, are held and sent once the bridge resumes rather than being lost (see below). Once in the `Halted` state, follow-up calls to the `halt` will fail.
 
 The halt blocks new transfers from entering the bridge:
 
