@@ -16,10 +16,6 @@ Today, the only way for a light client to determine whether a submitted transact
 
 After submitting a transaction, a light client consumer needs to know when (and where) it was included, both to update the UI and to know when to stop gossiping it. The only mechanism available today is to download the body of each new block and linearly search it for the submitted extrinsic. Block bodies are one of the chain's primary scaling factors: the busier the chain, the larger the bodies, and the more bandwidth a light client burns on data it almost entirely discards.
 
-### There is no way to prove non-inclusion without sending the whole body
-
-A full node could, today, simply omit a transaction from what it tells a light client and there is no way for the light client to catch the lie short of downloading the entire body and confirming the transaction really is absent. Any solution needs to let the light client either confirm inclusion+index, or convince itself of non-inclusion, from a proof much smaller than the body itself.
-
 ### The previously-identified blocker (V0 extrinsics trie) is already resolved
 
 [RFC-0042](0042-extrinsics-state-version.md) introduced `RuntimeVersion::system_version`, and setting it to `2` switches the trie used to compute `extrinsics_root` from `state_version` 0 to `state_version` 1 (in addition to the state trie itself). This is already enacted on Polkadot and its system chains. Trie `state_version` 1 replaces, inside proof nodes, any value whose SCALE-encoded length is 33 bytes or more with just its hash. Since almost all extrinsics comfortably exceed 33 bytes, everything needed to reconstruct and verify the extrinsics trie of such a chain is, in practice, just a list of extrinsic hashes. What has been missing since is the networking primitive to actually request that list. This RFC adds it.
