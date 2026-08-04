@@ -71,15 +71,20 @@ The pallet should add two extrinsics to resolve the halting deposit, `slash` and
 
 ### Threat model coverage
 
-- **New E→P entry**, Gateway halt (call 2) stops new transfers starting on Ethereum.
-- **E→P in-flight + inbound-queue exploit**, the inbound hold. Covers exploits that bypass the Gateway entirely (malformed proofs, payload-decode bugs, MMR weaknesses): messages are verified and held, and malicious ones can be dropped before reaching Asset Hub.
-- **New P→E entry**, AH frontend halt (call 1) stops new transfers at Asset Hub.
-- **P→E in-flight**, the outbound hold keeps messages queued and uncommitted until resume.
+P→E:
+
+- **New entry**, AH frontend halt (call 1) stops new transfers at Asset Hub.
+- **In-flight**, the outbound hold keeps messages queued and uncommitted until resume.
+
+E→P:
+
+- **New entry**, Gateway halt (call 2) stops new transfers starting on Ethereum.
+- **In-flight + inbound-queue exploit**, the inbound hold. Covers exploits that bypass the Gateway entirely (malformed proofs, payload-decode bugs, MMR weaknesses): messages are verified and held, and malicious ones can be dropped before reaching Asset Hub.
 - **Beacon-client exploit**, beacon client halt (call 3).
 
 ## Drawbacks
 
-- **Griefing**: This proposal adds permissionless halting, guarded by a slashable deposit. Someone who is willing to lose funds to censor the bridge, could repeatedly call the permissionless halt. In practice, this seems unlikely. Should this happen, the deposit amount can be upped as a further deterrent.
+- **Griefing**: This proposal adds permissionless halting, guarded by a slashable deposit. Someone willing to lose funds to censor the bridge could repeatedly call the halt. Each halt risks a fresh slashable deposit and only buys a short interruption before OpenGov resumes, so the cost per disruption is high. This is a tradeoff we accept for permissionless halting, and the deposit is the protection.
 - **Best Effort Halt**: Since the halt relies on async calls to multiple chains, there is the possibility that some of the halt calls might fail.
 
 ## Testing, Security, and Privacy
