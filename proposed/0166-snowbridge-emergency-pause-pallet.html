@@ -253,16 +253,20 @@
 <h3 id="releasing-or-slashing-the-deposit"><a class="header" href="#releasing-or-slashing-the-deposit">Releasing or slashing the deposit</a></h3>
 <p>The pallet should add two extrinsics to resolve the halting deposit, <code>slash</code> and <code>refund</code>, both voted on by OpenGov. Slashing the deposit should send it to the Dynamic Allocation Pool (DAP), where other Polkadot slashes now go, routed from Bridge Hub via the <code>dap-satellite</code> pallet. Refunding the deposit should release the funds back to the caller. The reason behind the slash or refund should be captured on-chain as text.</p>
 <h3 id="threat-model-coverage"><a class="header" href="#threat-model-coverage">Threat model coverage</a></h3>
+<p>P→E:</p>
 <ul>
-<li><strong>New E→P entry</strong>, Gateway halt (call 2) stops new transfers starting on Ethereum.</li>
-<li><strong>E→P in-flight + inbound-queue exploit</strong>, the inbound hold. Covers exploits that bypass the Gateway entirely (malformed proofs, payload-decode bugs, MMR weaknesses): messages are verified and held, and malicious ones can be dropped before reaching Asset Hub.</li>
-<li><strong>New P→E entry</strong>, AH frontend halt (call 1) stops new transfers at Asset Hub.</li>
-<li><strong>P→E in-flight</strong>, the outbound hold keeps messages queued and uncommitted until resume.</li>
+<li><strong>New entry</strong>, AH frontend halt (call 1) stops new transfers at Asset Hub.</li>
+<li><strong>In-flight</strong>, the outbound hold keeps messages queued and uncommitted until resume.</li>
+</ul>
+<p>E→P:</p>
+<ul>
+<li><strong>New entry</strong>, Gateway halt (call 2) stops new transfers starting on Ethereum.</li>
+<li><strong>In-flight + inbound-queue exploit</strong>, the inbound hold. Covers exploits that bypass the Gateway entirely (malformed proofs, payload-decode bugs, MMR weaknesses): messages are verified and held, and malicious ones can be dropped before reaching Asset Hub.</li>
 <li><strong>Beacon-client exploit</strong>, beacon client halt (call 3).</li>
 </ul>
 <h2 id="drawbacks"><a class="header" href="#drawbacks">Drawbacks</a></h2>
 <ul>
-<li><strong>Griefing</strong>: This proposal adds permissionless halting, guarded by a slashable deposit. Someone who is willing to lose funds to censor the bridge, could repeatedly call the permissionless halt. In practice, this seems unlikely. Should this happen, the deposit amount can be upped as a further deterrent.</li>
+<li><strong>Griefing</strong>: This proposal adds permissionless halting, guarded by a slashable deposit. Someone willing to lose funds to censor the bridge could repeatedly call the halt. Each halt risks a fresh slashable deposit and only buys a short interruption before OpenGov resumes, so the cost per disruption is high. This is a tradeoff we accept for permissionless halting, and the deposit is the protection.</li>
 <li><strong>Best Effort Halt</strong>: Since the halt relies on async calls to multiple chains, there is the possibility that some of the halt calls might fail.</li>
 </ul>
 <h2 id="testing-security-and-privacy"><a class="header" href="#testing-security-and-privacy">Testing, Security, and Privacy</a></h2>
