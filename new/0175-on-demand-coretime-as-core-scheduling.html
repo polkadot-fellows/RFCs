@@ -293,7 +293,8 @@
     OneShot,
 }
 <span class="boring">}</span></code></pre></pre>
-<p>and the relay-side coretime pallet gains a second broker-facing call next to <code>assign_core</code>:</p>
+<p><code>ScheduleKind</code> is internal to the Relay Chain scheduler and is not part of any interface. Schedules created by <code>assign_core</code> are <code>Windowed</code>, while schedules created by <code>assign_core_once</code> are <code>OneShot</code>.</p>
+<p>The relay-side coretime pallet gains a second broker-facing call next to <code>assign_core</code>:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>pub fn assign_core_once(
