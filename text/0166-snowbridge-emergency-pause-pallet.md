@@ -8,13 +8,13 @@
 
 ## Summary
 
-At the moment, there is no way for Snowbridge to be halted immediately. The best course of action to halt the bridge should an exploit be detected, is to halt the bridge through a whitelisted caller proposal, through OpenGov. This has obvious drawbacks - even if a Snowbridge exploit is detected, there is no way to halt the bridge on-chain (off-chain relayers can be switched off but it is obviously not a fool-proof stopgap). This RFC proposes a permissionless, instant Snowbridge halt if the caller deposits a large sum of DOT, to be slashed if paused maliciously. This proposal is a reactive security measure (i.e. a exploit or vulnerability first need to be visible for this functionality to be useful). Another proposal, [Snowbridge Circuit Breakers](https://github.com/polkadot-fellows/RFCs/pull/167), is proposed alongside this RFC for a more proactive approach.
+At the moment, there is no way for Snowbridge to be halted immediately. The best course of action to halt the bridge should an exploit be detected, is to halt the bridge through a whitelisted caller proposal, through OpenGov. This has obvious drawbacks - even if a Snowbridge exploit is detected, there is no way to halt the bridge on-chain (off-chain relayers can be switched off but it is obviously not a fool-proof stopgap). This RFC proposes a permissionless, instant Snowbridge halt if the caller deposits a large sum of DOT, to be slashed if paused maliciously. This proposal is a reactive security measure (i.e. an exploit or vulnerability first needs to be visible for this functionality to be useful). Another proposal, [Snowbridge Circuit Breakers](https://github.com/polkadot-fellows/RFCs/pull/167), is proposed alongside this RFC for a more proactive approach.
 
 ## Motivation
 
 Snowbridge has no near-immediate halt path today. Existing governance halt routes require a referendum and Fellowship action (hours-to-days latency). Both are too slow for an active drainage exploit and to stop activity during investigation.
 
-Investigation into the new TX Pause pallet and Safe Mode pallet ([polkadot-fellows/runtimes PR1164](https://github.com/polkadot-fellows/runtimes/pull/1164)) revealed parts that can be reused and referenced, but they do not resolve Snowbridge's need directly. Pallet Safe Mode blocks all calls except a configured whitelist, which works backwards for us: halting only Snowbridge would mean whitelisting essentially the whole rest of the chain rather than targeting the bridge, so it acts as a chain-wide brake rather than a per-component one. Besides this, Snowbridge requires a multi-chain freeze that spans Ethereum contracts, Bridge Hub and Asset Hub. Neither of these two existing pallets support inter-chain messaging. Similarly, pallet TX Pause requires a privileged origin. Snowbridge requires a permissionless pausing mechanism, given a sizeable, slashable deposit.
+Investigation into the new TX Pause pallet and Safe Mode pallet ([polkadot-fellows/runtimes PR1164](https://github.com/polkadot-fellows/runtimes/pull/1164)) revealed parts that can be reused and referenced, but they do not resolve Snowbridge's need directly. Pallet Safe Mode blocks all calls except a configured whitelist, which works backwards for us: halting only Snowbridge would mean whitelisting essentially the whole rest of the chain rather than targeting the bridge, so it acts as a chain-wide brake rather than a per-component one. Besides this, Snowbridge requires a multi-chain freeze that spans Ethereum contracts, Bridge Hub and Asset Hub. Neither of these two existing pallets supports inter-chain messaging. Similarly, pallet TX Pause requires a privileged origin. Snowbridge requires a permissionless pausing mechanism, given a sizeable, slashable deposit.
 
 ## Stakeholders
 
@@ -31,13 +31,13 @@ A permissionless DOT deposit triggers a complete Snowbridge halt, in response to
 
 ### Halt and resolution authority
 
-Authority is deliberately split: anyone can halt, only OpenGov can resolve. The halt is permissionless, gated only by a large slashable deposit. An emergency stop has to be fast and open to whoever spots an exploit, so putting it behind a privileged origin would reintroduce the latency this proposal exists to remove, and the deposit deters griefing (lost if the halt was malicious, returned if genuine).
+The halt is permissionless, gated only by a large slashable deposit. The deposit deters griefing (lost if the halt was malicious, returned if genuine).
 
-Resolution, resuming the bridge and deciding slash versus refund, sits with OpenGov, not the halter or the Fellowship. The halter must not resolve, or a malicious caller could hold the bridge down or reopen it to suit their exploit. The Fellowship should not, since judging whether an incident is over is an operational call, not the technical stewardship it exists for. OpenGov is the natural authority and is always available, so no automatic time-based resume is needed. The asymmetry is intentional.
+Resolution, resuming the bridge and deciding slash versus refund, is OpenGov's responsibility. The Fellowship should not, since judging whether an incident is over is an operational call, not the technical stewardship it exists for. OpenGov is the natural authority and is always available, so no automatic time-based resume is needed.
 
 ### Implementation
 
-The proposed implementation starts with an entry point extrinsic, `halt`, on Bridge Hub (in a new pallet). The extrinsic requires a DOT deposit. Once a valid deposit has been reserved, the pallet state changes to `Halted` and the bridge is halted in both directions. The halt is graceful: messages that were already in flight, in either direction, are held and sent once the bridge resumes rather than being lost, with one bounded exception on the P→E side described below. Once in the `Halted` state, follow-up calls to the `halt` will fail.
+The proposed implementation starts with an entry point extrinsic, `halt`, on Bridge Hub (in a new pallet). The extrinsic requires a DOT deposit. Once a valid deposit has been reserved, the pallet state changes to `Halted` and the bridge is halted in both directions. The halt is graceful: messages that were already in flight, in either direction, are held and sent once the bridge resumes rather than being lost, with one bounded exception on the P→E side described below. Once in the `Halted` state, follow-up calls to `halt` will fail.
 
 The halt blocks new transfers from entering the bridge:
 
@@ -49,9 +49,9 @@ Messages that were already in flight when the halt landed are not rejected. Reje
 
 These calls are all best-effort, and failure does not prevent the other calls from being executed. The pallet attempts each, logs successes and failures, and re-attempts pending calls in later blocks via `on_initialize`.
 
-The holds below reads the new halt pallet's `Halted` state, which the inbound and outbound message handling on Bridge Hub read directly to decide whether to hold a message or process it as normal.
+The holds described below key off the new halt pallet's `Halted` state, which the inbound and outbound message handling on Bridge Hub read directly to decide whether to hold a message or process it as normal.
 
-For P→E transfers, in-flight messages are held using the MessageQueue. Outbound messages only get a nonce when they are committed for relay to Ethereum, so while the bridge is halted they are accepted into the queue but not committed. When the bridge resumes, they are committed with fresh nonces, which avoids any stale light client proofs. A small number of P→E messages may have been committed and relayed just before the halt landed, which cannot be held on Bridge Hub; to cover those, we should also consider a bridge operating mode check in the Ethereum `submitV1` and `submitV2` contracts, so they do not process on Ethereum while the bridge is halted. There is one further edge case: a transfer from another parachain, with destination Ethereum can reach Asset Hub after the frontend is halted. Its assets have already left the origin chain, and there is no way to do a clean prevent of the message being sent. The recovery action in this scenario is to reject the message from the frontend, and the assets are trapped on Asset Hub. The original user should reclaim them on Asset Hub. While is this not the best UX, we accept this case as a tradeoff, keeping in mind that in these cases keeping bridge funds safe is the first priority. It is worth mentioning that partners should be alerted when the bridge will be halted, immediately.
+For P→E transfers, in-flight messages are held using the MessageQueue. Outbound messages only get a nonce when they are committed for relay to Ethereum, so while the bridge is halted they are accepted into the queue but not committed. When the bridge resumes, they are committed with fresh nonces, which avoids any stale light client proofs. A small number of P→E messages may have been committed and relayed just before the halt landed, which cannot be held on Bridge Hub; to cover those, we should also consider a bridge operating mode check in the Ethereum `submitV1` and `submitV2` contracts, so they do not process on Ethereum while the bridge is halted. There is one further edge case: a transfer from another parachain, with destination Ethereum can reach Asset Hub after the frontend is halted. Its assets have already left the origin chain, and there is no clean way to prevent the message from being sent. The recovery action in this scenario is to reject the message from the frontend, and the assets are trapped on Asset Hub. The original user should reclaim them on Asset Hub. While this is not the best UX, we accept this case as a tradeoff, keeping in mind that in these cases keeping bridge funds safe is the first priority. It is worth mentioning that partners should be alerted immediately when the bridge is halted.
 
 For E→P transfers, halting holds messages in storage until the bridge resumes. While the bridge is halted, incoming messages are still verified but, rather than being forwarded to Asset Hub, they are kept in the pallet's storage. When the bridge resumes, the held messages are sent on. This applies to the V2 inbound path only, since the older V1 path is being deprecated.
 
@@ -89,8 +89,8 @@ E→P:
 
 ## Testing, Security, and Privacy
 
-* **Pallet unit tests:** Usual tests to cover the pallet code, in a unit test fashion (including halting, holding and replaying inbound messages, deposit under sufficient/insufficient balance, bridge resuming, extend).
-* **Integration tests:** Test that calls the pallet extrinsic and verifies all the expected effects occur (all the Bridge Hub halt events trigger, outbound message to Ethereum is queued and AssetHub receives and processed Snowbridge system frontend halt message).
+* **Pallet unit tests:** Usual tests to cover the pallet code, in a unit test fashion (including halting, holding and replaying inbound messages, deposit under sufficient/insufficient balance, bridge resuming, slash and refund).
+* **Integration tests:** Test that calls the pallet extrinsic and verifies all the expected effects occur (all the Bridge Hub halt events trigger, outbound message to Ethereum is queued and Asset Hub receives and processes the Snowbridge system frontend halt message).
 * **End-to-end simulation** (chopsticks fork): Polkadot ecosystem tests to verify that all the correct behaviour executes against a fork of Polkadot mainnet.
 * **Security posture:** the pallet creates a new attack surface. This is the intended design, calibrated against the asymmetric harm of being unable to halt during an active drainage.
 
@@ -104,7 +104,7 @@ Performance is not really a concern of this RFC, since the halt is gated by a la
 
 The permissionless halt trigger is an extrinsic with large (to be determined, around 100k) DOT in the signer's account. Offchain relayers should implement watching events for the new pallet, and also stop relaying messages once the pallet `Halted` state is discovered.
 
-The second user of this new function is OpenGov, which resolves the halt: resume, slash, refund or extend.
+The second user of this new function is OpenGov, which resolves the halt: resume, slash or refund.
 
 ### Compatibility
 
