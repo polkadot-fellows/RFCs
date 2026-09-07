@@ -141,7 +141,7 @@ with `traffic` updated by the same adaptive formula the Relay Chain uses now, bu
 
 ### Payment and pool revenue
 
-The spot price is paid into the broker's pot and accrued to the current timeslice's `InstaPoolHistory` record. This is the same record that receives on-demand revenue today. Distribution is unchanged: the system's share is burned per RFC-10, and private pool contributors claim theirs through `claim_revenue`.
+The spot price is paid into the broker's pot and accrued to the current timeslice's `InstaPoolHistory` record. This is the same record that receives on-demand revenue today. Distribution is unchanged: the system's share goes to the runtime's `OnRevenue` sink, and private pool contributors claim theirs through `claim_revenue`.
 
 ## Drawbacks
 
