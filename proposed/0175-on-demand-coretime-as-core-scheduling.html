@@ -323,7 +323,7 @@
 </ul>
 <p><code>traffic</code> is updated on every order and on every block, as today. The <code>on_demand_base_fee</code>, target-utilisation, and fee-variability parameters move from the Relay Chain's <code>HostConfiguration</code> into broker configuration.</p>
 <h3 id="payment-and-pool-revenue"><a class="header" href="#payment-and-pool-revenue">Payment and pool revenue</a></h3>
-<p>The spot price is paid into the broker's pot and accrued to the current timeslice's <code>InstaPoolHistory</code> record. This is the same record that receives on-demand revenue today. Distribution is unchanged: the system's share is burned per RFC-10, and private pool contributors claim theirs through <code>claim_revenue</code>.</p>
+<p>The spot price is paid into the broker's pot and accrued to the current timeslice's <code>InstaPoolHistory</code> record. This is the same record that receives on-demand revenue today. Distribution is unchanged: the system's share goes to the runtime's <code>OnRevenue</code> sink, and private pool contributors claim theirs through <code>claim_revenue</code>.</p>
 <h2 id="drawbacks"><a class="header" href="#drawbacks">Drawbacks</a></h2>
 <ul>
 <li><strong>Latency.</strong> An order must be included in a Coretime chain block and delivered over UMP before it can be scheduled. This adds a few relay blocks compared to ordering on the Relay Chain directly.</li>
