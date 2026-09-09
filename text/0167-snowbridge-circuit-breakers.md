@@ -21,7 +21,7 @@ The downside with circuit breakers is that legitimate transactions might be dela
 ## Stakeholders
 
 - **Snowbridge maintainers**, who implement this proposal and suggest initial caps.
-- **Polkadot Fellowship and OpenGov**, who vote on per-asset caps via governance.
+- **OpenGov**, who vote on per-asset caps via governance.
 - **Snowbridge users and integrators**, who experience a tripped cap as a temporary lockdown of one asset+direction. Main stakeholder here is Hydration.
 - **Asset issuers** whose tokens are listed on Snowbridge and would have caps set against them.
 - **Relayers and the existing relayer-operated monitoring stack**, which becomes the alerting backbone for cap events.
