@@ -28,7 +28,7 @@ The downside with circuit breakers is that legitimate transactions might be dela
 
 ## Explanation
 
-### Gateway Circuit Breaker
+### Gateway (Ethereum contract) Circuit Breaker
 
 Snowbridge's honey pot is primarily on Ethereum - all locked funds bridged from Ethereum to Polkadot are located in the Snowbridge gateway contract. For this reason, it makes sense to protect these assets from irregular activity, in the gateway contract. Additionally, Polkadot Native Assets (PNAs) like DOT are minted on Ethereum, backed by assets on Asset Hub, which also need protection against irregular minting.
 
