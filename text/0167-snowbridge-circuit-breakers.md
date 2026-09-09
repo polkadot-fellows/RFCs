@@ -39,7 +39,7 @@ If one considers the possible exploit shapes, they would all be protected by a c
 - Gateway message decode bug
 - PNA minting bug
 
-The implementation should track per-asset, net outflow over a rolling 24 hour window, both ERC-20s and Ether, and PNAs (Polkadot native assets, like DOT). This part of the circuit breaker is specifically for P->E transfers For each asset and each class, net movement (outflow - inflow) is tracked over the window. Net flow is tracked so two-way arbitrage and market-maker activity doesn't trigger the cap and unnecessarily delay transactions. This is borrowed from Hydration's `pallet-circuit-breaker` net-volume pattern. 
+The implementation should track per-asset, net outflow over a rolling 24 hour window, both ERC-20s and Ether, and PNAs (Polkadot native assets, like DOT). This part of the circuit breaker is specifically for P->E transfers. For each asset and each class, net movement (outflow - inflow) is tracked over the window. Net flow is tracked so two-way arbitrage and market-maker activity doesn't trigger the cap and unnecessarily delay transactions. This is borrowed from Hydration's `pallet-circuit-breaker` net-volume pattern. 
 
 A 24 hour window is suggested, as the delay needs to be long enough for bridge operators to notice. The window matches bridges like Wormhole and LayerZero's behaviour. Assets should be tracked by denomination, not USD, so that it doesn't create reliance on oracles. Assets without a cap ignore the circuit breaker pattern, so that the tracking is opt-in by way of governance vote.
 
