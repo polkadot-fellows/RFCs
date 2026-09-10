@@ -190,7 +190,7 @@ detailing proposed changes to the technical implementation of the Polkadot netwo
 <li><a href="proposed/0167-snowbridge-circuit-breakers.html#stakeholders">Stakeholders</a></li>
 <li><a href="proposed/0167-snowbridge-circuit-breakers.html#explanation">Explanation</a>
 <ul>
-<li><a href="proposed/0167-snowbridge-circuit-breakers.html#gateway-circuit-breaker">Gateway Circuit Breaker</a></li>
+<li><a href="proposed/0167-snowbridge-circuit-breakers.html#gateway-ethereum-contract-circuit-breaker">Gateway (Ethereum contract) Circuit Breaker</a></li>
 <li><a href="proposed/0167-snowbridge-circuit-breakers.html#asset-hub-circuit-breaker">Asset Hub Circuit Breaker</a></li>
 <li><a href="proposed/0167-snowbridge-circuit-breakers.html#caps-set-by-governance">Caps set by Governance</a></li>
 <li><a href="proposed/0167-snowbridge-circuit-breakers.html#observability-and-alerting">Observability and alerting</a></li>
@@ -219,7 +219,7 @@ detailing proposed changes to the technical implementation of the Polkadot netwo
 </tbody></table>
 </div>
 <h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
-<p>Snowbridge does not currently have any proactive on-chain security measures in place, in case of irregular activity. This proposal suggests adding on-chain rate limiting, with the main goal being reducing artificial latency in case of an exploit, which gives the team time to halt the bridge. This RFC goes hand in hand with the reactive security measure that is introduced in <a href="proposed/./0166-snowbridge-emergency-pause-pallet.html">Snowbridge Emergency Pause Pallet RFC</a>.</p>
+<p>Snowbridge does not currently have any proactive on-chain security measures in place, in case of irregular activity. This proposal suggests adding on-chain rate limiting, with the main goal being introducing artificial latency in case of an exploit, which gives the team time to halt the bridge. This RFC goes hand in hand with the reactive security measure that is introduced in <a href="proposed/./0166-snowbridge-emergency-pause-pallet.html">Snowbridge Emergency Pause Pallet RFC</a>.</p>
 <h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
 <p>At the moment, there is no way to halt Snowbridge besides a Fellowship-driven whitelisted caller proposal to halt Snowbridge. A permissionless halt is proposed in <a href="proposed/./0166-snowbridge-emergency-pause-pallet.html">Snowbridge Emergency Pause Pallet RFC</a>. A reactive halt might not be enough in the case of an exploit that already occurred, and saw millions of dollars flow out of the bridge. Consequently, this proposal adds a proactive security measure - delaying unusual large net transfers in either direction (funds leaving the bridge on Ethereum, or bridged assets minted on Polkadot), to give the community time to inspect the transfer, and halt the bridge via the permissionless halt, if illegitimate.</p>
 <p>The need for such a feature is supported by other popular bridges, e.g. (Wormhole's <a href="https://github.com/wormhole-foundation/wormhole/blob/main/whitepapers/0007_governor.md">Governor</a>, Axelar's <a href="https://www.axelar.network/blog/axelar-governance-explained">transfer-rate limits</a> and LayerZero OFT's <a href="https://github.com/LayerZero-Labs/devtools/blob/main/packages/oapp-evm/contracts/oapp/utils/RateLimiter.sol"><code>RateLimiter</code></a>). Bridges that did not implement rate limiting, have seen exploits that might have been prevented with rate limiting (Nomad's <a href="https://cloud.google.com/blog/topics/threat-intelligence/dissecting-nomad-bridge-hack">$190M exploit</a>, Multichain, Ronin, Wormhole's own pre-Governor Solana exploit). This RFC adopts the best practices that other bridges have set: per-asset, rolling-window, governance-set, auto-lifting.</p>
@@ -227,13 +227,13 @@ detailing proposed changes to the technical implementation of the Polkadot netwo
 <h2 id="stakeholders"><a class="header" href="#stakeholders">Stakeholders</a></h2>
 <ul>
 <li><strong>Snowbridge maintainers</strong>, who implement this proposal and suggest initial caps.</li>
-<li><strong>Polkadot Fellowship and OpenGov</strong>, who vote on per-asset caps via governance.</li>
+<li><strong>OpenGov</strong>, who vote on per-asset caps via governance.</li>
 <li><strong>Snowbridge users and integrators</strong>, who experience a tripped cap as a temporary lockdown of one asset+direction. Main stakeholder here is Hydration.</li>
 <li><strong>Asset issuers</strong> whose tokens are listed on Snowbridge and would have caps set against them.</li>
 <li><strong>Relayers and the existing relayer-operated monitoring stack</strong>, which becomes the alerting backbone for cap events.</li>
 </ul>
 <h2 id="explanation"><a class="header" href="#explanation">Explanation</a></h2>
-<h3 id="gateway-circuit-breaker"><a class="header" href="#gateway-circuit-breaker">Gateway Circuit Breaker</a></h3>
+<h3 id="gateway-ethereum-contract-circuit-breaker"><a class="header" href="#gateway-ethereum-contract-circuit-breaker">Gateway (Ethereum contract) Circuit Breaker</a></h3>
 <p>Snowbridge's honey pot is primarily on Ethereum - all locked funds bridged from Ethereum to Polkadot are located in the Snowbridge gateway contract. For this reason, it makes sense to protect these assets from irregular activity, in the gateway contract. Additionally, Polkadot Native Assets (PNAs) like DOT are minted on Ethereum, backed by assets on Asset Hub, which also need protection against irregular minting.</p>
 <p>If one considers the possible exploit shapes, they would all be protected by a circuit breaker, given the circuit breaker catches the outflow pattern:</p>
 <ul>
@@ -242,7 +242,7 @@ detailing proposed changes to the technical implementation of the Polkadot netwo
 <li>Gateway message decode bug</li>
 <li>PNA minting bug</li>
 </ul>
-<p>The implementation should track per-asset, net outflow over a rolling 24 hour window, both ERC-20s and Ether, and PNAs (Polkadot native assets, like DOT). This part of the circuit breaker is specifically for P-&gt;E transfers For each asset and each class, net movement (outflow - inflow) is tracked over the window. Net flow is tracked so two-way arbitrage and market-maker activity doesn't trigger the cap and unnecessarily delay transactions. This is borrowed from Hydration's <code>pallet-circuit-breaker</code> net-volume pattern. </p>
+<p>The implementation should track per-asset, net outflow over a rolling 24 hour window, both ERC-20s and Ether, and PNAs (Polkadot native assets, like DOT). This part of the circuit breaker is specifically for P-&gt;E transfers. For each asset and each class, net movement (outflow - inflow) is tracked over the window. Net flow is tracked so two-way arbitrage and market-maker activity doesn't trigger the cap and unnecessarily delay transactions. This is borrowed from Hydration's <code>pallet-circuit-breaker</code> net-volume pattern. </p>
 <p>A 24 hour window is suggested, as the delay needs to be long enough for bridge operators to notice. The window matches bridges like Wormhole and LayerZero's behaviour. Assets should be tracked by denomination, not USD, so that it doesn't create reliance on oracles. Assets without a cap ignore the circuit breaker pattern, so that the tracking is opt-in by way of governance vote.</p>
 <p>The suggested cap formula is <code>cap = max(5x trailing-7-day-median hourly net flow, configured floor per asset)</code>.</p>
 <ul>
