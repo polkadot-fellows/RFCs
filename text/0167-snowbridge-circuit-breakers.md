@@ -55,7 +55,17 @@ A formula that adjusts the cap on-chain from recent volume was considered and no
 
 For example, with a cap of 5 per 24 hours: a transfer of 3 goes through (used = 3), a transfer of 1 goes through (used = 4), and a further transfer of 3 does not fit and is held. Used capacity drains back at 5 per 24 hours, so after about 10 hours it has dropped to 2 and the held 3 fits.
 
-A transfer larger than the cap is rejected, since it could never fit. dApps would have to split a transfer that would not fit into pieces that do, so users do not have to do this themselves.
+#### Transfers larger than the cap
+
+A transfer larger than the cap can never fit in the refilling limit. It is not rejected. Instead it is delayed at the destination for a time proportional to its size, `amount / cap × 24 hours`, and then goes through. For example, with a cap of 5, a transfer of 15 is held for 3 days.
+
+While it waits, it does not use any capacity, so other transfers of the same asset are not affected. Once the delay has passed, it goes through without counting against the cap. This is the same approach as Wormhole's delay for large transactions, scaled by size instead of a flat 24 hours.
+
+This means the amount an attacker could move per asset is not strictly the cap per 24 hours. It is the cap per 24 hours, plus any large transfer that has been visible on-chain for at least 24 hours without the bridge being halted. This is intended. The breaker is there to delay large transfers, not to stop them, and the defence against a fraudulent large transfer is the emergency pause. A held transfer larger than the cap is rare and looks exactly like an exploit, so monitoring should alert on it immediately.
+
+Rejecting such transfers was considered and not adopted. A rejection has to happen at the source before funds move, otherwise funds get stuck at the destination. For P→E this means Asset Hub would have to check every outgoing transfer against the Gateway cap, and a transfer from another parachain that fails on Asset Hub leaves the user's funds out of sync between the parachain and Asset Hub. Delaying instead means everything that is sent eventually arrives. If governance lowers a cap while a transfer is in flight, that transfer is simply delayed.
+
+On Ethereum, the Gateway records when a transfer larger than the cap was first submitted, and relayers resubmit it once the delay has passed. On Asset Hub, it is held on-chain and released automatically. Governance can release or drop a delayed transfer early on both sides.
 
 Held P→E transfers are not processed by the Gateway. Relayers retry them once there is capacity. When several held transfers are waiting for the same capacity, whichever one a relayer submits first goes first. Relayers pick the transfer that pays them the most, so the fee a user attaches decides the order, the same as for ordinary relaying.
 
@@ -65,7 +75,7 @@ Capacity that frees up goes to whichever transfer is submitted first. This has a
 
 The alternative is that a held transfer counts its amount as used the moment it is held, so nothing else can pass until enough capacity has drained for it to go through. This guarantees a held transfer goes through within 24 hours. We did not adopt it because it brings back the blocking that the refilling limit is meant to remove. One transfer that does not fit would block all transfers of that asset until it drains, for up to 24 hours, at the cost of a single fee, and a griefer could repeat this every day with the same funds.
 
-Without reservation, nothing is ever blocked outright. During a sustained griefing attack, honest users compete with the griefer on fees for each unit of capacity that frees up, and the griefer pays a fee on every unit they take. Splitting means a large honest transfer still gets through piece by piece rather than waiting for one large gap. Caps are set well above normal daily volume, so a transfer that needs most of the cap at once is rare. It is also the kind of transfer the breaker is meant to slow down.
+Without reservation, nothing is ever blocked outright. During a sustained griefing attack, honest users compete with the griefer on fees for each unit of capacity that frees up, and the griefer pays a fee on every unit they take. A user whose transfer is held can also send it as several smaller transfers that fit sooner. Caps are set well above normal daily volume, so a transfer that needs most of the cap at once is rare. It is also the kind of transfer the breaker is meant to slow down.
 
 While the bridge is halted through the emergency pause ([RFC-0166](./0166-snowbridge-emergency-pause-pallet.md)), held transfers are not released, even if there is capacity. This way the community can check held transfers before any of them go through.
 
@@ -90,7 +100,7 @@ The cap works exactly like the Gateway breaker: per-asset, tracked by denominati
 
 The breaker keeps a gross meter per asset: value arriving from Ethereum (E→P). Transfers of the same asset between Asset Hub and other parachains are not counted. A flow only counts when it comes from Ethereum.
 
-When an inbound (E→P) transfer does not fit in the remaining capacity, it is not delivered. It is held on-chain and goes through automatically once there is capacity. On Ethereum, relayers resubmit held transfers instead. Since relayers do not decide the order on Asset Hub, the oldest held transfer that fits is released first. A held transfer that does not fit yet is skipped, not waited for, so it does not block smaller ones behind it (see "Held transfers do not reserve capacity"). A backlog drains as capacity comes back rather than all at once, so releasing held transfers cannot exceed the cap. Until release, the funds are not credited to the beneficiary, so governance can drop a transfer judged malicious. As on Ethereum, held transfers are not released while the bridge is halted. The exact mechanism is left to the implementation.
+When an inbound (E→P) transfer does not fit in the remaining capacity, it is not delivered. It is held on-chain and goes through automatically once there is capacity. On Ethereum, relayers resubmit held transfers instead. Since relayers do not decide the order on Asset Hub, the oldest held transfer that fits is released first. A held transfer that does not fit yet is skipped, not waited for, so it does not block smaller ones behind it (see "Rate-filling mechanisms"). A backlog drains as capacity comes back rather than all at once, so releasing held transfers cannot exceed the cap. Until release, the funds are not credited to the beneficiary, so governance can drop a transfer judged malicious. As on Ethereum, held transfers are not released while the bridge is halted. The exact mechanism is left to the implementation.
 
 Caps are set through a root-gated `set_cap` extrinsic on the Snowbridge System Frontend pallet on Asset Hub, the same pallet the Gateway cap is routed through (see "Caps set by Governance"), so both caps share one governance surface. Events are emitted when a transfer is held and when it is released, so the existing relayer monitoring can watch for them and page on-call, and halt the bridge via the emergency pause if the spike turns out to be real.
 
@@ -137,13 +147,13 @@ The contract emits events when a transfer is held and when it is released so the
 
 ### Ergonomics
 
-User-facing: under normal operation, invisible. When the cap is full, the user sees a delayed transaction. Transfers larger than the cap have to be split.
+User-facing: under normal operation, invisible. When the cap is full, the user sees a delayed transaction. A transfer larger than the cap is delayed in proportion to its size.
 
 Operator-facing: cap configuration is a governance-driven workflow. Bridge monitoring should surface "used capacity vs cap" per asset so maintainers can spot the cap filling up before transfers are held.
 
 ### Compatibility
 
-- **Ethereum Gateway (P→E breaker):** This is a major Ethereum contract change and requires a gateway upgrade. Adds the per-asset caps, a command to set cap values, outflow tracking and checking each transfer against the cap.
+- **Ethereum Gateway (P→E breaker):** This is a major Ethereum contract change and requires a gateway upgrade. Adds the per-asset caps, a command to set cap values, outflow tracking, checking each transfer against the cap, and recording when a transfer larger than the cap was first submitted so it can be released after its delay.
 - **Asset Hub (E→P breaker):** Adds a circuit-breaker pallet that meters E→P inflow per asset and holds over-cap transfers. Ordinary transfers between Asset Hub and other parachains are not counted. The Snowbridge System Frontend pallet gains a root-origin `set_cap` extrinsic (mirroring its `set_operating_mode`) that sets the local cap and proxies the *Gateway* cap command to Bridge Hub.
 - **Bridge Hub:** Adds a `set_cap` extrinsic (in the Ethereum System V2 pallet) that relays the Gateway cap command on to Ethereum.
 
@@ -161,6 +171,6 @@ None at this time.
 
 ## Future Directions and Related Material
 - **Asset-class default caps at registration.** Add an "asset class" field to the asset registry (stablecoin, ETH-LST, long-tail, etc.) with a per-class default cap so new assets get a starting cap until governance sets one.
-- **Per-asset capacity reservation.** If large transfers of a specific asset are regularly starved by smaller ones, governance could enable reservation for that asset, so held transfers count as used and go through within 24 hours (see "Held transfers do not reserve capacity" for the trade-off).
+- **Per-asset capacity reservation.** If large transfers of a specific asset are regularly starved by smaller ones, reservation could be added for that asset, so held transfers count as used and go through within 24 hours (see "Rate-filling mechanisms" for the trade-off). This is a Gateway upgrade, not a setting: the Gateway would need to record held messages and their amounts, plus a per-asset flag. The per-message record already needed for delaying transfers larger than the cap could be reused.
 - **Per-asset limited netting.** If an asset's two-way volume grows enough that its gross cap fills up on legitimate traffic, governance could enable netting for that asset. The counter would never go below zero and credit from the other direction would be capped at the cap, so the worst case is 2× the cap.
 - **Companion RFC:** the [Snowbridge Emergency Pause Pallet RFC](./0166-snowbridge-emergency-pause-pallet.md) (PR #166) specifies the reactive layer that this preventive layer composes with.
