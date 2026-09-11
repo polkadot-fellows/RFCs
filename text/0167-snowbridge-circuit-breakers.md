@@ -12,7 +12,7 @@ Snowbridge does not currently have any proactive on-chain security measures in p
 
 ## Motivation
 
-At the moment, there is no way to halt Snowbridge besides a Fellowship-driven whitelisted caller proposal to halt Snowbridge. A permissionless halt is proposed in [Snowbridge Emergency Pause Pallet RFC](./0166-snowbridge-emergency-pause-pallet.md). A reactive halt might not be enough in the case of an exploit that already occurred, and saw millions of dollars flow out of the bridge. Consequently, this proposal adds a proactive security measure - delaying unusual large net transfers in either direction (funds leaving the bridge on Ethereum, or bridged assets minted on Polkadot), to give the community time to inspect the transfer, and halt the bridge via the permissionless halt, if illegitimate.
+At the moment, there is no way to halt Snowbridge besides a Fellowship-driven whitelisted caller proposal to halt Snowbridge. A permissionless halt is proposed in [Snowbridge Emergency Pause Pallet RFC](./0166-snowbridge-emergency-pause-pallet.md). A reactive halt might not be enough in the case of an exploit that already occurred, and saw millions of dollars flow out of the bridge. Consequently, this proposal adds a proactive security measure - delaying unusually large transfers in either direction (funds leaving the bridge on Ethereum, or bridged assets minted on Polkadot), to give the community time to inspect the transfer, and halt the bridge via the permissionless halt, if illegitimate.
 
 The need for such a feature is supported by other popular bridges, e.g. (Wormhole's [Governor](https://github.com/wormhole-foundation/wormhole/blob/main/whitepapers/0007_governor.md), Axelar's [transfer-rate limits](https://www.axelar.network/blog/axelar-governance-explained) and LayerZero OFT's [`RateLimiter`](https://github.com/LayerZero-Labs/devtools/blob/main/packages/oapp-evm/contracts/oapp/utils/RateLimiter.sol)). Bridges that did not implement rate limiting, have seen exploits that might have been prevented with rate limiting (Nomad's [$190M exploit](https://cloud.google.com/blog/topics/threat-intelligence/dissecting-nomad-bridge-hack), Multichain, Ronin, Wormhole's own pre-Governor Solana exploit). This RFC adopts the best practices that other bridges have set: per-asset, rolling-window, governance-set, auto-lifting.
 
@@ -39,11 +39,11 @@ If one considers the possible exploit shapes, they would all be protected by a c
 - Gateway message decode bug
 - PNA minting bug
 
-The implementation should track per-asset, net outflow over a rolling 24 hour window, both ERC-20s and Ether, and PNAs (Polkadot native assets, like DOT). This part of the circuit breaker is specifically for P->E transfers. For each asset and each class, net movement (outflow - inflow) is tracked over the window. Net flow is tracked so two-way arbitrage and market-maker activity doesn't trigger the cap and unnecessarily delay transactions. This is borrowed from Hydration's `pallet-circuit-breaker` net-volume pattern. 
+The implementation should track per-asset, gross outflow over a rolling 24 hour window, both ERC-20s and Ether, and PNAs (Polkadot native assets, like DOT). This part of the circuit breaker is specifically for P->E transfers. For each asset, only the outflow (ERC-20 and Ether releases, PNA mints) is tracked over the window. Inflow in the opposite direction does not offset it.
 
 A 24 hour window is suggested, as the delay needs to be long enough for bridge operators to notice. The window matches bridges like Wormhole and LayerZero's behaviour. Assets should be tracked by denomination, not USD, so that it doesn't create reliance on oracles. Assets without a cap ignore the circuit breaker pattern, so that the tracking is opt-in by way of governance vote.
 
-The suggested cap formula is `cap = max(5x trailing-7-day-median hourly net flow, configured floor per asset)`.
+The suggested cap formula is `cap = max(5x trailing-7-day-median hourly gross outflow, configured floor per asset)`.
 
 - The 5x multiplier is high enough to not trip on legitimate spikes.
 - The floor prevents low-volume-but-high-value assets from having too low a cap relative to their total locked value.
@@ -53,8 +53,7 @@ If the cap is tripped, asset movement is locked for a certain set time (proposed
 
 Specific implementation details:
 
-- E→P: Tracks inflow.
-- P→E: Tracks outflow, and checks cap. Asset transfers that would breach the cap are deferred, and the nonce is not processed. Relayers should watch and respect this lock, and resubmit the transaction when the lock lifts.
+- P→E: Tracks gross outflow, and checks cap. Asset transfers that would breach the cap are deferred, and the nonce is not processed. Relayers should watch and respect this lock, and resubmit the transaction when the lock lifts.
 
 The reason why the asset lock auto-lifts is that this mechanism is a buy-us-time defense, not a defense in and of itself. The inverse also adds unnecessary burden on governance - not auto-resuming would require the Fellowship/OpenGov to submit unlock referendums, which is added admin for little gain.
 
@@ -64,22 +63,30 @@ It is worth noting that the gateway circuit breaker only covers P->E transfers b
 
 ### Asset Hub Circuit Breaker
 
-The Asset Hub breaker caps the net amount of each bridged asset that arrives from Ethereum over a rolling window:
+The Asset Hub breaker caps the gross amount of each bridged asset that arrives from Ethereum over a rolling window:
 
-- Ethereum assets: net mint = minted (E→P) − burned (P→E).
-- PNAs: net release = released from the reserve (E→P) − locked (P→E).
+- Ethereum assets: mint = minted (E→P).
+- PNAs: release = released from the reserve (E→P).
 
-The cap works exactly like the Gateway breaker: per-asset, tracked by denomination (no oracle), net flow, a governance-set cap with a floor, and a 24h auto-lift. What differs is where it hooks in, because on Asset Hub the assets pallet is not the natural place to meter bridge flow.
+P→E transfers (burns of Ethereum assets, locks of PNAs) do not offset the meter.
 
-The breaker keeps a net meter per asset: value arriving from Ethereum (E→P) minus value leaving for Ethereum (P→E). The important part is separating those bridge flows from ordinary transfers of the same asset between Asset Hub and other parachains, which must not count. A flow only counts when Ethereum is on the other side of it, as the origin on the way in or the destination on the way out.
+The cap works exactly like the Gateway breaker: per-asset, tracked by denomination (no oracle), gross flow, a governance-set cap with a floor, and a 24h auto-lift.
 
-For Ethereum assets (ERC-20s and Ether), the E→P side is a mint performed by the XCM asset transactor as it executes the inbound message. A wrapper around that transactor meters the mint, but only when the message origin is the Ethereum inbound path. An ordinary reserve transfer from another parachain also mints on Asset Hub, but its origin is that parachain, not Ethereum, so it is ignored. The P→E side is a burn, and at the transactor a burn cannot be told apart from sending the asset to another parachain, so it is metered one step later, at the point the transfer is exported to Ethereum and the destination is known. This still happens on Asset Hub, where the outbound message is still structured and its per-asset amounts are visible, before it is forwarded to Bridge Hub for delivery. So both sides of the meter stay on Asset Hub.
-
-Polkadot native assets (PNAs) like DOT are simpler. PNAs are held in the bridge's reserve (the Ethereum sovereign account) while bridged to Ethereum. A P→E transfer deposits it into that reserve and an E→P transfer withdraws it, both through the asset transactor. So for PNAs the meters deposits into and withdrawals from the reserve account, which by construction excludes any transfer that does not touch it.
+The breaker keeps a gross meter per asset: value arriving from Ethereum (E→P). Transfers of the same asset between Asset Hub and other parachains are not counted. A flow only counts when it comes from Ethereum.
 
 When an inbound (E→P) transfer would breach the cap, it is not delivered. It is held, and completed automatically once the cap is no longer breached. A backlog drains gradually rather than all at once, so releasing held transfers cannot immediately re-trip the cap. Until release, the funds are not credited to the beneficiary, so a transfer later judged malicious can simply be dropped. This is the Asset Hub counterpart to the Gateway side, where the relayer holds and resubmits off-chain; here the held transfer is parked on-chain and completed by the runtime. The exact mechanism is left to the implementation.
 
 Caps are set through a root-gated `set_cap` extrinsic on the Snowbridge System Frontend pallet on Asset Hub, the same pallet the Gateway cap is routed through (see "Caps set by Governance"), so both caps share one governance surface. Trip and lift events are emitted so the existing relayer monitoring can watch for them and page on-call, and halt the bridge via the emergency pause if the spike turns out to be real.
+
+### Gross flow
+
+Each breaker counts only the flow in the direction it protects, and the two breakers operate independently. Net flow (outflow minus inflow) was considered, as used by Hydration's `pallet-circuit-breaker` and LayerZero's `RateLimiter`, so that two-way arbitrage and market-maker activity would not use up the cap. It was not adopted, for two reasons.
+
+First, netting lets an attacker raise the cap. An attacker who has compromised one direction can create their own inflow to offset their fraudulent outflow. For example, with P→E compromised, the attacker deposits X tokens into the Gateway on Ethereum. This is a valid E→P transfer, so it reduces the Gateway's net counter by X, and the attacker receives X on Asset Hub. They then forge a release of `cap + X` from the Gateway. They keep the X on Asset Hub, so the deposit costs them nothing, and the amount they can drain grows with their capital. The Asset Hub breaker limits this, since the deposit counts against the Asset Hub cap, but the worst case then depends on available liquidity instead of being a fixed amount. Limiting the credit (never letting the counter go below zero, and capping credit at the cap) makes the worst case 2× the net cap.
+
+Second, Snowbridge traffic is mostly one-way, so netting would not allow much lower caps. We compared daily net flow with daily gross flow per asset across all 28,213 Snowbridge V2 transfers from June 2024 to September 2026. On busy days (95th percentile, last 90 days), net outflow was 0.9 to 1.0 of gross outflow for most assets (tBTC, wstETH, LINK, sUSDe and others), so netting would not allow a lower cap for them. The most two-way assets were USDT (0.33), USDC (0.39) and ETH (0.49). Even for these, the 2× worst case of limited netting is only 0 to 35% below a gross cap. Few addresses use the bridge in both directions, and the share of flow that cancels out has dropped (57% for ETH over the full history, 28% in the last 90 days).
+
+With a gross cap, the worst case is the cap itself, regardless of the other breaker or the attacker's capital, and it is simpler to implement and audit. If an asset's two-way volume grows enough that its gross cap trips on legitimate traffic, limited netting can be enabled for that asset in a later upgrade (see "Future Directions").
 
 ### Caps set by Governance
 
@@ -100,7 +107,7 @@ The contract emits events at trip and lift so the existing relayer infrastructur
 ## Testing, Security, and Privacy
 
 - P→E cap Gateway tests: Solidity unit tests, covering all the possible scenarios.
-- E→P Asset Hub circuit breaker unit tests: net-mint tracking, cap reached and auto-lift, holding and retry of an over-cap mint, for both foreign assets and PNAs.
+- E→P Asset Hub circuit breaker unit tests: gross-mint tracking, cap reached and auto-lift, holding and retry of an over-cap mint, for both foreign assets and PNAs.
 - Ethereum System Frontend pallet unit tests for setting both the Gateway and Asset Hub `set_cap` governance entry.
 - Polkadot SDK integration tests: Testing the governance command from Asset Hub, is sent to Bridge Hub and the outbound message to Ethereum is queued correctly.
 - No privacy concerns with this proposal - all events are public.
@@ -116,19 +123,19 @@ The contract emits events at trip and lift so the existing relayer infrastructur
 
 User-facing: under normal operation, invisible. On a trip, the user sees a delayed transaction.
 
-Operator-facing: cap configuration is a governance-driven workflow. Bridge monitoring should surface "current net flow vs cap" per asset so maintainers can spot a trip becoming likely before it happens.
+Operator-facing: cap configuration is a governance-driven workflow. Bridge monitoring should surface "current flow vs cap" per asset so maintainers can spot a trip becoming likely before it happens.
 
 ### Compatibility
 
-- **Ethereum Gateway (P→E breaker):** This is a major Ethereum contract change and requires a gateway upgrade. Adds the per-asset caps, a command to set cap values, inflow and outflow tracking and checking each transfer against the cap.
-- **Asset Hub (E→P breaker):** Adds an asset-transactor wrapper to meter the E→P inflow (scoped to bridge flows by the Ethereum inbound origin, or the reserve account for PNAs), an export-path wrapper to credit the P→E outflow for Ethereum-origin assets, and a circuit-breaker pallet for the net counters and held-transfer queue. Ordinary transfers between Asset Hub and other parachains are not counted. The Snowbridge System Frontend pallet gains a root-origin `set_cap` extrinsic (mirroring its `set_operating_mode`) that sets the local cap and proxies the *Gateway* cap command to Bridge Hub.
+- **Ethereum Gateway (P→E breaker):** This is a major Ethereum contract change and requires a gateway upgrade. Adds the per-asset caps, a command to set cap values, outflow tracking and checking each transfer against the cap.
+- **Asset Hub (E→P breaker):** Adds a circuit-breaker pallet that meters E→P inflow per asset and holds over-cap transfers. Ordinary transfers between Asset Hub and other parachains are not counted. The Snowbridge System Frontend pallet gains a root-origin `set_cap` extrinsic (mirroring its `set_operating_mode`) that sets the local cap and proxies the *Gateway* cap command to Bridge Hub.
 - **Bridge Hub:** Adds a `set_cap` extrinsic (in the Ethereum System V2 pallet) that relays the Gateway cap command on to Ethereum.
 
 ## Prior Art and References
 
-- Hydration's [`pallet-circuit-breaker`](https://github.com/galacticcouncil/hydration-node/tree/master/pallets/circuit-breaker), the net-volume limit pattern this design borrows (per-block in Hydration; this RFC applies it over a rolling window).
-- Wormhole's [Governor](https://github.com/wormhole-foundation/wormhole/blob/main/whitepapers/0007_governor.md) and [Global Accountant](https://github.com/wormhole-foundation/wormhole/blob/main/whitepapers/0011_accountant.md): rolling-24h USD-denominated per-chain cap (Governor) layered with a cumulative balance check (Accountant). Their later [flow-cancelling extension](https://wormhole.com/blog/understanding-the-flow-canceling-governor-in-wormhole) addressed stablecoin caps routinely hitting 100% utilization; informed the net-flow choice in this RFC.
-- LayerZero OFT [`RateLimiter`](https://github.com/LayerZero-Labs/devtools/blob/main/packages/oapp-evm/contracts/oapp/utils/RateLimiter.sol): per-pathway `(limit, window)` with linear refill, raw token denomination, inbound transfers crediting against outbound (net-flow). A second precedent for the net-flow choice.
+- Hydration's [`pallet-circuit-breaker`](https://github.com/galacticcouncil/hydration-node/tree/master/pallets/circuit-breaker), a per-block net-volume limit. Considered and not adopted for this RFC (see "Gross flow, not net flow").
+- Wormhole's [Governor](https://github.com/wormhole-foundation/wormhole/blob/main/whitepapers/0007_governor.md) and [Global Accountant](https://github.com/wormhole-foundation/wormhole/blob/main/whitepapers/0011_accountant.md): rolling-24h USD-denominated per-chain cap (Governor) layered with a cumulative balance check (Accountant). The Governor originally tracked only outbound transfers (gross flow). Its later [flow-cancelling extension](https://wormhole.com/blog/understanding-the-flow-canceling-governor-in-wormhole) lets inbound transfers offset outbound ones, but only for allow-listed tokens (some stablecoins) on allow-listed chain pairs. It was added because round-trip arbitrage and settlement traffic kept several chains near 100% of their limits. Snowbridge could add netting per asset in the same way later.
+- LayerZero OFT [`RateLimiter`](https://github.com/LayerZero-Labs/devtools/blob/main/packages/oapp-evm/contracts/oapp/utils/RateLimiter.sol): per-pathway `(limit, window)` with linear refill, raw token denomination, inbound transfers crediting against outbound (net-flow).
 - Axelar's [governance-controlled transfer-rate limits](https://www.axelar.network/blog/axelar-governance-explained): a multisig sets per-token flow limits on-chain. Comparable to a Polkadot-governance-controlled bridge.
 - The [Nomad bridge exploit post-mortem](https://cloud.google.com/blog/topics/threat-intelligence/dissecting-nomad-bridge-hack) ($190M drained within hours, no velocity cap), illustrative of the failure mode this RFC's primary cap is designed to prevent.
 
@@ -138,4 +145,5 @@ None at this time.
 
 ## Future Directions and Related Material
 - **Asset-class default caps at registration.** Add an "asset class" field to the asset registry (stablecoin, ETH-LST, long-tail, etc.) with a per-class default cap multiplier so new asset listings auto-cap at a sensible starting value pending governance refinement.
+- **Per-asset limited netting.** If an asset's two-way volume grows enough that its gross cap trips on legitimate traffic, governance could enable netting for that asset. The counter would never go below zero and credit from the other direction would be capped at the cap, so the worst case is 2× the cap.
 - **Companion RFC:** the [Snowbridge Emergency Pause Pallet RFC](./0166-snowbridge-emergency-pause-pallet.md) (PR #166) specifies the reactive layer that this preventive layer composes with.
