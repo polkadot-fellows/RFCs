@@ -43,15 +43,19 @@ The implementation should track per-asset, gross outflow over a rolling 24 hour 
 
 A 24 hour window is suggested, as the delay needs to be long enough for bridge operators to notice. The window matches bridges like Wormhole and LayerZero's behaviour. Assets should be tracked by denomination, not USD, so that it doesn't create reliance on oracles. Assets without a cap ignore the circuit breaker pattern, so that the tracking is opt-in by way of governance vote.
 
-The suggested cap formula is `cap = max(5x trailing-7-day-median hourly gross outflow, configured floor per asset)`.
+Each asset's cap is a fixed value set by governance, proposed to be values from historical flow data, for example the 99th percentile of daily gross outflow over the last 90 days plus a margin, and caps are reviewed periodically as traffic changes. New assets start uncapped until governance sets a cap.
 
-- The 5x multiplier is high enough to not trip on legitimate spikes.
-- The floor prevents low-volume-but-high-value assets from having too low a cap relative to their total locked value.
-- Both factors are governance-settable per asset; no automatic defaults at asset registration (new assets start uncapped).
+A formula that adjusts the cap on-chain from recent volume was considered and not adopted:
+
+- Snowbridge traffic comes in bursts. For every asset, 81 to 100% of hours in a recent 7-day window had no outflow at all, so hourly statistics like the median are 0, and statistics like mean plus standard deviation swing widely depending on whether a single large transfer happened that week.
+- An attacker can raise an adaptive cap ahead of an exploit by bridging their own funds in the preceding days.
+- A fixed value is simpler to implement and gives governance a single number to vote on.
 
 If the cap is tripped, asset movement is locked for a certain set time (proposed 24 hours). Other asset transfers continue as normal. Once the locked time elapses, the asset transfer continues as normal. 
 
-P→E transfers that would exceed the cap are not processed. Relayers retry them once capacity is available.
+P→E transfers of a locked asset are not processed. Relayers retry them once the lock lifts.
+
+While the bridge is halted through the emergency pause ([RFC-0166](./0166-snowbridge-emergency-pause-pallet.md)), held transfers are not released, even if the lock lifts. This way the community can check held transfers before any of them go through.
 
 The reason why the asset lock auto-lifts is that this mechanism is a buy-us-time defense, not a defense in and of itself. The inverse also adds unnecessary burden on governance - not auto-resuming would require the Fellowship/OpenGov to submit unlock referendums, which is added admin for little gain.
 
@@ -68,11 +72,11 @@ The Asset Hub breaker caps the gross amount of each bridged asset that arrives f
 
 P→E transfers (burns of Ethereum assets, locks of PNAs) do not offset the meter.
 
-The cap works exactly like the Gateway breaker: per-asset, tracked by denomination (no oracle), gross flow, a governance-set cap with a floor, and a 24h auto-lift.
+The cap works exactly like the Gateway breaker: per-asset, tracked by denomination (no oracle), gross flow, a governance-set cap, and a 24h auto-lift.
 
 The breaker keeps a gross meter per asset: value arriving from Ethereum (E→P). Transfers of the same asset between Asset Hub and other parachains are not counted. A flow only counts when it comes from Ethereum.
 
-When an inbound (E→P) transfer would breach the cap, it is not delivered. It is held, and completed automatically once the cap is no longer breached. A backlog drains gradually rather than all at once, so releasing held transfers cannot immediately re-trip the cap. Until release, the funds are not credited to the beneficiary, so a transfer later judged malicious can simply be dropped. On Ethereum, relayers resubmit held transfers once the cap lifts. On Asset Hub, held transfers go through automatically once the cap lifts. The exact mechanism is left to the implementation.
+When an inbound (E→P) transfer would breach the cap, it is not delivered. It is held, and goes through automatically once the lock lifts. On Ethereum, relayers resubmit held transfers instead. A backlog drains gradually rather than all at once, so releasing held transfers cannot immediately re-trip the cap. Until release, the funds are not credited to the beneficiary, so governance can drop a transfer judged malicious. As on Ethereum, held transfers are not released while the bridge is halted. The exact mechanism is left to the implementation.
 
 Caps are set through a root-gated `set_cap` extrinsic on the Snowbridge System Frontend pallet on Asset Hub, the same pallet the Gateway cap is routed through (see "Caps set by Governance"), so both caps share one governance surface. Trip and lift events are emitted so the existing relayer monitoring can watch for them and page on-call, and halt the bridge via the emergency pause if the spike turns out to be real.
 
@@ -90,7 +94,7 @@ With a gross cap, the worst case is the cap itself, regardless of the other brea
 
 Caps are set via governance, through the usual method of using the Ethereum Frontend pallet on Asset Hub, which sets the Asset Hub circuit breaker cap, as well as sends a message to the Ethereum System V2 pallet on Bridge Hub, which in turn sends the message to Ethereum. Concrete cap values per asset are deliberately out of scope of this RFC, which specifies the cap mechanism's shape and the framework for choosing values, not the values themselves. Token-denominated cap values are decided and ratified by community vote at deployment and at re-vote, if necessary.
 
-For the initial contract upgrade, the 24h asset flow will not be accurate (since it needs 24 hours to build up a true view of flows), but the governance-decided floor cap will be used (as part of the cap calculation).
+Since caps are fixed values, they apply as soon as the upgrade is live, without a warm-up period.
 
 ### Observability and alerting
 
@@ -131,7 +135,7 @@ Operator-facing: cap configuration is a governance-driven workflow. Bridge monit
 
 ## Prior Art and References
 
-- Hydration's [`pallet-circuit-breaker`](https://github.com/galacticcouncil/hydration-node/tree/master/pallets/circuit-breaker), a per-block net-volume limit. Considered and not adopted for this RFC (see "Gross flow, not net flow").
+- Hydration's [`pallet-circuit-breaker`](https://github.com/galacticcouncil/hydration-node/tree/master/pallets/circuit-breaker), a per-block net-volume limit. Considered and not adopted for this RFC (see "Gross flow").
 - Wormhole's [Governor](https://github.com/wormhole-foundation/wormhole/blob/main/whitepapers/0007_governor.md) and [Global Accountant](https://github.com/wormhole-foundation/wormhole/blob/main/whitepapers/0011_accountant.md): rolling-24h USD-denominated per-chain cap (Governor) layered with a cumulative balance check (Accountant). The Governor originally tracked only outbound transfers (gross flow). Its later [flow-cancelling extension](https://wormhole.com/blog/understanding-the-flow-canceling-governor-in-wormhole) lets inbound transfers offset outbound ones, but only for allow-listed tokens (some stablecoins) on allow-listed chain pairs. It was added because round-trip arbitrage and settlement traffic kept several chains near 100% of their limits. Snowbridge could add netting per asset in the same way later.
 - LayerZero OFT [`RateLimiter`](https://github.com/LayerZero-Labs/devtools/blob/main/packages/oapp-evm/contracts/oapp/utils/RateLimiter.sol): per-pathway `(limit, window)` with linear refill, raw token denomination, inbound transfers crediting against outbound (net-flow).
 - Axelar's [governance-controlled transfer-rate limits](https://www.axelar.network/blog/axelar-governance-explained): a multisig sets per-token flow limits on-chain. Comparable to a Polkadot-governance-controlled bridge.
@@ -139,9 +143,9 @@ Operator-facing: cap configuration is a governance-driven workflow. Bridge monit
 
 ## Unresolved Questions
 
-None at this time.
+- **Griefing.** Anyone with enough capital can bridge a cap's worth of an asset and lock it for everyone for 24 hours, at little cost to themselves. One option is a refilling limit, where capacity recovers linearly over the window (as in LayerZero's `RateLimiter`) and only transfers that don't fit are held, instead of locking the asset. A griefer would then have to keep bridging funds to keep an asset blocked. This needs the same per-asset storage as a plain counter.
 
 ## Future Directions and Related Material
-- **Asset-class default caps at registration.** Add an "asset class" field to the asset registry (stablecoin, ETH-LST, long-tail, etc.) with a per-class default cap multiplier so new asset listings auto-cap at a sensible starting value pending governance refinement.
+- **Asset-class default caps at registration.** Add an "asset class" field to the asset registry (stablecoin, ETH-LST, long-tail, etc.) with a per-class default cap so new assets get a starting cap until governance sets one.
 - **Per-asset limited netting.** If an asset's two-way volume grows enough that its gross cap trips on legitimate traffic, governance could enable netting for that asset. The counter would never go below zero and credit from the other direction would be capped at the cap, so the worst case is 2× the cap.
 - **Companion RFC:** the [Snowbridge Emergency Pause Pallet RFC](./0166-snowbridge-emergency-pause-pallet.md) (PR #166) specifies the reactive layer that this preventive layer composes with.
