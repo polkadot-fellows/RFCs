@@ -143,7 +143,7 @@ Operator-facing: cap configuration is a governance-driven workflow. Bridge monit
 
 ## Unresolved Questions
 
-- **Griefing.** Anyone with enough capital can bridge a cap's worth of an asset and lock it for everyone for 24 hours, at little cost to themselves. One option is a refilling limit, where capacity recovers linearly over the window (as in LayerZero's `RateLimiter`) and only transfers that don't fit are held, instead of locking the asset. A griefer would then have to keep bridging funds to keep an asset blocked. This needs the same per-asset storage as a plain counter.
+- **Griefing.** Anyone with enough capital can bridge a cap's worth of an asset and lock it for everyone for 24 hours, at little cost to themselves. One option is a refilling limit, where capacity recovers linearly over the window (as in LayerZero's `RateLimiter`) and only transfers that don't fit are held, instead of locking the asset. This does not change the funds a griefer needs (about a cap's worth per 24 hours either way, and splitting it into small transfers only adds fees), but it reduces the impact. With a 24 hour lock, one transfer over the cap blocks the asset for everyone for a day. With a refilling limit, capacity comes back continuously and legitimate transfers go through as soon as there is room, so keeping an asset fully blocked would mean claiming all refilled capacity, all the time. This needs the same per-asset storage as a plain counter.
 
 ## Future Directions and Related Material
 - **Asset-class default caps at registration.** Add an "asset class" field to the asset registry (stablecoin, ETH-LST, long-tail, etc.) with a per-class default cap so new assets get a starting cap until governance sets one.
