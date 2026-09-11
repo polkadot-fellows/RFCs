@@ -51,9 +51,7 @@ The suggested cap formula is `cap = max(5x trailing-7-day-median hourly gross ou
 
 If the cap is tripped, asset movement is locked for a certain set time (proposed 24 hours). Other asset transfers continue as normal. Once the locked time elapses, the asset transfer continues as normal. 
 
-Specific implementation details:
-
-- P→E: Tracks gross outflow, and checks cap. Asset transfers that would breach the cap are deferred, and the nonce is not processed. Relayers should watch and respect this lock, and resubmit the transaction when the lock lifts.
+P→E transfers that would exceed the cap are not processed. Relayers retry them once capacity is available.
 
 The reason why the asset lock auto-lifts is that this mechanism is a buy-us-time defense, not a defense in and of itself. The inverse also adds unnecessary burden on governance - not auto-resuming would require the Fellowship/OpenGov to submit unlock referendums, which is added admin for little gain.
 
@@ -74,7 +72,7 @@ The cap works exactly like the Gateway breaker: per-asset, tracked by denominati
 
 The breaker keeps a gross meter per asset: value arriving from Ethereum (E→P). Transfers of the same asset between Asset Hub and other parachains are not counted. A flow only counts when it comes from Ethereum.
 
-When an inbound (E→P) transfer would breach the cap, it is not delivered. It is held, and completed automatically once the cap is no longer breached. A backlog drains gradually rather than all at once, so releasing held transfers cannot immediately re-trip the cap. Until release, the funds are not credited to the beneficiary, so a transfer later judged malicious can simply be dropped. This is the Asset Hub counterpart to the Gateway side, where the relayer holds and resubmits off-chain; here the held transfer is parked on-chain and completed by the runtime. The exact mechanism is left to the implementation.
+When an inbound (E→P) transfer would breach the cap, it is not delivered. It is held, and completed automatically once the cap is no longer breached. A backlog drains gradually rather than all at once, so releasing held transfers cannot immediately re-trip the cap. Until release, the funds are not credited to the beneficiary, so a transfer later judged malicious can simply be dropped. Unlike the Gateway, where relayers retry held transfers, Asset Hub holds them on-chain. The exact mechanism is left to the implementation.
 
 Caps are set through a root-gated `set_cap` extrinsic on the Snowbridge System Frontend pallet on Asset Hub, the same pallet the Gateway cap is routed through (see "Caps set by Governance"), so both caps share one governance surface. Trip and lift events are emitted so the existing relayer monitoring can watch for them and page on-call, and halt the bridge via the emergency pause if the spike turns out to be real.
 
