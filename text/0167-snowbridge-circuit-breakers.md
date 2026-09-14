@@ -28,7 +28,27 @@ The downside with circuit breakers is that legitimate transactions might be dela
 
 ## Explanation
 
-### Gateway (Ethereum contract) Circuit Breaker
+### Design
+
+Each breaker limits, per asset, the gross amount leaving the bridge in the direction it protects: releases from the Gateway for P→E, mints on Asset Hub for E→P. Inflow in the other direction does not offset it (see "Why gross flow, not net flow"). ERC-20s, Ether and Polkadot native assets (PNAs, like DOT) are all covered.
+
+The limit works like a leaky bucket. Each asset has a bucket that holds one cap. A transfer adds its amount to the bucket and goes through if it fits. The bucket leaks at a steady rate and empties in 24 hours. The leak is continuous and not tied to any transfer. A transfer that has gone through is done. The bucket level is only a record of how much has gone through recently. If a transfer does not fit, only that transfer is held. The asset is not locked as a whole. Other transfers of the same asset keep going through as long as they fit. A held transfer goes through once enough has leaked out for it to fit.
+
+For example, with a cap of 5 per 24 hours: a transfer of 3 goes through (bucket at 3), a transfer of 1 goes through (bucket at 4), and a further transfer of 3 does not fit and is held. The bucket leaks 5 per 24 hours, about 1 every 5 hours. If nothing else goes through, after about 10 hours the bucket is down to 2 and the held 3 fits. The same leak sets the worst case: starting from an empty bucket, an attacker can send 5 at once and another 5 over the next 24 hours as the bucket leaks, so 10 in the first day. After that only what leaks out can be added, 5 per day.
+
+The 24 hour period gives bridge operators time to notice, and matches Wormhole and LayerZero.
+
+**Transfers larger than the cap.** A transfer of the cap or more can never fit in the bucket. It is not rejected, since a rejection would have to happen at the source before funds move, and a transfer from another parachain that fails on Asset Hub would leave the user's funds out of sync. Instead it is delayed at the destination for `amount / cap × 24 hours` and then goes through without counting against the bucket. Large transfers of the same asset are queued: each one's release time is fixed when it enters the queue as the later of now and the previous large transfer's release time, plus its own delay. So with a cap of 5, transfers of 15, 10 and 6 arriving on the same day are released on day 3, day 5 and day 6.2, which is 5 per day. Without the queue, many transfers of just over the cap could all be released after about 24 hours. A single release is still the whole transfer, so the worst case for an asset is one cap at once and one cap per 24 hours through the bucket, plus through the queue any amount that has been visible on-chain for at least one day per cap of its size. This is intended: the breaker delays large transfers, and the emergency pause stops fraudulent ones. A large transfer does not affect ordinary transfers of the same asset, but it does delay large transfers queued behind it. A griefer can queue one very large transfer to make honest large transfers wait, but the griefer's own funds are stuck for the same time.
+
+**Held transfers.** A transfer that does not fit is held at the destination and goes through once it fits. Held transfers do not reserve capacity: capacity that frees up goes to the next transfer that fits, held or new. A large held transfer can therefore wait a long time while smaller ones keep taking capacity, however long it has waited. A user who expects this can send several smaller transfers instead. See "Why a refilling limit, not a lock" for why reservation was not adopted.
+
+**Emergency pause and governance.** While the bridge is halted through the emergency pause ([RFC-0166](./0166-snowbridge-emergency-pause-pallet.md)), the breakers release nothing. Held and queued transfers stay where they are on both sides, even if there is capacity or their release time has come. RFC-0166 stops new transfers and holds in-flight messages on Bridge Hub, but a transfer already held by a breaker is past Bridge Hub, so the breakers observe the halt themselves. The halt reaches Ethereum asynchronously, so there is a short window before the Gateway breaker stops releasing. Governance can release or drop a held or queued transfer at any time, including during a halt. A released transfer goes through without counting against the bucket or the queue. A dropped transfer is cancelled and cannot be retried. Its funds stay at the source, and returning them, if the transfer turns out to be legitimate, is a separate governance action outside this RFC.
+
+**Caps.** Each asset's cap is a fixed value set by governance through the Snowbridge System Frontend pallet on Asset Hub, which sets the Asset Hub cap and forwards the Gateway cap through Bridge Hub to Ethereum. The two directions have independent values, each in the asset's own units, so no oracle is needed. Values are proposed from historical flow data, for example the 99th percentile of daily gross outflow over the last 90 days plus a margin, and reviewed as traffic changes. Concrete values are out of scope of this RFC. Caps apply as soon as the upgrade is live. Assets start uncapped, and an uncapped asset has no protection (see "Future Directions" for default caps at registration).
+
+When a cap changes, the amount of capacity already used is kept as is, so lowering a cap does not free up capacity and raising one does not take it away. Held transfers stay held and are checked against the new cap. A held transfer that is now at or above the new cap moves to the large-transfer queue, with its delay computed from the new cap from the time of the change. Queued large transfers keep the time they have already waited, and the remaining delay is recomputed with the new cap. A cap of zero holds every transfer of that asset until the cap is raised, which gives governance a per-asset pause. Removing an asset's cap releases its held and queued transfers.
+
+### Gateway breaker (P→E)
 
 Snowbridge's honey pot is primarily on Ethereum - all locked funds bridged from Ethereum to Polkadot are located in the Snowbridge gateway contract. For this reason, it makes sense to protect these assets from irregular activity, in the gateway contract. Additionally, Polkadot Native Assets (PNAs) like DOT are minted on Ethereum, backed by assets on Asset Hub, which also need protection against irregular minting.
 
@@ -39,66 +59,13 @@ If one considers the possible exploit types, they would all be protected by a ci
 - Gateway message decode bug
 - PNA minting bug
 
-The implementation should limit per-asset, gross outflow to a cap per 24 hours, both ERC-20s and Ether, and PNAs (Polkadot native assets, like DOT). This part of the circuit breaker is specifically for P->E transfers. For each asset, only the outflow (ERC-20 and Ether releases, PNA mints) is counted. Inflow in the opposite direction does not offset it.
+The Gateway counts ERC-20 and Ether releases and PNA mints. Held transfers are not processed. Relayers retry them once there is capacity, and since relayers pick the transfer that pays them the most, the fee a user attaches decides the order among held transfers, the same as for ordinary relaying.
 
-The limit works like a leaky bucket. Each asset has a bucket that holds one cap. A transfer adds its amount to the bucket and goes through if it fits. The bucket leaks at a steady rate and empties in 24 hours. The leak is continuous and not tied to any transfer. A transfer that has gone through is done. The bucket level is only a record of how much has gone through recently. If a transfer does not fit, only that transfer is held. The asset is not locked as a whole. Other transfers of the same asset keep going through as long as they fit. A held transfer goes through once enough has leaked out for it to fit.
+The Gateway breaker only covers P→E transfers. An exploit that bypasses Ethereum and submits fraudulent transactions to Bridge Hub is not seen by it, which is why a separate breaker on Asset Hub is required.
 
-For example, with a cap of 5 per 24 hours: a transfer of 3 goes through (bucket at 3), a transfer of 1 goes through (bucket at 4), and a further transfer of 3 does not fit and is held. The bucket leaks 5 per 24 hours, about 1 every 5 hours. If nothing else goes through, after about 10 hours the bucket is down to 2 and the held 3 fits. The same leak sets the worst case: starting from an empty bucket, an attacker can send 5 at once and another 5 over the next 24 hours as the bucket leaks, so 10 in the first day. After that only what leaks out can be added, 5 per day.
+### Asset Hub breaker (E→P)
 
-Capacity refills automatically because this mechanism is a buy-us-time defence, not a defence in and of itself. A refilling limit was chosen over locking the asset for a set time once the cap is reached. Locking makes griefing cheap: one transfer that fills the cap blocks the asset for everyone for the whole period, and with gross limits a griefer can fill both directions by moving the same funds back and forth. With a refilling limit nothing is ever blocked outright. A griefer has to keep using up capacity as it comes back, paying fees on every transfer, and honest users can still get through by attaching higher relay fees.
-
-A 24 hour refill period is suggested, as the delay needs to be long enough for bridge operators to notice. Assets should be tracked by denomination, not USD, so that it doesn't create reliance on oracles. Assets without a cap ignore the circuit breaker pattern, so that the tracking is opt-in by way of governance vote.
-
-Each asset's cap is a fixed value set by governance. Values are proposed from historical flow data, for example the 99th percentile of daily gross outflow over the last 90 days plus a margin, and reviewed periodically as traffic changes. New assets start uncapped until governance sets a cap. The bounds in this RFC apply only to capped assets. An uncapped asset has no protection, including a newly registered asset before governance has set its cap (see "Future Directions" for default caps at registration).
-
-Held P→E transfers are not processed by the Gateway. Relayers retry them once there is capacity. When several held transfers are waiting for the same capacity, whichever one a relayer submits first goes first. Relayers pick the transfer that pays them the most, so the fee a user attaches decides the order, the same as for ordinary relaying.
-
-While the bridge is halted through the emergency pause ([RFC-0166](./0166-snowbridge-emergency-pause-pallet.md)), no transfers are processed at all. Held transfers and queued large transfers stay where they are on both sides, even if there is capacity or their release time has come. RFC-0166 stops new transfers on Asset Hub and the Gateway and holds in-flight messages on Bridge Hub, but a transfer already held by a breaker is past Bridge Hub, so the breakers have to observe the halt themselves. The halt reaches Ethereum asynchronously, so there is a short window before the Gateway breaker stops releasing. Governance can still release or drop individual transfers during a halt. This way the community can check held transfers before any of them go through.
-
-The increased gas cost to add the circuit breaker is estimated to be around ~10-15k extra (read and write the per-asset counter and check the cap). A transfer larger than the cap also records its release time, which costs more, but such transfers are rare.
-
-It is worth noting that the gateway circuit breaker only covers P->E transfers because in the case of E->P transfers, where an exploit bypasses Ethereum and submits fraudulent transactions to Bridge Hub, the circuit breaker on Ethereum won't help. This is why a separate circuit breaker on Asset Hub is also required.
-
-#### Transfers larger than the cap
-
-A transfer larger than the cap can never fit in the refilling limit. A transfer of exactly the cap counts as larger than the cap too, since it could only fit after 24 hours with no other traffic. Such a transfer is not rejected. Instead it is delayed at the destination and then goes through without counting against the cap. This is the same approach as Wormhole's delay for large transactions, with two differences: the delay is proportional to size, `amount / cap × 24 hours`, and large transfers of the same asset are queued one behind another.
-
-Each large transfer's release time is fixed when it enters the queue: the later of now and the previous large transfer's release time, plus its own delay. Whether the previous transfer has actually been relayed by then does not matter, so an unrelayed transfer cannot hold up the ones behind it.
-
-For example, with a cap of 5, three large transfers of 15, 10 and 6 arrive on the same day. The 15 is released after 3 days, the 10 after 2 more days (day 5), and the 6 after 1.2 more days (day 6.2). That is 31 tokens over 6.2 days, or 5 per day.
-
-The queue is what bounds the rate. If each large transfer waited only its own delay, an attacker could send many transfers of just over the cap in parallel and have all of them released after about 24 hours. With the queue, the large transfers of an asset average at most one cap per 24 hours, however many are queued.
-
-That is an average. A single release is the whole transfer: a transfer of 20× cap is released in full after 20 days. So the worst case for an asset has two parts. Through the refilling limit: one cap at once, then one cap per 24 hours. Through the queue: any amount, as long as it has been visible on-chain for at least one day per cap of its size. This is intended. The breaker is there to delay large transfers, not to stop them, and the defence against a fraudulent large transfer is the emergency pause. A queued large transfer is rare and looks exactly like an exploit, so monitoring should alert on it immediately.
-
-While it waits, a large transfer does not use any capacity in the refilling limit, so ordinary transfers of the same asset are not affected. It does delay other large transfers of the same asset queued behind it. A griefer can queue one very large transfer and make honest large transfers wait a long time, but the griefer's own funds are stuck for the same time, and governance can release an honest transfer early.
-
-Rejecting such transfers was considered and not adopted. A rejection has to happen at the source before funds move, otherwise funds get stuck at the destination. For P→E this means Asset Hub would have to check every outgoing transfer against the Gateway cap, and a transfer from another parachain that fails on Asset Hub leaves the user's funds out of sync between the parachain and Asset Hub. Delaying instead means nothing is rejected and no funds are stuck. If governance lowers a cap while a transfer is in flight, that transfer is simply delayed.
-
-On Ethereum, relayers resubmit a large transfer once its release time has passed. On Asset Hub, it is released automatically. Governance can release or drop a queued transfer early on both sides.
-
-#### Ordering of held transfers
-
-Capacity that frees up goes to whichever transfer is submitted first. This has a downside: a large held transfer needs a large amount of free capacity at once, and a steady stream of small transfers can keep taking capacity as it frees up, so the large transfer may wait a long time no matter what fee it attaches.
-
-The alternative is that a held transfer counts its amount as used the moment it is held, so nothing else can pass until enough capacity has drained for it to go through. This guarantees a held transfer goes through within 24 hours. We did not adopt it because it brings back the blocking that the refilling limit is meant to remove. One transfer that does not fit would block all transfers of that asset until it drains, for up to 24 hours, at the cost of a single fee, and a griefer could repeat this every day with the same funds.
-
-Without reservation, nothing is ever blocked outright. During a sustained griefing attack, honest users compete with the griefer on fees for each unit of capacity that frees up, and the griefer pays a fee on every unit they take. A user who expects a transfer to be held can send several smaller transfers instead. A held transfer close to the cap can wait a long time under sustained heavy traffic, and governance can release it if that happens. Caps are set well above normal daily volume, so a transfer that needs most of the cap at once is rare. It is also the kind of transfer the breaker is meant to slow down.
-
-### Asset Hub Circuit Breaker
-
-The Asset Hub breaker caps the gross amount of each bridged asset that arrives from Ethereum per 24 hours:
-
-- Ethereum assets: mint = minted (E→P).
-- PNAs: release = released from the reserve (E→P).
-
-P→E transfers (burns of Ethereum assets, locks of PNAs) do not offset the meter. Transfers of the same asset between Asset Hub and other parachains are not counted either. A flow only counts when it comes from Ethereum.
-
-The cap works exactly like the Gateway breaker: per-asset, tracked by denomination (no oracle), gross flow, a governance-set cap, and a limit that refills over 24 hours.
-
-When an inbound (E→P) transfer does not fit in the remaining capacity, it is not delivered. It is held on-chain and goes through automatically once there is capacity. On Ethereum, relayers resubmit held transfers instead. Since relayers do not decide the order on Asset Hub, the oldest held transfer that fits is released first. A held transfer that does not fit yet is skipped, not waited for, so it does not block smaller ones behind it (see "Ordering of held transfers"). A backlog drains as capacity comes back rather than all at once, so releasing held transfers cannot exceed the cap. A transfer larger than the cap is delayed in proportion to its size and queued behind other large transfers of the same asset, as on Ethereum (see "Transfers larger than the cap"). Until release, the funds are not credited to the beneficiary, so governance can drop a transfer judged malicious. As on Ethereum, held transfers are not released while the bridge is halted. The exact mechanism is left to the implementation.
-
-Caps are set through a root-gated `set_cap` extrinsic on the Snowbridge System Frontend pallet on Asset Hub, the same pallet the Gateway cap is routed through (see "Caps set by Governance"), so both caps share one governance surface. Events are emitted when a transfer is held and when it is released, so the existing relayer monitoring can watch for them and page on-call, and halt the bridge via the emergency pause if the spike turns out to be real.
+Asset Hub counts mints of Ethereum assets and releases of PNAs from the reserve, only when the transfer comes from Ethereum. Transfers of the same asset between Asset Hub and other parachains are not counted. Held transfers are held on-chain and released automatically, oldest first among those that fit. Until release, the funds are not credited to the beneficiary. The exact mechanism is left to the implementation.
 
 ### Gross flow
 
@@ -110,15 +77,11 @@ Second, Snowbridge traffic is mostly one-way, so netting would not allow much lo
 
 With a gross cap, the worst case depends only on the cap, not on the other breaker or the attacker's capital, and it is simpler to implement and audit. If an asset's two-way volume grows enough that its gross cap fills up on legitimate traffic, limited netting can be enabled for that asset in a later upgrade (see "Future Directions").
 
-### Caps set by Governance
+### Refilling
 
-Caps are set via governance, through the usual method of using the Snowbridge System Frontend pallet on Asset Hub, which sets the Asset Hub circuit breaker cap, as well as sends a message to the Ethereum System V2 pallet on Bridge Hub, which in turn sends the message to Ethereum. Concrete cap values per asset are deliberately out of scope of this RFC, which specifies the cap mechanism's shape and the framework for choosing values, not the values themselves. Token-denominated cap values are decided and ratified by community vote at deployment and at re-vote, if necessary.
+A refilling limit was chosen over locking the asset for a set time once the cap is reached. Locking makes griefing cheap: one transfer that fills the cap blocks the asset for everyone for the whole period, and with gross limits a griefer can fill both directions by moving the same funds back and forth. With a refilling limit nothing is blocked outright. A griefer has to keep using up capacity as it leaks out, paying a fee on every transfer, and honest users compete for each unit that frees up, on fees on Ethereum and in arrival order on Asset Hub.
 
-The two directions have independent cap values, each in the asset's own units.
-
-Since caps are fixed values, they apply as soon as the upgrade is live, without a warm-up period.
-
-When a cap changes, the amount of capacity already used is kept as is, so lowering a cap does not free up capacity and raising one does not take it away. Held transfers stay held and are checked against the new cap. A held transfer that is now at or above the new cap moves to the large-transfer queue, with its delay computed from the new cap from the time of the change. Queued large transfers keep the time they have already waited, and the remaining delay is recomputed with the new cap. A cap of zero holds every transfer of that asset until the cap is raised, which gives governance a per-asset pause. Removing an asset's cap releases its held and queued transfers.
+For the same reason, held transfers do not reserve capacity. If a held transfer counted as used the moment it was held, nothing else could pass until it drained. That guarantees it goes through within 24 hours, but brings the lock back: one transfer that does not fit would block the asset for up to 24 hours for a single fee, repeatable every day with the same funds. Caps are set well above normal daily volume, so a transfer that needs most of the cap at once is rare, and it is the kind of transfer the breaker is meant to slow down.
 
 ### Observability and alerting
 
@@ -142,7 +105,7 @@ The contract emits events when a transfer is held, when a transfer larger than t
 
 ### Performance
 
-- **Gateway:** ~10-15k extra gas per ERC20 release and PNA mint of a capped asset. Uncapped assets pay no extra gas.
+- **Gateway:** ~10-15k extra gas per ERC20 release and PNA mint of a capped asset. A transfer larger than the cap also records its release time, which costs more, but such transfers are rare. Uncapped assets pay no extra gas.
 - **Asset Hub:** a per-asset counter read and write per E→P mint of a capped asset, negligible. Uncapped assets are untouched.
 
 ### Ergonomics
@@ -159,7 +122,7 @@ Operator-facing: cap configuration is a governance-driven workflow. Bridge monit
 
 ## Prior Art and References
 
-- Hydration's [`pallet-circuit-breaker`](https://github.com/galacticcouncil/hydration-node/tree/master/pallets/circuit-breaker), a per-block net-volume limit. Considered and not adopted for this RFC (see "Gross flow").
+- Hydration's [`pallet-circuit-breaker`](https://github.com/galacticcouncil/hydration-node/tree/master/pallets/circuit-breaker), a per-block net-volume limit. Considered and not adopted for this RFC (see "Why gross flow, not net flow").
 - Wormhole's [Governor](https://github.com/wormhole-foundation/wormhole/blob/main/whitepapers/0007_governor.md) and [Global Accountant](https://github.com/wormhole-foundation/wormhole/blob/main/whitepapers/0011_accountant.md): rolling-24h USD-denominated per-chain cap (Governor) layered with a cumulative balance check (Accountant). The Governor originally tracked only outbound transfers (gross flow). Its later [flow-cancelling extension](https://wormhole.com/blog/understanding-the-flow-canceling-governor-in-wormhole) lets inbound transfers offset outbound ones, but only for allow-listed tokens (some stablecoins) on allow-listed chain pairs. It was added because round-trip arbitrage and settlement traffic kept several chains near 100% of their limits. Snowbridge could add netting per asset in the same way later. The Governor also delays transactions above a size threshold by a flat 24 hours instead of counting them against the daily limit. This RFC borrows that idea, with the delay proportional to size and large transfers queued one after another.
 - LayerZero OFT [`RateLimiter`](https://github.com/LayerZero-Labs/devtools/blob/main/packages/oapp-evm/contracts/oapp/utils/RateLimiter.sol): per-pathway `(limit, window)` with linear refill, raw token denomination, inbound transfers crediting against outbound (net-flow). This RFC uses the same refilling limit, without the netting.
 - Axelar's [governance-controlled transfer-rate limits](https://www.axelar.network/blog/axelar-governance-explained): a multisig sets per-token flow limits on-chain. Comparable to a Polkadot-governance-controlled bridge.
@@ -171,6 +134,6 @@ None at this time.
 
 ## Future Directions and Related Material
 - **Asset-class default caps at registration.** Add an "asset class" field to the asset registry (stablecoin, ETH-LST, long-tail, etc.) with a per-class default cap so new assets get a starting cap until governance sets one.
-- **Per-asset capacity reservation.** If large transfers of a specific asset are regularly starved by smaller ones, reservation could be added for that asset, so held transfers count as used and go through within 24 hours (see "Ordering of held transfers" for the trade-off). This is a Gateway upgrade, not a setting: the Gateway would need to record held messages and their amounts, plus a per-asset flag. The per-message release time already recorded for transfers larger than the cap could be reused.
+- **Per-asset capacity reservation.** If large transfers of a specific asset are regularly starved by smaller ones, reservation could be added for that asset, so held transfers count as used and go through within 24 hours (see "Why a refilling limit, not a lock" for the trade-off). This is a Gateway upgrade, not a setting: the Gateway would need to record held messages and their amounts, plus a per-asset flag. The per-message release time already recorded for transfers larger than the cap could be reused.
 - **Per-asset limited netting.** If an asset's two-way volume grows enough that its gross cap fills up on legitimate traffic, governance could enable netting for that asset. The counter would never go below zero and credit from the other direction would be limited to one cap per 24 hours, so the worst case is 2× the cap.
 - **Companion RFC:** [RFC-0166, Snowbridge Emergency Pause Pallet](./0166-snowbridge-emergency-pause-pallet.md), specifies the reactive layer that this preventive layer composes with.
