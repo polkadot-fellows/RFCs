@@ -32,7 +32,7 @@ The downside with circuit breakers is that legitimate transactions might be dela
 
 Snowbridge's honey pot is primarily on Ethereum - all locked funds bridged from Ethereum to Polkadot are located in the Snowbridge gateway contract. For this reason, it makes sense to protect these assets from irregular activity, in the gateway contract. Additionally, Polkadot Native Assets (PNAs) like DOT are minted on Ethereum, backed by assets on Asset Hub, which also need protection against irregular minting.
 
-If one considers the possible exploit shapes, they would all be protected by a circuit breaker, given the circuit breaker catches the outflow pattern:
+If one considers the possible exploit types, they would all be protected by a circuit breaker, given the circuit breaker catches the outflow pattern:
 
 - Forged BEEFY commitment
 - MMR proof bug
@@ -43,7 +43,7 @@ The implementation should limit per-asset, gross outflow to a cap per 24 hours, 
 
 The limit refills continuously. Each transfer uses up capacity equal to its amount. Used capacity frees up again gradually, at a steady rate that clears a full cap in 24 hours. A transfer goes through if it fits in the remaining capacity. If it does not fit, only that transfer is held. The asset is not locked as a whole. Other transfers of the same asset keep going through as long as they fit. A held transfer goes through once enough capacity has come back.
 
-For example, with a cap of 5 per 24 hours: a transfer of 3 goes through (used = 3), a transfer of 1 goes through (used = 4), and a further transfer of 3 does not fit and is held. Used capacity drains back at 5 per 24 hours, so after about 10 hours it has dropped to 2 and the held 3 fits.
+For example, with a cap of 5 per 24 hours: a transfer of 3 goes through (used = 3), a transfer of 1 goes through (used = 4), and a further transfer of 3 does not fit and is held. Used capacity drains back at 5 per 24 hours, about 1 unit every 5 hours, so if nothing else goes through, after about 10 hours it has dropped from 4 to 2 and the held 3 fits.
 
 This limits the rate, not the amount in a calendar day. Starting from full capacity, one cap can go through at once and another cap refills over the following 24 hours, so up to 2× cap can pass in the first 24 hours after a quiet period. After that it is one cap per 24 hours.
 
