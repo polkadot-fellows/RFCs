@@ -41,11 +41,11 @@ If one considers the possible exploit types, they would all be protected by a ci
 
 The implementation should limit per-asset, gross outflow to a cap per 24 hours, both ERC-20s and Ether, and PNAs (Polkadot native assets, like DOT). This part of the circuit breaker is specifically for P->E transfers. For each asset, only the outflow (ERC-20 and Ether releases, PNA mints) is counted. Inflow in the opposite direction does not offset it.
 
-The limit refills continuously. Each transfer uses up capacity equal to its amount. Used capacity frees up again gradually, at a steady rate that clears a full cap in 24 hours. A transfer goes through if it fits in the remaining capacity. If it does not fit, only that transfer is held. The asset is not locked as a whole. Other transfers of the same asset keep going through as long as they fit. A held transfer goes through once enough capacity has come back.
+The limit works like a leaky bucket. Each asset has a bucket that holds one cap. A transfer adds its amount to the bucket and goes through if it fits. The bucket leaks at a steady rate and empties in 24 hours. The leak is continuous and not tied to any transfer. A transfer that has gone through is done. The bucket level is only a record of how much has gone through recently. If a transfer does not fit, only that transfer is held. The asset is not locked as a whole. Other transfers of the same asset keep going through as long as they fit. A held transfer goes through once enough has leaked out for it to fit.
 
-For example, with a cap of 5 per 24 hours: a transfer of 3 goes through (used = 3), a transfer of 1 goes through (used = 4), and a further transfer of 3 does not fit and is held. Used capacity drains back at 5 per 24 hours, about 1 unit every 5 hours, so if nothing else goes through, after about 10 hours it has dropped from 4 to 2 and the held 3 fits.
+For example, with a cap of 5 per 24 hours: a transfer of 3 goes through (bucket at 3), a transfer of 1 goes through (bucket at 4), and a further transfer of 3 does not fit and is held. The bucket leaks 5 per 24 hours, about 1 every 5 hours. If nothing else goes through, after about 10 hours the bucket is down to 2 and the held 3 fits.
 
-This limits the rate, not the amount in a calendar day. Starting from full capacity, one cap can go through at once and another cap refills over the following 24 hours, so up to 2× cap can pass in the first 24 hours after a quiet period. After that it is one cap per 24 hours.
+This limits the rate, not the amount per calendar day. After a quiet period the bucket is empty. A burst can then fill it with one cap at once, and add another cap over the next 24 hours as the bucket leaks. That is up to 2× cap in the first 24 hours of a burst. After that, only what leaks out can be added: one cap per 24 hours. To get 2× cap in a day again, the bucket first has to empty during another quiet day, so the long-run average is one cap per 24 hours.
 
 A 24 hour refill period is suggested, as the delay needs to be long enough for bridge operators to notice. Assets should be tracked by denomination, not USD, so that it doesn't create reliance on oracles. Assets without a cap ignore the circuit breaker pattern, so that the tracking is opt-in by way of governance vote.
 
@@ -159,7 +159,7 @@ The contract emits events when a transfer is held, when a transfer larger than t
 
 User-facing: under normal operation, invisible. When the cap is full, the user sees a delayed transaction. A transfer larger than the cap is delayed in proportion to its size, and longer if other large transfers of the same asset are queued ahead of it.
 
-Operator-facing: cap configuration is a governance-driven workflow. Bridge monitoring should surface "used capacity vs cap" per asset so maintainers can spot the cap filling up before transfers are held.
+Operator-facing: cap configuration is a governance-driven workflow. Bridge monitoring should surface each asset's bucket level against its cap, so maintainers can spot the bucket filling up before transfers are held.
 
 ### Compatibility
 
