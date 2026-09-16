@@ -44,7 +44,7 @@ This is the last part of coretime remaining on the Relay Chain. RFC-32 establish
 Pool cores are no longer committed to the Relay Chain as `CoreAssignment::Pool`; the broker sells their individual blocks instead. An order proceeds as follows:
 
 1. A user calls `place_order(max_amount, para_id)` on the Coretime chain.
-2. The broker computes the spot price from its local count of outstanding orders. The order is rejected, with nothing charged, if the price exceeds `max_amount`, every pool core is at its pending-order cap, or the block's order limit has been reached.
+2. The broker computes the current spot price. The order is rejected, with nothing charged, if the price exceeds `max_amount`, every pool core is at its pending-order cap, or the block's order limit has been reached.
 3. Otherwise the spot price is charged and the order is buffered against the pool core with the fewest pending orders.
 4. At the end of the Coretime chain block, the whole buffer is flushed as a single UMP message: one `Transact` per core, each carrying one `assign_core_once(core, tasks)` call with every order assigned to that core in this block.
 5. The Relay Chain appends each call's tasks to the target core's schedule queue as a *one-shot* schedule: each task is served for exactly one block, in order, retrying while the core is blocked. Once the schedule is exhausted, the next one in the queue takes over.
@@ -124,20 +124,7 @@ A draft implementation of the relay-side changes: <https://github.com/paritytech
 
 ### Pricing
 
-Pricing uses no Relay Chain data: the Coretime chain has everything it needs in local state.
-
-The price retains the exact form used by the Relay Chain today:
-
-```
-spot_price = traffic * on_demand_base_fee
-```
-
-with `traffic` updated by the same adaptive formula the Relay Chain uses now, but fed from local state:
-
-- *queue size* is the number of orders accepted but not yet served. The broker can track this locally, since the Relay Chain serves one task per pool core per block;
-- *queue capacity* is `number_of_pool_cores * MAX_PENDING_ORDERS_PER_CORE`.
-
-`traffic` is updated on every order and on every block, as today. The `on_demand_base_fee`, target-utilisation, and fee-variability parameters move from the Relay Chain's `HostConfiguration` into broker configuration.
+The broker charges a spot price computed from Coretime chain state alone. No Relay Chain data is required. The concrete pricing mechanism is out of scope for this RFC and should be defined in a follow-up proposal. A possible starting point is the adaptive model the Relay Chain uses today, fed by local demand measured against pool capacity.
 
 ### Payment and pool revenue
 
@@ -148,7 +135,6 @@ The spot price is paid into the broker's pot and accrued to the current timeslic
 - **Latency.** An order must be included in a Coretime chain block and delivered over UMP before it can be scheduled. This adds a few relay blocks compared to ordering on the Relay Chain directly.
 - **Retries.** A blocked one-shot retries until served, and the tasks behind it wait. Blocking conditions resolve within a few blocks, so the delay is bounded in practice. This is the cost of the no-drop guarantee (Requirement 2).
 - **Pooling.** Requiring a complete `CoreMask` for pooling removes the ability to contribute interlaced regions to the pool.
-- **Price model approximation.** The broker assumes one order is served per pool core per relay block. Blocked cores retry, so an order counted as served may still be pending.
 
 ## Testing, Security, and Privacy
 
@@ -184,6 +170,7 @@ RFC-5's interface is extended with one new call. `assign_core` and the `CoreAssi
 
 ## Unresolved Questions
 
+- **Pricing.** The concrete spot-price mechanism, satisfying Requirement 3, is left to a follow-up proposal.
 - **Parameter values.** `MAX_PENDING_ORDERS_PER_CORE` and `MAX_ORDERS_PER_BLOCK` need concrete values.
 - **Core-exit margin.** How large should the safety margin be when refusing orders on a core that is about to leave the pool? Too small a margin risks a paid order being cut off by the incoming tenant's schedule.
 - **Same-block re-ordering.** Today's relay queue serves at most one order per parachain per scheduling round. Should the broker impose an equivalent rule (e.g. at most one buffered order per para per core per block), or is unrestricted ordering acceptable now that each order is bound to a concrete queue position at purchase time?
