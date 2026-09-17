@@ -575,7 +575,7 @@ detailing proposed changes to the technical implementation of the Polkadot netwo
 <p>Pool cores are no longer committed to the Relay Chain as <code>CoreAssignment::Pool</code>; the broker sells their individual blocks instead. An order proceeds as follows:</p>
 <ol>
 <li>A user calls <code>place_order(max_amount, para_id)</code> on the Coretime chain.</li>
-<li>The broker computes the spot price from its local count of outstanding orders. The order is rejected, with nothing charged, if the price exceeds <code>max_amount</code>, every pool core is at its pending-order cap, or the block's order limit has been reached.</li>
+<li>The broker computes the current spot price. The order is rejected, with nothing charged, if the price exceeds <code>max_amount</code>, every pool core is at its pending-order cap, or the block's order limit has been reached.</li>
 <li>Otherwise the spot price is charged and the order is buffered against the pool core with the fewest pending orders.</li>
 <li>At the end of the Coretime chain block, the whole buffer is flushed as a single UMP message: one <code>Transact</code> per core, each carrying one <code>assign_core_once(core, tasks)</code> call with every order assigned to that core in this block.</li>
 <li>The Relay Chain appends each call's tasks to the target core's schedule queue as a <em>one-shot</em> schedule: each task is served for exactly one block, in order, retrying while the core is blocked. Once the schedule is exhausted, the next one in the queue takes over.</li>
@@ -636,16 +636,7 @@ detailing proposed changes to the technical implementation of the Polkadot netwo
 <p>Because one-shots only ever append behind existing entries, they never replace assignments already visible in the claim queue.</p>
 <p>A draft implementation of the relay-side changes: <a href="https://github.com/paritytech/polkadot-sdk/compare/master...szegoo-oneshot-assignments">https://github.com/paritytech/polkadot-sdk/compare/master...szegoo-oneshot-assignments</a></p>
 <h3 id="pricing"><a class="header" href="#pricing">Pricing</a></h3>
-<p>Pricing uses no Relay Chain data: the Coretime chain has everything it needs in local state.</p>
-<p>The price retains the exact form used by the Relay Chain today:</p>
-<pre><code>spot_price = traffic * on_demand_base_fee
-</code></pre>
-<p>with <code>traffic</code> updated by the same adaptive formula the Relay Chain uses now, but fed from local state:</p>
-<ul>
-<li><em>queue size</em> is the number of orders accepted but not yet served. The broker can track this locally, since the Relay Chain serves one task per pool core per block;</li>
-<li><em>queue capacity</em> is <code>number_of_pool_cores * MAX_PENDING_ORDERS_PER_CORE</code>.</li>
-</ul>
-<p><code>traffic</code> is updated on every order and on every block, as today. The <code>on_demand_base_fee</code>, target-utilisation, and fee-variability parameters move from the Relay Chain's <code>HostConfiguration</code> into broker configuration.</p>
+<p>The broker charges a spot price computed from Coretime chain state alone. No Relay Chain data is required. The concrete pricing mechanism is out of scope for this RFC and should be defined in a follow-up proposal. A possible starting point is the adaptive model the Relay Chain uses today, fed by local demand measured against pool capacity.</p>
 <h3 id="payment-and-pool-revenue"><a class="header" href="#payment-and-pool-revenue">Payment and pool revenue</a></h3>
 <p>The spot price is paid into the broker's pot and accrued to the current timeslice's <code>InstaPoolHistory</code> record. This is the same record that receives on-demand revenue today. Distribution is unchanged: the system's share goes to the runtime's <code>OnRevenue</code> sink, and private pool contributors claim theirs through <code>claim_revenue</code>.</p>
 <h2 id="drawbacks-2"><a class="header" href="#drawbacks-2">Drawbacks</a></h2>
@@ -653,7 +644,6 @@ detailing proposed changes to the technical implementation of the Polkadot netwo
 <li><strong>Latency.</strong> An order must be included in a Coretime chain block and delivered over UMP before it can be scheduled. This adds a few relay blocks compared to ordering on the Relay Chain directly.</li>
 <li><strong>Retries.</strong> A blocked one-shot retries until served, and the tasks behind it wait. Blocking conditions resolve within a few blocks, so the delay is bounded in practice. This is the cost of the no-drop guarantee (Requirement 2).</li>
 <li><strong>Pooling.</strong> Requiring a complete <code>CoreMask</code> for pooling removes the ability to contribute interlaced regions to the pool.</li>
-<li><strong>Price model approximation.</strong> The broker assumes one order is served per pool core per relay block. Blocked cores retry, so an order counted as served may still be pending.</li>
 </ul>
 <h2 id="testing-security-and-privacy-2"><a class="header" href="#testing-security-and-privacy-2">Testing, Security, and Privacy</a></h2>
 <p>Unit tests MUST cover the one-shot scheduling semantics on the Relay Chain and the ordering, batching, and pricing logic on the Coretime chain. The full flow, from order placement to a served one-shot assignment, SHOULD be covered by integration tests.</p>
@@ -677,6 +667,7 @@ detailing proposed changes to the technical implementation of the Polkadot netwo
 </ul>
 <h2 id="unresolved-questions-2"><a class="header" href="#unresolved-questions-2">Unresolved Questions</a></h2>
 <ul>
+<li><strong>Pricing.</strong> The concrete spot-price mechanism, satisfying Requirement 3, is left to a follow-up proposal.</li>
 <li><strong>Parameter values.</strong> <code>MAX_PENDING_ORDERS_PER_CORE</code> and <code>MAX_ORDERS_PER_BLOCK</code> need concrete values.</li>
 <li><strong>Core-exit margin.</strong> How large should the safety margin be when refusing orders on a core that is about to leave the pool? Too small a margin risks a paid order being cut off by the incoming tenant's schedule.</li>
 <li><strong>Same-block re-ordering.</strong> Today's relay queue serves at most one order per parachain per scheduling round. Should the broker impose an equivalent rule (e.g. at most one buffered order per para per core per block), or is unrestricted ordering acceptable now that each order is bound to a concrete queue position at purchase time?</li>
