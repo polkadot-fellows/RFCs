@@ -52,9 +52,8 @@ When a cap changes, the amount of capacity already used is kept as is, so loweri
 
 Snowbridge's honey pot is primarily on Ethereum - all locked funds bridged from Ethereum to Polkadot are located in the Snowbridge gateway contract. For this reason, it makes sense to protect these assets from irregular activity, in the gateway contract. Additionally, Polkadot Native Assets (PNAs) like DOT are minted on Ethereum, backed by assets on Asset Hub, which also need protection against irregular minting.
 
-If one considers the possible exploit types, they would all be protected by a circuit breaker, given the circuit breaker catches the outflow pattern:
+The breaker slows down exploits that produce fraudulent transfers, given it catches the outflow pattern:
 
-- Forged BEEFY commitment
 - MMR proof bug
 - Gateway message decode bug
 - PNA minting bug
@@ -134,6 +133,7 @@ None at this time.
 
 ## Future Directions and Related Material
 - **Asset-class default caps at registration.** Add an "asset class" field to the asset registry (stablecoin, ETH-LST, long-tail, etc.) with a per-class default cap so new assets get a starting cap until governance sets one.
+- **User cancellation of held transfers.** The origin or authorized claimer of a held transfer could cancel it and claim their funds back, so they can retry in smaller transfers instead of waiting for a large one to fit.
 - **Per-asset capacity reservation.** If large transfers of a specific asset are regularly starved by smaller ones, reservation could be added for that asset, so held transfers count as used and go through within 24 hours (see "Why a refilling limit, not a lock" for the trade-off). This is a Gateway upgrade, not a setting: the Gateway would need to record held messages and their amounts, plus a per-asset flag. The per-message release time already recorded for transfers larger than the cap could be reused.
 - **Per-asset limited netting.** If an asset's two-way volume grows enough that its gross cap fills up on legitimate traffic, governance could enable netting for that asset. The counter would never go below zero and credit from the other direction would be limited to one cap per 24 hours, so the worst case is 2× the cap.
 - **Companion RFC:** [RFC-0166, Snowbridge Emergency Pause Pallet](./0166-snowbridge-emergency-pause-pallet.md), specifies the reactive layer that this preventive layer composes with.
