@@ -241,9 +241,8 @@
 <p>When a cap changes, the amount of capacity already used is kept as is, so lowering a cap does not free up capacity and raising one does not take it away. Held transfers stay held and are checked against the new cap. A held transfer that is now at or above the new cap moves to the large-transfer queue, with its delay computed from the new cap from the time of the change. Queued large transfers keep the time they have already waited, and the remaining delay is recomputed with the new cap. A cap of zero holds every transfer of that asset until the cap is raised, which gives governance a per-asset pause. Removing an asset's cap releases its held and queued transfers.</p>
 <h3 id="gateway-breaker-pe"><a class="header" href="#gateway-breaker-pe">Gateway breaker (P→E)</a></h3>
 <p>Snowbridge's honey pot is primarily on Ethereum - all locked funds bridged from Ethereum to Polkadot are located in the Snowbridge gateway contract. For this reason, it makes sense to protect these assets from irregular activity, in the gateway contract. Additionally, Polkadot Native Assets (PNAs) like DOT are minted on Ethereum, backed by assets on Asset Hub, which also need protection against irregular minting.</p>
-<p>If one considers the possible exploit types, they would all be protected by a circuit breaker, given the circuit breaker catches the outflow pattern:</p>
+<p>The breaker slows down exploits that produce fraudulent transfers, given it catches the outflow pattern:</p>
 <ul>
-<li>Forged BEEFY commitment</li>
 <li>MMR proof bug</li>
 <li>Gateway message decode bug</li>
 <li>PNA minting bug</li>
@@ -304,6 +303,7 @@
 <h2 id="future-directions-and-related-material"><a class="header" href="#future-directions-and-related-material">Future Directions and Related Material</a></h2>
 <ul>
 <li><strong>Asset-class default caps at registration.</strong> Add an &quot;asset class&quot; field to the asset registry (stablecoin, ETH-LST, long-tail, etc.) with a per-class default cap so new assets get a starting cap until governance sets one.</li>
+<li><strong>User cancellation of held transfers.</strong> The origin or authorized claimer of a held transfer could cancel it and claim their funds back, so they can retry in smaller transfers instead of waiting for a large one to fit.</li>
 <li><strong>Per-asset capacity reservation.</strong> If large transfers of a specific asset are regularly starved by smaller ones, reservation could be added for that asset, so held transfers count as used and go through within 24 hours (see &quot;Why a refilling limit, not a lock&quot; for the trade-off). This is a Gateway upgrade, not a setting: the Gateway would need to record held messages and their amounts, plus a per-asset flag. The per-message release time already recorded for transfers larger than the cap could be reused.</li>
 <li><strong>Per-asset limited netting.</strong> If an asset's two-way volume grows enough that its gross cap fills up on legitimate traffic, governance could enable netting for that asset. The counter would never go below zero and credit from the other direction would be limited to one cap per 24 hours, so the worst case is 2× the cap.</li>
 <li><strong>Companion RFC:</strong> <a href="./0166-snowbridge-emergency-pause-pallet.html">RFC-0166, Snowbridge Emergency Pause Pallet</a>, specifies the reactive layer that this preventive layer composes with.</li>
