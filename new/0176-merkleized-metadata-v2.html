@@ -1,0 +1,586 @@
+
+<!DOCTYPE HTML>
+<html lang="en" class="polkadot" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>RFC-0176: Merkleized Metadata V2 - Polkadot Fellowship RFCs</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="An online book of RFCs approved or proposed within the Polkadot Fellowship.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/polkadot.css">
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "polkadot" : "polkadot";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('polkadot')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../introduction.html">Introduction</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Newly Proposed</li><li class="chapter-item expanded "><a href="../new/0176-merkleized-metadata-v2.html" class="active">RFC-0176: Merkleized Metadata V2</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Proposed</li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Approved</li><li class="chapter-item expanded "><a href="../approved/0001-agile-coretime.html">RFC-1: Agile Coretime</a></li><li class="chapter-item expanded "><a href="../approved/0005-coretime-interface.html">RFC-5: Coretime Interface</a></li><li class="chapter-item expanded "><a href="../approved/0007-system-collator-selection.html">RFC-0007: System Collator Selection</a></li><li class="chapter-item expanded "><a href="../approved/0008-parachain-bootnodes-dht.html">RFC-0008: Store parachain bootnodes in relay chain DHT</a></li><li class="chapter-item expanded "><a href="../approved/0009-improved-net-light-client-requests.html">RFC-0009: Improved light client requests networking protocol</a></li><li class="chapter-item expanded "><a href="../approved/0010-burn-coretime-revenue.html">RFC-0010: Burn Coretime Revenue</a></li><li class="chapter-item expanded "><a href="../approved/0012-process-for-adding-new-collectives.html">RFC-0012: Process for Adding New System Collectives</a></li><li class="chapter-item expanded "><a href="../approved/0013-prepare-blockbuilder-and-core-runtime-apis-for-mbms.html">RFC-0013: Prepare Core runtime API for MBMs</a></li><li class="chapter-item expanded "><a href="../approved/0014-improve-locking-mechanism-for-parachains.html">RFC-0014: Improve locking mechanism for parachains</a></li><li class="chapter-item expanded "><a href="../approved/0017-coretime-market-redesign.html">RFC-0017: Coretime Market Redesign</a></li><li class="chapter-item expanded "><a href="../approved/0022-adopt-encointer-runtime.html">RFC-0022: Adopt Encointer Runtime</a></li><li class="chapter-item expanded "><a href="../approved/0026-sassafras-consensus.html">RFC-0026: Sassafras Consensus Protocol</a></li><li class="chapter-item expanded "><a href="../approved/0032-minimal-relay.html">RFC-0032: Minimal Relay</a></li><li class="chapter-item expanded "><a href="../approved/0042-extrinsics-state-version.html">RFC-0042: Add System version that replaces StateVersion on RuntimeVersion</a></li><li class="chapter-item expanded "><a href="../approved/0043-storage-proof-size-hostfunction.html">RFC-0043: Introduce storage_proof_size Host Function for Improved Parachain Block Utilization</a></li><li class="chapter-item expanded "><a href="../approved/0045-nft-deposits-asset-hub.html">RFC-0045: Lowering NFT Deposits on Asset Hub</a></li><li class="chapter-item expanded "><a href="../approved/0047-assignment-of-availability-chunks.html">RFC-0047: Assignment of availability chunks to validators</a></li><li class="chapter-item expanded "><a href="../approved/0048-session-keys-runtime-api.html">RFC-0048: Generate ownership proof for SessionKeys</a></li><li class="chapter-item expanded "><a href="../approved/0050-fellowship-salaries.html">RFC-0050: Fellowship Salaries</a></li><li class="chapter-item expanded "><a href="../approved/0056-one-transaction-per-notification.html">RFC-0056: Enforce only one transaction per notification</a></li><li class="chapter-item expanded "><a href="../approved/0059-nodes-capabilities-discovery.html">RFC-0059: Add a discovery mechanism for nodes based on their capabilities</a></li><li class="chapter-item expanded "><a href="../approved/0078-merkleized-metadata.html">RFC-0078: Merkleized Metadata</a></li><li class="chapter-item expanded "><a href="../approved/0084-general-transaction-extrinsic-format.html">RFC-0084: General transactions in extrinsic format</a></li><li class="chapter-item expanded "><a href="../approved/0091-dht-record-creation-time.html">RFC-0091: DHT Authority discovery record creation time</a></li><li class="chapter-item expanded "><a href="../approved/0097-unbonding_queue.html">RFC-0097: Unbonding Queue</a></li><li class="chapter-item expanded "><a href="../approved/0099-transaction-extension-version.html">RFC-0099: Introduce a transaction extension version</a></li><li class="chapter-item expanded "><a href="../approved/0100-xcm-multi-type-asset-transfer.html">RFC-0100: New XCM instruction: InitiateAssetsTransfer</a></li><li class="chapter-item expanded "><a href="../approved/0101-xcm-transact-remove-max-weight-param.html">RFC-0101: XCM Transact remove require_weight_at_most parameter</a></li><li class="chapter-item expanded "><a href="../approved/0103-introduce-core-index-commitment.html">RFC-0103:  Introduce a CoreIndex commitment and a SessionIndex field in candidate receipts</a></li><li class="chapter-item expanded "><a href="../approved/0105-xcm-improved-fee-mechanism.html">RFC-0105: XCM improved fee mechanism</a></li><li class="chapter-item expanded "><a href="../approved/0107-xcm-execution-hints.html">RFC-0107: XCM Execution hints</a></li><li class="chapter-item expanded "><a href="../approved/0108-xcm-remove-testnet-ids.html">RFC-0108: Remove XCM testnet NetworkIds</a></li><li class="chapter-item expanded "><a href="../approved/0122-alias-origin-on-asset-transfers.html">RFC-0122: Asset transfers can alias XCM origin on destination to original origin</a></li><li class="chapter-item expanded "><a href="../approved/0123-pending-code-as-storage-location-for-runtime-upgrades.html">RFC-0123: Introduce :pending_code as intermediate storage key for the runtime code</a></li><li class="chapter-item expanded "><a href="../approved/0125-xcm-asset-metadata.html">RFC-0125: XCM Asset Metadata</a></li><li class="chapter-item expanded "><a href="../approved/0126-introduce-pvq.html">RFC-0126: Introduce PVQ (PolkaVM Query)</a></li><li class="chapter-item expanded "><a href="../approved/0135-compressed-blob-prefixes.html">RFC-0135: Compressed Blob Prefixes</a></li><li class="chapter-item expanded "><a href="../approved/0139-faster-erasure-coding.html">RFC-0139: Faster Erasure Coding</a></li><li class="chapter-item expanded "><a href="../approved/0145-remove-unnecessary-allocator-usage.html">RFC-0145: Remove the host-side runtime memory allocator</a></li><li class="chapter-item expanded "><a href="../approved/0146-deflationary-fee-proposal.html">RFC-0146: Deflationary Transaction Fee Model for the Relay Chain and its System Parachains</a></li><li class="chapter-item expanded "><a href="../approved/0149-rfc-1-renewal-adjustment.html">RFC-0149: Renewal Adjustment</a></li><li class="chapter-item expanded "><a href="../approved/0150-voting-while-delegating.html">RFC-150: Allow Voting While Delegating</a></li><li class="chapter-item expanded "><a href="../approved/0156-bls-signatures.html">RFC-0156: Add BLS12-381 Host Functions</a></li><li class="chapter-item expanded "><a href="../approved/0163-ec-host-functions.html">RFC-0163: Elliptic Curves Host Functions</a></li><li class="chapter-item expanded "><a href="../approved/0166-snowbridge-emergency-pause-pallet.html">RFC-0166: Snowbridge Emergency Pause Pallet</a></li><li class="chapter-item expanded "><a href="../approved/0167-snowbridge-circuit-breakers.html">RFC-0167: Snowbridge Circuit Breakers</a></li><li class="chapter-item expanded "><a href="../approved/0174-light-client-extrinsics-inclusion-proof.html">RFC-0174: Light client extrinsics-trie inclusion proof request</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Stale</li><li class="chapter-item expanded "><a href="../stale/0000-pq_accounts.html">RFC-0000: Hybrid post-quantum accounts (DRAFT)</a></li><li class="chapter-item expanded "><a href="../stale/0000-pre-elves_soft.html">RFC-0000: Pre-ELVES soft concensus</a></li><li class="chapter-item expanded "><a href="../stale/0000-rewards.html">RFC-0000: Validator Rewards</a></li><li class="chapter-item expanded "><a href="../stale/0074-stateful-multisig-pallet.html">RFC-0074: Stateful Multisig Pallet</a></li><li class="chapter-item expanded "><a href="../stale/0102-offchain-parachain-runtime-upgrades.html">RFC-0000: Feature Name Here</a></li><li class="chapter-item expanded "><a href="../stale/0104-stale-nomination-reward-curve.html">RFC-0104: Stale Nomination Reward Curve</a></li><li class="chapter-item expanded "><a href="../stale/0106-xcm-remove-fees-mode.html">RFC-0106: Remove XCM fees mode</a></li><li class="chapter-item expanded "><a href="../stale/0111-pure-proxy-replication.html">RFC-0111: Pure Proxy Replication</a></li><li class="chapter-item expanded "><a href="../stale/0112-compress-state-response-message-in-state-sync.html">RFC-0112: Compress the State Response Message in State Sync</a></li><li class="chapter-item expanded "><a href="../stale/0117-unbrick-collective.html">RFC-0117: The Unbrick Collective</a></li><li class="chapter-item expanded "><a href="../stale/0124-extrinsic-version-5.html">RFC-0124: Extrinsic version 5</a></li><li class="chapter-item expanded "><a href="../stale/0138-invulnerable-collator-election.html">RFC-0138: Election mechanism for invulnerable collators on system chains</a></li><li class="chapter-item expanded "><a href="../stale/0154-multi-slot-aura.html">RFC-0154: AURA Multi-Slot Collation </a></li><li class="chapter-item expanded "><a href="../stale/0158-storage-proof-size-v2.html">RFC-0158: Storage Proof Size Host Function Version 2</a></li><li class="chapter-item expanded "><a href="../stale/0160-pub-sub-mechanism.html">RFC-0160: PubSub Mechanism</a></li><li class="chapter-item expanded "><a href="../stale/0164-aura-allow-anyone-to-author-blocks.html">RFC-0164: Aura: Allow anyone to produce blocks after a downtime</a></li><li class="chapter-item expanded "><a href="../stale/0171-asset-based-storage-deposit-payments.html">RFC-0171: Asset-Based Storage Deposit Payments</a></li><li class="chapter-item expanded "><a href="../stale/0172-eth-rpc-compatibility-pallet-revive.html">RFC-0172: Ethereum JSON-RPC compatibility standard for pallet-revive</a></li><li class="chapter-item expanded "><a href="../stale/0175-on-demand-coretime-as-core-scheduling.html">RFC-0175: On-demand Coretime as Core Scheduling</a></li><li class="chapter-item expanded "><a href="../stale/xxxx-improve-the-security-of-proof-of-possession.html">RFC-XXXX: Adding customized mandatory context to proof of possession statement</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="polkadot">Polkadot</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Polkadot Fellowship RFCs</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <p><a href="https://github.com/polkadot-fellows/RFCs/pull/176">(source)</a></p>
+<p><strong>Table of Contents</strong></p>
+<ul>
+<li><a href="#rfc-0176-merkleized-metadata-v2">RFC-0176: Merkleized Metadata V2</a>
+<ul>
+<li><a href="#summary">Summary</a></li>
+<li><a href="#motivation">Motivation</a>
+<ul>
+<li><a href="#problem-1-extension-versions-other-than-0-are-not-covered">Problem 1: extension versions other than 0 are not covered</a></li>
+<li><a href="#problem-2-the-hash-depends-on-frame-registry-numbering">Problem 2: the hash depends on FRAME registry numbering</a></li>
+<li><a href="#requirements">Requirements</a></li>
+</ul>
+</li>
+<li><a href="#stakeholders">Stakeholders</a></li>
+<li><a href="#explanation">Explanation</a>
+<ul>
+<li><a href="#source-metadata">Source metadata</a></li>
+<li><a href="#metadata-digest">Metadata digest</a></li>
+<li><a href="#extrinsic-metadata">Extrinsic metadata</a></li>
+<li><a href="#collecting-types">Collecting types</a></li>
+<li><a href="#compact">Compact</a></li>
+<li><a href="#generating-typeref">Generating <code>TypeRef</code></a></li>
+<li><a href="#errors">Errors</a></li>
+<li><a href="#building-the-merkle-tree-root">Building the Merkle tree root</a></li>
+<li><a href="#worked-example">Worked example</a></li>
+<li><a href="#inclusion-in-an-extrinsic">Inclusion in an extrinsic</a></li>
+<li><a href="#mode-1-is-valid-on-extension-version-0-only">Mode 1 is valid on extension version 0 only</a></li>
+<li><a href="#signing">Signing</a></li>
+</ul>
+</li>
+<li><a href="#drawbacks">Drawbacks</a></li>
+<li><a href="#testing-security-and-privacy">Testing, Security, and Privacy</a>
+<ul>
+<li><a href="#testing">Testing</a></li>
+<li><a href="#security">Security</a></li>
+<li><a href="#privacy">Privacy</a></li>
+</ul>
+</li>
+<li><a href="#performance-ergonomics-and-compatibility">Performance, Ergonomics, and Compatibility</a>
+<ul>
+<li><a href="#performance">Performance</a></li>
+<li><a href="#ergonomics">Ergonomics</a></li>
+<li><a href="#compatibility">Compatibility</a></li>
+</ul>
+</li>
+<li><a href="#prior-art-and-references">Prior Art and References</a></li>
+<li><a href="#unresolved-questions">Unresolved Questions</a></li>
+<li><a href="#future-directions-and-related-material">Future Directions and Related Material</a></li>
+</ul>
+</li>
+</ul>
+<h1 id="rfc-0176-merkleized-metadata-v2"><a class="header" href="#rfc-0176-merkleized-metadata-v2">RFC-0176: Merkleized Metadata V2</a></h1>
+<div class="table-wrapper"><table><thead><tr><th></th><th></th></tr></thead><tbody>
+<tr><td><strong>Start Date</strong></td><td>22 November 2026</td></tr>
+<tr><td><strong>Description</strong></td><td>A metadata hash that covers every transaction extension version and does not depend on FRAME's type numbering.</td></tr>
+<tr><td><strong>Authors</strong></td><td>Baruch Fishman (@daiagi)</td></tr>
+</tbody></table>
+</div>
+<h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
+<p><a href="https://github.com/polkadot-fellows/RFCs/blob/main/text/0078-merkleized-metadata.md">RFC-0078</a> defines a metadata hash that offline signers use to decode a transaction without trusting the online wallet. The runtime adds the hash it knows to the signed data, so a transaction decoded with wrong metadata fails its signature check. Since then, runtimes have started to accept more than one transaction extension pipeline. Metadata also now comes in two versions, V15 and V16, whose type registries can number the same types differently. The RFC-0078 hash describes only extension version 0. Its type ids follow FRAME registry numbering, so the same runtime can give different hashes from V15 and V16.</p>
+<p>This RFC adds a second digest format, <code>MetadataDigest::V2</code>. Format 2 lists the extensions of every extension version the runtime accepts. It numbers types by a depth-first walk of the type graph instead of by registry id, and it is computed from metadata V16 only. <code>CheckMetadataHash</code> gains mode <code>2</code> for the new format, and the runtime stops accepting mode <code>1</code> on extension versions other than 0. Format 1 is not changed. The leaf encoding and Merkle tree of RFC-0078, and the proof format of its reference implementation, are reused unchanged. Format 2 works with today's extrinsic format 4. On extension versions 1 and above, format 2 commits to the extension lists and the runtime stops accepting mode 1, but offline signing on those versions needs a follow-up RFC.</p>
+<h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
+<h3 id="problem-1-extension-versions-other-than-0-are-not-covered"><a class="header" href="#problem-1-extension-versions-other-than-0-are-not-covered">Problem 1: extension versions other than 0 are not covered</a></h3>
+<p><a href="https://github.com/polkadot-fellows/RFCs/blob/main/text/0099-transaction-extension-version.md">RFC-0099</a> lets a runtime accept several transaction extension pipelines, selected by an extension version byte. Polkadot People and Polkadot Asset Hub already do this. Both define <code>TxExtensionV0</code> and <code>TxExtensionV1</code>, and both pipelines contain <code>CheckMetadataHash</code> (<a href="https://github.com/polkadot-fellows/runtimes/blob/ddfd5bc3d2aa14489314a1faf76aa61b50729b3c/system-parachains/people/people-polkadot/src/lib.rs#L124-L171">People</a>, <a href="https://github.com/polkadot-fellows/runtimes/blob/ddfd5bc3d2aa14489314a1faf76aa61b50729b3c/system-parachains/asset-hubs/asset-hub-polkadot/src/lib.rs#L1838-L1890">Asset Hub</a>).</p>
+<p><code>substrate-wasm-builder</code> computes the metadata hash from metadata V15 (<a href="https://github.com/paritytech/polkadot-sdk/blob/006389c761e9ce8433dd99ea2cb3536fd5047598/substrate/utils/wasm-builder/src/metadata_hash.rs#L64-L73">wasm-builder</a>), and the conversion to V15 keeps only the extension version 0 pipeline (<a href="https://github.com/paritytech/polkadot-sdk/blob/006389c761e9ce8433dd99ea2cb3536fd5047598/substrate/primitives/metadata-ir/src/v15.rs#L96-L111">metadata-ir</a>). On Polkadot People, version 0 has 11 extensions and version 1 has 19, including origin modifiers such as <code>AsPerson</code> and <code>AsMember</code>, and <code>RestrictOrigins</code>. No hash describes the 19, so a version 1 transaction with <code>Mode::Enabled</code> signs a hash that says nothing about its own extensions. This was reported in <a href="https://github.com/polkadot-fellows/runtimes/issues/1322">runtimes#1322</a>.</p>
+<h3 id="problem-2-the-hash-depends-on-frame-registry-numbering"><a class="header" href="#problem-2-the-hash-depends-on-frame-registry-numbering">Problem 2: the hash depends on FRAME registry numbering</a></h3>
+<p>RFC-0078 assigns type ids by sorting the reachable types &quot;using the <code>id</code> provided by FRAME metadata&quot; (<a href="https://github.com/polkadot-fellows/RFCs/blob/main/text/0078-merkleized-metadata.md">RFC-0078</a>, &quot;Generating <code>TypeRef</code>&quot;), as does the reference implementation (<a href="https://github.com/bkchr/merkleized-metadata/blob/1997a55cfebf120d4b1037993a86d2e5d3b3f453/src/from_frame_metadata.rs#L77-L88">merkleized-metadata</a>). Registry ids reflect the order in which <code>scale-info</code> happened to register types. They are not part of the type graph.</p>
+<p>On Kusama Asset Hub runtime 1007001 (block <code>0x505c4d0f39bd498254072ddc7a009eb6db220ef9859a8f5957a60b12e7334e99</code>), V15 and V16 contain identical type graphs. V16 registers <code>RuntimeCall</code> earlier (FRAME id 206 in V16, 416 in V15), and everything it pulls in moves with it. The two format 1 trees differ in 1039 of 1397 leaves, and the digests are <code>0x67e6f6ab…</code> (V15) and <code>0xb5d0f3d3…</code> (V16). This was <a href="https://github.com/polkadot-fellows/RFCs/issues/148#issuecomment-3351667308">reported on RFCs#148</a>.</p>
+<p><a href="https://github.com/paritytech/frame-metadata/pull/110">frame-metadata#110</a> registers extrinsic types first, so that V15 and V16 agree again. It was released in frame-metadata 23.0.1 and changes the V15 order too, so the same runtime source gives different V15 digests under 23.0.0 and 23.0.1. RFC-0078 does not specify the registration walk that the digest depends on.</p>
+<h3 id="requirements"><a class="header" href="#requirements">Requirements</a></h3>
+<ol>
+<li>The format 1 algorithm MUST stay byte-identical. Offline signers in the field hard-code mode byte <code>0x01</code> in the extension data and the variant name <code>&quot;Enabled&quot;</code> (<a href="https://github.com/Zondax/ledger-polkadot/blob/7520e0e5ee822ad8c04f5003025124a146a1612e/app/src/parser_impl.c#L92-L110">Ledger app</a>), and digest index <code>0x01</code>, the first byte of the digest (<a href="https://github.com/Zondax/ledger-polkadot/blob/7520e0e5ee822ad8c04f5003025124a146a1612e/app/src/metadata_proof.c#L262-L264">Ledger app</a>). The format 1 hash value still changes when a runtime upgrades, as it does today whenever types change, because <code>Mode</code> gains a variant.</li>
+<li>Format 2 MUST describe every extension version the runtime accepts.</li>
+<li>Type ids in format 2 MUST depend only on the registry types reachable from the extrinsic metadata, never on FRAME registry id values.</li>
+<li>Numbering MUST be deterministic for graphs with cycles.</li>
+<li>Mode 1 MUST NOT be accepted on an extension version it does not describe.</li>
+<li>Device input per signature SHOULD stay within a few kilobytes.</li>
+<li>The hash MUST be computed at build time, as in RFC-0078.</li>
+</ol>
+<h2 id="stakeholders"><a class="header" href="#stakeholders">Stakeholders</a></h2>
+<ul>
+<li>Runtime developers using <code>frame-metadata-hash-extension</code>, in particular the Fellowship system chains.</li>
+<li>Online wallet and library developers: polkadot-api, polkadot.js, subxt and others that compute the metadata hash and build proofs.</li>
+<li>Offline signer developers: Zondax (Ledger), Polkadot Vault, Kampela.</li>
+<li>Maintainers of <code>merkleized-metadata</code>, <code>substrate-wasm-builder</code> and <code>sp-runtime</code> in polkadot-sdk.</li>
+</ul>
+<p>The problems and options were discussed in <a href="https://github.com/polkadot-fellows/RFCs/issues/148">RFCs#148</a>, <a href="https://github.com/polkadot-fellows/runtimes/issues/1322">runtimes#1322</a> and <a href="https://github.com/paritytech/frame-metadata/pull/110">frame-metadata#110</a>. One hash for all extension versions, the depth-first numbering and V16 as the source were agreed on RFCs#148 in November 2026 (<a href="https://github.com/polkadot-fellows/RFCs/issues/148#issuecomment-7008724097">one hash and numbering</a>, <a href="https://github.com/polkadot-fellows/RFCs/issues/148#issuecomment-6740050684">V16</a>). <a href="https://github.com/paritytech/polkadot-sdk/pull/13822">sdk#13822</a> (open) implements the runtime check that mode 1 is used on extension version 0 only.</p>
+<h2 id="explanation"><a class="header" href="#explanation">Explanation</a></h2>
+<p>Computing a format 2 hash takes four steps: build <code>ExtrinsicMetadataV2</code> from metadata V16, number the types reachable from it, build the Merkle tree of their leaves, and hash the digest. Each step has its own section below, and anything not described here is as in RFC-0078. The worked example runs all four steps on a small runtime.</p>
+<p>All encodings are SCALE. <code>Hash = [u8; 32]</code>. Every hash in the digest and the Merkle tree is <code>blake3</code>, as in RFC-0078. MUST, SHOULD and MAY are used as in RFC 2119.</p>
+<p>Several different things are called &quot;version&quot;:</p>
+<div class="table-wrapper"><table><thead><tr><th>term</th><th>values</th><th>meaning</th></tr></thead><tbody>
+<tr><td>digest format</td><td>1, 2</td><td>the <code>MetadataDigest</code> variant. Format 1 is RFC-0078. Format 2 is this RFC.</td></tr>
+<tr><td>mode</td><td>0, 1, 2</td><td>the explicit byte of <code>CheckMetadataHash</code>. Mode <code>n</code> selects digest format <code>n</code>. Mode 0 disables the check.</td></tr>
+<tr><td>extension version</td><td>0, 1, …</td><td>which transaction extension pipeline a transaction uses (<a href="https://github.com/polkadot-fellows/RFCs/blob/main/text/0099-transaction-extension-version.md">RFC-0099</a>).</td></tr>
+<tr><td>extrinsic format</td><td>4, 5</td><td>format 4 Signed (<code>0x84</code>), format 5 General (<code>0x45</code>).</td></tr>
+<tr><td>metadata version</td><td>15, 16</td><td>the FRAME metadata version a digest is computed from.</td></tr>
+</tbody></table>
+</div>
+<p>Below, &quot;format 1&quot; and &quot;format 2&quot; alone mean the digest format. The extrinsic format is always written in full.</p>
+<h3 id="source-metadata"><a class="header" href="#source-metadata">Source metadata</a></h3>
+<p>Format 2 MUST be computed from metadata V16 (<a href="https://github.com/polkadot-fellows/RFCs/issues/148#issuecomment-6740050684">agreed on RFCs#148</a>). V15 keeps only the extension version 0 pipeline (<a href="https://github.com/paritytech/polkadot-sdk/blob/006389c761e9ce8433dd99ea2cb3536fd5047598/substrate/primitives/metadata-ir/src/v15.rs#L96-L111">metadata-ir</a>), so a format 2 digest computed from V15 does not conform, even where the two agree today. A later metadata version MAY become a valid source only if its RFC requires that it reproduce the values in <a href="#testing">Testing</a> exactly. A future digest format MUST state which metadata version it is computed from.</p>
+<h3 id="metadata-digest"><a class="header" href="#metadata-digest">Metadata digest</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>enum MetadataDigest {
+    #[index = 1]
+    V1 { /* unchanged, see RFC-0078 */ },
+    #[index = 2]
+    V2 {
+        type_information_tree_root: Hash,
+        extrinsic_metadata_hash: Hash,
+        spec_version: u32,
+        spec_name: String,
+        base58_prefix: u16,
+        decimals: u8,
+        token_symbol: String,
+    },
+}
+<span class="boring">}</span></code></pre></pre>
+<p>The metadata hash of format 2 is <code>blake3(SCALE(MetadataDigest::V2 { .. }))</code>. <code>MetadataDigest::V2</code> has the same fields, in the same order, as V1. Its encoding starts with <code>0x02</code>. Two fields are computed differently: <code>type_information_tree_root</code> uses the type numbering below, and <code>extrinsic_metadata_hash</code> is <code>blake3(SCALE(ExtrinsicMetadataV2))</code>. The other five fields are computed as in format 1.</p>
+<h3 id="extrinsic-metadata"><a class="header" href="#extrinsic-metadata">Extrinsic metadata</a></h3>
+<p><code>ExtrinsicMetadataV2</code> replaces RFC-0078's <code>ExtrinsicMetadata</code> in format 2.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct ExtrinsicMetadataV2 {
+    address_ty: TypeRef,
+    call_ty: TypeRef,
+    signature_ty: TypeRef,
+    extensions_by_version: Vec&lt;(u8, Vec&lt;TransactionExtensionMetadata&gt;)&gt;,
+}
+
+struct TransactionExtensionMetadata {
+    identifier: String,
+    included_in_extrinsic: TypeRef,
+    included_in_signed_data: TypeRef,
+}
+<span class="boring">}</span></code></pre></pre>
+<p><code>TransactionExtensionMetadata</code> is RFC-0078's <code>SignedExtensionMetadata</code>, renamed as in polkadot-sdk. Fields and encoding are the same. Format 1's <code>version: u8</code> field is dropped. It held the extrinsic format, and with formats 4 and 5 both in use a single number has no meaning.</p>
+<p><code>extensions_by_version</code> holds one entry per extension version the runtime accepts:</p>
+<ol>
+<li>Entries MUST be sorted by version, strictly increasing, and the vector MUST NOT be empty.</li>
+<li>Each list MUST be the full pipeline for that version, in pipeline order.</li>
+<li>An extension that appears in several pipelines MUST be written out in full in each list.</li>
+<li>Within one list, an identifier MUST NOT occur twice.</li>
+</ol>
+<p>Across lists, a runtime MUST NOT use one identifier with different <code>included_in_extrinsic</code> or <code>included_in_signed_data</code> types. V16 stores each identifier once and points every pipeline that uses it at that one entry (<a href="https://github.com/paritytech/polkadot-sdk/blob/006389c761e9ce8433dd99ea2cb3536fd5047598/substrate/primitives/runtime/src/traits/vers_tx_ext/mod.rs#L125-L151">sp-runtime</a>), so a second use with other types would be described with the first one's types. A format 2 builder cannot detect this from V16, so the metadata builder in polkadot-sdk (<a href="https://github.com/paritytech/polkadot-sdk/blob/006389c761e9ce8433dd99ea2cb3536fd5047598/substrate/primitives/runtime/src/traits/vers_tx_ext/mod.rs#L125-L151">sp-runtime</a>) MUST fail when an identifier is reused with different types.</p>
+<p><code>ExtrinsicMetadataV2</code> is built from the <code>extrinsic</code> field of metadata V16:</p>
+<ul>
+<li><code>address_ty</code>, <code>call_ty</code>, <code>signature_ty</code>: the V16 fields of the same name.</li>
+<li><code>extensions_by_version</code>: one entry <code>(v, list)</code> for each key <code>v</code> of <code>transaction_extensions_by_version</code>. That map's value is a list of 0-based positions in <code>transaction_extensions</code>, for example <code>{0: [0, 1, 2], 1: [3, 0, 1, 2]}</code>. <code>list</code> holds the extensions at those positions, in that order.</li>
+<li>In each extension, <code>identifier</code> is the V16 <code>identifier</code>, <code>included_in_extrinsic</code> is the V16 <code>ty</code>, and <code>included_in_signed_data</code> is the V16 <code>implicit</code>.</li>
+</ul>
+<p>Each type is then written as a <code>TypeRef</code> (<a href="#generating-typeref">Generating <code>TypeRef</code></a>).</p>
+<h3 id="collecting-types"><a class="header" href="#collecting-types">Collecting types</a></h3>
+<p>The input is the type registry of metadata V16. Registry ids are used to look types up and to test two references for equality. Their numeric values MUST NOT be compared, sorted or written into any output.</p>
+<p>A <code>Composite</code> with no fields, a <code>Variant</code> with no variants and a <code>Tuple</code> with no elements are <em>empty</em>; they become <code>TypeRef::Void</code>. <code>Primitive</code> and <code>Compact</code> types become primitive or compact <code>TypeRef</code>s (see <a href="#compact">Compact</a>). Every other type is a <em>node</em>: it produces at least one leaf and gets an id.</p>
+<p>Leaves are as in format 1. Each enum variant is a separate leaf, and all variants of one enum share one <code>type_id</code>. A leaf copies the <code>path</code>, field names and <code>type_name</code>s of its registry type and drops the docs. Leaf types and <code>TypeRef</code> are encoded as RFC-0078 declares them, with variant indices in declaration order. RFC-0078 calls the last <code>TypeRef</code> variant <code>PerId</code>; this RFC uses the reference implementation's name, <code>ById</code> (<a href="https://github.com/bkchr/merkleized-metadata/blob/1997a55cfebf120d4b1037993a86d2e5d3b3f453/src/types.rs#L6-L143">merkleized-metadata</a>). Its encoded index is 22 either way. A <code>BitSequence</code> leaf takes <code>num_bytes</code> from its store type (<code>u8</code>, <code>u16</code>, <code>u32</code>, <code>u64</code> give 1, 2, 4, 8) and sets <code>least_significant_bit_first</code> when a segment of its order type's path equals <code>Lsb0</code> (a segment equal to <code>Msb0</code> gives false). The store and order types are not children and get no id; any other store or order type is an error.</p>
+<p>The <em>children</em> of a type are, in order:</p>
+<div class="table-wrapper"><table><thead><tr><th><code>type_def</code></th><th>children</th></tr></thead><tbody>
+<tr><td><code>Composite</code></td><td>the type of each field, in declaration order</td></tr>
+<tr><td><code>Variant</code></td><td>the variants sorted by <code>index</code>, ascending, not in registry order (the two differ on live chains, for example <code>DigestItem</code> on Polkadot People); for each variant, the type of each field in order</td></tr>
+<tr><td><code>Sequence</code>, <code>Array</code></td><td>the element type</td></tr>
+<tr><td><code>Tuple</code></td><td>each element type, in order</td></tr>
+<tr><td><code>BitSequence</code>, <code>Primitive</code>, <code>Compact</code></td><td>none</td></tr>
+</tbody></table>
+</div>
+<p>Two things are not children:</p>
+<ul>
+<li>Type parameters. The merkleized <code>Type</code> does not carry them, so if the walk followed them, types outside the tree could change the ids.</li>
+<li>The inner type of a <code>Compact</code>. It is resolved to a <code>TypeRef</code> (see <a href="#compact">Compact</a>), not given an id.</li>
+</ul>
+<p>The <em>roots</em> are every type referenced by <code>ExtrinsicMetadataV2</code>, in encoding order:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let mut roots = vec![address_ty, call_ty, signature_ty];
+for (_version, list) in extensions_by_version {          // ascending version
+    for ext in list {                                     // pipeline order
+        roots.push(ext.included_in_extrinsic);
+        roots.push(ext.included_in_signed_data);
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p>The root order changes the ids, so implementations MUST use the order above.</p>
+<h3 id="compact"><a class="header" href="#compact">Compact</a></h3>
+<p><code>Compact&lt;T&gt;</code> resolves as follows:</p>
+<ul>
+<li><code>T</code> is an unsigned integer: the matching <code>CompactU8</code> … <code>CompactU256</code>.</li>
+<li><code>T</code> is a composite with exactly one field or a tuple with exactly one element (for example <code>Perbill</code>): resolve <code>Compact</code> of that field's type.</li>
+<li><code>T</code> is an empty composite or an empty tuple, including <code>()</code>: <code>Void</code>. This occurs on live chains in <code>MultiAddress::Index</code> (<code>Compact&lt;()&gt;</code>, because the account index type is <code>()</code>).</li>
+<li>Anything else, including an empty enum: error.</li>
+</ul>
+<h3 id="generating-typeref"><a class="header" href="#generating-typeref">Generating <code>TypeRef</code></a></h3>
+<p>This section replaces the FRAME id sort of RFC-0078 for format 2.</p>
+<p>Walk the roots in order, depth first. The first time the walk reaches a node, give it the next id, starting from 0, then walk its children in order. Skip types that are not nodes and nodes that already have an id.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let mut ids: Map&lt;RegistryId, u32&gt; = Map::new();
+let mut next = 0;
+
+fn number(t: RegistryId) {
+    if !is_node(t) || ids.contains_key(t) {
+        return;
+    }
+    ids.insert(t, next);
+    next += 1;
+    for c in children(t) {
+        number(c);
+    }
+}
+
+for r in roots {
+    number(r);
+}
+<span class="boring">}</span></code></pre></pre>
+<p>Every reference to a type <code>t</code> then becomes <code>TypeRef::ById(ids[t])</code> if <code>t</code> is a node, <code>TypeRef::Void</code> if <code>t</code> is empty, and the matching primitive or compact <code>TypeRef</code> otherwise. The <code>type_id</code> of every leaf of <code>t</code> is <code>ids[t]</code>. Types the walk did not reach are not part of the type information.</p>
+<p>A cycle (for example <code>RuntimeCall</code> → <code>utility::Call</code> → <code>Vec&lt;RuntimeCall&gt;</code> → <code>RuntimeCall</code>) ends the first time the walk meets a node that already has an id. The first visit of every node is fixed by the root order and the child order, so the root order and the child order are the rule that picks where a cycle is entered. This answers the concern raised on <a href="https://github.com/paritytech/frame-metadata/pull/110#issuecomment-3628205101">frame-metadata#110</a>.</p>
+<p>Call graphs on live chains are deep, so implementations usually walk iteratively. Push the roots in reverse order. Pop one type at a time. If it is not a node or already has an id, skip it. Otherwise assign the next id and push its children in reverse order. The &quot;already has an id&quot; check MUST happen when a type is popped. Checking on push gives a different order.</p>
+<h3 id="errors"><a class="header" href="#errors">Errors</a></h3>
+<p>A builder MUST NOT produce a digest if any of the following holds. The checks cover the types reached from the roots, including types examined while resolving a <code>Compact</code>.</p>
+<ol>
+<li>A <code>Compact</code> does not resolve.</li>
+<li>An enum has two variants with the same <code>index</code>.</li>
+<li><code>extensions_by_version</code> breaks rule 1 or rule 4 of its list.</li>
+<li>A V16 position is outside <code>transaction_extensions</code>.</li>
+<li>A <code>BitSequence</code> has a store or order type other than those in <a href="#collecting-types">Collecting types</a>.</li>
+</ol>
+<h3 id="building-the-merkle-tree-root"><a class="header" href="#building-the-merkle-tree-root">Building the Merkle tree root</a></h3>
+<p>As in RFC-0078, leaves are sorted by <code>(type_id, variant index)</code>; a type that is not an enum has one leaf, sorted by its <code>type_id</code>. A leaf hash is <code>blake3(SCALE(Type))</code>, and the tree and the empty root are as in RFC-0078. Proofs take the form <code>{ leaves, leaf_indices, nodes }</code> of the reference implementation (<a href="https://github.com/bkchr/merkleized-metadata/blob/1997a55cfebf120d4b1037993a86d2e5d3b3f453/src/merkle_tree.rs#L126-L159">merkleized-metadata</a>).</p>
+<h3 id="worked-example"><a class="header" href="#worked-example">Worked example</a></h3>
+<p>A small runtime with two extension versions. Each extension is written as <code>Name(explicit type, implicit type)</code>. <code>Mode</code> already has the <code>EnabledV2</code> variant (see <a href="#inclusion-in-an-extrinsic">Inclusion in an extrinsic</a>):</p>
+<pre><code class="language-text">MultiAddress    enum { 0: Id(AccountId32), 1: Raw(Vec&lt;u8&gt;) }
+AccountId32     struct([u8; 32])
+RuntimeCall     enum { 0: System(system::Call), 1: Utility(utility::Call) }
+system::Call    enum { 0: remark { remark: Vec&lt;u8&gt; } }
+utility::Call   enum { 0: batch { calls: Vec&lt;RuntimeCall&gt; } }        // cycle
+MultiSignature  enum { 0: Sr25519([u8; 64]) }
+Mode            enum { 0: Disabled, 1: Enabled, 2: EnabledV2 }
+Option&lt;[u8;32]&gt; enum { 0: None, 1: Some([u8; 32]) }
+VerifySignature enum { 0: Signed { signature: MultiSignature, account: AccountId32 }, 1: Disabled }
+
+version 0: [CheckNonce(Compact&lt;u32&gt;, ()), CheckMetadataHash(Mode, Option&lt;[u8;32]&gt;)]
+version 1: [VerifyMultiSignature(VerifySignature, ()), CheckNonce(..), CheckMetadataHash(..)]
+</code></pre>
+<p>Format 2 numbers it as follows:</p>
+<pre><code class="language-text">MultiAddress     -&gt; 0   children AccountId32, Vec&lt;u8&gt; (variant 0, then variant 1)
+AccountId32      -&gt; 1   child [u8; 32]
+[u8; 32]         -&gt; 2   child u8 is not a node
+Vec&lt;u8&gt;          -&gt; 3
+RuntimeCall      -&gt; 4   children system::Call, utility::Call
+system::Call     -&gt; 5   child Vec&lt;u8&gt; already has id 3
+utility::Call    -&gt; 6   child Vec&lt;RuntimeCall&gt;
+Vec&lt;RuntimeCall&gt; -&gt; 7   child RuntimeCall already has id 4, the cycle ends here
+MultiSignature   -&gt; 8   child [u8; 64]
+[u8; 64]         -&gt; 9
+version 0 roots:  Compact&lt;u32&gt; and () are not nodes; Mode -&gt; 10; Option&lt;[u8;32]&gt; -&gt; 11
+version 1 roots:  VerifySignature -&gt; 12; its children and the other roots already have ids
+</code></pre>
+<p>The leaves, written as <code>type_id</code> or <code>(type_id, variant index)</code>, are <code>(0,0) (0,1) 1 2 3 (4,0) (4,1) (5,0) (6,0) 7 (8,0) 9 (10,0) (10,1) (10,2) (11,0) (11,1) (12,0) (12,1)</code>: 19 in all.</p>
+<p>Format 1 never reaches <code>VerifySignature</code>, because it hashes only the version 0 list.</p>
+<p>Format 1 ids also follow registry ids. Suppose the same types are registered twice, once with <code>RuntimeCall</code> at FRAME id 60 and once at 21 (made-up ids; V16 moved <code>RuntimeCall</code> earlier in the same way on Kusama Asset Hub). <code>RuntimeCall</code> and the types it pulls in then get different format 1 ids, and the root changes. Format 2 gives both registries the numbering above.</p>
+<h3 id="inclusion-in-an-extrinsic"><a class="header" href="#inclusion-in-an-extrinsic">Inclusion in an extrinsic</a></h3>
+<p><code>CheckMetadataHash</code> keeps its identifier, its position in each pipeline and its implicit type. Its explicit <code>Mode</code> gains one variant:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>enum Mode {
+    Disabled,   // 0
+    Enabled,    // 1: digest format 1, unchanged
+    EnabledV2,  // 2: digest format 2
+}
+
+type Implicit = Option&lt;[u8; 32]&gt;;
+<span class="boring">}</span></code></pre></pre>
+<p>With <code>EnabledV2</code> the implicit is <code>Some(metadata_hash_v2)</code>. If the runtime was built without a format 2 hash, the extension fails with <code>UnknownTransaction::CannotLookup</code>, as mode 1 already does without a format 1 hash (<a href="https://github.com/paritytech/polkadot-sdk/blob/006389c761e9ce8433dd99ea2cb3536fd5047598/substrate/frame/metadata-hash-extension/src/lib.rs#L148-L167">source</a>).</p>
+<p>The index <code>2</code> and the name <code>&quot;EnabledV2&quot;</code> are both normative. The index is the encoded byte; the name is part of the type information that signers check. <code>Mode</code> has no explicit codec indices today (<a href="https://github.com/paritytech/polkadot-sdk/blob/006389c761e9ce8433dd99ea2cb3536fd5047598/substrate/frame/metadata-hash-extension/src/lib.rs#L55-L59">source</a>). It MUST get explicit <code>#[codec(index = 0)]</code>, <code>#[codec(index = 1)]</code> and <code>#[codec(index = 2)]</code>, so that removing <code>Enabled</code> later cannot move <code>EnabledV2</code>. The type information of <code>Mode</code> changes, but existing byte encodings stay valid, including those of a pipeline whose encoding must not change, such as <code>TxExtensionV0</code>.</p>
+<p>A runtime can accept mode 2 only if <code>Mode</code> has a variant with index 2 named <code>&quot;EnabledV2&quot;</code>; no new constant is introduced. The variant is necessary, not sufficient: a runtime built without a format 2 hash still has it, and rejects mode 2 with <code>CannotLookup</code>. Such a transaction fails; it is never signed against a wrong hash.</p>
+<h3 id="mode-1-is-valid-on-extension-version-0-only"><a class="header" href="#mode-1-is-valid-on-extension-version-0-only">Mode 1 is valid on extension version 0 only</a></h3>
+<p>If the mode is <code>Enabled</code> and the extension version is not 0, <code>CheckMetadataHash</code> MUST reject the transaction with <code>InvalidTransaction::BadProof</code>. On extension version 0 nothing changes.</p>
+<p>The check is in <code>implicit</code>, which produces the signed hash. <a href="https://github.com/paritytech/polkadot-sdk/pull/13822">sdk#13822</a> adds the extension version as a parameter of <code>TransactionExtension::implicit</code>. Format 4 Signed transactions pass version 0, as sp-runtime already does for <code>validate</code> (<a href="https://github.com/paritytech/polkadot-sdk/blob/006389c761e9ce8433dd99ea2cb3536fd5047598/substrate/primitives/runtime/src/generic/checked_extrinsic.rs#L105-L110">sp-runtime</a>).</p>
+<h3 id="signing"><a class="header" href="#signing">Signing</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>extrinsic format</th><th>extension version</th></tr></thead><tbody>
+<tr><td>4, Signed (<code>0x84</code>)</td><td>always 0 (<a href="https://github.com/polkadot-fellows/RFCs/issues/148#issuecomment-3265173526">comment on RFCs#148</a>)</td></tr>
+<tr><td>5, General (<code>0x45</code>)</td><td>the byte after the <code>0x45</code> version byte (<a href="https://github.com/paritytech/polkadot-sdk/blob/006389c761e9ce8433dd99ea2cb3536fd5047598/substrate/primitives/runtime/src/generic/unchecked_extrinsic.rs#L130-L144">sp-runtime</a>, <a href="https://github.com/polkadot-fellows/RFCs/pull/124">RFC-0124</a>)</td></tr>
+</tbody></table>
+</div>
+<p>For extrinsic format 4 Signed with mode 2, the signed payload is unchanged: <code>call ‖ explicit data of all version 0 extensions ‖ implicit data of all version 0 extensions</code>, hashed with <code>blake2_256</code> if longer than 256 bytes (<a href="https://github.com/paritytech/polkadot-sdk/blob/006389c761e9ce8433dd99ea2cb3536fd5047598/substrate/primitives/runtime/src/generic/unchecked_extrinsic.rs#L657-L675">sp-runtime</a>). The implicit of <code>CheckMetadataHash</code> is <code>Some(metadata_hash_v2)</code>. This gives offline signers the fix for problem 2 without any extrinsic format 5 support.</p>
+<p>A signer that signs with mode 2 MUST select the extension list by the extension version of the transaction it signs (0 for extrinsic format 4 Signed). It MUST refuse to sign if <code>extensions_by_version</code> has no list for that version, or if any bytes of the call or the extension data are left over after decoding against that list. Until an RFC defines offline signing on extension versions 1 and above, a signer MUST refuse those versions.</p>
+<p>Offline signing on extension versions 1 and above also needs a definition of which bytes are signed and where the authorizing extension sits. That belongs in a follow-up <code>VerifySignature</code> RFC (<a href="https://github.com/polkadot-fellows/RFCs/pull/124#discussion_r1809204841">review of RFC-0124</a>).</p>
+<h2 id="drawbacks"><a class="header" href="#drawbacks">Drawbacks</a></h2>
+<ul>
+<li>Two formats to maintain. Format 1 stays, with its dependence on V15 and on frame-metadata's registration walk.</li>
+<li>Larger extrinsic metadata. The signer receives every extension list with each transaction, about 350 bytes more than format 1 on today's two-pipeline runtimes (see <a href="#performance">Performance</a>).</li>
+<li>Slightly larger proofs. The depth-first order spreads one transaction's leaves a little more than the FRAME order, so proofs need a few more sibling hashes.</li>
+<li>Identical types keep separate ids. About 11% of leaves on Polkadot People and Asset Hub are duplicates, for example the same generic type instantiated twice. Builder and wallet read the same V16, so they still agree. Two registries give the same hash only if they hold the same reachable types. Merging two duplicate entries into one, or splitting one into two, therefore changes the hash.</li>
+<li>The lists are declared, not derived. The extension lists are what each extension's <code>metadata()</code> declares (<a href="https://github.com/paritytech/polkadot-sdk/blob/006389c761e9ce8433dd99ea2cb3536fd5047598/substrate/primitives/runtime/src/traits/transaction_extension/mod.rs#L252-L266">sp-runtime</a>), as in format 1. A wrong declaration is hashed as it is.</li>
+<li>A behaviour change for mode 1. A wallet that sends mode 1 on extension version 1 or above will see its transactions rejected. Those transactions were not protected by the hash.</li>
+</ul>
+<h2 id="testing-security-and-privacy"><a class="header" href="#testing-security-and-privacy">Testing, Security, and Privacy</a></h2>
+<h3 id="testing"><a class="header" href="#testing">Testing</a></h3>
+<p>Implementations MUST produce identical digests. As in RFC-0078, they can be checked against each other on live metadata. The format 2 values for metadata V16 of these runtimes, fetched at the given block, are:</p>
+<div class="table-wrapper"><table><thead><tr><th>chain</th><th>block</th><th><code>type_information_tree_root</code></th><th><code>extrinsic_metadata_hash</code></th><th>format 2 metadata hash</th></tr></thead><tbody>
+<tr><td>Polkadot People 2005002</td><td><code>0x8ddea996daca51107e9069abcb5cca64dbca4f769c75d0645f51621cec57cf51</code></td><td><code>0xb4a3e3b5384c00e6f3966596751b9b5b33269cfa5c1e055e961200c00327362f</code></td><td><code>0xad8ff260c0049bbed2d64134c74800f436464ba940651de43bdc288f70ae8e67</code></td><td><code>0x70b28e0f89eebe08d3bfe444a16a6b3592970fdaefc0157072d801b798af5d94</code></td></tr>
+<tr><td>Polkadot Asset Hub 2005002</td><td><code>0x4d84d54a112d850b36dbdd81f1dbf51ce15900302a59cbccc214b31f78d1a746</code></td><td><code>0x8580f16e03bb2b8eb9dbd59ad22ac0d86c188586909ba24b5eaceff491ea0613</code></td><td><code>0x8330e68af2d98ea1f4c387ba0b1e7a61a191eb131b3e4f9b4a829a976e76a8e4</code></td><td><code>0x2dfa90de20fe81dd4283c3b436609d9f9fca017c7ca4ee59cb305d9aacbfc5e6</code></td></tr>
+</tbody></table>
+</div>
+<p>The <code>blake2_256</code> hashes of the raw V16 metadata bytes (inside the <code>Option&lt;OpaqueMetadata&gt;</code> returned by <code>Metadata_metadata_at_version(16)</code>) are <code>0x30e681cce5b2f9918d786f688bd1c472e08abb0aa37f75270e33c3572a6adbba</code> (Polkadot People) and <code>0x1647e216a8a4b42c67220850e4d0d9d4b69d02060246f669a551caf9b95c5467</code> (Polkadot Asset Hub).</p>
+<p>Both use <code>spec_version</code> 2005002, <code>base58_prefix</code> 0, <code>decimals</code> 10 and <code>token_symbol</code> <code>&quot;DOT&quot;</code>, with <code>spec_name</code> <code>&quot;people-polkadot&quot;</code> and <code>&quot;statemint&quot;</code>.</p>
+<p>An implementation can also check that randomly permuting the registry ids leaves the root unchanged, and that format 1 still gives the fixture digests pinned in <code>merkleized-metadata</code> (<a href="https://github.com/bkchr/merkleized-metadata/blob/1997a55cfebf120d4b1037993a86d2e5d3b3f453/src/lib.rs#L178-L203">merkleized-metadata</a>).</p>
+<h3 id="security"><a class="header" href="#security">Security</a></h3>
+<p>A signer that predates this RFC requires mode byte <code>0x01</code> (<a href="https://github.com/Zondax/ledger-polkadot/blob/7520e0e5ee822ad8c04f5003025124a146a1612e/app/src/parser_impl.c#L92-L110">Ledger app</a>) and refuses a mode 2 transaction. The mode byte is explicit data and is signed, so a mode 1 signature cannot be presented as mode 2. The runtime rejects mode 1 on extension versions other than 0, so a transaction cannot fall back to a hash that does not describe its pipeline. As in RFC-0078, the hash is computed at build time, and reproducible builds let anyone check it.</p>
+<h3 id="privacy"><a class="header" href="#privacy">Privacy</a></h3>
+<p>Unchanged from RFC-0078.</p>
+<h2 id="performance-ergonomics-and-compatibility"><a class="header" href="#performance-ergonomics-and-compatibility">Performance, Ergonomics, and Compatibility</a></h2>
+<h3 id="performance"><a class="header" href="#performance">Performance</a></h3>
+<p>Both hashes are computed at build time. At runtime the only new work is the mode 1 check in <code>implicit</code>.</p>
+<p>Signer input per transaction (proof, extrinsic metadata and extra information) on Polkadot Asset Hub and Polkadot People 2005002:</p>
+<div class="table-wrapper"><table><thead><tr><th>chain</th><th>transaction</th><th>digest format 1</th><th>digest format 2, extrinsic format 4 Signed</th></tr></thead><tbody>
+<tr><td>Polkadot Asset Hub</td><td><code>transfer_keep_alive</code></td><td>3172 B</td><td>3782 B</td></tr>
+<tr><td>Polkadot Asset Hub</td><td><code>batch_all[transfer_keep_alive, PolkadotXcm.transfer_assets]</code></td><td>6289 B</td><td>6674 B</td></tr>
+<tr><td>Polkadot People</td><td><code>transfer_keep_alive</code></td><td>3038 B</td><td>3496 B</td></tr>
+</tbody></table>
+</div>
+<p>For the same extrinsic format 4 transaction, format 2 adds 385 to 610 bytes of total input. Most of that is the extrinsic metadata, which grows by about 350 bytes because it carries every extension list. The largest input above, 6674 bytes, is under half of the Ledger app's 16 KiB buffer (<a href="https://github.com/Zondax/ledger-polkadot/blob/7520e0e5ee822ad8c04f5003025124a146a1612e/app/src/common/tx.c#L34-L37">source</a>).</p>
+<h3 id="ergonomics"><a class="header" href="#ergonomics">Ergonomics</a></h3>
+<p>Runtime developers keep the same <code>CheckMetadataHash</code> in every pipeline. Extensions that override <code>implicit</code> must add the extension version parameter that <a href="https://github.com/paritytech/polkadot-sdk/pull/13822">sdk#13822</a> introduces; extensions on the default <code>implicit</code> need no change. Developers who build transactions compute the format 2 digest from V16 and send mode 2, much as they do for format 1 today. Offline signers change only the leading digest byte, the accepted mode byte and the extrinsic metadata they read. Type ids arrive inside the leaves, so a signer never runs the numbering. Dapps can keep sending mode 1 on extension version 0 until the signer they talk to supports format 2.</p>
+<h3 id="compatibility"><a class="header" href="#compatibility">Compatibility</a></h3>
+<p>Format 1, mode 1 on extension version 0, and every existing signer keep working. The rollout is:</p>
+<ol>
+<li>Implementation in <code>merkleized-metadata</code>, <code>substrate-wasm-builder</code> and <code>frame-metadata-hash-extension</code>, and the <code>implicit</code> change in sp-runtime (<a href="https://github.com/paritytech/polkadot-sdk/pull/13822">sdk#13822</a>). That change breaks custom <code>implicit</code> overrides at compile time.</li>
+<li>Fellowship runtimes upgrade. The new runtimes build both hashes and reject mode 1 on extension version 1 and above. Wallet developers need notice of the mode 1 rejection before the upgrade.</li>
+<li>Online libraries and signers adopt format 2 at their own pace.</li>
+</ol>
+<p>Chains outside the Fellowship need matching versions of <code>substrate-wasm-builder</code> and <code>frame-metadata-hash-extension</code> and need to serve metadata V16. Chains with a single pipeline gain only the fix for problem 2, and many may stay on format 1.</p>
+<h2 id="prior-art-and-references"><a class="header" href="#prior-art-and-references">Prior Art and References</a></h2>
+<ul>
+<li><a href="https://github.com/polkadot-fellows/RFCs/blob/main/text/0078-merkleized-metadata.md">RFC-0078</a>: Merkleized Metadata, which this RFC extends.</li>
+<li><a href="https://github.com/polkadot-fellows/RFCs/blob/main/text/0099-transaction-extension-version.md">RFC-0099</a>: transaction extension versions.</li>
+<li><a href="https://github.com/polkadot-fellows/RFCs/pull/124">RFC-0124</a>: extrinsic format 5 (open).</li>
+<li><a href="https://github.com/polkadot-fellows/RFCs/issues/148">RFCs#148</a>: RFC-0078 adaptation to Metadata V16 and Extrinsic V5.</li>
+<li><a href="https://github.com/polkadot-fellows/runtimes/issues/1322">runtimes#1322</a>: <code>CheckMetadataHash</code> does not cover transaction extension versions other than 0.</li>
+<li><a href="https://github.com/paritytech/frame-metadata/pull/110">frame-metadata#110</a>: registers extrinsic types before pallet types, and the discussion of a canonical order that followed.</li>
+<li><a href="https://github.com/bkchr/merkleized-metadata">merkleized-metadata</a>: the reference implementation of RFC-0078.</li>
+</ul>
+<p>Other designs discussed on <a href="https://github.com/polkadot-fellows/RFCs/issues/148">RFCs#148</a>, <a href="https://github.com/paritytech/frame-metadata/pull/110">frame-metadata#110</a> and <a href="https://github.com/paritytech/polkadot-sdk/pull/13822">sdk#13822</a>:</p>
+<ul>
+<li>One hash per extension version (<a href="https://github.com/polkadot-fellows/RFCs/issues/148#issuecomment-3248305489">RFCs#148</a>, <a href="https://github.com/paritytech/polkadot-sdk/pull/13822#discussion_r4648193667">sdk#13822</a>). The device gets a smaller input that does not grow as versions are added. A single hash costs 211 to 358 bytes more device input on Polkadot People and Asset Hub, because the device receives every list instead of one. A single hash was preferred on RFCs#148 because it is <a href="https://github.com/polkadot-fellows/RFCs/issues/148#issuecomment-6740050684">simpler</a> and <a href="https://github.com/polkadot-fellows/RFCs/issues/148#issuecomment-6743267964">any change to any pipeline changes it</a>.</li>
+<li>Keeping the FRAME id order and computing the hash from V16 only (<a href="https://github.com/polkadot-fellows/RFCs/issues/148#issuecomment-3351667308">RFCs#148</a>). This covers every extension version, but the ids still follow registry order, so problem 2 remains.</li>
+<li>Sorting registry entries by their SCALE encoding (<a href="https://github.com/polkadot-fellows/RFCs/issues/148#issuecomment-3351667308">RFCs#148</a>). An entry's encoding contains its children's registry ids, so the order still depends on them.</li>
+<li>Content hashes as type references (<a href="https://github.com/paritytech/frame-metadata/pull/110#issuecomment-3628096698">frame-metadata#110</a>). These avoid ids entirely, but need a rule for cycles and make every reference 32 bytes.</li>
+<li>General graph canonization (<a href="https://github.com/polkadot-fellows/RFCs/issues/148#issuecomment-7036859872">RFCs#148</a>). This works without fixed starting points. Here the roots are fixed and the edges are ordered, so the depth-first walk is already canonical.</li>
+</ul>
+<h2 id="unresolved-questions"><a class="header" href="#unresolved-questions">Unresolved Questions</a></h2>
+<p>None.</p>
+<h2 id="future-directions-and-related-material"><a class="header" href="#future-directions-and-related-material">Future Directions and Related Material</a></h2>
+<ul>
+<li>Semantic information (which fields are balances, which asset an amount refers to) and multi-token decimals remain out of scope, as in RFC-0078.</li>
+<li>Format 1 can be retired once signers have moved to format 2.</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../introduction.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../approved/0001-agile-coretime.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../introduction.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../approved/0001-agile-coretime.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>
