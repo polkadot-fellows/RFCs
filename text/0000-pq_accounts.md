@@ -1,12 +1,16 @@
-# RFC-0000: Hybrid post-quantum accounts (DRAFT)
+# RFC-0000: Hash-based and hybrid post-quantum accounts (DRAFT)
 
 |                 |                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | **Start Date**  | Date of initial proposal                                                                    |
-| **Description** | Add host calls for post-quantum signatures and support for hybrid post-quantum accounts.    |
+| **Description** | Add host calls for post-quantum signatures and support for hash-based and hybrid post-quantum accounts.    |
 | **Authors**     | Jeff Burdges                                                                                |
 
 ## Summary
+
+We immediately add SLH-DSA-SHAKE-128s ([SPHINCS+](https://sphincs.org/)) signatures as standardized in [FIPS 205](https://csrc.nist.gov/pubs/fips/205/final), which offers 128 bits of security and requires 7856 bytes.
+
+AssetHub and Polkadot Vault add support for SLH-DSA-SHAKE-128s signatures too.
 
 After NIST standardizes FN-DSA (Falcon-512) in 2026 or 2027, we shall add one or more host calls for FN-DSA, probably with public key recovery or message recovery (Falcon-MRM), and probably a host call for ML-DSA (Dilithium) too.
 
@@ -20,13 +24,13 @@ If large enough quantum computers existed, then they could break all the public 
 
 We elaborate upon those observations in the appendix but focus here upon more direct motivations:
 
-1)  People want to feel secure, so if they want to adopt hybrid post-quantum account keys now, and pay say 5% higher tx fees, the why stop them?  In this, hybrid post-quantum account keys would not significantly increase blocksizes or transaction sizes, roughly 1.5 kb per treansation.  If we worried about blocksizes now then we'd adopt NOMT which should improve overall blocksizes by a factor of three or four, dwarfing this.
+1)  People want to feel secure, so if they want to adopt hybrid post-quantum account keys now, and pay higher tx fees, the why stop them?  In this, hash-base signatures would consume significat extra blockspace by 8kb per transaction, but our proposed hybrid post-quantum account keys would not significantly increase blocksizes or transaction sizes, roughly 1.5 kb per treansation.  If we worried about blocksizes now then we'd adopt NOMT which should improve overall blocksizes by a factor of three or four, dwarfing this.
 
-2)  We could avoid blanace transfers and have users merely add a post-quantum key attached to their existing sr25519 or ed25519 key, without doing any balance transfers or fighitng with staking and locks.  This solves our largest adoption hurdle. 
+2)  We could avoid blanace transfers and have users merely add a post-quantum key attached to their existing sr25519 or ed25519 key, without doing any balance transfers or fighitng with staking and locks.  This solves our largest adoption hurdle.  All this requires FN-DSA standardization though, while early adopters would be stuck with SLH-DSA, which requires balance transfers.
 
-3)  We do pay development and maintannace costs for doing this properly once, because anything that touches acocunt cryptocraphy requires careful debugging and testing, but we belive that (a) the non-transfer hybrid transition makes roll backs possible, and (b) Kusama reduces these cost, relative to what our compeditors pay.  We doubt that quantum computers disapear from the news since researchers shall continue making some progress, however incremental or overhyped.
+3)  We do pay development and maintannace costs for doing this properly only twice, once for SLH-DSA and once for hybrid FN-DSA, because anything that touches acocunt cryptocraphy requires careful debugging and testing, but we belive that (a) the non-transfer hybrid transition makes roll backs possible, and (b) Kusama reduces these cost, relative to what our compeditors pay.  We doubt that quantum computers disapear from the news since researchers shall continue making some progress, however incremental or overhyped.
 
-We choose FN-DSA (Falcon) because its the smallest easily deployable post-quantum signature scheme:  An FN-DSA signature plus public key winds up being almost 2.5 x smaller than for ML-DSA, but still 16 x larger than for sr25519/ed25519.  FN-DSA and ML-DSA both have similar verificaiton times, roughly half that of sr25519 and ed25519.  FN-DSA signers are roughly 4 x slower than ML-DSA signers, which is already 5 x slower than sr25519/ed25519.  We do not care about signers being somewhat slow however, since our signatures are verified many more times than signed. 
+We prefer FN-DSA (Falcon) because its the smallest easily deployable post-quantum signature scheme:  An FN-DSA signature plus public key winds up being almost 2.5 x smaller than for ML-DSA, but still 16 x larger than for sr25519/ed25519.  FN-DSA and ML-DSA both have similar verificaiton times, roughly half that of sr25519 and ed25519.  FN-DSA signers are roughly 4 x slower than ML-DSA signers, which is already 5 x slower than sr25519/ed25519.  We do not care about signers being somewhat slow however, since our signatures are verified many more times than signed. 
 
 ## Stakeholders
 
@@ -39,6 +43,8 @@ We choose FN-DSA (Falcon) because its the smallest easily deployable post-quantu
 
 ### Host calls
 
+We immediately add a host call for SLH-DSA-SHAKE-128s ([SPHINCS+](https://sphincs.org/)) signatures as standardized in [FIPS 205](https://csrc.nist.gov/pubs/fips/205/final) and provide this as an alternative signature scheme in AssetHub.  
+
 We add a host call for [FN-DSA-512](https://datatracker.ietf.org/doc/draft-ietf-cose-falcon/) (Falcon) signature verification once its standardized. 
 
 We should explore adding variants that do key or message recovery.  Signal & others have done work on message recovery in [iacr/2026/420](https://eprint.iacr.org/2026/420), but we're unsure how this beats key recovery.  We're unsure if any recovery schemes shall be deployed or stnadardized, or when, or the future code quality, including whether constant-time signers exist.
@@ -49,7 +55,13 @@ We should ideally research if more abstract interfaces make sense for either FN-
 
 ### Secret key derivation
 
-We require deterministic key derivation for all account keys, so that users can save their keys in human readable ways, and have key derivation trees.  We cannot yet deterministically derive secret keys for FN-DSA (Falcon) because [NIST has not yet standardized the secret key format and generation](https://github.com/pornin/rust-fn-dsa/pull/5) and indeed other details could change in Falcon, but we expect this should be corrected before 2028.  We should not deploy on polkadot until we know the standards situation, even if we choose non-standard modes like recoveries, but we could deploy other experemental versions to Kusama, provided we accepted the risks of doing roll backs.
+We require deterministic key derivation for all account keys, so that users can save their keys in human readable ways, and have key derivation trees.  We want user's existing derivation path to work with the new post quantum keys, especially for hybrid signatures, but also simply for convenience with hash-based signatures.
+
+In other words, we treat the signature scheme choice almost like a final step in a hard derivation path.  We should figure out how much we wish to automate this choice, like by creating all types together, or if this only causes confusion.
+
+At least sr25519 and ed25519 have an internal key derivation layer (hash), which hopefully Polakdot Vault uses, so different schemes could employ the same hard derivation path, and diverge only in this final step.
+
+We cannot yet deterministically derive secret keys for FN-DSA (Falcon) because [NIST has not yet standardized the secret key format and generation](https://github.com/pornin/rust-fn-dsa/pull/5) and indeed other details could change in Falcon, but we expect this should be corrected before 2028.  We should not deploy on polkadot until we know the standards situation, even if we choose non-standard modes like recoveries, but we could deploy other experemental versions to Kusama, provided we accepted the risks of doing roll backs.
 
 As a hybrid post-quantum signature using derivation paths, we need a deterministically derived FN-DSA secret key for each possible derivaiton of the existing elliptic curve key.
 
@@ -57,9 +69,11 @@ We cannot derive a post-quantum key from the scalar in an (expanded) secret key 
 
 As a result, we need an entirely seperate true hard derivation path that uses only hash functions.  We could explore some hybrid combiners for the derivation path that intermix the elliptic curve key somehow, but afaik this brings no advantage over a seperate parallel purely hard derivation tree.  As soft derivations loose their privacy against quantum computers, we could simply abandon them and not derive FN-DSA secret keys below soft derivations.  If we do derive below soft derivations, then we retain soft derivation anonymity only against classical adversaries.
 
-It's possible someone constructs a soft derivation for FN-DSA eventually, but if so they would necessarily entwine the FN-DSA and elliptic curve for hybrid post-quantum unlinkability, so we'd require some third hybrid post-quantum soft derivation type.
+It's possible someone constructs a soft derivation for FN-DSA eventually, but if so they would necessarily entwine the FN-DSA and elliptic curve for hybrid post-quantum unlinkability, so we'd require some third hybrid post-quantum soft derivation type.  SLH-DSA shall never support soft derivation paths.
 
 ### Accounts ###
+
+SLH-DSA accounts should be identified directly by the hash of their public key, which AssetHub shall treate like an unrealted account.  A priori, Polakdot Vault should treats them like different accounts too.  we could treat them like one account in Vault though, especially since the hybrid scheme requires this.
 
 Hybrid post-quantum accounts should be identified by the hash of both their public keys keys together, ala `blake2b("hpq_account",a.fn_dsa_pk,a.sr25519_pk)`.  We should avoid two hybrid post-quantum accounts having the same elliptic curve public key, so each hybrid post-quantum account needs a free-ish alias named by its elliptic curve public key.  We could optimise this off-chain at RFC nodes for inocming payments, but we'll likely need some on-chain implementation too.
 
@@ -74,7 +88,9 @@ We could expand https://github.com/polkadot-fellows/RFCs/pull/163 to ed25519-dal
 
 ## Drawbacks
 
-We necessarily spend considerably more bandwidth sending the post-qauntum public keys and signatures (see performance below). 
+We necessarily spend considerably more bandwidth sending the post-qauntum public keys and signatures (see performance below).  
+
+SLH-DSA signatures are 8kb, which consumes far more bandwidth, and makes transactions much more expensive.
 
 ECDSA key recovery wound up being an incorrect design choice for blockchains like Ethereum, because it obstructs batch verification.  ECDSA key recovery only saves 32 bytes per signature, while batch verification yields massive savings in CPU time, given chains wind up bound by the CPU time of signature verificaiton (cite ourselves?). 
 
